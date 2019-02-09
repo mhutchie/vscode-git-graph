@@ -1,0 +1,176 @@
+body{
+	margin:0;
+	padding:0;
+}
+
+body.notGitRepository h1, body.notGitRepository p{
+	text-align:center;
+}
+
+#commitGraph{
+	display:block;
+	position:absolute;
+	left:8px;
+	top:71px;
+}
+#commitGraph{
+	display:block;
+	position:absolute;
+	left:8px;
+	top:71px;
+}
+#commitGraph circle.first{
+	fill:var(--vscode-editor-background);
+	stroke-width:2;
+}
+#commitGraph circle:not(.first){
+	stroke:var(--vscode-editor-background);
+	stroke-width:1;
+	stroke-opacity:0.75;
+}
+#commitTable{
+	display:block;
+	position:absolute;
+	left:0;
+	right:0;
+	top:40px;
+}
+#commitTable table{
+	width:100%;
+	border-collapse:collapse;
+}
+#commitTable table, #commitTable tbody, #commitTable tr, #commitTable th, #commitTable td{
+	padding:0;
+	margin:0;
+}
+#commitTable th, #commitTable td{
+	white-space:nowrap;
+	font-size:14px;
+}
+#commitTable tr:hover td{
+	background-color:rgba(128,128,128,0.15);
+}
+#commitTable tr:hover:last-child td{
+	background-color:unset;
+}
+#commitTable td{
+    line-height:24px;
+    padding:0 4px;
+}
+#commitTable th{
+	border-left:1px solid rgba(128,128,128,0.5);
+	border-bottom:1px solid rgba(128,128,128,0.5);
+    background-color:rgba(128,128,128,0.2);
+    line-height:18px;
+	padding:6px 12px;
+	cursor:default;
+}
+#commitTable th:first-child{
+	border-left-width:0;
+}
+
+#commitTable td:nth-child(2), #commitTable th:nth-child(2){
+	width:100%;
+	text-overflow:ellipsis;
+	overflow:hidden;
+	max-width:0;
+}
+#commitTable td:nth-child(4), #commitTable th:nth-child(4){
+	max-width:120px;
+	text-overflow:ellipsis;
+	overflow:hidden;
+}
+.gitRef{
+	background-color:rgba(128,128,128,0.2);
+	border-radius:5px;
+	border:1px solid rgba(128,128,128,0.5);
+	padding:0 5px;
+	margin-right:5px;
+	height:12px;
+}
+.gitRef > svg{
+	display:inline;
+	fill:rgb(128,128,128);
+	margin-right:3px;
+	line-height:20px;
+	vertical-align:sub;
+}
+
+#loadingHeader{
+	text-align:center;
+	line-height:32px;
+}
+#loadingHeader svg{
+	display:inline;
+	fill:rgb(128,128,128);
+	margin-right:10px;
+	vertical-align:top;
+	animation:loadingIconAnimation 2s linear infinite;
+}
+@keyframes loadingIconAnimation{
+	0%{transform:rotate(0deg);}
+	100%{transform:rotate(360deg);}
+}
+
+/* Controls */
+#controls{
+	display:block;
+	position:absolute;
+	left:0;
+	right:0;
+	top:0;
+	height:40px;
+	padding-right:96px;
+	border-bottom:2px solid rgba(128,128,128,0.5);
+	background-color:rgba(128,128,128,0.2);
+	line-height:38px;
+    text-align:center;
+	font-weight:700;
+	font-size:14px;
+}
+#branchSelect{
+	margin-right:20px;
+	font-size:14px;
+}
+#showRemoteBranchesCheckbox{
+	width:14px;
+	vertical-align:text-top
+}
+#refreshBtn{
+    position:absolute;
+    right:8px;
+    top:8px;
+    width:80px;
+    height:22px;
+    line-height:22px;
+    border-radius:11px;
+}
+#loadMoreCommitsBtn{
+	width:180px;
+	height:30px;
+	margin:10px auto;
+	border-radius:15px;
+	line-height:30px;
+}
+
+#controls select:focus, #controls input:focus{
+	outline:none;
+}
+#controls label{
+	cursor:pointer;
+}
+
+.roundedBtn{
+	display:block;
+	background-color:rgba(128,128,128,0.2);
+	border:1px solid rgba(128,128,128,0.5);
+	font-size:14px;
+	text-align:center;
+	cursor:pointer;
+}
+.roundedBtn:hover{
+	background-color:rgba(128,128,128,0.4);
+}
+#commitTable th, #loadingHeader, .unselectable, .roundedBtn, #controls label{
+	user-select:none;
+}

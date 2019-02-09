@@ -1,0 +1,19 @@
+{
+	"rules": {
+		"no-string-throw": true,
+		"no-unused-expression": true,
+		"no-duplicate-variable": true,
+		"class-name": true,
+		"semicolon": [
+			true,
+			"always"
+		],
+		"triple-equals": true,
+		"quotemark": [
+			true,
+			"single"
+		],
+		"ordered-imports": true
+	},
+	"defaultSeverity": "warning"
+}

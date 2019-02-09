@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"lib": [
+			"es6", "dom"
+		],
+		"module": "none",
+		"outDir": "../media",
+		"strict": true,
+		"removeComments": true
+	}
+}

@@ -1,0 +1,115 @@
+{
+	"name": "git-graph",
+	"displayName": "Git Graph",
+	"version": "1.0.0",
+	"publisher": "mhutchie",
+	"author": {
+		"name": "Michael Hutchison",
+		"email": "michael@16right.com"
+	},
+	"description": "View a Git Graph of your repository",
+	"keywords": [
+		"git",
+		"graph"
+	],
+	"categories": [
+		"Other"
+	],
+	"homepage": "https://github.com/mhutchie/vscode-git-graph",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mhutchie/vscode-git-graph.git"
+	},
+	"bugs": {
+		"url": "https://github.com/mhutchie/vscode-git-graph/issues"
+	},
+	"license": "MIT",
+	"icon": "resources/icon.png",
+	"engines": {
+		"vscode": "^1.30.0"
+	},
+	"activationEvents": [
+		"*"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "git-graph.view",
+				"title": "Git Graph: View Git Graph"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Git Graph",
+			"properties": {
+				"git-graph.graphStyle": {
+					"type": "string",
+					"enum": [
+						"rounded",
+						"angular"
+					],
+					"default": "rounded",
+					"description": "Specifies the style of the graph."
+				},
+				"git-graph.graphColours": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"description": "Hex Colour"
+					},
+					"default": [
+						"#0085d9",
+						"#d9008f",
+						"#00d90a",
+						"#d98500",
+						"#a300d9",
+						"#ff0000"
+					],
+					"description": "Specifies the colours used on the graph."
+				},
+				"git-graph.dateFormat": {
+					"type": "string",
+					"enum": [
+						"Date & Time",
+						"Date Only",
+						"Relative"
+					],
+					"default": "Date & Time",
+					"description": "Specifies the number of commits to initially load."
+				},
+				"git-graph.initialLoadCommits": {
+					"type": "number",
+					"default": 300,
+					"description": "Specifies the number of commits to initially load."
+				},
+				"git-graph.loadMoreCommits": {
+					"type": "number",
+					"default": 75,
+					"description": "Specifies the number of commits to load when the \"Load More Commits\" button is pressed (only shown when more commits are available)."
+				},
+				"git-graph.showStatusBarItem": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show a Status Bar item which opens Git Graph when clicked."
+				},
+				"git-graph.showUncommittedChanges": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show uncommitted changes (set to false to decrease load time on large repositories)."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./src && tsc -p ./web",
+		"postinstall": "node ./node_modules/vscode/bin/install"
+	},
+	"devDependencies": {
+		"typescript": "^3.3.1",
+		"vscode": "^1.1.28",
+		"tslint": "^5.12.1",
+		"@types/node": "^8.10.25"
+	}
+}

@@ -1,0 +1,4 @@
+media/main.js
+node_modules
+out
+*.vsix

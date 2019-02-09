@@ -109,8 +109,8 @@ export class DataSource {
 
 				if (ref.startsWith('refs/heads/')) {
 					refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
-				} else if (ref.startsWith('refs/tags/') && ref.endsWith('^{}')) {
-					refs.push({ hash: hash, name: ref.substring(10, ref.length - 3), type: 'tag' });
+				} else if (ref.startsWith('refs/tags/')) {
+					refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
 				} else if (ref.startsWith('refs/remotes/')) {
 					refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
 				}

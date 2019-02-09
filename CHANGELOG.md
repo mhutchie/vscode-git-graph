@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.1 - 2019-02-10
+* Detect & display lightweight tags
+
 ## 1.0.0 - 2019-02-10
 * Initial release
 * Git Graph Visualisation

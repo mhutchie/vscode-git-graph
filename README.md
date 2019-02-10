@@ -1,15 +1,20 @@
 # Git Graph extension for Visual Studio Code
 
-View a Git Graph of your repository in Visual Studio Code. Configurable to look the way you want!
+View a Git Graph of your repository, and easily perform Git actions from the graph. Configurable to look the way you want!
 
 ![Recording of Git Graph](https://github.com/mhutchie/vscode-git-graph/raw/master/resources/demo.gif)
 
 ## Features
 
-* Git Graph Visualisation
-    * Display Local & Remote Branches
-    * Display Refs: Heads, Tags & Remotes
-    * Display Uncommitted Changes
+* Git Graph View:
+    * Display:
+        * Local & Remote Branches
+        * Local Refs: Heads, Tags & Remotes
+        * Local Uncommitted Changes
+    * Perform Git Actions (available by right clicking on a commit / branch / tag):
+        * Create, Checkout, Rename & Delete Branches
+        * Add & Delete Tags
+        * Copy Commit Hash to Clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)
 * "Git Graph: View Git Graph" launch command in the Command Palette
 * "Git Graph" launch button in the Status Bar
@@ -34,11 +39,7 @@ This extension contributes the following commands:
 
 ## Coming Soon
 
-* Interact with commits shown on the Git Graph:
-    * View Changes in commit
-    * Create Branch from commit
-    * Add Tag to commit
-    * Checkout Branch
+* View Changes in commit by right clicking on it
 
 ## Release Notes
 Detailed Release Notes are available [here](CHANGELOG.md).

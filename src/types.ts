@@ -8,6 +8,7 @@ export interface GitCommitNode {
 	date: number;
 	message: string;
 	refs: GitRef[];
+	current: boolean;
 }
 
 export interface GitCommit {
@@ -53,7 +54,8 @@ export interface RequestLoadCommitsMessage {
 	data: {
 		branch: string,
 		maxCommits: number,
-		showRemoteBranches: boolean
+		showRemoteBranches: boolean,
+		currentBranch: string | null
 	};
 }
 
@@ -70,10 +72,111 @@ export interface ResponseLoadCommitsMessage {
 	};
 }
 
+export interface RequestAddTag {
+	command: 'addTag';
+	data: {
+		commitHash: string,
+		tagName: string
+	};
+}
+
+export interface ResponseAddTag {
+	command: 'addTag';
+	data: GitCommandStatus;
+}
+
+export interface RequestDeleteTag {
+	command: 'deleteTag';
+	data: string;
+}
+
+export interface ResponseDeleteTag {
+	command: 'deleteTag';
+	data: GitCommandStatus;
+}
+
+export interface RequestCopyCommitHashToClipboard {
+	command: 'copyCommitHashToClipboard';
+	data: string;
+}
+
+export interface ResponseCopyCommitHashToClipboard {
+	command: 'copyCommitHashToClipboard';
+	data: boolean;
+}
+
+export interface RequestCreateBranch {
+	command: 'createBranch';
+	data: {
+		commitHash: string,
+		branchName: string
+	};
+}
+
+export interface ResponseCreateBranch {
+	command: 'createBranch';
+	data: GitCommandStatus;
+}
+
+export interface RequestCheckoutBranch {
+	command: 'checkoutBranch';
+	data: {
+		branchName: string,
+		remoteBranch: string | null
+	};
+}
+
+export interface ResponseCheckoutBranch {
+	command: 'checkoutBranch';
+	data: GitCommandStatus;
+}
+
+export interface RequestDeleteBranch {
+	command: 'deleteBranch';
+	data: {
+		branchName: string,
+		forceDelete: boolean
+	};
+}
+
+export interface ResponseDeleteBranch {
+	command: 'deleteBranch';
+	data: GitCommandStatus;
+}
+
+export interface RequestRenameBranch {
+	command: 'renameBranch';
+	data: {
+		oldName: string,
+		newName: string
+	};
+}
+
+export interface ResponseRenameBranch {
+	command: 'renameBranch';
+	data: GitCommandStatus;
+}
 
 /* Types */
 
-export type RequestMessage = RequestLoadBranchesMessage | RequestLoadCommitsMessage;
-export type ResponseMessage = ResponseLoadBranchesMessage | ResponseLoadCommitsMessage;
+export type RequestMessage = RequestLoadBranchesMessage
+	| RequestLoadCommitsMessage
+	| RequestAddTag
+	| RequestDeleteTag
+	| RequestCopyCommitHashToClipboard
+	| RequestCreateBranch
+	| RequestCheckoutBranch
+	| RequestDeleteBranch
+	| RequestRenameBranch;
+export type ResponseMessage = ResponseLoadBranchesMessage
+	| ResponseLoadCommitsMessage
+	| ResponseAddTag
+	| ResponseDeleteTag
+	| ResponseCopyCommitHashToClipboard
+	| ResponseCreateBranch
+	| ResponseCheckoutBranch
+	| ResponseDeleteBranch
+	| ResponseRenameBranch;
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type GraphStyle = 'rounded' | 'angular';
+export type GitCommandStatus = string | null;

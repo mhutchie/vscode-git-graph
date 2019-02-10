@@ -9,7 +9,7 @@ export class GitGraphView {
 
 	private readonly panel: vscode.WebviewPanel;
 	private readonly extensionPath: string;
-	private readonly dataSource: DataSource;
+	private readonly dataSource: DataSource | null;
 	private disposables: vscode.Disposable[] = [];
 
 	public static createOrShow(extensionPath: string) {
@@ -34,7 +34,7 @@ export class GitGraphView {
 		this.panel = panel;
 		this.extensionPath = extensionPath;
 		let workspaceFolders = vscode.workspace.workspaceFolders;
-		this.dataSource = new DataSource(workspaceFolders !== undefined && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : null);
+		this.dataSource = workspaceFolders !== undefined && workspaceFolders.length > 0 ? new DataSource(workspaceFolders[0].uri.fsPath) : null;
 
 		this.update();
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
@@ -45,6 +45,7 @@ export class GitGraphView {
 		}, null, this.disposables);
 
 		this.panel.webview.onDidReceiveMessage(async (message: RequestMessage) => {
+			if (this.dataSource === null) return;
 			switch (message.command) {
 				case 'loadBranches':
 					this.sendMessage({
@@ -55,7 +56,46 @@ export class GitGraphView {
 				case 'loadCommits':
 					this.sendMessage({
 						command: 'loadCommits',
-						data: this.dataSource.getCommits(message.data.branch, message.data.maxCommits, message.data.showRemoteBranches)
+						data: this.dataSource.getCommits(message.data.branch, message.data.maxCommits, message.data.showRemoteBranches, message.data.currentBranch)
+					});
+					return;
+				case 'addTag':
+					this.sendMessage({
+						command: 'addTag',
+						data: this.dataSource.addTag(message.data.tagName, message.data.commitHash)
+					});
+					return;
+				case 'deleteTag':
+					this.sendMessage({
+						command: 'deleteTag',
+						data: this.dataSource.deleteTag(message.data)
+					});
+					return;
+				case 'copyCommitHashToClipboard':
+					this.copyCommitHashToClipboard(message.data);
+					return;
+				case 'createBranch':
+					this.sendMessage({
+						command: 'createBranch',
+						data: this.dataSource.createBranch(message.data.branchName, message.data.commitHash)
+					});
+					return;
+				case 'checkoutBranch':
+					this.sendMessage({
+						command: 'checkoutBranch',
+						data: this.dataSource.checkoutBranch(message.data.branchName, message.data.remoteBranch)
+					});
+					return;
+				case 'deleteBranch':
+					this.sendMessage({
+						command: 'deleteBranch',
+						data: this.dataSource.deleteBranch(message.data.branchName, message.data.forceDelete)
+					});
+					return;
+				case 'renameBranch':
+					this.sendMessage({
+						command: 'renameBranch',
+						data: this.dataSource.renameBranch(message.data.oldName, message.data.newName)
 					});
 					return;
 			}
@@ -83,7 +123,7 @@ export class GitGraphView {
 		const jsUri = jsPathOnDisk.with({ scheme: 'vscode-resource' });
 		const cssPathOnDisk = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.css'));
 		const cssUri = cssPathOnDisk.with({ scheme: 'vscode-resource' });
-		const isRepo = this.dataSource.isGitRepository();
+		const isRepo = this.dataSource !== null && this.dataSource.isGitRepository();
 		const nonce = getNonce();
 		let settings: GitGraphViewSettings = {
 			graphStyle: config.graphStyle(),
@@ -111,6 +151,9 @@ export class GitGraphView {
 			</div>
 			<div id="commitGraph"></div>
 			<div id="commitTable"></div>
+			<ul id="contextMenu"></ul>
+			<div id="dialogBacking"></div>
+			<div id="dialog"></div>
 			<script nonce="${nonce}">var settings = ${JSON.stringify(settings)};</script>
 			<script src="${jsUri}"></script>
 			</body>`;
@@ -123,6 +166,14 @@ export class GitGraphView {
 
 	private sendMessage(msg: ResponseMessage) {
 		this.panel.webview.postMessage(msg);
+	}
+
+	private copyCommitHashToClipboard(str: string) {
+		vscode.env.clipboard.writeText(str)
+		.then(
+			() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: true }),
+			() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: false })
+		);
 	}
 }
 

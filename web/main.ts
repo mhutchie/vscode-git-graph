@@ -21,9 +21,15 @@ declare interface Config {
 	loadMoreCommits: number;
 }
 
+declare interface ContextMenuItem {
+	title: string;
+	onClick: () => void;
+}
+
 (function () {
 	const vscode = acquireVsCodeApi();
 	const svgIcons = {
+		alert: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg>',
 		branch: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="16" viewBox="0 0 10 16"><path fill-rule="evenodd" d="M10 5c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v.3c-.02.52-.23.98-.63 1.38-.4.4-.86.61-1.38.63-.83.02-1.48.16-2 .45V4.72a1.993 1.993 0 0 0-1-3.72C.88 1 0 1.89 0 3a2 2 0 0 0 1 1.72v6.56c-.59.35-1 .99-1 1.72 0 1.11.89 2 2 2 1.11 0 2-.89 2-2 0-.53-.2-1-.53-1.36.09-.06.48-.41.59-.47.25-.11.56-.17.94-.17 1.05-.05 1.95-.45 2.75-1.25S8.95 7.77 9 6.73h-.02C9.59 6.37 10 5.73 10 5zM2 1.8c.66 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2C1.35 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2zm0 12.41c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm6-8c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>',
 		tag: '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="16" viewBox="0 0 15 16"><path fill-rule="evenodd" d="M7.73 1.73C7.26 1.26 6.62 1 5.96 1H3.5C2.13 1 1 2.13 1 3.5v2.47c0 .66.27 1.3.73 1.77l6.06 6.06c.39.39 1.02.39 1.41 0l4.59-4.59a.996.996 0 0 0 0-1.41L7.73 1.73zM2.38 7.09c-.31-.3-.47-.7-.47-1.13V3.5c0-.88.72-1.59 1.59-1.59h2.47c.42 0 .83.16 1.13.47l6.14 6.13-4.73 4.73-6.13-6.15zM3.01 3h2v2H3V3h.01z"/></svg>',
 		loading: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 12 16"><path fill-rule="evenodd" d="M10.24 7.4a4.15 4.15 0 0 1-1.2 3.6 4.346 4.346 0 0 1-5.41.54L4.8 10.4.5 9.8l.6 4.2 1.31-1.26c2.36 1.74 5.7 1.57 7.84-.54a5.876 5.876 0 0 0 1.74-4.46l-1.75-.34zM2.96 5a4.346 4.346 0 0 1 5.41-.54L7.2 5.6l4.3.6-.6-4.2-1.31 1.26c-2.36-1.74-5.7-1.57-7.85.54C.5 5.03-.06 6.65.01 8.26l1.75.35A4.17 4.17 0 0 1 2.96 5z"/></svg>'
@@ -37,7 +43,17 @@ declare interface Config {
 		'\'': '&#x27;',
 		'/': '&#x2F;'
 	};
+	const htmlUnescapes: { [key: string]: string } = {
+		'&amp;': '&',
+		'&lt;': '<',
+		'&gt;': '>',
+		'&quot;': '"',
+		'&#x27;': '\'',
+		'&#x2F;': '/'
+	};
 	const htmlEscaper = /[&<>"'\/]/g;
+	const htmlUnescaper = /&lt;|&gt;|&amp;|&quot;|&#x27;|&#x2F;/g;
+	const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$/g;
 
 	class Branch {
 		private nodes: Node[];
@@ -126,14 +142,16 @@ declare interface Config {
 		private nextParent: number;
 		private onBranch: Branch | null;
 		private isCommitted: boolean;
+		private isCurrent: boolean;
 
-		constructor(y: number, isCommitted: boolean) {
+		constructor(y: number, isCommitted: boolean, isCurrent: boolean) {
 			this.x = 0;
 			this.y = y;
 			this.parents = [];
 			this.nextParent = 0;
 			this.onBranch = null;
 			this.isCommitted = isCommitted;
+			this.isCurrent = isCurrent;
 		}
 
 		public addParent(node: Node) {
@@ -186,13 +204,13 @@ declare interface Config {
 			circle.setAttribute('cx', (this.x * config.grid.x + config.grid.offsetX).toString());
 			circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY).toString());
 			circle.setAttribute('r', '4');
-			if(this.y > 0){
-				circle.setAttribute('fill', colour);
-			}else{
-				circle.setAttribute('class', 'first');
+			if (this.isCurrent) {
+				circle.setAttribute('class', 'current');
 				circle.setAttribute('stroke', colour);
+			} else {
+				circle.setAttribute('fill', colour);
 			}
-			
+
 			svg.appendChild(circle);
 		}
 	}
@@ -241,12 +259,10 @@ declare interface Config {
 			this.showRemoteBranchesElem.addEventListener('change', () => {
 				this.showRemoteBranches = this.showRemoteBranchesElem.checked;
 				this.saveState();
-				this.showLoading();
-				this.requestLoadBranchOptions();
+				this.refresh();
 			});
 			document.getElementById('refreshBtn')!.addEventListener('click', () => {
-				this.showLoading();
-				this.requestLoadBranchOptions();
+				this.refresh();
 			});
 
 			this.showLoading();
@@ -295,7 +311,7 @@ declare interface Config {
 
 			let i: number, j: number;
 			for (i = 0; i < this.commits.length; i++) {
-				this.nodes.push(new Node(i, this.commits[i].hash !== '*'));
+				this.nodes.push(new Node(i, this.commits[i].hash !== '*', this.commits[i].current));
 			}
 			for (i = 0; i < this.commits.length; i++) {
 				for (j = 0; j < this.commits[i].parents.length; j++) {
@@ -310,12 +326,25 @@ declare interface Config {
 			this.render();
 		}
 
+		public refresh() {
+			this.showLoading();
+			this.requestLoadBranchOptions();
+		}
+
 		private requestLoadBranchOptions() {
 			sendMessage({ command: 'loadBranches', data: { showRemoteBranches: this.showRemoteBranches } });
 		}
 
 		private requestLoadCommits() {
-			sendMessage({ command: 'loadCommits', data: { branch: (this.selectedBranch !== null ? this.selectedBranch : ''), maxCommits: this.maxCommits, showRemoteBranches: this.showRemoteBranches } });
+			sendMessage({
+				command: 'loadCommits',
+				data: {
+					branch: (this.selectedBranch !== null ? this.selectedBranch : ''),
+					maxCommits: this.maxCommits,
+					showRemoteBranches: this.showRemoteBranches,
+					currentBranch: this.branchOptions.length > 0 ? this.branchOptions[0] : null
+				}
+			});
 		}
 
 		private saveState() {
@@ -337,7 +366,7 @@ declare interface Config {
 					if (this.nodes[j].isNotOnBranch()) this.nodes[j].pushRight();
 				}
 				i = joinsToNodePoint.y;
-				if(!joinsToNode.isNotOnBranch()) break;
+				if (!joinsToNode.isNotOnBranch()) break;
 			}
 			if (this.nodes[i].isNotOnBranch() && !this.nodes[i].hasParents()) {
 				branch.addNode(this.nodes[i]);
@@ -403,17 +432,20 @@ declare interface Config {
 
 			let html = '<tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr>';
 			for (i = 0; i < this.commits.length; i++) {
-				let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j;
+				let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName;
 				for (j = 0; j < this.commits[i].refs.length; j++) {
-					refs += '<span class="gitRef">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch) + escapeHtml(this.commits[i].refs[j].name) + '</span>';
+					refName = escapeHtml(this.commits[i].refs[j].name);
+					refs += '<span class="gitRef ' + this.commits[i].refs[j].type + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch) + refName + '</span>';
 				}
 
-				html += '<tr><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + escapeHtml(this.commits[i].hash.substring(0, 8)) + '</td></tr>';
+				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : '') + '><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + escapeHtml(this.commits[i].hash.substring(0, 8)) + '</td></tr>';
 			}
 			if (this.moreCommitsAvailable) {
-				html += '<tr><td colspan="5"><div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div></td></tr>';
+				html += '<tr class="noHighlight"><td colspan="5"><div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div></td></tr>';
 			}
 			this.tableElem.innerHTML = '<table>' + html + '</table>';
+
+			document.getElementById('tableHeaderGraphCol')!.style.padding = '0 ' + Math.round((Math.max(graphWidth + 16, 64) - (document.getElementById('tableHeaderGraphCol')!.offsetWidth - 24)) / 2) + 'px';
 
 			if (this.moreCommitsAvailable) {
 				document.getElementById('loadMoreCommitsBtn')!.addEventListener('click', () => {
@@ -423,7 +455,85 @@ declare interface Config {
 					this.requestLoadCommits();
 				});
 			}
-			document.getElementById('tableHeaderGraphCol')!.style.padding = '0 ' + Math.round((Math.max(graphWidth + 16, 64) - (document.getElementById('tableHeaderGraphCol')!.offsetWidth - 24)) / 2) + 'px';
+
+			addListenerToClass('commit', 'contextmenu', (e: Event) => {
+				e.stopPropagation();
+				let sourceElement = <HTMLElement>(<Element>e.target).closest('.commit')!;
+				let hash = sourceElement.dataset.hash!;
+				showContextMenu(<MouseEvent>e, [
+					{
+						title: 'Add Tag',
+						onClick: () => {
+							showInputDialog('Enter the name of the tag you would like to add to commit <b><i>' + hash.substring(0, 8) + '</i></b>:', '', 'Add Tag', (name: string) => {
+								sendMessage({ command: 'addTag', data: { tagName: name, commitHash: hash } });
+							});
+						}
+					},
+					{
+						title: 'Create Branch from Commit',
+						onClick: () => {
+							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + hash.substring(0, 8) + '</i></b>:', '', 'Create Branch', (name: string) => {
+								sendMessage({ command: 'createBranch', data: { branchName: name, commitHash: hash } });
+							});
+						}
+					},
+					{
+						title: 'Copy Commit Hash to Clipboard',
+						onClick: () => {
+							hideContextMenu();
+							sendMessage({ command: 'copyCommitHashToClipboard', data: hash });
+						}
+					}
+				], sourceElement);
+			});
+			addListenerToClass('gitRef', 'contextmenu', (e: Event) => {
+				e.stopPropagation();
+				let sourceElement = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
+				let refName = unescapeHtml(sourceElement.dataset.name!), menu;
+				if (sourceElement.className === 'gitRef tag') {
+					menu = [{
+						title: 'Delete Tag',
+						onClick: () => {
+							showConfirmationDialog('Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+								sendMessage({ command: 'deleteTag', data: refName });
+							});
+						}
+					}];
+				} else {
+					menu = [{
+						title: 'Checkout Branch',
+						onClick: () => {
+							if (sourceElement.className === 'gitRef head') {
+								sendMessage({ command: 'checkoutBranch', data: { branchName: refName, remoteBranch: null } });
+							} else if (sourceElement.className === 'gitRef remote') {
+								let refNameComps = refName.split('/');
+								showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElement.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
+									sendMessage({ command: 'checkoutBranch', data: { branchName: newBranch, remoteBranch: refName } });
+								});
+							}
+						}
+					}];
+					if (sourceElement.className === 'gitRef head') {
+						menu.push({
+							title: 'Rename Branch',
+							onClick: () => {
+								showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+									sendMessage({ command: 'renameBranch', data: { oldName: refName, newName: newName } });
+								});
+							}
+						});
+						menu.push({
+							title: 'Delete Branch',
+							onClick: () => {
+								showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', 'Delete Branch', (forceDelete) => {
+									sendMessage({ command: 'deleteBranch', data: { branchName: refName, forceDelete: forceDelete } });
+								});
+							}
+						});
+					}
+				}
+				showContextMenu(<MouseEvent>e, menu, sourceElement);
+			});
 		}
 		private showLoading() {
 			if (this.graphElem.firstChild) {
@@ -450,13 +560,42 @@ declare interface Config {
 			case 'loadCommits':
 				gitGraph.loadCommits(msg.data.commits, msg.data.moreCommitsAvailable);
 				break;
+			case 'addTag':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Add Tag');
+				break;
+			case 'deleteTag':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Delete Tag');
+				break;
+			case 'copyCommitHashToClipboard':
+				if (msg.data === false) showErrorDialog('Unable to Copy Commit Hash to Clipboard', null);
+				break;
+			case 'createBranch':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Create Branch');
+				break;
+			case 'checkoutBranch':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Checkout Branch');
+				break;
+			case 'deleteBranch':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Delete Branch');
+				break;
+			case 'renameBranch':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Rename Branch');
+				break;
 		}
 	});
+	function refreshGraphOrDisplayError(status: GitCommandStatus, errorMessage: string) {
+		if (status === null) {
+			gitGraph.refresh();
+		} else {
+			showErrorDialog(errorMessage, status);
+		}
+	}
 
 	function sendMessage(msg: RequestMessage) {
 		vscode.postMessage(msg);
 	}
 
+	/* Dates */
 	function getCommitDate(dateVal: number) {
 		let date = new Date(dateVal * 1000), value;
 		let dateStr = date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
@@ -498,9 +637,121 @@ declare interface Config {
 	function pad2(i: number) {
 		return i > 9 ? i : '0' + i;
 	}
+
+	/* HTML Escape / Unescape */
 	function escapeHtml(str: string) {
 		return str.replace(htmlEscaper, function (match) {
 			return htmlEscapes[match];
 		});
+	}
+	function unescapeHtml(str: string) {
+		return str.replace(htmlUnescaper, function (match) {
+			return htmlUnescapes[match];
+		});
+	}
+
+	/* DOM Helpers */
+	function addListenerToClass(className: string, event: string, eventListener: EventListener) {
+		let elems = document.getElementsByClassName(className), i;
+		for (i = 0; i < elems.length; i++) {
+			elems[i].addEventListener(event, eventListener);
+		}
+	}
+
+	/* Context Menu */
+	let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
+	function showContextMenu(e: MouseEvent, items: ContextMenuItem[], sourceElement: HTMLElement) {
+		let html = '', i: number, event = <MouseEvent>e;
+		for (i = 0; i < items.length; i++) {
+			html += '<li class="contextMenuItem" data-index="' + i + '">' + items[i].title + '</li>';
+		}
+
+		contextMenu.style.opacity = '0';
+		contextMenu.className = 'active';
+		contextMenu.innerHTML = html;
+		let bounds = contextMenu.getBoundingClientRect();
+		contextMenu.style.left = ((event.pageX - window.pageXOffset) + bounds.width < window.innerWidth ? event.pageX - 2 : event.pageX - bounds.width + 2) + 'px';
+		contextMenu.style.top = ((event.pageY - window.pageYOffset) + bounds.height < window.innerHeight ? event.pageY - 2 : event.pageY - bounds.height + 2) + 'px';
+		contextMenu.style.opacity = '1';
+
+		addListenerToClass('contextMenuItem', 'click', (e) => {
+			hideContextMenu();
+			items[parseInt((<HTMLElement>(e.target)).dataset.index!)].onClick();
+		});
+		contextMenu.addEventListener('mouseleave', hideContextMenu);
+
+		contextMenuSource = sourceElement;
+		contextMenuSource.className += ' contextMenuActive';
+	}
+	function hideContextMenu() {
+		contextMenu.className = '';
+		contextMenu.innerHTML = '';
+		contextMenu.style.left = '0px';
+		contextMenu.style.top = '0px';
+		contextMenu.removeEventListener('mouseleave', hideContextMenu);
+		if (contextMenuSource !== null) contextMenuSource.className = contextMenuSource.className.replace(' contextMenuActive', '');
+	}
+
+	/* Dialogs */
+	let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!;
+	function showConfirmationDialog(message: string, confirmed: () => void) {
+		dialogBacking.className = 'active';
+		dialog.className = 'active';
+		dialog.innerHTML = message + '<br><div id="dialogYes" class="roundedBtn">Yes</div><div id="dialogNo" class="roundedBtn">No</div>';
+		document.getElementById('dialogYes')!.addEventListener('click', () => {
+			hideDialog();
+			confirmed();
+		});
+		document.getElementById('dialogNo')!.addEventListener('click', hideDialog);
+	}
+	function showInputDialog(message: string, defaultValue: string, action: string, actioned: (value: string) => void) {
+		dialogBacking.className = 'active';
+		dialog.className = 'active';
+		dialog.innerHTML = message + '<br><input id="dialogInput" type="text"/><br><div id="dialogAction" class="roundedBtn">' + action + '</div><div id="dialogCancel" class="roundedBtn">Cancel</div>';
+		let dialogInput = <HTMLInputElement>document.getElementById('dialogInput'), dialogAction = document.getElementById('dialogAction')!;
+		if (defaultValue !== '') {
+			dialogInput.value = defaultValue;
+		} else {
+			dialog.className = 'active noInput';
+		}
+		dialogInput.focus();
+
+		dialogInput.addEventListener('keyup', () => {
+			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(refInvalid) !== null;
+			let newClassName = 'active' + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
+			if (dialog.className !== newClassName) {
+				dialog.className = newClassName;
+				dialogAction.title = invalidInput ? 'Unable to ' + action + ', one or more invalid characters entered.' : '';
+			}
+		});
+		dialogAction.addEventListener('click', () => {
+			if (dialog.className === 'active noInput' || dialog.className === 'active inputInvalid') return;
+			let value = dialogInput.value;
+			hideDialog();
+			actioned(value);
+		});
+		document.getElementById('dialogCancel')!.addEventListener('click', hideDialog);
+	}
+	function showCheckboxDialog(message: string, checkboxLabel: string, action: string, actioned: (value: boolean) => void) {
+		dialogBacking.className = 'active';
+		dialog.className = 'active';
+		dialog.innerHTML = message + '<br><label><input id="dialogInput" type="checkbox"/>' + checkboxLabel + '</label><br><div id="dialogAction" class="roundedBtn">' + action + '</div><div id="dialogCancel" class="roundedBtn">Cancel</div>';
+		document.getElementById('dialogAction')!.addEventListener('click', () => {
+			let value = (<HTMLInputElement>document.getElementById('dialogInput')).checked;
+			hideDialog();
+			actioned(value);
+		});
+		document.getElementById('dialogCancel')!.addEventListener('click', hideDialog);
+	}
+	function showErrorDialog(message: string, reason: string | null) {
+		dialogBacking.className = 'active';
+		dialog.className = 'active';
+		dialog.innerHTML = svgIcons.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : '') + '<br><div id="dialogDismiss" class="roundedBtn">Dismiss</div>';
+		document.getElementById('dialogDismiss')!.addEventListener('click', hideDialog);
+	}
+	function hideDialog() {
+		dialogBacking.className = '';
+		dialog.className = '';
+		dialog.innerHTML = '';
 	}
 }());

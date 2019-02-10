@@ -19,11 +19,11 @@ body.notGitRepository h1, body.notGitRepository p{
 	left:8px;
 	top:71px;
 }
-#commitGraph circle.first{
+#commitGraph circle.current{
 	fill:var(--vscode-editor-background);
 	stroke-width:2;
 }
-#commitGraph circle:not(.first){
+#commitGraph circle:not(.current){
 	stroke:var(--vscode-editor-background);
 	stroke-width:1;
 	stroke-opacity:0.75;
@@ -46,11 +46,12 @@ body.notGitRepository h1, body.notGitRepository p{
 #commitTable th, #commitTable td{
 	white-space:nowrap;
 	font-size:14px;
+	cursor:default;
 }
-#commitTable tr:hover td{
+#commitTable tr:hover td, #commitTable tr.commit.contextMenuActive td{
 	background-color:rgba(128,128,128,0.15);
 }
-#commitTable tr:hover:last-child td{
+#commitTable tr.noHighlight:hover td{
 	background-color:unset;
 }
 #commitTable td{
@@ -63,7 +64,6 @@ body.notGitRepository h1, body.notGitRepository p{
     background-color:rgba(128,128,128,0.2);
     line-height:18px;
 	padding:6px 12px;
-	cursor:default;
 }
 #commitTable th:first-child{
 	border-left-width:0;
@@ -87,8 +87,9 @@ body.notGitRepository h1, body.notGitRepository p{
 	padding:0 5px;
 	margin-right:5px;
 	height:12px;
+	cursor:default;
 }
-.gitRef > svg{
+.gitRef > svg, #dialog svg{
 	display:inline;
 	fill:rgb(128,128,128);
 	margin-right:3px;
@@ -134,7 +135,7 @@ body.notGitRepository h1, body.notGitRepository p{
 }
 #showRemoteBranchesCheckbox{
 	width:14px;
-	vertical-align:text-top
+	vertical-align:text-top;
 }
 #refreshBtn{
     position:absolute;
@@ -160,6 +161,93 @@ body.notGitRepository h1, body.notGitRepository p{
 	cursor:pointer;
 }
 
+#contextMenu{
+	display:none;
+	position:absolute;
+	background-color:var(--vscode-menu-background);
+	box-shadow:1px 1px 2px 1px var(--vscode-widget-shadow);
+	color:var(--vscode-menu-foreground);
+	list-style-type:none;
+	margin:0;
+	padding:4px 0;
+}
+#contextMenu.active{
+	display:block;
+}
+#contextMenu li{
+	padding:6px 20px;
+	cursor:default;
+}
+#contextMenu li:hover{
+	background-color:var(--vscode-menu-selectionBackground);
+}
+
+#dialog, #dialogBacking{
+	display:none;
+}
+#dialog.active{
+	display:block;
+	position:fixed;
+	background-color:var(--vscode-menu-background);
+	padding:10px;
+	left:50%;
+	top:50%;
+	transform:translateX(-50%) translateY(-50%);
+	border:1px solid rgba(128,128,128,0.5);
+	border-radius:5px;
+	text-align:center;
+	max-width:360px;
+	z-index:10;
+}
+#dialog label{
+	margin-top:10px;
+	display:inline-block;
+}
+#dialog input[type=text]{
+	margin-top:10px;
+	width:100%;
+	padding:4px;
+    box-sizing:border-box;
+}
+#dialog input[type=checkbox]{
+	vertical-align:text-top;
+}
+#dialog .roundedBtn{
+	display:inline-block;
+	line-height:24px;
+	padding:0 15px;
+	margin:10px 6px 0 6px;
+	height:24px;
+	border-radius:12px;
+}
+#dialog .errorReason{
+	display:inline-block;
+    font-style:italic;
+	margin-top:10px;
+	text-align:left;
+}
+#dialogBacking.active{
+	display:block;
+	position:fixed;
+	left:0;
+	right:0;
+	top:0;
+	bottom:0;
+	z-index:9;
+	background-color:var(--vscode-widget-shadow);
+	opacity:0.5;
+}
+#dialog.noInput #dialogAction, #dialog.inputInvalid #dialogAction{
+	background-color:rgba(128,128,128,0.2);
+	opacity:0.5;
+}
+#dialog.noInput #dialogAction{
+	cursor:default;
+}
+#dialog.inputInvalid #dialogAction{
+	cursor:help;
+}
+
 .roundedBtn{
 	display:block;
 	background-color:rgba(128,128,128,0.2);
@@ -171,6 +259,6 @@ body.notGitRepository h1, body.notGitRepository p{
 .roundedBtn:hover{
 	background-color:rgba(128,128,128,0.4);
 }
-#commitTable th, #loadingHeader, .unselectable, .roundedBtn, #controls label{
+#commitGraph, #commitTable th, #commitTable td, .gitRef, #loadingHeader, .unselectable, .roundedBtn, #controls label{
 	user-select:none;
 }

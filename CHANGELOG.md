@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.1.0 - 2019-02-11
+* Perform Git actions directly from Git Graph by right clicking on a commit / branch / tag:
+    * Create, Checkout, Rename & Delete Branches
+    * Add & Delete Tags
+    * Copy Commit Hash to Clipboard
+* Graph generation improvements
+
 ## 1.0.1 - 2019-02-10
 * Detect & display lightweight tags
 

@@ -1,21 +1,19 @@
 import * as cp from 'child_process';
 import { Config } from './config';
-import { GitCommit, GitCommitNode, GitRef, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitNode, GitRef, GitUnsavedChanges } from './types';
+
+const eolRegex = /\r\n|\r|\n/g;
+const gitLogSeparator = '4Rvn5rwg14BTwO3msm0ftBCk';
+const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparator);
 
 export class DataSource {
-	private workspaceDir: string | null;
-	private readonly gitLogFormat: string;
-	private readonly gitLogSeparator: string;
+	private workspaceDir: string;
 
-	constructor(workspaceDir: string | null) {
+	constructor(workspaceDir: string) {
 		this.workspaceDir = workspaceDir;
-		this.gitLogSeparator = '4Rvn5rwg14BTwO3msm0ftBCk';
-		this.gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(this.gitLogSeparator);
 	}
 
 	public isGitRepository(): boolean {
-		if (this.workspaceDir === null) return false;
-
 		try {
 			cp.execSync('git rev-parse --git-dir', { cwd: this.workspaceDir });
 			return true;
@@ -25,10 +23,8 @@ export class DataSource {
 	}
 
 	public getBranches(showRemoteBranches: boolean): string[] {
-		if (this.workspaceDir === null) return [];
-
 		try {
-			let lines = cp.execSync('git branch' + (showRemoteBranches ? ' -a' : ''), { cwd: this.workspaceDir }).toString().split(/\r\n|\r|\n/g);
+			let lines = cp.execSync('git branch' + (showRemoteBranches ? ' -a' : ''), { cwd: this.workspaceDir }).toString().split(eolRegex);
 			let branches: string[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
 				let active = lines[i][0] === '*';
@@ -45,27 +41,28 @@ export class DataSource {
 		}
 	}
 
-	public getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean) {
+	public getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean, currentBranch: string | null) {
 		let i, j;
 		let commits = this.getGitLog(branch, maxCommits + 1, showRemoteBranches);
 		let refs = this.getRefs(showRemoteBranches);
-		let unsavedChanges = (new Config()).showUncommittedChanges() ? this.getGitUnsavedChanges() : null;
+		let unsavedChanges = null;
 
 		let moreCommitsAvailable = commits.length === maxCommits + 1;
 		if (moreCommitsAvailable) commits.pop();
 
-		if (unsavedChanges !== null) {
-			let unsavedChangesBranchHash = null;
-			for (i = 0; i < refs.length; i++) {
-				if (refs[i].name === unsavedChanges.branch && refs[i].type === 'head') {
-					unsavedChangesBranchHash = refs[i].hash;
-					break;
-				}
+		let currentBranchHash = null;
+		for (i = 0; i < refs.length; i++) {
+			if (refs[i].name === currentBranch && refs[i].type === 'head') {
+				currentBranchHash = refs[i].hash;
+				break;
 			}
-			if (unsavedChangesBranchHash !== null) {
+		}
+		if (currentBranchHash !== null && (branch === '' || branch === currentBranch)) {
+			unsavedChanges = (new Config()).showUncommittedChanges() ? this.getGitUnsavedChanges() : null;
+			if (unsavedChanges !== null) {
 				for (j = 0; j < commits.length; j++) {
-					if (unsavedChangesBranchHash === commits[j].hash) {
-						commits.unshift({ hash: '*', parentHashes: [unsavedChangesBranchHash], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+					if (currentBranchHash === commits[j].hash) {
+						commits.unshift({ hash: '*', parentHashes: [currentBranchHash], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 						break;
 					}
 				}
@@ -77,7 +74,7 @@ export class DataSource {
 
 		for (i = 0; i < commits.length; i++) {
 			commitLookup[commits[i].hash] = i;
-			commitNodes.push({ hash: commits[i].hash, parents: [], author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [] });
+			commitNodes.push({ hash: commits[i].hash, parents: [], author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [], current: false });
 		}
 		for (i = 0; i < refs.length; i++) {
 			if (typeof commitLookup[refs[i].hash] === 'number') {
@@ -92,13 +89,52 @@ export class DataSource {
 			}
 		}
 
+		if(unsavedChanges !== null){
+			commitNodes[0].current = true;
+		}else if(currentBranchHash !== null && typeof commitLookup[currentBranchHash] === 'number'){
+			commitNodes[commitLookup[currentBranchHash]].current = true;
+		}
+
 		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
 	}
 
-	private getRefs(showRemoteBranches: boolean): GitRef[] {
-		if (this.workspaceDir === null) return [];
+	public addTag(tagName: string, commitHash: string): GitCommandStatus {
+		return this.runGitCommand('git tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash);
+	}
+
+	public deleteTag(tagName: string): GitCommandStatus {
+		return this.runGitCommand('git tag -d ' + escapeRefName(tagName));
+	}
+
+	public createBranch(branchName: string, commitHash: string): GitCommandStatus {
+		return this.runGitCommand('git branch ' + escapeRefName(branchName) + ' ' + commitHash);
+	}
+
+	public checkoutBranch(branchName: string, remoteBranch: string | null): GitCommandStatus {
+		return this.runGitCommand('git checkout ' + (remoteBranch === null ? escapeRefName(branchName) : ' -b ' + escapeRefName(branchName) + ' ' + escapeRefName(remoteBranch)));
+	}
+
+	public deleteBranch(branchName: string, forceDelete: boolean): GitCommandStatus {
+		return this.runGitCommand('git branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName));
+	}
+
+	public renameBranch(oldName: string, newName: string): GitCommandStatus {
+		return this.runGitCommand('git branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName));
+	}
+
+	private runGitCommand(command: string): GitCommandStatus {
 		try {
-			let lines = cp.execSync('git show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', { cwd: this.workspaceDir }).toString().split(/\r\n|\r|\n/g);
+			cp.execSync(command, { cwd: this.workspaceDir });
+			return null;
+		} catch (e) {
+			let lines = e.message.split(eolRegex);
+			return lines.slice(1, lines.length - 1).join('\n');
+		}
+	}
+
+	private getRefs(showRemoteBranches: boolean): GitRef[] {
+		try {
+			let lines = cp.execSync('git show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', { cwd: this.workspaceDir }).toString().split(eolRegex);
 			let refs: GitRef[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(' ');
@@ -122,13 +158,11 @@ export class DataSource {
 	}
 
 	private getGitLog(branch: string, num: number, showRemoteBranches: boolean): GitCommit[] {
-		if (this.workspaceDir === null) return [];
-
 		try {
-			let lines = cp.execSync('git log ' + (branch !== '' ? branch : '--branches' + (showRemoteBranches ? ' --remotes' : '')) + ' --max-count=' + num + ' --format="' + this.gitLogFormat + '"', { cwd: this.workspaceDir }).toString().split(/\r\n|\r|\n/g);
+			let lines = cp.execSync('git log ' + (branch !== '' ? escapeRefName(branch) : '--branches' + (showRemoteBranches ? ' --remotes' : '')) + ' --max-count=' + num + ' --format="' + gitLogFormat + '"', { cwd: this.workspaceDir }).toString().split(eolRegex);
 			let gitCommits: GitCommit[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
-				let line = lines[i].split(this.gitLogSeparator);
+				let line = lines[i].split(gitLogSeparator);
 				if (line.length !== 6) break;
 				gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
 			}
@@ -139,13 +173,15 @@ export class DataSource {
 	}
 
 	private getGitUnsavedChanges(): GitUnsavedChanges | null {
-		if (this.workspaceDir === null) return null;
-
 		try {
-			let lines = cp.execSync('git status -s --branch --untracked-files --porcelain', { cwd: this.workspaceDir }).toString().split(/\r\n|\r|\n/g);
+			let lines = cp.execSync('git status -s --branch --untracked-files --porcelain', { cwd: this.workspaceDir }).toString().split(eolRegex);
 			return lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null;
 		} catch (e) {
 			return null;
 		}
 	}
+}
+
+function escapeRefName(str: string){
+	return str.replace(/'/g, '\'');
 }

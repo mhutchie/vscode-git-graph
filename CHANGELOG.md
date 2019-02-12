@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.2.0 - 2019-02-12
+* Graph generation improvements, making complex graphs easier to read
+* Graph rendering performance improvements
+* Improved graph styling
+
 ## 1.1.0 - 2019-02-11
 * Perform Git actions directly from Git Graph by right clicking on a commit / branch / tag:
     * Create, Checkout, Rename & Delete Branches

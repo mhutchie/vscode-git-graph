@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -10,7 +10,10 @@
 	"description": "View a Git Graph of your repository, and perform Git actions from the graph.",
 	"keywords": [
 		"git",
-		"graph"
+		"graph",
+		"visualise",
+		"interact",
+		"action"
 	],
 	"categories": [
 		"Other"
@@ -104,6 +107,8 @@
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./src && tsc -p ./web",
+		"compile-src": "tsc -p ./src",
+		"compile-web": "tsc -p ./web",
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"devDependencies": {

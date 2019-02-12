@@ -28,6 +28,16 @@ body.notGitRepository h1, body.notGitRepository p{
 	stroke-width:1;
 	stroke-opacity:0.75;
 }
+#commitGraph path.shaddow{
+	fill:none;
+	stroke:var(--vscode-editor-background);
+	stroke-opacity:0.75;
+	stroke-width:4;
+}
+#commitGraph path.line{
+	fill:none;
+	stroke-width:2;
+}
 #commitTable{
 	display:block;
 	position:absolute;

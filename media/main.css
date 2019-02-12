@@ -65,14 +65,14 @@ body.notGitRepository h1, body.notGitRepository p{
 	background-color:unset;
 }
 #commitTable td{
-    line-height:24px;
-    padding:0 4px;
+	line-height:24px;
+	padding:0 4px;
 }
 #commitTable th{
 	border-left:1px solid rgba(128,128,128,0.5);
 	border-bottom:1px solid rgba(128,128,128,0.5);
-    background-color:rgba(128,128,128,0.2);
-    line-height:18px;
+	background-color:rgba(128,128,128,0.2);
+	line-height:18px;
 	padding:6px 12px;
 }
 #commitTable th:first-child{
@@ -90,21 +90,28 @@ body.notGitRepository h1, body.notGitRepository p{
 	text-overflow:ellipsis;
 	overflow:hidden;
 }
-.gitRef{
-	background-color:rgba(128,128,128,0.2);
-	border-radius:5px;
-	border:1px solid rgba(128,128,128,0.5);
-	padding:0 5px;
+.gitRef {
+	display:inline-block;
+	height:18px;
+	line-height:18px;
+	margin-top:2px;
 	margin-right:5px;
-	height:12px;
+	padding-right:5px;
+	background-color:rgba(128,128,128,0.25);
+	border-radius:5px;
+	border:1px solid rgba(128,128,128,0.75);
+	vertical-align:top;
+	font-size:12px;
 	cursor:default;
 }
-.gitRef > svg, #dialog svg{
-	display:inline;
-	fill:rgb(128,128,128);
-	margin-right:3px;
-	line-height:20px;
-	vertical-align:sub;
+.gitRef > svg{
+	fill:var(--vscode-editor-background);
+	width:14px;
+	height:14px;
+	padding:2px;
+	margin-right:5px;
+	border-radius:4px 0 0 4px;
+	vertical-align:top;
 }
 
 #loadingHeader{
@@ -135,7 +142,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	border-bottom:2px solid rgba(128,128,128,0.5);
 	background-color:rgba(128,128,128,0.2);
 	line-height:38px;
-    text-align:center;
+	text-align:center;
 	font-weight:700;
 	font-size:14px;
 }
@@ -148,13 +155,13 @@ body.notGitRepository h1, body.notGitRepository p{
 	vertical-align:text-top;
 }
 #refreshBtn{
-    position:absolute;
-    right:8px;
-    top:8px;
-    width:80px;
-    height:22px;
-    line-height:22px;
-    border-radius:11px;
+	position:absolute;
+	right:8px;
+	top:8px;
+	width:80px;
+	height:22px;
+	line-height:22px;
+	border-radius:11px;
 }
 #loadMoreCommitsBtn{
 	width:180px;
@@ -217,7 +224,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	margin-top:10px;
 	width:100%;
 	padding:4px;
-    box-sizing:border-box;
+	box-sizing:border-box;
 }
 #dialog input[type=checkbox]{
 	vertical-align:text-top;
@@ -232,7 +239,7 @@ body.notGitRepository h1, body.notGitRepository p{
 }
 #dialog .errorReason{
 	display:inline-block;
-    font-style:italic;
+	font-style:italic;
 	margin-top:10px;
 	text-align:left;
 }
@@ -256,6 +263,13 @@ body.notGitRepository h1, body.notGitRepository p{
 }
 #dialog.inputInvalid #dialogAction{
 	cursor:help;
+}
+#dialog svg{
+	display:inline;
+	fill:rgb(128,128,128);
+	margin-right:3px;
+	line-height:20px;
+	vertical-align:sub;
 }
 
 .roundedBtn{

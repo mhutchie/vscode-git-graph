@@ -213,6 +213,9 @@ declare interface ContextMenuItem {
 			if (x > this.nextX) this.nextX = x;
 		}
 
+		public getColour() {
+			return this.onBranch !== null ? this.onBranch.getColour() : 0;
+		}
 		public draw(svg: SVGElement, config: Config) {
 			if (this.onBranch === null) return;
 
@@ -453,7 +456,7 @@ declare interface ContextMenuItem {
 				let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName;
 				for (j = 0; j < this.commits[i].refs.length; j++) {
 					refName = escapeHtml(this.commits[i].refs[j].name);
-					refs += '<span class="gitRef ' + this.commits[i].refs[j].type + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch) + refName + '</span>';
+					refs += '<span class="gitRef ' + this.commits[i].refs[j].type + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch).replace('viewBox', 'class="colour' + this.nodes[i].getColour() + '" viewBox') + refName + '</span>';
 				}
 
 				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : '') + '><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + escapeHtml(this.commits[i].hash.substring(0, 8)) + '</td></tr>';
@@ -624,28 +627,30 @@ declare interface ContextMenuItem {
 				value = dateStr;
 				break;
 			case 'Relative':
-				let diff = Math.round((new Date()).getTime() / 1000) - dateVal;
+				let diff = Math.round((new Date()).getTime() / 1000) - dateVal, unit;
 				if (diff < 60) {
-					value = diff + ' second' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'second';
 				} else if (diff < 3600) {
-					diff = Math.round(diff / 60);
-					value = diff + ' minute' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'minute';
+					diff /= 60;
 				} else if (diff < 86400) {
-					diff = Math.round(diff / 3600);
-					value = diff + ' hour' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'hour';
+					diff /= 3600;
 				} else if (diff < 604800) {
-					diff = Math.round(diff / 86400);
-					value = diff + ' day' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'day';
+					diff /= 86400;
 				} else if (diff < 2629800) {
-					diff = Math.round(diff / 604800);
-					value = diff + ' week' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'week';
+					diff /= 604800;
 				} else if (diff < 31557600) {
-					diff = Math.round(diff / 2629800);
-					value = diff + ' month' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'month';
+					diff /= 2629800;
 				} else {
-					diff = Math.round(diff / 31557600);
-					value = diff + ' year' + (diff !== 1 ? 's' : '') + ' ago';
+					unit = 'year';
+					diff /= 31557600;
 				}
+				diff = Math.round(diff);
+				value = diff + ' ' + unit + (diff !== 1 ? 's' : '') + ' ago';
 				break;
 			default:
 				value = dateStr + ' ' + timeStr;

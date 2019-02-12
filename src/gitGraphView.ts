@@ -125,6 +125,7 @@ export class GitGraphView {
 		const cssUri = cssPathOnDisk.with({ scheme: 'vscode-resource' });
 		const isRepo = this.dataSource !== null && this.dataSource.isGitRepository();
 		const nonce = getNonce();
+
 		let settings: GitGraphViewSettings = {
 			graphStyle: config.graphStyle(),
 			initialLoadCommits: config.initialLoadCommits(),
@@ -133,14 +134,20 @@ export class GitGraphView {
 			dateFormat: config.dateFormat()
 		};
 
+		let colourStyles = '';
+		for (let i = 0; i < settings.graphColours.length; i++) {
+			colourStyles += '.colour' + i + ' { background-color:' + settings.graphColours[i] + '; } ';
+		}
+
 		let html = `<!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource:; script-src vscode-resource: 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'nonce-${nonce}'; script-src vscode-resource: 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link rel="stylesheet" type="text/css" href="${cssUri}">
-                <title>Git Graph</title>
+				<title>Git Graph</title>
+				<style nonce="${nonce}">${colourStyles}</style>
             </head>`;
 		if (isRepo) {
 			html += `<body>
@@ -170,10 +177,10 @@ export class GitGraphView {
 
 	private copyCommitHashToClipboard(str: string) {
 		vscode.env.clipboard.writeText(str)
-		.then(
-			() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: true }),
-			() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: false })
-		);
+			.then(
+				() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: true }),
+				() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: false })
+			);
 	}
 }
 

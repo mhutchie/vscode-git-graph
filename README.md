@@ -14,6 +14,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
         * Create, Checkout, Rename & Delete Branches
         * Add & Delete Tags
+        * Reset to commit
         * Copy Commit Hash to Clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)
 * "Git Graph: View Git Graph" launch command in the Command Palette

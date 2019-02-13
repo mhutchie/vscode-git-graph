@@ -48,6 +48,10 @@ export interface RequestLoadBranchesMessage {
 		showRemoteBranches: boolean
 	};
 }
+export interface ResponseLoadBranchesMessage {
+	command: 'loadBranches';
+	data: string[];
+}
 
 export interface RequestLoadCommitsMessage {
 	command: 'loadCommits';
@@ -58,12 +62,6 @@ export interface RequestLoadCommitsMessage {
 		currentBranch: string | null
 	};
 }
-
-export interface ResponseLoadBranchesMessage {
-	command: 'loadBranches';
-	data: string[];
-}
-
 export interface ResponseLoadCommitsMessage {
 	command: 'loadCommits';
 	data: {
@@ -79,7 +77,6 @@ export interface RequestAddTag {
 		tagName: string
 	};
 }
-
 export interface ResponseAddTag {
 	command: 'addTag';
 	data: GitCommandStatus;
@@ -89,7 +86,6 @@ export interface RequestDeleteTag {
 	command: 'deleteTag';
 	data: string;
 }
-
 export interface ResponseDeleteTag {
 	command: 'deleteTag';
 	data: GitCommandStatus;
@@ -99,7 +95,6 @@ export interface RequestCopyCommitHashToClipboard {
 	command: 'copyCommitHashToClipboard';
 	data: string;
 }
-
 export interface ResponseCopyCommitHashToClipboard {
 	command: 'copyCommitHashToClipboard';
 	data: boolean;
@@ -112,7 +107,6 @@ export interface RequestCreateBranch {
 		branchName: string
 	};
 }
-
 export interface ResponseCreateBranch {
 	command: 'createBranch';
 	data: GitCommandStatus;
@@ -125,7 +119,6 @@ export interface RequestCheckoutBranch {
 		remoteBranch: string | null
 	};
 }
-
 export interface ResponseCheckoutBranch {
 	command: 'checkoutBranch';
 	data: GitCommandStatus;
@@ -138,7 +131,6 @@ export interface RequestDeleteBranch {
 		forceDelete: boolean
 	};
 }
-
 export interface ResponseDeleteBranch {
 	command: 'deleteBranch';
 	data: GitCommandStatus;
@@ -151,9 +143,20 @@ export interface RequestRenameBranch {
 		newName: string
 	};
 }
-
 export interface ResponseRenameBranch {
 	command: 'renameBranch';
+	data: GitCommandStatus;
+}
+
+export interface RequestResetToCommit {
+	command: 'resetToCommit';
+	data: {
+		commitHash: string,
+		resetMode: GitResetMode
+	};
+}
+export interface ResponseResetToCommit {
+	command: 'resetToCommit';
 	data: GitCommandStatus;
 }
 
@@ -167,7 +170,8 @@ export type RequestMessage = RequestLoadBranchesMessage
 	| RequestCreateBranch
 	| RequestCheckoutBranch
 	| RequestDeleteBranch
-	| RequestRenameBranch;
+	| RequestRenameBranch
+	| RequestResetToCommit;
 export type ResponseMessage = ResponseLoadBranchesMessage
 	| ResponseLoadCommitsMessage
 	| ResponseAddTag
@@ -176,7 +180,9 @@ export type ResponseMessage = ResponseLoadBranchesMessage
 	| ResponseCreateBranch
 	| ResponseCheckoutBranch
 	| ResponseDeleteBranch
-	| ResponseRenameBranch;
+	| ResponseRenameBranch
+	| ResponseResetToCommit;
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type GraphStyle = 'rounded' | 'angular';
 export type GitCommandStatus = string | null;
+export type GitResetMode = 'soft' | 'mixed' | 'hard';

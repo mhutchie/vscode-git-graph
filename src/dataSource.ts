@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { Config } from './config';
-import { GitCommandStatus, GitCommit, GitCommitNode, GitRef, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitNode, GitRef, GitResetMode, GitUnsavedChanges } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
 const gitLogSeparator = '4Rvn5rwg14BTwO3msm0ftBCk';
@@ -120,6 +120,10 @@ export class DataSource {
 
 	public renameBranch(oldName: string, newName: string): GitCommandStatus {
 		return this.runGitCommand('git branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName));
+	}
+
+	public resetToCommit(commitHash: string, resetMode: GitResetMode): GitCommandStatus {
+		return this.runGitCommand('git reset --' + resetMode + ' ' + commitHash);
 	}
 
 	private runGitCommand(command: string): GitCommandStatus {

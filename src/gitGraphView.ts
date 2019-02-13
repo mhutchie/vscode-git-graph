@@ -98,6 +98,12 @@ export class GitGraphView {
 						data: this.dataSource.renameBranch(message.data.oldName, message.data.newName)
 					});
 					return;
+				case 'resetToCommit':
+					this.sendMessage({
+						command: 'resetToCommit',
+						data: this.dataSource.resetToCommit(message.data.commitHash, message.data.resetMode)
+					});
+					return;
 			}
 		}, null, this.disposables);
 	}

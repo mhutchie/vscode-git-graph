@@ -220,7 +220,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	margin-top:10px;
 	display:inline-block;
 }
-#dialog input[type=text]{
+#dialog input[type=text], #dialog select{
 	margin-top:10px;
 	width:100%;
 	padding:4px;

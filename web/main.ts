@@ -491,7 +491,7 @@ declare interface ContextMenuItem {
 						}
 					},
 					{
-						title: 'Create Branch from Commit',
+						title: 'Create Branch from this Commit',
 						onClick: () => {
 							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + hash.substring(0, 8) + '</i></b>:', '', 'Create Branch', (name: string) => {
 								sendMessage({ command: 'createBranch', data: { branchName: name, commitHash: hash } });
@@ -499,9 +499,20 @@ declare interface ContextMenuItem {
 						}
 					},
 					{
+						title: 'Reset current branch to this Commit',
+						onClick: () => {
+							showSelectDialog('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + hash.substring(0, 8) + '</i></b>:', 'mixed', [
+								{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
+								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
+								{ name: 'Hard - Discard all changes', value: 'hard' }
+							], 'Yes, reset', (mode: string) => {
+								sendMessage({ command: 'resetToCommit', data: { commitHash: hash, resetMode: <GitResetMode>mode } });
+							});
+						}
+					},
+					{
 						title: 'Copy Commit Hash to Clipboard',
 						onClick: () => {
-							hideContextMenu();
 							sendMessage({ command: 'copyCommitHashToClipboard', data: hash });
 						}
 					}
@@ -601,6 +612,9 @@ declare interface ContextMenuItem {
 				break;
 			case 'renameBranch':
 				refreshGraphOrDisplayError(msg.data, 'Unable to Rename Branch');
+				break;
+			case 'resetToCommit':
+				refreshGraphOrDisplayError(msg.data, 'Unable to Reset to Commit');
 				break;
 		}
 	});
@@ -761,6 +775,21 @@ declare interface ContextMenuItem {
 		dialog.innerHTML = message + '<br><label><input id="dialogInput" type="checkbox"/>' + checkboxLabel + '</label><br><div id="dialogAction" class="roundedBtn">' + action + '</div><div id="dialogCancel" class="roundedBtn">Cancel</div>';
 		document.getElementById('dialogAction')!.addEventListener('click', () => {
 			let value = (<HTMLInputElement>document.getElementById('dialogInput')).checked;
+			hideDialog();
+			actioned(value);
+		});
+		document.getElementById('dialogCancel')!.addEventListener('click', hideDialog);
+	}
+	function showSelectDialog(message: string, defaultValue: string, options: { name: string, value: string }[], action: string, actioned: (value: string) => void) {
+		dialogBacking.className = 'active';
+		dialog.className = 'active';
+		let selectOptions = '', i;
+		for (i = 0; i < options.length; i++) {
+			selectOptions += '<option value="' + options[i].value + '"' + (options[i].value === defaultValue ? ' selected' : '') + '>' + options[i].name + '</option>';
+		}
+		dialog.innerHTML = message + '<br><select id="dialogInput">' + selectOptions + '</select><br><div id="dialogAction" class="roundedBtn">' + action + '</div><div id="dialogCancel" class="roundedBtn">Cancel</div>';
+		document.getElementById('dialogAction')!.addEventListener('click', () => {
+			let value = (<HTMLSelectElement>document.getElementById('dialogInput')).value;
 			hideDialog();
 			actioned(value);
 		});

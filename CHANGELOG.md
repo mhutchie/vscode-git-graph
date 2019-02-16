@@ -1,5 +1,13 @@
 # Change Log
 
+## Coming Soon
+* Open the VSCode diff view for a file selected in the commit details view.
+
+## 1.3.0 - 2019-02-16
+* Commit details view (click on a commit to open it). This shows the full commit details, and a tree view of all file changes in the commit.
+* Support for git reset hard, mixed & soft.
+* Add the branch colour to ref labels to make them easier to read.
+
 ## 1.2.0 - 2019-02-12
 * Graph generation improvements, making complex graphs easier to read
 * Graph rendering performance improvements

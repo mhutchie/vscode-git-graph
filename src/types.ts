@@ -20,6 +20,17 @@ export interface GitCommit {
 	message: string;
 }
 
+export interface GitCommitDetails {
+	hash: string;
+	parents: string[];
+	author: string;
+	email: string;
+	date: number;
+	committer: string;
+	body: string;
+	fileChanges: GitFileChange[];
+}
+
 export interface GitRef {
 	hash: string;
 	name: string;
@@ -37,6 +48,13 @@ export interface GitGraphViewSettings {
 	initialLoadCommits: number;
 	loadMoreCommits: number;
 	dateFormat: DateFormat;
+}
+
+export interface GitFileChange{
+	fileName: string;
+	type: GitFileChangeType;
+	additions: number | null;
+	deletions: number | null;
 }
 
 
@@ -160,6 +178,16 @@ export interface ResponseResetToCommit {
 	data: GitCommandStatus;
 }
 
+export interface RequestCommitDetails {
+	command: 'commitDetails';
+	data: string;
+}
+export interface ResponseCommitDetails {
+	command: 'commitDetails';
+	data: GitCommitDetails | null;
+}
+
+
 /* Types */
 
 export type RequestMessage = RequestLoadBranchesMessage
@@ -171,7 +199,8 @@ export type RequestMessage = RequestLoadBranchesMessage
 	| RequestCheckoutBranch
 	| RequestDeleteBranch
 	| RequestRenameBranch
-	| RequestResetToCommit;
+	| RequestResetToCommit
+	| RequestCommitDetails;
 export type ResponseMessage = ResponseLoadBranchesMessage
 	| ResponseLoadCommitsMessage
 	| ResponseAddTag
@@ -181,8 +210,10 @@ export type ResponseMessage = ResponseLoadBranchesMessage
 	| ResponseCheckoutBranch
 	| ResponseDeleteBranch
 	| ResponseRenameBranch
-	| ResponseResetToCommit;
+	| ResponseResetToCommit
+	| ResponseCommitDetails;
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type GraphStyle = 'rounded' | 'angular';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
+export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'C';

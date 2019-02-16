@@ -1,10 +1,11 @@
 import * as cp from 'child_process';
 import { Config } from './config';
-import { GitCommandStatus, GitCommit, GitCommitNode, GitRef, GitResetMode, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRef, GitResetMode, GitUnsavedChanges } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
-const gitLogSeparator = '4Rvn5rwg14BTwO3msm0ftBCk';
+const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparator);
+const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn', '%B'].join(gitLogSeparator);
 
 export class DataSource {
 	private workspaceDir: string;
@@ -97,6 +98,45 @@ export class DataSource {
 
 		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
 	}
+
+	public commitDetails(commitHash: string){
+		try {
+			let lines = cp.execSync('git show --quiet '+commitHash+' --format="'+gitCommitDetailsFormat+'"', { cwd: this.workspaceDir }).toString().split(eolRegex);
+			let commitInfo = lines[0].split(gitLogSeparator);
+			let details: GitCommitDetails = {
+				hash: commitInfo[0],
+				parents: commitInfo[1].split(' '),
+				author: commitInfo[2],
+				email: commitInfo[3],
+				date: parseInt(commitInfo[4]),
+				committer: commitInfo[5],
+				body: commitInfo[6],
+				fileChanges: []
+			};
+
+			let fileLookup:{[file:string]:number} = {};
+			lines = cp.execSync('git diff-tree --name-status -r -m --root '+commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
+			for (let i = 1; i < lines.length - 1; i++) {
+				let line = lines[i].split('\t');
+				if(line.length !== 2) break;
+				fileLookup[line[1]] = details.fileChanges.length;
+				details.fileChanges.push({fileName: line[1], type: <GitFileChangeType>line[0], additions:null, deletions:null});
+			}
+			lines = cp.execSync('git diff-tree --numstat -r -m --root '+commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
+			for (let i = 1; i < lines.length - 1; i++) {
+				let line = lines[i].split('\t');
+				if(line.length !== 3) break;
+				if(typeof fileLookup[line[2]] === 'number'){
+					details.fileChanges[fileLookup[line[2]]].additions = parseInt(line[0]);
+					details.fileChanges[fileLookup[line[2]]].deletions = parseInt(line[1]);
+				}
+			}
+			return details;
+		} catch (e) { 
+			return null;
+		}
+	}
+
 
 	public addTag(tagName: string, commitHash: string): GitCommandStatus {
 		return this.runGitCommand('git tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash);

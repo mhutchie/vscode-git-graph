@@ -1,12 +1,13 @@
+/* Body */
 body{
 	margin:0;
 	padding:0;
 }
-
 body.notGitRepository h1, body.notGitRepository p{
 	text-align:center;
 }
 
+/* Commit Graph */
 #commitGraph{
 	display:block;
 	position:absolute;
@@ -38,6 +39,8 @@ body.notGitRepository h1, body.notGitRepository p{
 	fill:none;
 	stroke-width:2;
 }
+
+/* Commit Table */
 #commitTable{
 	display:block;
 	position:absolute;
@@ -58,11 +61,11 @@ body.notGitRepository h1, body.notGitRepository p{
 	font-size:14px;
 	cursor:default;
 }
-#commitTable tr:hover td, #commitTable tr.commit.contextMenuActive td{
-	background-color:rgba(128,128,128,0.15);
+#commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td, #commitTable tr.commit.commitDetailsOpen td{
+	background-color:rgba(128,128,128,0.2);
 }
-#commitTable tr.noHighlight:hover td{
-	background-color:unset;
+#commitTable tr.commit:hover td{
+	cursor:pointer;
 }
 #commitTable td{
 	line-height:24px;
@@ -90,6 +93,119 @@ body.notGitRepository h1, body.notGitRepository p{
 	text-overflow:ellipsis;
 	overflow:hidden;
 }
+
+/* Commit Details View */
+#commitDetails{
+	height:248px;
+	vertical-align:top;
+}
+#commitDetails td{
+	background-color:rgba(128,128,128,0.1);
+	position:relative;
+	font-size:13px;
+	line-height:18px;
+	border-top:1px solid rgba(128,128,128,0.5);
+	border-bottom:1px solid rgba(128,128,128,0.5);
+	white-space:normal;
+}
+#commitDetailsSummary{
+	position:absolute;
+	left:0;
+	top:0;
+	bottom:0;
+	width:45%;
+	padding:10px;
+	box-sizing:border-box;
+	overflow-x:hidden;
+	overflow-y:scroll;
+	text-overflow:ellipsis;
+	border-left:1px solid rgba(128,128,128,0.5);
+	border-right:1px solid rgba(128,128,128,0.5);
+	user-select:text;
+}
+#commitTable tr.commit.commitDetailsOpen td{
+	border-top:1px solid rgba(128,128,128,0.5);
+}
+#commitDetailsFiles{
+	position:absolute;
+	right:32px;
+	top:0;
+	bottom:0;
+	left:45%;
+	border-right:1px solid rgba(128,128,128,0.5);
+	overflow-x:hidden;
+	overflow-y:scroll;
+	padding:6px 0;
+	box-sizing:border-box;
+}
+#commitDetailsFiles ul{
+	list-style-type:none;
+	-webkit-margin-before:0;
+	-webkit-margin-after:0;
+	-webkit-margin-start:0px;
+	-webkit-margin-end:0px;
+	-webkit-padding-start:30px;
+}
+#commitDetailsFiles > ul{
+	-webkit-padding-start:10px;
+}
+#commitDetailsFiles li{
+	margin:4px 0;
+	white-space:nowrap;
+	text-overflow:ellipsis;
+	overflow-x:hidden;
+}
+#commitDetailsClose{
+	position:absolute;
+	right:4px;
+	top:4px;
+	width:24px;
+	height:24px;
+	cursor:pointer;
+}
+#commitDetailsClose svg{
+	width:24px;
+	height:24px;
+	fill:var(--vscode-editor-foreground);
+}
+svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
+	width:13px;
+	height:13px;
+	margin-top:2.5px;
+	fill:var(--vscode-editor-foreground);
+	margin-right:8px;
+	vertical-align:top;
+}
+.gitFolderContents.hidden{
+	display:none;
+}
+.gitFolder{
+	cursor:pointer;
+}
+.gitFile{
+	color:var(--vscode-gitDecoration-modifiedResourceForeground);
+}
+.gitFile.A{
+	color:var(--vscode-gitDecoration-addedResourceForeground);
+}
+.gitFile.D{
+	color:var(--vscode-gitDecoration-deletedResourceForeground);
+}
+.gitFileAddDel{
+	color:var(--vscode-editor-foreground);
+	margin-left:12px;
+}
+.gitFileAdditions, .gitFileDeletions{
+	padding:0 3px;
+}
+.gitFileAdditions{
+	color:var(--vscode-gitDecoration-addedResourceForeground);
+}
+.gitFileDeletions{
+	color:var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+/* Ref labels */
 .gitRef {
 	display:inline-block;
 	height:18px;
@@ -114,6 +230,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	vertical-align:top;
 }
 
+/* Loader */
 #loadingHeader{
 	text-align:center;
 	line-height:32px;
@@ -178,6 +295,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	cursor:pointer;
 }
 
+/* Context Menu */
 #contextMenu{
 	display:none;
 	position:absolute;
@@ -199,6 +317,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	background-color:var(--vscode-menu-selectionBackground);
 }
 
+/* Dialogs */
 #dialog, #dialogBacking{
 	display:none;
 }
@@ -215,6 +334,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	text-align:center;
 	max-width:360px;
 	z-index:10;
+	box-shadow:0 0 50px 15px var(--vscode-widget-shadow);
 }
 #dialog label{
 	margin-top:10px;
@@ -251,8 +371,6 @@ body.notGitRepository h1, body.notGitRepository p{
 	top:0;
 	bottom:0;
 	z-index:9;
-	background-color:var(--vscode-widget-shadow);
-	opacity:0.5;
 }
 #dialog.noInput #dialogAction, #dialog.inputInvalid #dialogAction{
 	background-color:rgba(128,128,128,0.2);
@@ -272,6 +390,7 @@ body.notGitRepository h1, body.notGitRepository p{
 	vertical-align:sub;
 }
 
+/* Buttons */
 .roundedBtn{
 	display:block;
 	background-color:rgba(128,128,128,0.2);
@@ -283,6 +402,8 @@ body.notGitRepository h1, body.notGitRepository p{
 .roundedBtn:hover{
 	background-color:rgba(128,128,128,0.4);
 }
+
+/* General */
 #commitGraph, #commitTable th, #commitTable td, .gitRef, #loadingHeader, .unselectable, .roundedBtn, #controls label{
 	user-select:none;
 }

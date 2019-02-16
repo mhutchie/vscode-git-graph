@@ -104,6 +104,12 @@ export class GitGraphView {
 						data: this.dataSource.resetToCommit(message.data.commitHash, message.data.resetMode)
 					});
 					return;
+				case 'commitDetails':
+					this.sendMessage({
+						command: 'commitDetails',
+						data: this.dataSource.commitDetails(message.data)
+					});
+					return;
 			}
 		}, null, this.disposables);
 	}

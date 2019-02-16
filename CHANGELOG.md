@@ -1,7 +1,7 @@
 # Change Log
 
-## Coming Soon
-* Open the VSCode diff view for a file selected in the commit details view.
+## 1.3.1 - 2019-02-17
+* View the Visual Studio Code Diff of a file change in a commit, by clicking on the file in the commit details view.
 
 ## 1.3.0 - 2019-02-16
 * Commit details view (click on a commit to open it). This shows the full commit details, and a tree view of all file changes in the commit.

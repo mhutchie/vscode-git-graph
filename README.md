@@ -11,6 +11,8 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Local & Remote Branches
         * Local Refs: Heads, Tags & Remotes
         * Local Uncommitted Changes
+    * View commit details and file changes by clicking on a commit
+        * View the Visual Studio Code Diff of a file change by clicking on it in the commit details view
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
         * Create, Checkout, Rename & Delete Branches
         * Add & Delete Tags
@@ -37,10 +39,6 @@ This extension contributes the following settings:
 This extension contributes the following commands:
 
 * `git-graph.view`: Git Graph: View Git Graph
-
-## Coming Soon
-
-* Open the VSCode diff view for a file selected in the commit details view.
 
 ## Release Notes
 Detailed Release Notes are available [here](CHANGELOG.md).

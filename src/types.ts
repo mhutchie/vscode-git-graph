@@ -51,7 +51,8 @@ export interface GitGraphViewSettings {
 }
 
 export interface GitFileChange{
-	fileName: string;
+	oldFilePath: string;
+	newFilePath: string;
 	type: GitFileChangeType;
 	additions: number | null;
 	deletions: number | null;
@@ -187,6 +188,20 @@ export interface ResponseCommitDetails {
 	data: GitCommitDetails | null;
 }
 
+export interface RequestViewDiff {
+	command: 'viewDiff';
+	data: {
+		commitHash: string,
+		oldFilePath: string,
+		newFilePath: string,
+		type: GitFileChangeType
+	};
+}
+export interface ResponseViewDiff {
+	command: 'viewDiff';
+	data: boolean;
+}
+
 
 /* Types */
 
@@ -200,7 +215,8 @@ export type RequestMessage = RequestLoadBranchesMessage
 	| RequestDeleteBranch
 	| RequestRenameBranch
 	| RequestResetToCommit
-	| RequestCommitDetails;
+	| RequestCommitDetails
+	| RequestViewDiff;
 export type ResponseMessage = ResponseLoadBranchesMessage
 	| ResponseLoadCommitsMessage
 	| ResponseAddTag
@@ -211,9 +227,10 @@ export type ResponseMessage = ResponseLoadBranchesMessage
 	| ResponseDeleteBranch
 	| ResponseRenameBranch
 	| ResponseResetToCommit
-	| ResponseCommitDetails;
+	| ResponseCommitDetails
+	| ResponseViewDiff;
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type GraphStyle = 'rounded' | 'angular';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
-export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'C';
+export type GitFileChangeType = 'A' | 'M' | 'D' | 'R';

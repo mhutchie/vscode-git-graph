@@ -191,18 +191,25 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .gitFile.D{
 	color:var(--vscode-gitDecoration-deletedResourceForeground);
 }
-.gitFileAddDel{
+.gitFile.gitDiffPossible{
+	cursor:pointer;
+}
+.gitFileAddDel, .gitFileRename{
 	color:var(--vscode-editor-foreground);
-	margin-left:12px;
+	margin-left:8px;
 }
 .gitFileAdditions, .gitFileDeletions{
 	padding:0 3px;
+	cursor:help;
 }
 .gitFileAdditions{
 	color:var(--vscode-gitDecoration-addedResourceForeground);
 }
 .gitFileDeletions{
 	color:var(--vscode-gitDecoration-deletedResourceForeground);
+}
+.gitFileRename{
+	cursor:help;
 }
 
 /* Ref labels */
@@ -334,7 +341,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	text-align:center;
 	max-width:360px;
 	z-index:10;
-	box-shadow:0 0 50px 15px var(--vscode-widget-shadow);
+	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 }
 #dialog label{
 	margin-top:10px;

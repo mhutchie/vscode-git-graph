@@ -1,50 +1,4 @@
-/* Declarations */
-
-declare function acquireVsCodeApi(): any;
-
-declare var settings: GitGraphViewSettings;
-
-declare interface Point {
-	x: number;
-	y: number;
-}
-
-declare interface Line {
-	p1: Point;
-	p2: Point;
-	isCommitted: boolean;
-}
-
-declare interface Config {
-	grid: { x: number, y: number, offsetX: number, offsetY: number };
-	colours: string[];
-	graphStyle: 'rounded' | 'angular';
-	initialLoadCommits: number;
-	loadMoreCommits: number;
-}
-
-declare interface ContextMenuItem {
-	title: string;
-	onClick: () => void;
-}
-
-declare interface GitFolder {
-	type: 'folder';
-	name: string;
-	contents: GitFolderContents;
-}
-declare interface GitFile {
-	type: 'file';
-	name: string;
-	index: number;
-}
-declare type GitFolderOrFile = GitFolder | GitFile;
-declare type GitFolderContents = { [name: string]: GitFolderOrFile };
-
-
-/* Git Graph Closure */
 (function () {
-
 	/* Constants */
 	const vscode = acquireVsCodeApi();
 	const svgIcons = {
@@ -58,22 +12,8 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 		file: '<svg xmlns="http://www.w3.org/2000/svg" class="fileIcon" viewBox="0 0 30 30"><path d="M24.707,8.793l-6.5-6.5C18.019,2.105,17.765,2,17.5,2H7C5.895,2,5,2.895,5,4v22c0,1.105,0.895,2,2,2h16c1.105,0,2-0.895,2-2 V9.5C25,9.235,24.895,8.981,24.707,8.793z M18,10c-0.552,0-1-0.448-1-1V3.904L23.096,10H18z"/></svg>'
 	};
 	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-	const htmlEscapes: { [key: string]: string } = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		'\'': '&#x27;',
-		'/': '&#x2F;'
-	};
-	const htmlUnescapes: { [key: string]: string } = {
-		'&amp;': '&',
-		'&lt;': '<',
-		'&gt;': '>',
-		'&quot;': '"',
-		'&#x27;': '\'',
-		'&#x2F;': '/'
-	};
+	const htmlEscapes: { [key: string]: string } = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#x27;', '/': '&#x2F;' };
+	const htmlUnescapes: { [key: string]: string } = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': '\'', '&#x2F;': '/' };
 	const htmlEscaper = /[&<>"'\/]/g;
 	const htmlUnescaper = /&lt;|&gt;|&amp;|&quot;|&#x27;|&#x2F;/g;
 	const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$/g;
@@ -285,11 +225,7 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 		private selectedBranch: string | null = null;
 		private moreCommitsAvailable: boolean = false;
 		private showRemoteBranches: boolean = true;
-		private expandedCommit: {
-			id: number,
-			hash: string,
-			srcElem: HTMLElement | null
-		} | null = null;
+		private expandedCommit: ExpandedCommit | null = null;
 
 		private config: Config;
 		private maxCommits: number;
@@ -301,7 +237,7 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 		private branchSelectElem: HTMLSelectElement;
 		private showRemoteBranchesElem: HTMLInputElement;
 
-		constructor(config: Config, previousState: any) {
+		constructor(config: Config, prevState: any) {
 			this.config = config;
 			this.maxCommits = config.initialLoadCommits;
 			this.graphElem = document.getElementById('commitGraph')!;
@@ -327,28 +263,32 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 			});
 
 			this.renderShowLoading();
-			if (previousState) {
-				if (typeof previousState.selectedBranch !== 'undefined') {
-					this.selectedBranch = previousState.selectedBranch;
+			if (prevState) {
+				if (typeof prevState.selectedBranch !== 'undefined') {
+					this.selectedBranch = prevState.selectedBranch;
 				}
-				if (typeof previousState.showRemoteBranches !== 'undefined') {
-					this.showRemoteBranches = previousState.showRemoteBranches;
+				if (typeof prevState.showRemoteBranches !== 'undefined') {
+					this.showRemoteBranches = prevState.showRemoteBranches;
 					this.showRemoteBranchesElem.checked = this.showRemoteBranches;
 				}
-				if (typeof previousState.maxCommits !== 'undefined') {
-					this.maxCommits = previousState.maxCommits;
+				if (typeof prevState.maxCommits !== 'undefined') {
+					this.maxCommits = prevState.maxCommits;
 				}
-				if (typeof previousState.commits !== 'undefined') {
-					this.loadCommits(previousState.commits, previousState.moreCommitsAvailable);
+				if (typeof prevState.expandedCommit !== 'undefined') {
+					this.expandedCommit = prevState.expandedCommit;
 				}
-				if (typeof previousState.branchOptions !== 'undefined') {
-					this.loadBranchOptions(previousState.branchOptions);
+				if (typeof prevState.commits !== 'undefined') {
+					this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
+				}
+				if (typeof prevState.branchOptions !== 'undefined') {
+					this.loadBranchOptions(prevState.branchOptions, false);
 				}
 			}
 			this.requestLoadBranchOptions();
 		}
 
-		public loadBranchOptions(branchOptions: string[]) {
+		/* Loading Data */
+		public loadBranchOptions(branchOptions: string[], reloadCommits: boolean) {
 			this.branchOptions = branchOptions;
 			if (this.selectedBranch !== null && this.branchOptions.indexOf(this.selectedBranch) === -1) this.selectedBranch = '';
 			this.saveState();
@@ -358,9 +298,8 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 				html += '<option value="' + this.branchOptions[i] + '"' + (this.selectedBranch === this.branchOptions[i] ? ' selected' : '') + '>' + (this.branchOptions[i].indexOf('remotes/') === 0 ? this.branchOptions[i].substring(8) : this.branchOptions[i]) + '</option>';
 			}
 			this.branchSelectElem.innerHTML = html;
-			this.requestLoadCommits();
+			if (reloadCommits) this.requestLoadCommits();
 		}
-
 		public loadCommits(commits: GitCommitNode[], moreAvailable: boolean) {
 			this.moreCommitsAvailable = moreAvailable;
 			this.commits = commits;
@@ -385,20 +324,27 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 				this.determinePath(i);
 			}
 
-			if (!expandedCommitVisible) this.expandedCommit = null;
+			if (this.expandedCommit !== null && !expandedCommitVisible) {
+				this.expandedCommit = null;
+				this.saveState();
+			}
 			this.render();
 		}
 
+		/* Refresh */
 		public refresh() {
-			this.expandedCommit = null;
+			if (this.expandedCommit !== null) {
+				this.expandedCommit = null;
+				this.saveState();
+			}
 			this.renderShowLoading();
 			this.requestLoadBranchOptions();
 		}
 
+		/* Requests */
 		private requestLoadBranchOptions() {
 			sendMessage({ command: 'loadBranches', data: { showRemoteBranches: this.showRemoteBranches } });
 		}
-
 		private requestLoadCommits() {
 			sendMessage({
 				command: 'loadCommits',
@@ -411,16 +357,19 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 			});
 		}
 
+		/* State */
 		private saveState() {
 			vscode.setState({
 				branchOptions: this.branchOptions,
 				commits: this.commits,
 				selectedBranch: this.selectedBranch,
 				maxCommits: this.maxCommits,
-				showRemoteBranches: this.showRemoteBranches
+				showRemoteBranches: this.showRemoteBranches,
+				expandedCommit: this.expandedCommit
 			});
 		}
 
+		/* Graph Generation */
 		private determinePath(startAt: number) {
 			let i = startAt;
 			let branch = new Branch(this.getAvailableColour(startAt));
@@ -479,6 +428,7 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 			return this.nodes.length * this.config.grid.y + (this.expandedCommit !== null ? expandedCommitHeight : 0);
 		}
 
+		/* Renderers */
 		private render() {
 			this.renderGraph();
 			this.renderTable();
@@ -538,9 +488,15 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 				}
 				if (elem === null) {
 					this.expandedCommit = null;
+					this.saveState();
 				} else {
 					this.expandedCommit.srcElem = elem;
-					this.loadCommitDetails(elem);
+					this.saveState();
+					if (this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
+						this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree);
+					} else {
+						this.loadCommitDetails(elem);
+					}
 				}
 			}
 
@@ -587,7 +543,12 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 			});
 			addListenerToClass('commit', 'click', (e: Event) => {
 				e.stopPropagation();
-				this.loadCommitDetails(<HTMLElement>(<Element>e.target).closest('.commit')!);
+				let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
+				if (this.expandedCommit !== null && this.expandedCommit.hash === sourceElem.dataset.hash!) {
+					this.hideCommitDetails();
+				} else {
+					this.loadCommitDetails(sourceElem);
+				}
 			});
 			addListenerToClass('gitRef', 'contextmenu', (e: Event) => {
 				e.stopPropagation();
@@ -638,7 +599,6 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 				showContextMenu(<MouseEvent>e, menu, sourceElem);
 			});
 		}
-
 		private renderShowLoading() {
 			if (this.graphElem.firstChild) {
 				this.graphElem.removeChild(this.graphElem.firstChild);
@@ -646,28 +606,32 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 			this.tableElem.innerHTML = '<table><tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr></table><h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 		}
 
+		/* Commit Details */
 		private loadCommitDetails(sourceElem: HTMLElement) {
 			this.hideCommitDetails();
-			this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem };
+			this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileTree: null };
+			this.saveState();
 			sendMessage({ command: 'commitDetails', data: sourceElem.dataset.hash! });
 		}
-		private hideCommitDetails() {
+		public hideCommitDetails() {
 			if (this.expandedCommit !== null) {
 				let elem = document.getElementById('commitDetails');
 				if (typeof elem === 'object' && elem !== null) elem.remove();
 				if (typeof this.expandedCommit.srcElem === 'object' && this.expandedCommit.srcElem !== null) this.expandedCommit.srcElem.classList.remove('commitDetailsOpen');
 				this.expandedCommit = null;
+				this.saveState();
 				this.renderGraph();
 			}
 		}
-		public showCommitDetails(commitDetails: GitCommitDetails | null) {
-			if (commitDetails === null) {
-				showErrorDialog('Unable to load commit details', null, null);
-				return;
-			}
+		public showCommitDetails(commitDetails: GitCommitDetails, fileTree: GitFolder) {
 			if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.hash !== commitDetails.hash) return;
 			let elem = document.getElementById('commitDetails');
 			if (typeof elem === 'object' && elem !== null) elem.remove();
+
+			this.expandedCommit.commitDetails = commitDetails;
+			this.expandedCommit.fileTree = fileTree;
+			this.expandedCommit.srcElem.classList.add('commitDetailsOpen');
+			this.saveState();
 
 			let newElem = document.createElement('tr'), html = '<td></td><td colspan="4"><div id="commitDetailsSummary">';
 			html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
@@ -676,7 +640,7 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 			html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
 			html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '<br><br>';
 			html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>') + '</div>';
-			html += '<div id="commitDetailsFiles">' + generateTreeHtml(commitDetails.fileChanges) + '</table></div>';
+			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(fileTree, commitDetails.fileChanges) + '</table></div>';
 			html += '<div id="commitDetailsClose">' + svgIcons.close + '</div>';
 			html += '</td>';
 
@@ -685,12 +649,26 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 
 			this.renderGraph();
 			insertAfter(newElem, this.expandedCommit.srcElem);
-			this.expandedCommit.srcElem.classList.add('commitDetailsOpen');
+
 			window.scrollTo(0, newElem.offsetTop + 177 - window.innerHeight / 2);
 			document.getElementById('commitDetailsClose')!.addEventListener('click', () => {
 				this.hideCommitDetails();
 			});
-			registerTreeEventListeners();
+			addListenerToClass('gitFolder', 'click', (e) => {
+				let sourceElem = <HTMLElement>(<Element>e.target!).closest('.gitFolder');
+				let parent = sourceElem.parentElement!;
+				parent.classList.toggle('closed');
+				let isOpen = !parent.classList.contains('closed');
+				parent.children[0].children[0].innerHTML = isOpen ? svgIcons.openFolder : svgIcons.closedFolder;
+				parent.children[1].classList.toggle('hidden');
+				alterGitFileTree(this.expandedCommit!.fileTree!, decodeURIComponent(sourceElem.dataset.folderpath!), isOpen);
+				this.saveState();
+			});
+			addListenerToClass('gitFile', 'click', (e) => {
+				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitFile')!;
+				if (this.expandedCommit === null || !sourceElem.classList.contains('gitDiffPossible')) return;
+				sendMessage({ command: 'viewDiff', data: { commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GitFileChangeType>sourceElem.dataset.type } });
+			});
 		}
 	}
 
@@ -709,7 +687,7 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 		const msg: ResponseMessage = event.data;
 		switch (msg.command) {
 			case 'loadBranches':
-				gitGraph.loadBranchOptions(msg.data);
+				gitGraph.loadBranchOptions(msg.data, true);
 				return;
 			case 'loadCommits':
 				gitGraph.loadCommits(msg.data.commits, msg.data.moreCommitsAvailable);
@@ -739,7 +717,15 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 				refreshGraphOrDisplayError(msg.data, 'Unable to Reset to Commit');
 				break;
 			case 'commitDetails':
-				gitGraph.showCommitDetails(msg.data);
+				if (msg.data === null) {
+					gitGraph.hideCommitDetails();
+					showErrorDialog('Unable to load commit details', null, null);
+				} else {
+					gitGraph.showCommitDetails(msg.data, generateGitFileTree(msg.data.fileChanges));
+				}
+			case 'viewDiff':
+				if (msg.data === false) showErrorDialog('Unable to view diff of file', null, null);
+				break;
 		}
 	});
 	function refreshGraphOrDisplayError(status: GitCommandStatus, errorMessage: string) {
@@ -800,17 +786,17 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 	}
 
 	/* Utils */
-	function generateTreeHtml(gitFiles: GitFileChange[]) {
+	function generateGitFileTree(gitFiles: GitFileChange[]) {
 		let contents: GitFolderContents = {}, i, j, path, cur: GitFolder;
-		let files: GitFolder = { type: 'folder', name: '', contents: contents };
+		let files: GitFolder = { type: 'folder', name: '', folderPath: '', contents: contents, open: true };
 		for (i = 0; i < gitFiles.length; i++) {
 			cur = files;
-			path = gitFiles[i].fileName.split('/');
+			path = gitFiles[i].newFilePath.split('/');
 			for (j = 0; j < path.length; j++) {
 				if (j < path.length - 1) {
 					if (typeof cur.contents[path[j]] === 'undefined') {
 						contents = {};
-						cur.contents[path[j]] = { type: 'folder', name: path[j], contents: contents };
+						cur.contents[path[j]] = { type: 'folder', name: path[j], folderPath: path.slice(0, j + 1).join('/'), contents: contents, open: true };
 					}
 					cur = <GitFolder>cur.contents[path[j]];
 				} else {
@@ -818,28 +804,35 @@ declare type GitFolderContents = { [name: string]: GitFolderOrFile };
 				}
 			}
 		}
-		return generateTreeHtmlRec(files, gitFiles);
+		return files;
 	}
-	function generateTreeHtmlRec(folder: GitFolder, gitFiles: GitFileChange[]) {
-		let html = (folder.name !== '' ? '<span class="gitFolder"><span class="gitFolderIcon">' + svgIcons.openFolder + '</span><span class="gitFolderName">' + folder.name + '</span></span>' : '') + '<ul class="gitFolderContents">', keys = Object.keys(folder.contents), i, gitFile;
+	function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GitFileChange[]) {
+		let html = (folder.name !== '' ? '<span class="gitFolder" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="gitFolderIcon">' + (folder.open ? svgIcons.openFolder : svgIcons.closedFolder) + '</span><span class="gitFolderName">' + folder.name + '</span></span>' : '') + '<ul class="gitFolderContents' + (!folder.open ? ' hidden' : '') + '">', keys = Object.keys(folder.contents), i, gitFile, gitFolder;
 		keys.sort((a, b) => folder.contents[a].type === 'folder' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type === 'folder' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
 		for (i = 0; i < keys.length; i++) {
 			if (folder.contents[keys[i]].type === 'folder') {
-				html += '<li>' + generateTreeHtmlRec(<GitFolder>folder.contents[keys[i]], gitFiles) + '</li>';
+				gitFolder = <GitFolder>folder.contents[keys[i]];
+				html += '<li' + (!gitFolder.open ? ' class="closed"' : '') + '>' + generateGitFileTreeHtml(gitFolder, gitFiles) + '</li>';
 			} else {
 				gitFile = gitFiles[(<GitFile>(folder.contents[keys[i]])).index];
-				html += '<li class="gitFile ' + gitFile.type + '"><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + (gitFile.type !== 'A' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' additions">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletions">-' + gitFile.deletions + '</span>)</span>' : '') + '</li>';
+				html += '<li class="gitFile ' + gitFile.type + (gitFile.additions !== null && gitFile.deletions !== null ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '"' + (gitFile.additions === null || gitFile.deletions === null ? ' title="This is a binary file, unable to view diff."' : '') + '><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + (gitFile.type === 'R' ? ' <span class="gitFileRename" title="' + escapeHtml(gitFile.oldFilePath + ' was renamed to ' + gitFile.newFilePath) + '">R</span>' : '') + (gitFile.type !== 'A' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') + '</li>';
 			}
 		}
 		return html + '</ul>';
 	}
-	function registerTreeEventListeners() {
-		addListenerToClass('gitFolder', 'click', (e) => {
-			let parent = (<HTMLElement>e.target!).parentElement!.parentElement!;
-			parent.classList.toggle('closed');
-			parent.children[1].classList.toggle('hidden');
-			parent.children[0].children[0].innerHTML = parent.classList.contains('closed') ? svgIcons.closedFolder : svgIcons.openFolder;
-		});
+	function alterGitFileTree(folder: GitFolder, folderPath: string, open: boolean) {
+		let path = folderPath.split('/'), i, cur = folder;
+		for (i = 0; i < path.length; i++) {
+			if (typeof cur.contents[path[i]] !== 'undefined') {
+				cur = <GitFolder>cur.contents[path[i]];
+				if (i === path.length - 1) {
+					cur.open = open;
+					return;
+				}
+			} else {
+				return;
+			}
+		}
 	}
 
 

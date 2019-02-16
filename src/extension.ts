@@ -1,11 +1,20 @@
 import * as vscode from 'vscode';
 import { Config } from './config';
+import { DataSource } from './dataSource';
+import { DiffDocProvider } from './diffDocProvider';
 import { GitGraphView } from './gitGraphView';
 
 export function activate(context: vscode.ExtensionContext) {
+	let workspaceFolders = vscode.workspace.workspaceFolders;
+	const dataSource = workspaceFolders !== undefined && workspaceFolders.length > 0 ? new DataSource(workspaceFolders[0].uri.fsPath) : null;
+
 	context.subscriptions.push(vscode.commands.registerCommand('git-graph.view', () => {
-		GitGraphView.createOrShow(context.extensionPath);
+		GitGraphView.createOrShow(context.extensionPath, dataSource);
 	}));
+
+	context.subscriptions.push(vscode.Disposable.from(
+		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource))
+	));
 
 	let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
 	statusBarItem.text = 'Git Graph';

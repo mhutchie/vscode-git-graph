@@ -90,18 +90,18 @@ export class DataSource {
 			}
 		}
 
-		if(unsavedChanges !== null){
+		if (unsavedChanges !== null) {
 			commitNodes[0].current = true;
-		}else if(currentBranchHash !== null && typeof commitLookup[currentBranchHash] === 'number'){
+		} else if (currentBranchHash !== null && typeof commitLookup[currentBranchHash] === 'number') {
 			commitNodes[commitLookup[currentBranchHash]].current = true;
 		}
 
 		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
 	}
 
-	public commitDetails(commitHash: string){
+	public commitDetails(commitHash: string) {
 		try {
-			let lines = cp.execSync('git show --quiet '+commitHash+' --format="'+gitCommitDetailsFormat+'"', { cwd: this.workspaceDir }).toString().split(eolRegex);
+			let lines = cp.execSync('git show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', { cwd: this.workspaceDir }).toString().split(eolRegex);
 			let commitInfo = lines[0].split(gitLogSeparator);
 			let details: GitCommitDetails = {
 				hash: commitInfo[0],
@@ -114,29 +114,38 @@ export class DataSource {
 				fileChanges: []
 			};
 
-			let fileLookup:{[file:string]:number} = {};
-			lines = cp.execSync('git diff-tree --name-status -r -m --root '+commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
+			let fileLookup: { [file: string]: number } = {};
+			lines = cp.execSync('git diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
 			for (let i = 1; i < lines.length - 1; i++) {
 				let line = lines[i].split('\t');
-				if(line.length !== 2) break;
-				fileLookup[line[1]] = details.fileChanges.length;
-				details.fileChanges.push({fileName: line[1], type: <GitFileChangeType>line[0], additions:null, deletions:null});
+				if (line.length < 2) break;
+				let oldFilePath = line[1].replace(/\\/g, '/'), newFilePath = line[line.length-1].replace(/\\/g, '/');
+				fileLookup[newFilePath] = details.fileChanges.length;
+				details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
 			}
-			lines = cp.execSync('git diff-tree --numstat -r -m --root '+commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
+			lines = cp.execSync('git diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
 			for (let i = 1; i < lines.length - 1; i++) {
 				let line = lines[i].split('\t');
-				if(line.length !== 3) break;
-				if(typeof fileLookup[line[2]] === 'number'){
-					details.fileChanges[fileLookup[line[2]]].additions = parseInt(line[0]);
-					details.fileChanges[fileLookup[line[2]]].deletions = parseInt(line[1]);
+				if (line.length !== 3) break;
+				let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
+				if (typeof fileLookup[fileName] === 'number') {
+					details.fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
+					details.fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
 				}
 			}
 			return details;
-		} catch (e) { 
+		} catch (e) {
 			return null;
 		}
 	}
 
+	public getFile(commitHash: string, filePath: string) {
+		try {
+			return cp.execSync('git show "' + commitHash + '":"' + filePath + '"', { cwd: this.workspaceDir }).toString();
+		} catch (e) {
+			return '';
+		}
+	}
 
 	public addTag(tagName: string, commitHash: string): GitCommandStatus {
 		return this.runGitCommand('git tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash);
@@ -226,6 +235,6 @@ export class DataSource {
 	}
 }
 
-function escapeRefName(str: string){
+function escapeRefName(str: string) {
 	return str.replace(/'/g, '\'');
 }

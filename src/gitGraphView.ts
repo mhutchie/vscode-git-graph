@@ -2,7 +2,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { Config } from './config';
 import { DataSource } from './dataSource';
-import { GitGraphViewSettings, RequestMessage, ResponseMessage } from './types';
+import { encodeDiffDocUri } from './diffDocProvider';
+import { GitFileChangeType, GitGraphViewSettings, RequestMessage, ResponseMessage } from './types';
+import { abbrevCommit } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -12,7 +14,7 @@ export class GitGraphView {
 	private readonly dataSource: DataSource | null;
 	private disposables: vscode.Disposable[] = [];
 
-	public static createOrShow(extensionPath: string) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource | null) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -27,14 +29,13 @@ export class GitGraphView {
 			]
 		});
 
-		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath);
+		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionPath: string) {
+	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource | null) {
 		this.panel = panel;
 		this.extensionPath = extensionPath;
-		let workspaceFolders = vscode.workspace.workspaceFolders;
-		this.dataSource = workspaceFolders !== undefined && workspaceFolders.length > 0 ? new DataSource(workspaceFolders[0].uri.fsPath) : null;
+		this.dataSource = dataSource;
 
 		this.update();
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
@@ -109,6 +110,9 @@ export class GitGraphView {
 						command: 'commitDetails',
 						data: this.dataSource.commitDetails(message.data)
 					});
+					return;
+				case 'viewDiff':
+					this.viewDiff(message.data.commitHash, message.data.oldFilePath, message.data.newFilePath, message.data.type);
 					return;
 			}
 		}, null, this.disposables);
@@ -188,11 +192,17 @@ export class GitGraphView {
 	}
 
 	private copyCommitHashToClipboard(str: string) {
-		vscode.env.clipboard.writeText(str)
-			.then(
-				() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: true }),
-				() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: false })
-			);
+		vscode.env.clipboard.writeText(str).then(
+			() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: true }),
+			() => this.sendMessage({ command: 'copyCommitHashToClipboard', data: false })
+		);
+	}
+
+	private viewDiff(commitHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
+		let abbrevHash = abbrevCommit(commitHash);
+		let pathComponents = newFilePath.split('/');
+		let title = pathComponents[pathComponents.length - 1] + ' (' + (type === 'A' ? 'Added in ' + abbrevHash : type === 'D' ? 'Deleted in ' + abbrevHash : abbrevCommit(commitHash) + '^ ↔ ' + abbrevCommit(commitHash)) + ')';
+		vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(oldFilePath, commitHash + '^'), encodeDiffDocUri(newFilePath, commitHash), title, { preview: true });
 	}
 }
 

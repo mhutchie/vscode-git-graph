@@ -68,7 +68,13 @@
 						"#00d90a",
 						"#d98500",
 						"#a300d9",
-						"#ff0000"
+						"#ff0000",
+						"#00d9cc",
+						"#e138e8",
+						"#85d900",
+						"#dc5b23",
+						"#6f24d6",
+						"#ffcc00"
 					],
 					"description": "Specifies the colours used on the graph."
 				},
@@ -80,7 +86,7 @@
 						"Relative"
 					],
 					"default": "Date & Time",
-					"description": "Specifies the number of commits to initially load."
+					"description": "Specifies the date format to be used in the date column of the graph."
 				},
 				"git-graph.initialLoadCommits": {
 					"type": "number",
@@ -107,15 +113,18 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./src && tsc -p ./web",
+		"clean": "node ./.vscode/clean.js",
+		"compile": "npm run clean && npm run compile-src && npm run compile-web",
 		"compile-src": "tsc -p ./src",
-		"compile-web": "tsc -p ./web",
+		"compile-web": "tsc -p ./web && uglifyjs ./media/main.js --mangle --output ./media/main.min.js",
+		"package": "vsce package",
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"devDependencies": {
-		"typescript": "^3.3.1",
-		"vscode": "^1.1.28",
+		"@types/node": "^8.10.25",
 		"tslint": "^5.12.1",
-		"@types/node": "^8.10.25"
+		"typescript": "^3.3.1",
+		"uglifyjs": "^2.4.11",
+		"vscode": "^1.1.28"
 	}
 }

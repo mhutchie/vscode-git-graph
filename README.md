@@ -28,7 +28,7 @@ This extension contributes the following settings:
 
 * `git-graph.graphColours`: Specifies the colours used on the graph.
 * `git-graph.graphStyle`: Specifies the style of the graph.
-* `git-graph.dateFormat`: Specifies the number of commits to initially load.
+* `git-graph.dateFormat`: Specifies the date format to be used in the date column of the graph.
 * `git-graph.initialLoadCommits`: Specifies the number of commits to initially load.
 * `git-graph.loadMoreCommits`: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * `git-graph.showStatusBarItem`: Show a Status Bar item which opens Git Graph when clicked.

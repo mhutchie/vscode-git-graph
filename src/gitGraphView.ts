@@ -135,7 +135,7 @@ export class GitGraphView {
 
 	private async getHtmlForWebview() {
 		const config = new Config();
-		const jsPathOnDisk = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.js'));
+		const jsPathOnDisk = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.min.js'));
 		const jsUri = jsPathOnDisk.with({ scheme: 'vscode-resource' });
 		const cssPathOnDisk = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.css'));
 		const cssUri = cssPathOnDisk.with({ scheme: 'vscode-resource' });

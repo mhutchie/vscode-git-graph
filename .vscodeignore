@@ -1,0 +1,10 @@
+.github/
+.vscode/
+media/main.js
+out/*.d.ts
+out/*.js.map
+resources/demo.gif
+src/
+web/
+.gitignore
+tslint.json

@@ -25,14 +25,15 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 
 	public provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
 		let document = this.docs.get(uri.toString());
-		if (document) {
-			return document.value;
-		}
+		if (document) return document.value;
+		if (this.dataSource === null) return '';
 
 		let request = decodeDiffDocUri(uri);
-        document = new DiffDocument(this.dataSource !== null ? this.dataSource.getFile(request.commit, request.filePath) : '');
-        this.docs.set(uri.toString(), document);
-        return document.value;
+		return this.dataSource.getCommitFile(request.commit, request.filePath).then((data) => {
+			let document = new DiffDocument(data);
+			this.docs.set(uri.toString(), document);
+			return document.value;
+		});
 	}
 }
 
@@ -49,9 +50,9 @@ class DiffDocument {
 }
 
 export function encodeDiffDocUri(path: string, commit: string): vscode.Uri {
-	return vscode.Uri.parse(DiffDocProvider.scheme + ':'+path.replace(/\\/g, '/')+'?'+commit);
+	return vscode.Uri.parse(DiffDocProvider.scheme + ':' + path.replace(/\\/g, '/') + '?' + commit);
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri) {
-	return {filePath: uri.path, commit:uri.query};
+	return { filePath: uri.path, commit: uri.query };
 }

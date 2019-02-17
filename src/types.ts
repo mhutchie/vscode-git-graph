@@ -234,3 +234,4 @@ export type GraphStyle = 'rounded' | 'angular';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R';
+export type GitUnsavedChangesCmdResp = GitUnsavedChanges | null;

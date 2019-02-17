@@ -51,25 +51,25 @@ export class GitGraphView {
 				case 'loadBranches':
 					this.sendMessage({
 						command: 'loadBranches',
-						data: this.dataSource.getBranches(message.data.showRemoteBranches)
+						data: await this.dataSource.getBranches(message.data.showRemoteBranches)
 					});
 					return;
 				case 'loadCommits':
 					this.sendMessage({
 						command: 'loadCommits',
-						data: this.dataSource.getCommits(message.data.branch, message.data.maxCommits, message.data.showRemoteBranches, message.data.currentBranch)
+						data: await this.dataSource.getCommits(message.data.branch, message.data.maxCommits, message.data.showRemoteBranches, message.data.currentBranch)
 					});
 					return;
 				case 'addTag':
 					this.sendMessage({
 						command: 'addTag',
-						data: this.dataSource.addTag(message.data.tagName, message.data.commitHash)
+						data: await this.dataSource.addTag(message.data.tagName, message.data.commitHash)
 					});
 					return;
 				case 'deleteTag':
 					this.sendMessage({
 						command: 'deleteTag',
-						data: this.dataSource.deleteTag(message.data)
+						data: await this.dataSource.deleteTag(message.data)
 					});
 					return;
 				case 'copyCommitHashToClipboard':
@@ -78,37 +78,37 @@ export class GitGraphView {
 				case 'createBranch':
 					this.sendMessage({
 						command: 'createBranch',
-						data: this.dataSource.createBranch(message.data.branchName, message.data.commitHash)
+						data: await this.dataSource.createBranch(message.data.branchName, message.data.commitHash)
 					});
 					return;
 				case 'checkoutBranch':
 					this.sendMessage({
 						command: 'checkoutBranch',
-						data: this.dataSource.checkoutBranch(message.data.branchName, message.data.remoteBranch)
+						data: await this.dataSource.checkoutBranch(message.data.branchName, message.data.remoteBranch)
 					});
 					return;
 				case 'deleteBranch':
 					this.sendMessage({
 						command: 'deleteBranch',
-						data: this.dataSource.deleteBranch(message.data.branchName, message.data.forceDelete)
+						data: await this.dataSource.deleteBranch(message.data.branchName, message.data.forceDelete)
 					});
 					return;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',
-						data: this.dataSource.renameBranch(message.data.oldName, message.data.newName)
+						data: await this.dataSource.renameBranch(message.data.oldName, message.data.newName)
 					});
 					return;
 				case 'resetToCommit':
 					this.sendMessage({
 						command: 'resetToCommit',
-						data: this.dataSource.resetToCommit(message.data.commitHash, message.data.resetMode)
+						data: await this.dataSource.resetToCommit(message.data.commitHash, message.data.resetMode)
 					});
 					return;
 				case 'commitDetails':
 					this.sendMessage({
 						command: 'commitDetails',
-						data: this.dataSource.commitDetails(message.data)
+						data: await this.dataSource.commitDetails(message.data)
 					});
 					return;
 				case 'viewDiff':
@@ -129,17 +129,17 @@ export class GitGraphView {
 		}
 	}
 
-	private update() {
-		this.panel.webview.html = this.getHtmlForWebview();
+	private async update() {
+		this.panel.webview.html = await this.getHtmlForWebview();
 	}
 
-	private getHtmlForWebview() {
+	private async getHtmlForWebview() {
 		const config = new Config();
 		const jsPathOnDisk = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.js'));
 		const jsUri = jsPathOnDisk.with({ scheme: 'vscode-resource' });
 		const cssPathOnDisk = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.css'));
 		const cssUri = cssPathOnDisk.with({ scheme: 'vscode-resource' });
-		const isRepo = this.dataSource !== null && this.dataSource.isGitRepository();
+		const isRepo = this.dataSource !== null && await this.dataSource.isGitRepository();
 		const nonce = getNonce();
 
 		let settings: GitGraphViewSettings = {
@@ -203,6 +203,7 @@ export class GitGraphView {
 		let pathComponents = newFilePath.split('/');
 		let title = pathComponents[pathComponents.length - 1] + ' (' + (type === 'A' ? 'Added in ' + abbrevHash : type === 'D' ? 'Deleted in ' + abbrevHash : abbrevCommit(commitHash) + '^ ↔ ' + abbrevCommit(commitHash)) + ')';
 		vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(oldFilePath, commitHash + '^'), encodeDiffDocUri(newFilePath, commitHash), title, { preview: true });
+		this.sendMessage({ command: 'viewDiff', data: true });
 	}
 }
 

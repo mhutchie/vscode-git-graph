@@ -362,6 +362,7 @@
 			vscode.setState({
 				branchOptions: this.branchOptions,
 				commits: this.commits,
+				moreCommitsAvailable: this.moreCommitsAvailable,
 				selectedBranch: this.selectedBranch,
 				maxCommits: this.maxCommits,
 				showRemoteBranches: this.showRemoteBranches,

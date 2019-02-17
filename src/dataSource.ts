@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { Config } from './config';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRef, GitResetMode, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRef, GitResetMode, GitUnsavedChangesCmdResp } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
@@ -14,38 +14,41 @@ export class DataSource {
 		this.workspaceDir = workspaceDir;
 	}
 
-	public isGitRepository(): boolean {
-		try {
-			cp.execSync('git rev-parse --git-dir', { cwd: this.workspaceDir });
-			return true;
-		} catch (e) {
-			return false;
-		}
+	public isGitRepository() {
+		return new Promise<boolean>((resolve) => {
+			cp.exec('git rev-parse --git-dir', { cwd: this.workspaceDir }, (err) => {
+				resolve(!err);
+			});
+		});
 	}
 
-	public getBranches(showRemoteBranches: boolean): string[] {
-		try {
-			let lines = cp.execSync('git branch' + (showRemoteBranches ? ' -a' : ''), { cwd: this.workspaceDir }).toString().split(eolRegex);
-			let branches: string[] = [];
-			for (let i = 0; i < lines.length - 1; i++) {
-				let active = lines[i][0] === '*';
-				let name = lines[i].substring(2).split(' ')[0];
-				if (active) {
-					branches.unshift(name);
+	public getBranches(showRemoteBranches: boolean) {
+		return new Promise<string[]>((resolve) => {
+			cp.exec('git branch' + (showRemoteBranches ? ' -a' : ''), { cwd: this.workspaceDir }, (err, stdout) => {
+				if (!err) {
+					let lines = stdout.split(eolRegex);
+					let branches: string[] = [];
+					for (let i = 0; i < lines.length - 1; i++) {
+						let active = lines[i][0] === '*';
+						let name = lines[i].substring(2).split(' ')[0];
+						if (active) {
+							branches.unshift(name);
+						} else {
+							branches.push(name);
+						}
+					}
+					resolve(branches);
 				} else {
-					branches.push(name);
+					resolve([]);
 				}
-			}
-			return branches;
-		} catch (e) {
-			return [];
-		}
+			});
+		});
 	}
 
-	public getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean, currentBranch: string | null) {
+	public async getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean, currentBranch: string | null) {
 		let i, j;
-		let commits = this.getGitLog(branch, maxCommits + 1, showRemoteBranches);
-		let refs = this.getRefs(showRemoteBranches);
+		let commits = await this.getGitLog(branch, maxCommits + 1, showRemoteBranches);
+		let refs = await this.getRefs(showRemoteBranches);
 		let unsavedChanges = null;
 
 		let moreCommitsAvailable = commits.length === maxCommits + 1;
@@ -59,7 +62,7 @@ export class DataSource {
 			}
 		}
 		if (currentBranchHash !== null && (branch === '' || branch === currentBranch)) {
-			unsavedChanges = (new Config()).showUncommittedChanges() ? this.getGitUnsavedChanges() : null;
+			unsavedChanges = (new Config()).showUncommittedChanges() ? await this.getGitUnsavedChanges() : null;
 			if (unsavedChanges !== null) {
 				for (j = 0; j < commits.length; j++) {
 					if (currentBranchHash === commits[j].hash) {
@@ -99,136 +102,181 @@ export class DataSource {
 		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
 	}
 
-	public commitDetails(commitHash: string) {
+	public async commitDetails(commitHash: string) {
 		try {
-			let lines = cp.execSync('git show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', { cwd: this.workspaceDir }).toString().split(eolRegex);
-			let commitInfo = lines[0].split(gitLogSeparator);
-			let details: GitCommitDetails = {
-				hash: commitInfo[0],
-				parents: commitInfo[1].split(' '),
-				author: commitInfo[2],
-				email: commitInfo[3],
-				date: parseInt(commitInfo[4]),
-				committer: commitInfo[5],
-				body: commitInfo[6],
-				fileChanges: []
-			};
-
+			let details = await new Promise<GitCommitDetails>((resolve, reject) => {
+				cp.exec('git show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', { cwd: this.workspaceDir }, (err, stdout) => {
+					if (!err) {
+						let lines = stdout.split(eolRegex);
+						let commitInfo = lines[0].split(gitLogSeparator);
+						resolve({
+							hash: commitInfo[0],
+							parents: commitInfo[1].split(' '),
+							author: commitInfo[2],
+							email: commitInfo[3],
+							date: parseInt(commitInfo[4]),
+							committer: commitInfo[5],
+							body: commitInfo[6],
+							fileChanges: []
+						});
+					} else {
+						reject();
+					}
+				});
+			});
 			let fileLookup: { [file: string]: number } = {};
-			lines = cp.execSync('git diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
-			for (let i = 1; i < lines.length - 1; i++) {
-				let line = lines[i].split('\t');
-				if (line.length < 2) break;
-				let oldFilePath = line[1].replace(/\\/g, '/'), newFilePath = line[line.length-1].replace(/\\/g, '/');
-				fileLookup[newFilePath] = details.fileChanges.length;
-				details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
-			}
-			lines = cp.execSync('git diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, { cwd: this.workspaceDir }).toString().split(eolRegex);
-			for (let i = 1; i < lines.length - 1; i++) {
-				let line = lines[i].split('\t');
-				if (line.length !== 3) break;
-				let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
-				if (typeof fileLookup[fileName] === 'number') {
-					details.fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
-					details.fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
-				}
-			}
+			await new Promise((resolve, reject) => {
+				cp.exec('git diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, { cwd: this.workspaceDir }, (err, stdout) => {
+					if (!err) {
+						let lines = stdout.split(eolRegex);
+						for (let i = 1; i < lines.length - 1; i++) {
+							let line = lines[i].split('\t');
+							if (line.length < 2) break;
+							let oldFilePath = line[1].replace(/\\/g, '/'), newFilePath = line[line.length - 1].replace(/\\/g, '/');
+							fileLookup[newFilePath] = details.fileChanges.length;
+							details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
+						}
+						resolve();
+					} else {
+						reject();
+					}
+				});
+			});
+			await new Promise((resolve, reject) => {
+				cp.exec('git diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, { cwd: this.workspaceDir }, (err, stdout) => {
+					if (!err) {
+						let lines = stdout.split(eolRegex);
+						for (let i = 1; i < lines.length - 1; i++) {
+							let line = lines[i].split('\t');
+							if (line.length !== 3) break;
+							let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
+							if (typeof fileLookup[fileName] === 'number') {
+								details.fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
+								details.fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
+							}
+						}
+						resolve();
+					} else {
+						reject();
+					}
+
+				});
+			});
 			return details;
 		} catch (e) {
 			return null;
 		}
 	}
 
-	public getFile(commitHash: string, filePath: string) {
-		try {
-			return cp.execSync('git show "' + commitHash + '":"' + filePath + '"', { cwd: this.workspaceDir }).toString();
-		} catch (e) {
-			return '';
-		}
+	public async getCommitFile(commitHash: string, filePath: string) {
+		return new Promise<string>((resolve) => {
+			cp.exec('git show "' + commitHash + '":"' + filePath + '"', { cwd: this.workspaceDir }, (err, stdout) => {
+				resolve(!err ? stdout : '');
+			});
+		});
 	}
 
-	public addTag(tagName: string, commitHash: string): GitCommandStatus {
+	public addTag(tagName: string, commitHash: string) {
 		return this.runGitCommand('git tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash);
 	}
 
-	public deleteTag(tagName: string): GitCommandStatus {
+	public deleteTag(tagName: string) {
 		return this.runGitCommand('git tag -d ' + escapeRefName(tagName));
 	}
 
-	public createBranch(branchName: string, commitHash: string): GitCommandStatus {
+	public createBranch(branchName: string, commitHash: string) {
 		return this.runGitCommand('git branch ' + escapeRefName(branchName) + ' ' + commitHash);
 	}
 
-	public checkoutBranch(branchName: string, remoteBranch: string | null): GitCommandStatus {
+	public checkoutBranch(branchName: string, remoteBranch: string | null) {
 		return this.runGitCommand('git checkout ' + (remoteBranch === null ? escapeRefName(branchName) : ' -b ' + escapeRefName(branchName) + ' ' + escapeRefName(remoteBranch)));
 	}
 
-	public deleteBranch(branchName: string, forceDelete: boolean): GitCommandStatus {
+	public deleteBranch(branchName: string, forceDelete: boolean) {
 		return this.runGitCommand('git branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName));
 	}
 
-	public renameBranch(oldName: string, newName: string): GitCommandStatus {
+	public renameBranch(oldName: string, newName: string) {
 		return this.runGitCommand('git branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName));
 	}
 
-	public resetToCommit(commitHash: string, resetMode: GitResetMode): GitCommandStatus {
+	public resetToCommit(commitHash: string, resetMode: GitResetMode) {
 		return this.runGitCommand('git reset --' + resetMode + ' ' + commitHash);
 	}
 
-	private runGitCommand(command: string): GitCommandStatus {
-		try {
-			cp.execSync(command, { cwd: this.workspaceDir });
-			return null;
-		} catch (e) {
-			let lines = e.message.split(eolRegex);
-			return lines.slice(1, lines.length - 1).join('\n');
-		}
-	}
-
-	private getRefs(showRemoteBranches: boolean): GitRef[] {
-		try {
-			let lines = cp.execSync('git show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', { cwd: this.workspaceDir }).toString().split(eolRegex);
-			let refs: GitRef[] = [];
-			for (let i = 0; i < lines.length - 1; i++) {
-				let line = lines[i].split(' ');
-				if (line.length < 2) continue;
-
-				let hash = line.shift()!;
-				let ref = line.join(' ');
-
-				if (ref.startsWith('refs/heads/')) {
-					refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
-				} else if (ref.startsWith('refs/tags/')) {
-					refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
-				} else if (ref.startsWith('refs/remotes/')) {
-					refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
+	private async runGitCommand(command: string) {
+		return new Promise<GitCommandStatus>((resolve) => {
+			cp.exec(command, { cwd: this.workspaceDir }, (err) => {
+				if (!err) {
+					resolve(null);
+				} else {
+					let lines = err.message.split(eolRegex);
+					resolve(lines.slice(1, lines.length - 1).join('\n'));
 				}
-			}
-			return refs;
-		} catch (e) {
-			return [];
-		}
+			});
+		});
 	}
 
-	private getGitLog(branch: string, num: number, showRemoteBranches: boolean): GitCommit[] {
-		try {
-			let lines = cp.execSync('git log ' + (branch !== '' ? escapeRefName(branch) : '--branches' + (showRemoteBranches ? ' --remotes' : '')) + ' --max-count=' + num + ' --format="' + gitLogFormat + '"', { cwd: this.workspaceDir }).toString().split(eolRegex);
-			let gitCommits: GitCommit[] = [];
-			for (let i = 0; i < lines.length - 1; i++) {
-				let line = lines[i].split(gitLogSeparator);
-				if (line.length !== 6) break;
-				gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
-			}
-			return gitCommits;
-		} catch (e) {
-			return [];
-		}
+	private async getRefs(showRemoteBranches: boolean) {
+		return new Promise<GitRef[]>((resolve) => {
+			cp.exec('git show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', { cwd: this.workspaceDir }, (err, stdout) => {
+				if (!err) {
+					let lines = stdout.split(eolRegex);
+					let refs: GitRef[] = [];
+					for (let i = 0; i < lines.length - 1; i++) {
+						let line = lines[i].split(' ');
+						if (line.length < 2) continue;
+
+						let hash = line.shift()!;
+						let ref = line.join(' ');
+
+						if (ref.startsWith('refs/heads/')) {
+							refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
+						} else if (ref.startsWith('refs/tags/')) {
+							refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
+						} else if (ref.startsWith('refs/remotes/')) {
+							refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
+						}
+					}
+					resolve(refs);
+				} else {
+					resolve([]);
+				}
+			});
+		});
 	}
 
-	private getGitUnsavedChanges(): GitUnsavedChanges | null {
+	private async getGitLog(branch: string, num: number, showRemoteBranches: boolean) {
+		return new Promise<GitCommit[]>((resolve) => {
+			cp.exec('git log ' + (branch !== '' ? escapeRefName(branch) : '--branches' + (showRemoteBranches ? ' --remotes' : '')) + ' --max-count=' + num + ' --format="' + gitLogFormat + '"', { cwd: this.workspaceDir }, (err, stdout) => {
+				if (!err) {
+					let lines = stdout.split(eolRegex);
+					let gitCommits: GitCommit[] = [];
+					for (let i = 0; i < lines.length - 1; i++) {
+						let line = lines[i].split(gitLogSeparator);
+						if (line.length !== 6) break;
+						gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
+					}
+					resolve(gitCommits);
+				} else {
+					resolve([]);
+				}
+			});
+		});
+	}
+
+	private getGitUnsavedChanges() {
 		try {
-			let lines = cp.execSync('git status -s --branch --untracked-files --porcelain', { cwd: this.workspaceDir }).toString().split(eolRegex);
-			return lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null;
+			return new Promise<GitUnsavedChangesCmdResp>((resolve, reject) => {
+				cp.exec('git status -s --branch --untracked-files --porcelain', { cwd: this.workspaceDir }, (err, stdout) => {
+					if (!err) {
+						let lines = stdout.split(eolRegex);
+						resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
+					} else {
+						reject();
+					}
+				});
+			});
 		} catch (e) {
 			return null;
 		}

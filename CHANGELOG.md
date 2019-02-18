@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.2 - 2019-02-18
+* Fixes an issue when viewing some large graphs of more than 500 commits.
+* Significantly reduced package size.
+
 ## 1.3.1 - 2019-02-17
 * View the Visual Studio Code Diff of a file change in a commit, by clicking on the file in the commit details view.
 * All git commands are run asynchronously to improve responsiveness.

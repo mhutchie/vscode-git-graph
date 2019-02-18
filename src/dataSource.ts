@@ -170,8 +170,16 @@ export class DataSource {
 
 	public async getCommitFile(commitHash: string, filePath: string) {
 		return new Promise<string>((resolve) => {
-			cp.exec('git show "' + commitHash + '":"' + filePath + '"', { cwd: this.workspaceDir }, (err, stdout) => {
-				resolve(!err ? stdout : '');
+			let args = ['show', commitHash + ':' + filePath], stdout = '', err = false;
+			const cmd = cp.spawn('git', args, { cwd: this.workspaceDir });
+			cmd.stdout.on('data', (d) => { stdout += d; });
+			cmd.on('error', () => {
+				resolve('');
+				err = true;
+			});
+			cmd.on('exit', (code) => {
+				if (err) return;
+				resolve(code === 0 ? stdout : '');
 			});
 		});
 	}
@@ -248,8 +256,23 @@ export class DataSource {
 
 	private async getGitLog(branch: string, num: number, showRemoteBranches: boolean) {
 		return new Promise<GitCommit[]>((resolve) => {
-			cp.exec('git log ' + (branch !== '' ? escapeRefName(branch) : '--branches' + (showRemoteBranches ? ' --remotes' : '')) + ' --max-count=' + num + ' --format="' + gitLogFormat + '"', { cwd: this.workspaceDir }, (err, stdout) => {
-				if (!err) {
+			let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat], stdout = '', err = false;
+			if (branch !== '') {
+				args.push(escapeRefName(branch));
+			} else {
+				args.push('--branches');
+				if (showRemoteBranches) args.push('--remotes');
+			}
+
+			const cmd = cp.spawn('git', args, { cwd: this.workspaceDir });
+			cmd.stdout.on('data', (d) => { stdout += d; });
+			cmd.on('error', () => {
+				resolve([]);
+				err = true;
+			});
+			cmd.on('exit', (code) => {
+				if (err) return;
+				if (code === 0) {
 					let lines = stdout.split(eolRegex);
 					let gitCommits: GitCommit[] = [];
 					for (let i = 0; i < lines.length - 1; i++) {

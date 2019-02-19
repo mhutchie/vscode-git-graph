@@ -38,8 +38,9 @@
 	"contributes": {
 		"commands": [
 			{
+				"category": "Git Graph",
 				"command": "git-graph.view",
-				"title": "Git Graph: View Git Graph"
+				"title": "View Git Graph (git log)"
 			}
 		],
 		"configuration": {

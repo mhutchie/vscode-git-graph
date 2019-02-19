@@ -972,4 +972,7 @@
 			dialogMenuSource = null;
 		}
 	}
+	document.addEventListener('keyup', (e) => {
+		if (e.key === 'Escape' && dialog.classList.contains('active')) hideDialog();
+	});
 }());

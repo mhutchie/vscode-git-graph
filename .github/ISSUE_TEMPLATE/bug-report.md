@@ -11,9 +11,11 @@ assignees: mhutchie
 A clear and concise description of what the bug is.
 
 **What does the bug relate to**
-- [ ] Graph Rendering
-- [ ] Git Command
-- [ ] Responsiveness
+List the area(s) this issue relates to, for example:
+- Graph Rendering
+- Running a Git Command
+- Responsiveness
+- ....
 
 **To reproduce**
 Steps to reproduce the behaviour:

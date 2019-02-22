@@ -377,6 +377,7 @@
 			let node = this.nodes[i], parentNode = this.nodes[i].getNextParent();
 			let lastPoint = node.isNotOnBranch() ? node.getNextPoint() : node.getPoint(), curPoint;
 
+			node.setNextX(lastPoint.x + 1);
 			node.addToBranch(branch, lastPoint.x);
 			for (i = startAt + 1; i < this.nodes.length; i++) {
 				curPoint = parentNode === this.nodes[i] && !parentNode.isNotOnBranch() ? this.nodes[i].getPoint() : this.nodes[i].getNextPoint();

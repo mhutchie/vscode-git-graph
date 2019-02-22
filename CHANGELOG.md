@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.3.3 - 2019-02-22
+* #3 & #9: Fixes an issue preventing the graph loading for a few git repositories.
+* #10: Fixes an issue where lines extending past the rightmost node of the graph would be cropped.
+* Press escape to close any open Git Graph dialog.
+* FR#6: The command title in the Command Palette is changed to "Git Graph: View Git Graph (git log)".
+* Refined styling of the commit details view.
+
 ## 1.3.2 - 2019-02-18
 * Fixes an issue when viewing some large graphs of more than 500 commits.
 * Significantly reduced package size.

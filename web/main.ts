@@ -420,10 +420,10 @@
 		private getWidth() {
 			let x = 0, i, p;
 			for (i = 0; i < this.nodes.length; i++) {
-				p = this.nodes[i].getPoint();
+				p = this.nodes[i].getNextPoint();
 				if (p.x > x) x = p.x;
 			}
-			return (x + 1) * this.config.grid.x;
+			return x * this.config.grid.x;
 		}
 		private getHeight() {
 			return this.nodes.length * this.config.grid.y + (this.expandedCommit !== null ? expandedCommitHeight : 0);

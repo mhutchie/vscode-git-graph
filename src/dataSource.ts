@@ -256,7 +256,7 @@ export class DataSource {
 
 	private async getGitLog(branch: string, num: number, showRemoteBranches: boolean) {
 		return new Promise<GitCommit[]>((resolve) => {
-			let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat], stdout = '', err = false;
+			let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat, '--date-order'], stdout = '', err = false;
 			if (branch !== '') {
 				args.push(escapeRefName(branch));
 			} else {

@@ -326,7 +326,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	display:none;
 	position:absolute;
 	background-color:var(--vscode-menu-background);
-	box-shadow:0 1px 3px 1px var(--vscode-widget-shadow);
+	box-shadow:0 1px 4px 1px var(--vscode-widget-shadow);
 	color:var(--vscode-menu-foreground);
 	list-style-type:none;
 	margin:0;

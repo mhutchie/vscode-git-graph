@@ -544,7 +544,6 @@
 				], sourceElem);
 			});
 			addListenerToClass('commit', 'click', (e: Event) => {
-				e.stopPropagation();
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
 				if (this.expandedCommit !== null && this.expandedCommit.hash === sourceElem.dataset.hash!) {
 					this.hideCommitDetails();
@@ -871,6 +870,7 @@
 			html += '<li class="contextMenuItem" data-index="' + i + '">' + items[i].title + '</li>';
 		}
 
+		hideContextMenuListener();
 		contextMenu.style.opacity = '0';
 		contextMenu.className = 'active';
 		contextMenu.innerHTML = html;
@@ -880,10 +880,10 @@
 		contextMenu.style.opacity = '1';
 
 		addListenerToClass('contextMenuItem', 'click', (e) => {
+			e.stopPropagation();
 			hideContextMenu();
 			items[parseInt((<HTMLElement>(e.target)).dataset.index!)].onClick();
 		});
-		contextMenu.addEventListener('mouseleave', hideContextMenu);
 
 		contextMenuSource = sourceElem;
 		contextMenuSource.classList.add('contextMenuActive');
@@ -893,7 +893,6 @@
 		contextMenu.innerHTML = '';
 		contextMenu.style.left = '0px';
 		contextMenu.style.top = '0px';
-		contextMenu.removeEventListener('mouseleave', hideContextMenu);
 		if (contextMenuSource !== null) {
 			contextMenuSource.classList.remove('contextMenuActive');
 			contextMenuSource = null;
@@ -973,7 +972,18 @@
 			dialogMenuSource = null;
 		}
 	}
+
+	/* Global Listeners */
 	document.addEventListener('keyup', (e) => {
-		if (e.key === 'Escape' && dialog.classList.contains('active')) hideDialog();
+		if (e.key === 'Escape') {
+			if (dialog.classList.contains('active')) hideDialog();
+			hideContextMenuListener();
+		}
 	});
+	document.addEventListener('click', hideContextMenuListener);
+	document.addEventListener('contextmenu', hideContextMenuListener);
+	document.addEventListener('mouseleave', hideContextMenuListener);
+	function hideContextMenuListener() {
+		if (contextMenu.classList.contains('active')) hideContextMenu();
+	}
 }());

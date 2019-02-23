@@ -1,62 +1,42 @@
-import {
-	GitCommandStatus as GitCommandStatusX,
-	GitCommitDetails as GitCommitDetailsX,
-	GitCommitNode as GitCommitNodeX,
-	GitFileChange as GitFileChangeX,
-	GitFileChangeType as GitFileChangeTypeX,
-	GitGraphViewSettings as GitGraphViewSettingsX,
-	GitResetMode as GitResetModeX,
-	RequestMessage as RequestMessageX,
-	ResponseMessage as ResponseMessageX
-} from "../out/types";
+import * as GG from "../out/types";
 
 declare global {
-	/* Types from Backend */
-	type GitCommandStatus = GitCommandStatusX;
-	type GitCommitDetails = GitCommitDetailsX;
-	type GitCommitNode = GitCommitNodeX;
-	type GitFileChange = GitFileChangeX;
-	type GitFileChangeType = GitFileChangeTypeX;
-	type GitGraphViewSettings = GitGraphViewSettingsX;
-	type GitResetMode = GitResetModeX;
-	type RequestMessage = RequestMessageX;
-	type ResponseMessage = ResponseMessageX;
+	function acquireVsCodeApi(): {
+		getState(): WebViewState | null,
+		postMessage(message: GG.RequestMessage): void,
+		setState(state: WebViewState): void
+	};
 
-	/* Globals defined in Webview HTML content */
-	function acquireVsCodeApi(): any;
-	var settings: GitGraphViewSettings;
+	var settings: GG.GitGraphViewSettings;
 
-	/* Graph Interfaces */
-	interface Point {
-		x: number;
-		y: number;
-	}
-	interface Line {
-		p1: Point;
-		p2: Point;
-		isCommitted: boolean;
-	}
 	interface Config {
 		autoCenterCommitDetailsView: boolean;
-		colours: string[];
+		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';
 		grid: { x: number, y: number, offsetX: number, offsetY: number };
 		initialLoadCommits: number;
 		loadMoreCommits: number;
 	}
+
 	interface ContextMenuItem {
 		title: string;
 		onClick: () => void;
 	}
+
 	interface ExpandedCommit {
 		id: number;
 		hash: string;
 		srcElem: HTMLElement | null;
-		commitDetails: GitCommitDetails | null;
+		commitDetails: GG.GitCommitDetails | null;
 		fileTree: GitFolder | null;
 	}
 
-	/* Git Interfaces / Types */
+	interface GitFile {
+		type: 'file';
+		name: string;
+		index: number;
+	}
+
 	interface GitFolder {
 		type: 'folder';
 		name: string;
@@ -64,12 +44,31 @@ declare global {
 		contents: GitFolderContents;
 		open: boolean;
 	}
-	interface GitFile {
-		type: 'file';
-		name: string;
-		index: number;
-	}
+
 	type GitFolderOrFile = GitFolder | GitFile;
 	type GitFolderContents = { [name: string]: GitFolderOrFile };
 
+	interface Line {
+		p1: Point;
+		p2: Point;
+		isCommitted: boolean;
+	}
+
+	interface Point {
+		x: number;
+		y: number;
+	}
+
+	interface WebViewState {
+		branchOptions: string[];
+		commits: GG.GitCommitNode[],
+		moreCommitsAvailable: boolean,
+		selectedBranch: string | null,
+		maxCommits: number,
+		showRemoteBranches: boolean,
+		expandedCommit: ExpandedCommit | null
+	}
 }
+
+export as namespace GG;
+export = GG;

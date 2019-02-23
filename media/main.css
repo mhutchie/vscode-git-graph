@@ -110,11 +110,11 @@ body.notGitRepository h1, body.notGitRepository p{
 	content:'';
 	display:block;
 	position:absolute;
-    left:0;
-    right:0;
+	left:0;
+	right:0;
 	bottom:0;
 	height:2px;
-    background-color:rgba(128,128,128,0.2);
+	background-color:rgba(128,128,128,0.2);
 }
 #commitTable tr.commit.commitDetailsOpen td{
 	background-color:rgba(128,128,128,0.25);

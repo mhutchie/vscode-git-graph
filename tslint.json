@@ -13,7 +13,10 @@
 			true,
 			"single"
 		],
-		"ordered-imports": true
+		"ordered-imports": true,
+		"no-console": {
+			"severity": "warning"
+		}
 	},
 	"defaultSeverity": "warning"
 }

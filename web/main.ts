@@ -68,7 +68,7 @@
 		}
 		public draw(svg: SVGElement, config: Config, expandAt: number) {
 			this.simplifyVerticalLines();
-			let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2;
+			let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2;
 			for (i = 0; i < this.lines.length; i++) {
 				x1 = this.lines[i].p1.x * config.grid.x + config.grid.offsetX;
 				y1 = this.lines[i].p1.y * config.grid.y + config.grid.offsetY;
@@ -204,7 +204,7 @@
 			if (this.onBranch === null) return;
 
 			let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-			let colour = this.isCommitted ? config.colours[this.onBranch.getColour() % config.colours.length] : '#808080';
+			let colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
 			circle.setAttribute('cx', (this.x * config.grid.x + config.grid.offsetX).toString());
 			circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY + (expandOffset ? expandedCommitHeight : 0)).toString());
 			circle.setAttribute('r', '4');
@@ -221,13 +221,14 @@
 
 	class GitGraph {
 		private branchOptions: string[] = [];
-		private commits: GitCommitNode[] = [];
+		private commits: GG.GitCommitNode[] = [];
 		private selectedBranch: string | null = null;
 		private moreCommitsAvailable: boolean = false;
 		private showRemoteBranches: boolean = true;
 		private expandedCommit: ExpandedCommit | null = null;
 
 		private config: Config;
+		private commitLookup: { [hash: string]: number } = {};
 		private maxCommits: number;
 		private nodes: Node[] = [];
 		private branches: Branch[] = [];
@@ -237,7 +238,7 @@
 		private branchSelectElem: HTMLSelectElement;
 		private showRemoteBranchesElem: HTMLInputElement;
 
-		constructor(config: Config, prevState: any) {
+		constructor(config: Config, prevState: WebViewState | null) {
 			this.config = config;
 			this.maxCommits = config.initialLoadCommits;
 			this.graphElem = document.getElementById('commitGraph')!;
@@ -264,25 +265,13 @@
 
 			this.renderShowLoading();
 			if (prevState) {
-				if (typeof prevState.selectedBranch !== 'undefined') {
-					this.selectedBranch = prevState.selectedBranch;
-				}
-				if (typeof prevState.showRemoteBranches !== 'undefined') {
-					this.showRemoteBranches = prevState.showRemoteBranches;
-					this.showRemoteBranchesElem.checked = this.showRemoteBranches;
-				}
-				if (typeof prevState.maxCommits !== 'undefined') {
-					this.maxCommits = prevState.maxCommits;
-				}
-				if (typeof prevState.expandedCommit !== 'undefined') {
-					this.expandedCommit = prevState.expandedCommit;
-				}
-				if (typeof prevState.commits !== 'undefined') {
-					this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
-				}
-				if (typeof prevState.branchOptions !== 'undefined') {
-					this.loadBranchOptions(prevState.branchOptions, false);
-				}
+				this.selectedBranch = prevState.selectedBranch;
+				this.showRemoteBranches = prevState.showRemoteBranches;
+				this.showRemoteBranchesElem.checked = this.showRemoteBranches;
+				this.maxCommits = prevState.maxCommits;
+				this.expandedCommit = prevState.expandedCommit;
+				if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
+				if (prevState.branchOptions.length > 0) this.loadBranchOptions(prevState.branchOptions, false);
 			}
 			this.requestLoadBranchOptions();
 		}
@@ -300,9 +289,10 @@
 			this.branchSelectElem.innerHTML = html;
 			if (reloadCommits) this.requestLoadCommits();
 		}
-		public loadCommits(commits: GitCommitNode[], moreAvailable: boolean) {
+		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean) {
 			this.moreCommitsAvailable = moreAvailable;
 			this.commits = commits;
+			this.commitLookup = {};
 			this.saveState();
 
 			this.nodes = [];
@@ -311,12 +301,15 @@
 
 			let i: number, j: number, expandedCommitVisible = false;
 			for (i = 0; i < this.commits.length; i++) {
+				this.commitLookup[this.commits[i].hash] = i;
 				this.nodes.push(new Node(i, this.commits[i].hash !== '*', this.commits[i].current));
 				if (this.expandedCommit !== null && this.expandedCommit.hash === this.commits[i].hash) expandedCommitVisible = true;
 			}
 			for (i = 0; i < this.commits.length; i++) {
-				for (j = 0; j < this.commits[i].parents.length; j++) {
-					this.nodes[i].addParent(this.nodes[this.commits[i].parents[j]]);
+				for (j = 0; j < this.commits[i].parentHashes.length; j++) {
+					if (typeof this.commitLookup[this.commits[i].parentHashes[j]] === 'number') {
+						this.nodes[i].addParent(this.nodes[this.commitLookup[this.commits[i].parentHashes[j]]]);
+					}
 				}
 			}
 
@@ -343,17 +336,15 @@
 
 		/* Requests */
 		private requestLoadBranchOptions() {
-			sendMessage({ command: 'loadBranches', data: { showRemoteBranches: this.showRemoteBranches } });
+			sendMessage({ command: 'loadBranches', showRemoteBranches: this.showRemoteBranches });
 		}
 		private requestLoadCommits() {
 			sendMessage({
 				command: 'loadCommits',
-				data: {
-					branch: (this.selectedBranch !== null ? this.selectedBranch : ''),
-					maxCommits: this.maxCommits,
-					showRemoteBranches: this.showRemoteBranches,
-					currentBranch: this.branchOptions.length > 0 ? this.branchOptions[0] : null
-				}
+				branchName: (this.selectedBranch !== null ? this.selectedBranch : ''),
+				maxCommits: this.maxCommits,
+				showRemoteBranches: this.showRemoteBranches,
+				currentBranch: this.branchOptions.length > 0 ? this.branchOptions[0] : null
 			});
 		}
 
@@ -461,7 +452,7 @@
 					refs += '<span class="gitRef ' + this.commits[i].refs[j].type + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch).replace('viewBox', 'class="colour' + this.nodes[i].getColour() + '" viewBox') + refName + '</span>';
 				}
 
-				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '"><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + escapeHtml(this.commits[i].hash.substring(0, 8)) + '</td></tr>';
+				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '"><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 			}
 			if (this.moreCommitsAvailable) {
 				html += '<tr><td colspan="5"><div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div></td></tr>';
@@ -510,35 +501,35 @@
 					{
 						title: 'Add Tag',
 						onClick: () => {
-							showInputDialog('Enter the name of the tag you would like to add to commit <b><i>' + hash.substring(0, 8) + '</i></b>:', '', 'Add Tag', (name: string) => {
-								sendMessage({ command: 'addTag', data: { tagName: name, commitHash: hash } });
+							showInputDialog('Enter the name of the tag you would like to add to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Add Tag', (name) => {
+								sendMessage({ command: 'addTag', tagName: name, commitHash: hash });
 							}, sourceElem);
 						}
 					},
 					{
 						title: 'Create Branch from this Commit',
 						onClick: () => {
-							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + hash.substring(0, 8) + '</i></b>:', '', 'Create Branch', (name: string) => {
-								sendMessage({ command: 'createBranch', data: { branchName: name, commitHash: hash } });
+							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
+								sendMessage({ command: 'createBranch', branchName: name, commitHash: hash });
 							}, sourceElem);
 						}
 					},
 					{
 						title: 'Reset current branch to this Commit',
 						onClick: () => {
-							showSelectDialog('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + hash.substring(0, 8) + '</i></b>?', 'mixed', [
+							showSelectDialog('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'mixed', [
 								{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
 								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 								{ name: 'Hard - Discard all changes', value: 'hard' }
-							], 'Yes, reset', (mode: string) => {
-								sendMessage({ command: 'resetToCommit', data: { commitHash: hash, resetMode: <GitResetMode>mode } });
+							], 'Yes, reset', (mode) => {
+								sendMessage({ command: 'resetToCommit', commitHash: hash, resetMode: <GG.GitResetMode>mode });
 							}, sourceElem);
 						}
 					},
 					{
 						title: 'Copy Commit Hash to Clipboard',
 						onClick: () => {
-							sendMessage({ command: 'copyCommitHashToClipboard', data: hash });
+							sendMessage({ command: 'copyCommitHashToClipboard', commitHash: hash });
 						}
 					}
 				], sourceElem);
@@ -560,7 +551,7 @@
 						title: 'Delete Tag',
 						onClick: () => {
 							showConfirmationDialog('Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-								sendMessage({ command: 'deleteTag', data: refName });
+								sendMessage({ command: 'deleteTag', tagName: refName });
 							}, null);
 						}
 					}];
@@ -569,11 +560,11 @@
 						title: 'Checkout Branch',
 						onClick: () => {
 							if (sourceElem.className === 'gitRef head') {
-								sendMessage({ command: 'checkoutBranch', data: { branchName: refName, remoteBranch: null } });
+								sendMessage({ command: 'checkoutBranch', branchName: refName, remoteBranch: null });
 							} else if (sourceElem.className === 'gitRef remote') {
 								let refNameComps = refName.split('/');
 								showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
-									sendMessage({ command: 'checkoutBranch', data: { branchName: newBranch, remoteBranch: refName } });
+									sendMessage({ command: 'checkoutBranch', branchName: newBranch, remoteBranch: refName });
 								}, null);
 							}
 						}
@@ -583,7 +574,7 @@
 							title: 'Rename Branch',
 							onClick: () => {
 								showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
-									sendMessage({ command: 'renameBranch', data: { oldName: refName, newName: newName } });
+									sendMessage({ command: 'renameBranch', oldName: refName, newName: newName });
 								}, null);
 							}
 						});
@@ -591,7 +582,7 @@
 							title: 'Delete Branch',
 							onClick: () => {
 								showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', 'Delete Branch', (forceDelete) => {
-									sendMessage({ command: 'deleteBranch', data: { branchName: refName, forceDelete: forceDelete } });
+									sendMessage({ command: 'deleteBranch', branchName: refName, forceDelete: forceDelete });
 								}, null);
 							}
 						});
@@ -612,7 +603,7 @@
 			this.hideCommitDetails();
 			this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileTree: null };
 			this.saveState();
-			sendMessage({ command: 'commitDetails', data: sourceElem.dataset.hash! });
+			sendMessage({ command: 'commitDetails', commitHash: sourceElem.dataset.hash! });
 		}
 		public hideCommitDetails() {
 			if (this.expandedCommit !== null) {
@@ -624,7 +615,7 @@
 				this.renderGraph();
 			}
 		}
-		public showCommitDetails(commitDetails: GitCommitDetails, fileTree: GitFolder) {
+		public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: GitFolder) {
 			if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.hash !== commitDetails.hash) return;
 			let elem = document.getElementById('commitDetails');
 			if (typeof elem === 'object' && elem !== null) elem.remove();
@@ -651,20 +642,20 @@
 			this.renderGraph();
 			insertAfter(newElem, this.expandedCommit.srcElem);
 
-			if(this.config.autoCenterCommitDetailsView){
+			if (this.config.autoCenterCommitDetailsView) {
 				// Center Commit Detail View setting is enabled
 				// control menu height [40px] + newElem.y + (commit details view height [250px] + commit height [24px]) / 2 - (window height) / 2
 				window.scrollTo(0, newElem.offsetTop + 177 - window.innerHeight / 2);
-			}else if(newElem.offsetTop + 8 < window.pageYOffset){
+			} else if (newElem.offsetTop + 8 < window.pageYOffset) {
 				// Commit Detail View is opening above what is visible on screen
 				// control menu height [40px] + newElem y - commit height [24px] - desired gap from top [8px] < pageYOffset
 				window.scrollTo(0, newElem.offsetTop + 8);
-			}else if(newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48 > window.pageYOffset){
+			} else if (newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48 > window.pageYOffset) {
 				// Commit Detail View is opening below what is visible on screen
 				// control menu height [40px] + newElem y + commit details view height [250px] + desired gap from bottom [8px] - window height > pageYOffset
 				window.scrollTo(0, newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48);
 			}
-			
+
 			document.getElementById('commitDetailsClose')!.addEventListener('click', () => {
 				this.hideCommitDetails();
 			});
@@ -681,7 +672,7 @@
 			addListenerToClass('gitFile', 'click', (e) => {
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitFile')!;
 				if (this.expandedCommit === null || !sourceElem.classList.contains('gitDiffPossible')) return;
-				sendMessage({ command: 'viewDiff', data: { commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GitFileChangeType>sourceElem.dataset.type } });
+				sendMessage({ command: 'viewDiff', commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 			});
 		}
 	}
@@ -689,7 +680,7 @@
 
 	let gitGraph = new GitGraph({
 		autoCenterCommitDetailsView: settings.autoCenterCommitDetailsView,
-		colours: settings.graphColours,
+		graphColours: settings.graphColours,
 		graphStyle: settings.graphStyle,
 		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12 },
 		initialLoadCommits: settings.initialLoadCommits,
@@ -699,58 +690,59 @@
 
 	/* Command Processing */
 	window.addEventListener('message', event => {
-		const msg: ResponseMessage = event.data;
+		const msg: GG.ResponseMessage = event.data;
 		switch (msg.command) {
-			case 'loadBranches':
-				gitGraph.loadBranchOptions(msg.data, true);
-				return;
-			case 'loadCommits':
-				gitGraph.loadCommits(msg.data.commits, msg.data.moreCommitsAvailable);
-				break;
 			case 'addTag':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Add Tag');
-				break;
-			case 'deleteTag':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Delete Tag');
-				break;
-			case 'copyCommitHashToClipboard':
-				if (msg.data === false) showErrorDialog('Unable to Copy Commit Hash to Clipboard', null, null);
-				break;
-			case 'createBranch':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Create Branch');
+				refreshGraphOrDisplayError(msg.status, 'Unable to Add Tag');
 				break;
 			case 'checkoutBranch':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Checkout Branch');
-				break;
-			case 'deleteBranch':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Delete Branch');
-				break;
-			case 'renameBranch':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Rename Branch');
-				break;
-			case 'resetToCommit':
-				refreshGraphOrDisplayError(msg.data, 'Unable to Reset to Commit');
+				refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Branch');
 				break;
 			case 'commitDetails':
-				if (msg.data === null) {
+				if (msg.commitDetails === null) {
 					gitGraph.hideCommitDetails();
 					showErrorDialog('Unable to load commit details', null, null);
 				} else {
-					gitGraph.showCommitDetails(msg.data, generateGitFileTree(msg.data.fileChanges));
+					gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
 				}
+				break;
+			case 'copyCommitHashToClipboard':
+				if (msg.success === false) showErrorDialog('Unable to Copy Commit Hash to Clipboard', null, null);
+				break;
+			case 'createBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Create Branch');
+				break;
+			case 'deleteBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Branch');
+				break;
+			case 'deleteTag':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
+				break;
+			case 'loadBranches':
+				gitGraph.loadBranchOptions(msg.branches, true);
+				break;
+			case 'loadCommits':
+				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable);
+				break;
+			case 'renameBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
+				break;
+			case 'resetToCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Reset to Commit');
+				break;
 			case 'viewDiff':
-				if (msg.data === false) showErrorDialog('Unable to view diff of file', null, null);
+				if (msg.success === false) showErrorDialog('Unable to view diff of file', null, null);
 				break;
 		}
 	});
-	function refreshGraphOrDisplayError(status: GitCommandStatus, errorMessage: string) {
+	function refreshGraphOrDisplayError(status: GG.GitCommandStatus, errorMessage: string) {
 		if (status === null) {
 			gitGraph.refresh();
 		} else {
 			showErrorDialog(errorMessage, status, null);
 		}
 	}
-	function sendMessage(msg: RequestMessage) {
+	function sendMessage(msg: GG.RequestMessage) {
 		vscode.postMessage(msg);
 	}
 
@@ -801,7 +793,7 @@
 	}
 
 	/* Utils */
-	function generateGitFileTree(gitFiles: GitFileChange[]) {
+	function generateGitFileTree(gitFiles: GG.GitFileChange[]) {
 		let contents: GitFolderContents = {}, i, j, path, cur: GitFolder;
 		let files: GitFolder = { type: 'folder', name: '', folderPath: '', contents: contents, open: true };
 		for (i = 0; i < gitFiles.length; i++) {
@@ -821,7 +813,7 @@
 		}
 		return files;
 	}
-	function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GitFileChange[]) {
+	function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GG.GitFileChange[]) {
 		let html = (folder.name !== '' ? '<span class="gitFolder" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="gitFolderIcon">' + (folder.open ? svgIcons.openFolder : svgIcons.closedFolder) + '</span><span class="gitFolderName">' + folder.name + '</span></span>' : '') + '<ul class="gitFolderContents' + (!folder.open ? ' hidden' : '') + '">', keys = Object.keys(folder.contents), i, gitFile, gitFolder;
 		keys.sort((a, b) => folder.contents[a].type === 'folder' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type === 'folder' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
 		for (i = 0; i < keys.length; i++) {
@@ -849,18 +841,17 @@
 			}
 		}
 	}
+	function abbrevCommit(commitHash: string) {
+		return commitHash.substring(0, 8);
+	}
 
 
 	/* HTML Escape / Unescape */
 	function escapeHtml(str: string) {
-		return str.replace(htmlEscaper, function (match) {
-			return htmlEscapes[match];
-		});
+		return str.replace(htmlEscaper, (match) => htmlEscapes[match]);
 	}
 	function unescapeHtml(str: string) {
-		return str.replace(htmlUnescaper, function (match) {
-			return htmlUnescapes[match];
-		});
+		return str.replace(htmlUnescaper, (match) => htmlUnescapes[match]);
 	}
 
 

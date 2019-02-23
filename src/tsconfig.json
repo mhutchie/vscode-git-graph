@@ -1,13 +1,15 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
-		"outDir": "../out",
+		"declaration": true,
 		"lib": [
 			"es6"
 		],
-		"declaration": true,
+		"module": "commonjs",
+		"outDir": "../out",
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitAny": true,
 		"sourceMap": true,
-		"strict": true
+		"strict": true,
+		"target": "es6"
 	}
 }

@@ -78,18 +78,11 @@ export class DataSource {
 
 		for (i = 0; i < commits.length; i++) {
 			commitLookup[commits[i].hash] = i;
-			commitNodes.push({ hash: commits[i].hash, parents: [], author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [], current: false });
+			commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [], current: false });
 		}
 		for (i = 0; i < refs.length; i++) {
 			if (typeof commitLookup[refs[i].hash] === 'number') {
 				commitNodes[commitLookup[refs[i].hash]].refs.push(refs[i]);
-			}
-		}
-		for (i = commits.length - 1; i >= 0; i--) {
-			for (j = 0; j < commits[i].parentHashes.length; j++) {
-				if (typeof commitLookup[commits[i].parentHashes[j]] === 'number') {
-					commitNodes[i].parents.push(commitLookup[commits[i].parentHashes[j]]);
-				}
 			}
 		}
 

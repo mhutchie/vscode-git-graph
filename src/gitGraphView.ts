@@ -143,11 +143,12 @@ export class GitGraphView {
 		const nonce = getNonce();
 
 		let settings: GitGraphViewSettings = {
+			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
+			dateFormat: config.dateFormat(),
+			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),
 			initialLoadCommits: config.initialLoadCommits(),
-			loadMoreCommits: config.loadMoreCommits(),
-			graphColours: config.graphColours(),
-			dateFormat: config.dateFormat()
+			loadMoreCommits: config.loadMoreCommits()
 		};
 
 		let colourStyles = '';

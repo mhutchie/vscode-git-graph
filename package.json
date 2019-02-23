@@ -47,14 +47,20 @@
 			"type": "object",
 			"title": "Git Graph",
 			"properties": {
-				"git-graph.graphStyle": {
+				"git-graph.autoCenterCommitDetailsView": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically center the commit details view when it is opened."
+				},
+				"git-graph.dateFormat": {
 					"type": "string",
 					"enum": [
-						"rounded",
-						"angular"
+						"Date & Time",
+						"Date Only",
+						"Relative"
 					],
-					"default": "rounded",
-					"description": "Specifies the style of the graph."
+					"default": "Date & Time",
+					"description": "Specifies the date format to be used in the date column of the graph."
 				},
 				"git-graph.graphColours": {
 					"type": "array",
@@ -79,15 +85,14 @@
 					],
 					"description": "Specifies the colours used on the graph."
 				},
-				"git-graph.dateFormat": {
+				"git-graph.graphStyle": {
 					"type": "string",
 					"enum": [
-						"Date & Time",
-						"Date Only",
-						"Relative"
+						"rounded",
+						"angular"
 					],
-					"default": "Date & Time",
-					"description": "Specifies the date format to be used in the date column of the graph."
+					"default": "rounded",
+					"description": "Specifies the style of the graph."
 				},
 				"git-graph.initialLoadCommits": {
 					"type": "number",

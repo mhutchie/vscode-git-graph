@@ -8,6 +8,16 @@ export class Config {
 		this.workspaceConfiguration = vscode.workspace.getConfiguration('git-graph');
 	}
 
+	public autoCenterCommitDetailsView() {
+		return this.workspaceConfiguration.get('autoCenterCommitDetailsView', true);
+	}
+	public dateFormat(): DateFormat {
+		return this.workspaceConfiguration.get('dateFormat', 'Date & Time');
+	}
+	public graphColours() {
+		return this.workspaceConfiguration.get('graphColours', ['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000'])
+			.filter((v) => v.match(/^\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgb[a]?\s*\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))\s*$/) !== null);
+	}
 	public graphStyle(): GraphStyle {
 		return this.workspaceConfiguration.get('graphStyle', 'rounded');
 	}
@@ -16,13 +26,6 @@ export class Config {
 	}
 	public loadMoreCommits() {
 		return this.workspaceConfiguration.get('loadMoreCommits', 75);
-	}
-	public graphColours() {
-		return this.workspaceConfiguration.get('graphColours', ['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000'])
-			.filter((v) => v.match(/^\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgb[a]?\s*\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))\s*$/) !== null);
-	}
-	public dateFormat(): DateFormat {
-		return this.workspaceConfiguration.get('dateFormat', 'Date & Time');
 	}
 	public showStatusBarItem() {
 		return this.workspaceConfiguration.get('showStatusBarItem', true);

@@ -43,11 +43,12 @@ export interface GitUnsavedChanges {
 }
 
 export interface GitGraphViewSettings {
+	autoCenterCommitDetailsView: boolean;
+	dateFormat: DateFormat;
 	graphColours: string[];
 	graphStyle: GraphStyle;
 	initialLoadCommits: number;
 	loadMoreCommits: number;
-	dateFormat: DateFormat;
 }
 
 export interface GitFileChange{

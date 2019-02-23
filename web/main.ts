@@ -651,7 +651,20 @@
 			this.renderGraph();
 			insertAfter(newElem, this.expandedCommit.srcElem);
 
-			window.scrollTo(0, newElem.offsetTop + 177 - window.innerHeight / 2);
+			if(this.config.autoCenterCommitDetailsView){
+				// Center Commit Detail View setting is enabled
+				// control menu height [40px] + newElem.y + (commit details view height [250px] + commit height [24px]) / 2 - (window height) / 2
+				window.scrollTo(0, newElem.offsetTop + 177 - window.innerHeight / 2);
+			}else if(newElem.offsetTop + 8 < window.pageYOffset){
+				// Commit Detail View is opening above what is visible on screen
+				// control menu height [40px] + newElem y - commit height [24px] - desired gap from top [8px] < pageYOffset
+				window.scrollTo(0, newElem.offsetTop + 8);
+			}else if(newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48 > window.pageYOffset){
+				// Commit Detail View is opening below what is visible on screen
+				// control menu height [40px] + newElem y + commit details view height [250px] + desired gap from bottom [8px] - window height > pageYOffset
+				window.scrollTo(0, newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48);
+			}
+			
 			document.getElementById('commitDetailsClose')!.addEventListener('click', () => {
 				this.hideCommitDetails();
 			});
@@ -675,9 +688,10 @@
 
 
 	let gitGraph = new GitGraph({
-		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12 },
+		autoCenterCommitDetailsView: settings.autoCenterCommitDetailsView,
 		colours: settings.graphColours,
 		graphStyle: settings.graphStyle,
+		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12 },
 		initialLoadCommits: settings.initialLoadCommits,
 		loadMoreCommits: settings.loadMoreCommits
 	}, vscode.getState());

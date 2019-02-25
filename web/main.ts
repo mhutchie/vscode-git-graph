@@ -515,6 +515,42 @@
 						}
 					},
 					{
+						title: 'Cherry Pick this Commit',
+						onClick: () => {
+							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
+								showConfirmationDialog('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+									sendMessage({ command: 'cherrypickCommit', commitHash: hash, parentIndex: 0 });
+								}, sourceElem);
+							} else {
+								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
+									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
+									value: (index + 1).toString()
+								}));
+								showSelectDialog('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick commit', (parentIndex) => {
+									sendMessage({ command: 'cherrypickCommit', commitHash: hash, parentIndex: parseInt(parentIndex) });
+								}, sourceElem);
+							}
+						}
+					},
+					{
+						title: 'Reverse this Commit',
+						onClick: () => {
+							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
+								showConfirmationDialog('Are you sure you want to reverse commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+									sendMessage({ command: 'revertCommit', commitHash: hash, parentIndex: 0 });
+								}, sourceElem);
+							} else {
+								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
+									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
+									value: (index + 1).toString()
+								}));
+								showSelectDialog('Are you sure you want to reverse merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to reverse the commit relative to:', '1', options, 'Yes, reverse commit', (parentIndex) => {
+									sendMessage({ command: 'revertCommit', commitHash: hash, parentIndex: parseInt(parentIndex) });
+								}, sourceElem);
+							}
+						}
+					},
+					{
 						title: 'Reset current branch to this Commit',
 						onClick: () => {
 							showSelectDialog('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'mixed', [
@@ -570,22 +606,33 @@
 						}
 					}];
 					if (sourceElem.className === 'gitRef head') {
-						menu.push({
-							title: 'Rename Branch',
-							onClick: () => {
-								showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
-									sendMessage({ command: 'renameBranch', oldName: refName, newName: newName });
-								}, null);
+						menu.push(
+							{
+								title: 'Rename Branch',
+								onClick: () => {
+									showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+										sendMessage({ command: 'renameBranch', oldName: refName, newName: newName });
+									}, null);
+								}
+							}, {
+								title: 'Delete Branch',
+								onClick: () => {
+									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', 'Delete Branch', (forceDelete) => {
+										sendMessage({ command: 'deleteBranch', branchName: refName, forceDelete: forceDelete });
+									}, null);
+								}
 							}
-						});
-						menu.push({
-							title: 'Delete Branch',
-							onClick: () => {
-								showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', 'Delete Branch', (forceDelete) => {
-									sendMessage({ command: 'deleteBranch', branchName: refName, forceDelete: forceDelete });
-								}, null);
-							}
-						});
+						);
+						if (this.branchOptions.length > 0 && this.branchOptions[0] !== refName) {
+							menu.push({
+								title: 'Merge into current branch',
+								onClick: () => {
+									showConfirmationDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', () => {
+										sendMessage({ command: 'mergeBranch', branchName: refName });
+									}, null);
+								}
+							});
+						}
 					}
 				}
 				showContextMenu(<MouseEvent>e, menu, sourceElem);
@@ -698,6 +745,9 @@
 			case 'checkoutBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Branch');
 				break;
+			case 'cherrypickCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Cherry Pick Commit');
+				break;
 			case 'commitDetails':
 				if (msg.commitDetails === null) {
 					gitGraph.hideCommitDetails();
@@ -724,11 +774,17 @@
 			case 'loadCommits':
 				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable);
 				break;
+			case 'mergeBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');
+				break;
 			case 'renameBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
 				break;
 			case 'resetToCommit':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Reset to Commit');
+				break;
+			case 'revertCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Reverse Commit');
 				break;
 			case 'viewDiff':
 				if (msg.success === false) showErrorDialog('Unable to view diff of file', null, null);

@@ -60,6 +60,12 @@ export class GitGraphView {
 						status: await this.dataSource.checkoutBranch(msg.branchName, msg.remoteBranch)
 					});
 					return;
+				case 'cherrypickCommit':
+					this.sendMessage({
+						command: 'cherrypickCommit',
+						status: await this.dataSource.cherrypickCommit(msg.commitHash, msg.parentIndex)
+					});
+					return;
 				case 'commitDetails':
 					this.sendMessage({
 						command: 'commitDetails',
@@ -99,6 +105,12 @@ export class GitGraphView {
 						... await this.dataSource.getCommits(msg.branchName, msg.maxCommits, msg.showRemoteBranches, msg.currentBranch)
 					});
 					return;
+				case 'mergeBranch':
+					this.sendMessage({
+						command: 'mergeBranch',
+						status: await this.dataSource.mergeBranch(msg.branchName)
+					});
+					return;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',
@@ -109,6 +121,12 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'resetToCommit',
 						status: await this.dataSource.resetToCommit(msg.commitHash, msg.resetMode)
+					});
+					return;
+				case 'revertCommit':
+					this.sendMessage({
+						command: 'revertCommit',
+						status: await this.dataSource.revertCommit(msg.commitHash, msg.parentIndex)
 					});
 					return;
 				case 'viewDiff':

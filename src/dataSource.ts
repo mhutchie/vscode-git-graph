@@ -201,6 +201,18 @@ export class DataSource {
 		return this.runGitCommand('git branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName));
 	}
 
+	public mergeBranch(branchName: string){
+		return this.runGitCommand('git merge ' + escapeRefName(branchName));
+	}
+
+	public cherrypickCommit(commitHash: string, parentIndex: number) {
+		return this.runGitCommand('git cherry-pick ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''));
+	}
+
+	public revertCommit(commitHash: string, parentIndex: number) {
+		return this.runGitCommand('git revert --no-edit ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''));
+	}
+
 	public resetToCommit(commitHash: string, resetMode: GitResetMode) {
 		return this.runGitCommand('git reset --' + resetMode + ' ' + commitHash);
 	}

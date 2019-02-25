@@ -89,6 +89,16 @@ export interface ResponseCheckoutBranch {
 	status: GitCommandStatus;
 }
 
+export interface RequestCherrypickCommit {
+	command: 'cherrypickCommit';
+	commitHash: string;
+	parentIndex: number;
+}
+export interface ResponseCherrypickCommit {
+	command: 'cherrypickCommit';
+	status: GitCommandStatus;
+}
+
 export interface RequestCommitDetails {
 	command: 'commitDetails';
 	commitHash: string;
@@ -158,6 +168,15 @@ export interface ResponseLoadCommits {
 	moreCommitsAvailable: boolean;
 }
 
+export interface RequestMergeBranch {
+	command: 'mergeBranch';
+	branchName: string;
+}
+export interface ResponseMergeBranch {
+	command: 'mergeBranch';
+	status: GitCommandStatus;
+}
+
 export interface RequestRenameBranch {
 	command: 'renameBranch';
 	oldName: string;
@@ -178,6 +197,16 @@ export interface ResponseResetToCommit {
 	status: GitCommandStatus;
 }
 
+export interface RequestRevertCommit {
+	command: 'revertCommit';
+	commitHash: string;
+	parentIndex: number;
+}
+export interface ResponseRevertCommit {
+	command: 'revertCommit';
+	status: GitCommandStatus;
+}
+
 export interface RequestViewDiff {
 	command: 'viewDiff';
 	commitHash: string;
@@ -193,6 +222,7 @@ export interface ResponseViewDiff {
 export type RequestMessage = 
 	  RequestAddTag
 	| RequestCheckoutBranch
+	| RequestCherrypickCommit
 	| RequestCommitDetails
 	| RequestCopyCommitHashToClipboard
 	| RequestCreateBranch
@@ -200,13 +230,16 @@ export type RequestMessage =
 	| RequestDeleteTag
 	| RequestLoadBranches
 	| RequestLoadCommits
+	| RequestMergeBranch
 	| RequestRenameBranch
 	| RequestResetToCommit
+	| RequestRevertCommit
 	| RequestViewDiff;
 
 export type ResponseMessage = 
 	  ResponseAddTag
 	| ResponseCheckoutBranch
+	| ResponseCherrypickCommit
 	| ResponseCommitDetails
 	| ResponseCopyCommitHashToClipboard
 	| ResponseCreateBranch
@@ -214,6 +247,8 @@ export type ResponseMessage =
 	| ResponseDeleteTag
 	| ResponseLoadBranches
 	| ResponseLoadCommits
+	| ResponseMergeBranch
 	| ResponseRenameBranch
 	| ResponseResetToCommit
+	| ResponseRevertCommit
 	| ResponseViewDiff;

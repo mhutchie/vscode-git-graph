@@ -32,6 +32,8 @@ export function activate(context: vscode.ExtensionContext) {
 			} else {
 				statusBarItem.hide();
 			}
+		} else if (e.affectsConfiguration('git.path') && dataSource !== null) {
+			dataSource.registerGitPath();
 		}
 	}));
 }

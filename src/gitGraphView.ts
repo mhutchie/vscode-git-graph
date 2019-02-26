@@ -187,7 +187,7 @@ export class GitGraphView {
 			<script src="${jsUri}"></script>
 			</body>`;
 		} else {
-			body = `<body class="notGitRepository"><h1>Git Graph</h1><p>The current workspace is not a Git Repository, unable to show Git Graph.</p></body>`;
+			body = `<body class="unableToLoad"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
 		}
 
 		return `<!DOCTYPE html>

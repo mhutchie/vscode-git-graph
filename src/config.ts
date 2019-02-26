@@ -33,4 +33,8 @@ export class Config {
 	public showUncommittedChanges() {
 		return this.workspaceConfiguration.get('showUncommittedChanges', true);
 	}
+	public gitPath(): string {
+		let path = vscode.workspace.getConfiguration('git').get('path', null);
+		return path !== null ? path : 'git';
+	}
 }

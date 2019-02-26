@@ -3,7 +3,7 @@ body{
 	margin:0;
 	padding:0;
 }
-body.notGitRepository h1, body.notGitRepository p{
+body.unableToLoad h1, body.unableToLoad p{
 	text-align:center;
 }
 

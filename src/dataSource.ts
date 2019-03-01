@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { Config } from './config';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRef, GitResetMode, GitUnsavedChangesCmdResp } from './types';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRef, GitResetMode, GitUnsavedChanges } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
@@ -24,7 +24,7 @@ export class DataSource {
 
 	public isGitRepository() {
 		return new Promise<boolean>((resolve) => {
-			cp.exec(this.gitExecPath + ' rev-parse --git-dir', this.execOptions, (err) => {
+			this.execGit('rev-parse --git-dir', (err) => {
 				resolve(!err);
 			});
 		});
@@ -32,7 +32,7 @@ export class DataSource {
 
 	public getBranches(showRemoteBranches: boolean) {
 		return new Promise<string[]>((resolve) => {
-			cp.exec(this.gitExecPath + ' branch' + (showRemoteBranches ? ' -a' : ''), this.execOptions, (err, stdout) => {
+			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), (err, stdout) => {
 				if (!err) {
 					let lines = stdout.split(eolRegex);
 					let branches: string[] = [];
@@ -106,7 +106,7 @@ export class DataSource {
 	public async commitDetails(commitHash: string) {
 		try {
 			let details = await new Promise<GitCommitDetails>((resolve, reject) => {
-				cp.exec(this.gitExecPath + ' show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', this.execOptions, (err, stdout) => {
+				this.execGit('show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						let commitInfo = lines[0].split(gitLogSeparator);
@@ -127,7 +127,7 @@ export class DataSource {
 			});
 			let fileLookup: { [file: string]: number } = {};
 			await new Promise((resolve, reject) => {
-				cp.exec(this.gitExecPath + ' diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, this.execOptions, (err, stdout) => {
+				this.execGit('diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						for (let i = 1; i < lines.length - 1; i++) {
@@ -144,7 +144,7 @@ export class DataSource {
 				});
 			});
 			await new Promise((resolve, reject) => {
-				cp.exec(this.gitExecPath + ' diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, this.execOptions, (err, stdout) => {
+				this.execGit('diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						for (let i = 1; i < lines.length - 1; i++) {
@@ -169,20 +169,8 @@ export class DataSource {
 		}
 	}
 
-	public async getCommitFile(commitHash: string, filePath: string) {
-		return new Promise<string>((resolve) => {
-			let args = ['show', commitHash + ':' + filePath], stdout = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, this.execOptions);
-			cmd.stdout.on('data', (d) => { stdout += d; });
-			cmd.on('error', () => {
-				resolve('');
-				err = true;
-			});
-			cmd.on('exit', (code) => {
-				if (err) return;
-				resolve(code === 0 ? stdout : '');
-			});
-		});
+	public getCommitFile(commitHash: string, filePath: string) {
+		return this.spawnGit(['show', commitHash + ':' + filePath], stdout => stdout, '');
 	}
 
 	public addTag(tagName: string, commitHash: string) {
@@ -225,22 +213,9 @@ export class DataSource {
 		return this.runGitCommand('reset --' + resetMode + ' ' + commitHash);
 	}
 
-	private async runGitCommand(command: string) {
-		return new Promise<GitCommandStatus>((resolve) => {
-			cp.exec(this.gitExecPath + ' ' + command, this.execOptions, (err) => {
-				if (!err) {
-					resolve(null);
-				} else {
-					let lines = err.message.split(eolRegex);
-					resolve(lines.slice(1, lines.length - 1).join('\n'));
-				}
-			});
-		});
-	}
-
-	private async getRefs(showRemoteBranches: boolean) {
+	private getRefs(showRemoteBranches: boolean) {
 		return new Promise<GitRef[]>((resolve) => {
-			cp.exec(this.gitExecPath + ' show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', this.execOptions, (err, stdout) => {
+			this.execGit('show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', (err, stdout) => {
 				if (!err) {
 					let lines = stdout.split(eolRegex);
 					let refs: GitRef[] = [];
@@ -267,55 +242,71 @@ export class DataSource {
 		});
 	}
 
-	private async getGitLog(branch: string, num: number, showRemoteBranches: boolean) {
-		return new Promise<GitCommit[]>((resolve) => {
-			let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat, '--date-order'], stdout = '', err = false;
-			if (branch !== '') {
-				args.push(escapeRefName(branch));
-			} else {
-				args.push('--branches');
-				if (showRemoteBranches) args.push('--remotes');
-			}
+	private getGitLog(branch: string, num: number, showRemoteBranches: boolean) {
+		let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat, '--date-order'];
+		if (branch !== '') {
+			args.push(escapeRefName(branch));
+		} else {
+			args.push('--branches');
+			if (showRemoteBranches) args.push('--remotes');
+		}
 
-			const cmd = cp.spawn(this.gitPath, args, this.execOptions);
-			cmd.stdout.on('data', (d) => { stdout += d; });
-			cmd.on('error', () => {
-				resolve([]);
-				err = true;
-			});
-			cmd.on('exit', (code) => {
-				if (err) return;
-				if (code === 0) {
+		return this.spawnGit(args, (stdout) => {
+			let lines = stdout.split(eolRegex);
+			let gitCommits: GitCommit[] = [];
+			for (let i = 0; i < lines.length - 1; i++) {
+				let line = lines[i].split(gitLogSeparator);
+				if (line.length !== 6) break;
+				gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
+			}
+			return gitCommits;
+		}, []);
+	}
+
+	private getGitUnsavedChanges() {
+		return new Promise<GitUnsavedChanges | null>((resolve) => {
+			this.execGit('status -s --branch --untracked-files --porcelain', (err, stdout) => {
+				if (!err) {
 					let lines = stdout.split(eolRegex);
-					let gitCommits: GitCommit[] = [];
-					for (let i = 0; i < lines.length - 1; i++) {
-						let line = lines[i].split(gitLogSeparator);
-						if (line.length !== 6) break;
-						gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
-					}
-					resolve(gitCommits);
+					resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
 				} else {
-					resolve([]);
+					resolve(null);
 				}
 			});
 		});
 	}
 
-	private getGitUnsavedChanges() {
-		try {
-			return new Promise<GitUnsavedChangesCmdResp>((resolve, reject) => {
-				cp.exec(this.gitExecPath + ' status -s --branch --untracked-files --porcelain', this.execOptions, (err, stdout) => {
-					if (!err) {
-						let lines = stdout.split(eolRegex);
-						resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
-					} else {
-						reject();
-					}
-				});
+	private runGitCommand(command: string) {
+		return new Promise<GitCommandStatus>((resolve) => {
+			this.execGit(command, (err) => {
+				if (!err) {
+					resolve(null);
+				} else {
+					let lines = err.message.split(eolRegex);
+					resolve(lines.slice(1, lines.length - 1).join('\n'));
+				}
 			});
-		} catch (e) {
-			return null;
-		}
+		});
+	}
+
+	private execGit(command: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
+		cp.exec(this.gitExecPath + ' ' + command, this.execOptions, callback);
+	}
+
+	private spawnGit<T>(args: string[], successValue: { (stdout: string): T }, errorValue: T) {
+		return new Promise<T>((resolve) => {
+			let stdout = '', err = false;
+			const cmd = cp.spawn(this.gitPath, args, this.execOptions);
+			cmd.stdout.on('data', (d) => { stdout += d; });
+			cmd.on('error', () => {
+				resolve(errorValue);
+				err = true;
+			});
+			cmd.on('exit', (code) => {
+				if (err) return;
+				resolve(code === 0 ? successValue(stdout) : errorValue);
+			});
+		});
 	}
 }
 

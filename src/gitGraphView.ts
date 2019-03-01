@@ -102,7 +102,7 @@ export class GitGraphView {
 				case 'loadCommits':
 					this.sendMessage({
 						command: 'loadCommits',
-						... await this.dataSource.getCommits(msg.branchName, msg.maxCommits, msg.showRemoteBranches, msg.currentBranch)
+						... await this.dataSource.getCommits(msg.branchName, msg.maxCommits, msg.showRemoteBranches)
 					});
 					return;
 				case 'mergeBranch':

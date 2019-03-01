@@ -343,8 +343,7 @@
 				command: 'loadCommits',
 				branchName: (this.selectedBranch !== null ? this.selectedBranch : ''),
 				maxCommits: this.maxCommits,
-				showRemoteBranches: this.showRemoteBranches,
-				currentBranch: this.branchOptions.length > 0 ? this.branchOptions[0] : null
+				showRemoteBranches: this.showRemoteBranches
 			});
 		}
 

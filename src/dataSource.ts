@@ -1,8 +1,10 @@
 import * as cp from 'child_process';
 import { Config } from './config';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRef, GitResetMode, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
+const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
+
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparator);
 const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn', '%B'].join(gitLogSeparator);
@@ -37,9 +39,10 @@ export class DataSource {
 					let lines = stdout.split(eolRegex);
 					let branches: string[] = [];
 					for (let i = 0; i < lines.length - 1; i++) {
-						let active = lines[i][0] === '*';
-						let name = lines[i].substring(2).split(' ')[0];
-						if (active) {
+						let name = lines[i].substring(2).split(' -> ')[0];
+						if (name.match(headRegex) !== null) continue;
+
+						if (lines[i][0] === '*') {
 							branches.unshift(name);
 						} else {
 							branches.push(name);
@@ -53,30 +56,22 @@ export class DataSource {
 		});
 	}
 
-	public async getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean, currentBranch: string | null) {
-		let i, j;
+	public async getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean) {
 		let commits = await this.getGitLog(branch, maxCommits + 1, showRemoteBranches);
-		let refs = await this.getRefs(showRemoteBranches);
-		let unsavedChanges = null;
+		let refData = await this.getRefs(showRemoteBranches);
+		let i, unsavedChanges = null;
 
 		let moreCommitsAvailable = commits.length === maxCommits + 1;
 		if (moreCommitsAvailable) commits.pop();
 
-		let currentBranchHash = null;
-		for (i = 0; i < refs.length; i++) {
-			if (refs[i].name === currentBranch && refs[i].type === 'head') {
-				currentBranchHash = refs[i].hash;
-				break;
-			}
-		}
-		if (currentBranchHash !== null && (branch === '' || branch === currentBranch)) {
-			unsavedChanges = (new Config()).showUncommittedChanges() ? await this.getGitUnsavedChanges() : null;
-			if (unsavedChanges !== null) {
-				for (j = 0; j < commits.length; j++) {
-					if (currentBranchHash === commits[j].hash) {
-						commits.unshift({ hash: '*', parentHashes: [currentBranchHash], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
-						break;
+		if (refData.head !== null) {
+			for (i = 0; i < commits.length; i++) {
+				if (refData.head === commits[i].hash) {
+					unsavedChanges = (new Config()).showUncommittedChanges() ? await this.getGitUnsavedChanges() : null;
+					if (unsavedChanges !== null) {
+						commits.unshift({ hash: '*', parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 					}
+					break;
 				}
 			}
 		}
@@ -88,16 +83,16 @@ export class DataSource {
 			commitLookup[commits[i].hash] = i;
 			commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [], current: false });
 		}
-		for (i = 0; i < refs.length; i++) {
-			if (typeof commitLookup[refs[i].hash] === 'number') {
-				commitNodes[commitLookup[refs[i].hash]].refs.push(refs[i]);
+		for (i = 0; i < refData.refs.length; i++) {
+			if (typeof commitLookup[refData.refs[i].hash] === 'number') {
+				commitNodes[commitLookup[refData.refs[i].hash]].refs.push(refData.refs[i]);
 			}
 		}
 
 		if (unsavedChanges !== null) {
 			commitNodes[0].current = true;
-		} else if (currentBranchHash !== null && typeof commitLookup[currentBranchHash] === 'number') {
-			commitNodes[commitLookup[currentBranchHash]].current = true;
+		} else if (refData.head !== null && typeof commitLookup[refData.head] === 'number') {
+			commitNodes[commitLookup[refData.head]].current = true;
 		}
 
 		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
@@ -214,11 +209,11 @@ export class DataSource {
 	}
 
 	private getRefs(showRemoteBranches: boolean) {
-		return new Promise<GitRef[]>((resolve) => {
-			this.execGit('show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d', (err, stdout) => {
+		return new Promise<GitRefData>((resolve) => {
+			this.execGit('show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d --head', (err, stdout) => {
+				let refData: GitRefData = { head: null, refs: [] };
 				if (!err) {
 					let lines = stdout.split(eolRegex);
-					let refs: GitRef[] = [];
 					for (let i = 0; i < lines.length - 1; i++) {
 						let line = lines[i].split(' ');
 						if (line.length < 2) continue;
@@ -227,17 +222,17 @@ export class DataSource {
 						let ref = line.join(' ');
 
 						if (ref.startsWith('refs/heads/')) {
-							refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
+							refData.refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
 						} else if (ref.startsWith('refs/tags/')) {
-							refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
+							refData.refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
 						} else if (ref.startsWith('refs/remotes/')) {
-							refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
+							refData.refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
+						} else if (ref === 'HEAD') {
+							refData.head = hash;
 						}
 					}
-					resolve(refs);
-				} else {
-					resolve([]);
 				}
+				resolve(refData);
 			});
 		});
 	}

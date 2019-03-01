@@ -37,6 +37,11 @@ export interface GitRef {
 	type: 'head' | 'tag' | 'remote';
 }
 
+export interface GitRefData {
+	head: string | null;
+	refs: GitRef[];
+}
+
 export interface GitUnsavedChanges {
 	branch: string;
 	changes: number;
@@ -51,7 +56,7 @@ export interface GitGraphViewSettings {
 	loadMoreCommits: number;
 }
 
-export interface GitFileChange{
+export interface GitFileChange {
 	oldFilePath: string;
 	newFilePath: string;
 	type: GitFileChangeType;
@@ -159,7 +164,6 @@ export interface RequestLoadCommits {
 	branchName: string;
 	maxCommits: number;
 	showRemoteBranches: boolean;
-	currentBranch: string | null;
 }
 export interface ResponseLoadCommits {
 	command: 'loadCommits';

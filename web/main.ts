@@ -581,7 +581,7 @@
 				e.stopPropagation();
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
 				let refName = unescapeHtml(sourceElem.dataset.name!), menu;
-				if (sourceElem.className === 'gitRef tag') {
+				if (sourceElem.classList.contains('tag')) {
 					menu = [{
 						title: 'Delete Tag',
 						onClick: () => {
@@ -594,9 +594,9 @@
 					menu = [{
 						title: 'Checkout Branch',
 						onClick: () => {
-							if (sourceElem.className === 'gitRef head') {
+							if (sourceElem.classList.contains('head')) {
 								sendMessage({ command: 'checkoutBranch', branchName: refName, remoteBranch: null });
-							} else if (sourceElem.className === 'gitRef remote') {
+							} else if (sourceElem.classList.contains('remote')) {
 								let refNameComps = refName.split('/');
 								showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
 									sendMessage({ command: 'checkoutBranch', branchName: newBranch, remoteBranch: refName });
@@ -604,7 +604,7 @@
 							}
 						}
 					}];
-					if (sourceElem.className === 'gitRef head') {
+					if (sourceElem.classList.contains('head')) {
 						menu.push(
 							{
 								title: 'Rename Branch',
@@ -616,7 +616,7 @@
 							}, {
 								title: 'Delete Branch',
 								onClick: () => {
-									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', 'Delete Branch', (forceDelete) => {
+									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
 										sendMessage({ command: 'deleteBranch', branchName: refName, forceDelete: forceDelete });
 									}, null);
 								}
@@ -626,8 +626,8 @@
 							menu.push({
 								title: 'Merge into current branch',
 								onClick: () => {
-									showConfirmationDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', () => {
-										sendMessage({ command: 'mergeBranch', branchName: refName });
+									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
+										sendMessage({ command: 'mergeBranch', branchName: refName, createNewCommit: createNewCommit });
 									}, null);
 								}
 							});
@@ -992,8 +992,8 @@
 			}
 		});
 	}
-	function showCheckboxDialog(message: string, checkboxLabel: string, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
-		showDialog(message + '<br><label><input id="dialogInput" type="checkbox"/>' + checkboxLabel + '</label>', actionName, 'Cancel', () => {
+	function showCheckboxDialog(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
+		showDialog(message + '<br><label><input id="dialogInput" type="checkbox"' + (checkboxValue ? ' checked' : '') + '/>' + checkboxLabel + '</label>', actionName, 'Cancel', () => {
 			let value = (<HTMLInputElement>document.getElementById('dialogInput')).checked;
 			hideDialog();
 			actioned(value);

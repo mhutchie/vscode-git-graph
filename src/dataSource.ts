@@ -192,8 +192,8 @@ export class DataSource {
 		return this.runGitCommand('branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName));
 	}
 
-	public mergeBranch(branchName: string) {
-		return this.runGitCommand('merge ' + escapeRefName(branchName));
+	public mergeBranch(branchName: string, createNewCommit: boolean) {
+		return this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit ? ' --no-ff' : ''));
 	}
 
 	public cherrypickCommit(commitHash: string, parentIndex: number) {

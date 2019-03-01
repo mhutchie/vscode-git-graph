@@ -108,7 +108,7 @@ export class GitGraphView {
 				case 'mergeBranch':
 					this.sendMessage({
 						command: 'mergeBranch',
-						status: await this.dataSource.mergeBranch(msg.branchName)
+						status: await this.dataSource.mergeBranch(msg.branchName, msg.createNewCommit)
 					});
 					return;
 				case 'renameBranch':

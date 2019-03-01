@@ -174,6 +174,7 @@ export interface ResponseLoadCommits {
 export interface RequestMergeBranch {
 	command: 'mergeBranch';
 	branchName: string;
+	createNewCommit: boolean;
 }
 export interface ResponseMergeBranch {
 	command: 'mergeBranch';

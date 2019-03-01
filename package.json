@@ -1,11 +1,11 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.3.3",
+	"version": "1.4.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
-		"email": "michael@16right.com"
+		"email": "mhutchie@16right.com"
 	},
 	"description": "View a Git Graph of your repository, and perform Git actions from the graph.",
 	"keywords": [

@@ -14,8 +14,9 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
     * View commit details and file changes by clicking on a commit
         * View the Visual Studio Code Diff of a file change by clicking on it in the commit details view
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
-        * Create, Checkout, Rename & Delete Branches
-        * Add & Delete Tags
+        * Create, Checkout, Rename, Delete & Merge branches
+        * Add & Delete tags
+        * Reverse & Cherry Pick commits
         * Reset current branch to commit
         * Copy Commit Hash to Clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)
@@ -26,13 +27,18 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
 
 This extension contributes the following settings:
 
+* `git-graph.autoCenterCommitDetailsView`: Automatically center the commit details view when it is opened.
+* `git-graph.dateFormat`: Specifies the date format to be used in the date column of the graph.
 * `git-graph.graphColours`: Specifies the colours used on the graph.
 * `git-graph.graphStyle`: Specifies the style of the graph.
-* `git-graph.dateFormat`: Specifies the date format to be used in the date column of the graph.
 * `git-graph.initialLoadCommits`: Specifies the number of commits to initially load.
 * `git-graph.loadMoreCommits`: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * `git-graph.showStatusBarItem`: Show a Status Bar item which opens Git Graph when clicked.
 * `git-graph.showUncommittedChanges`: Show uncommitted changes (set to false to decrease load time on large repositories).
+
+This extension consumes the following settings:
+
+* `git.path`: Specifies the path of a portable Git installation.
 
 ## Extension Commands
 
@@ -41,4 +47,9 @@ This extension contributes the following commands:
 * `git-graph.view`: Git Graph: View Git Graph
 
 ## Release Notes
+
 Detailed Release Notes are available [here](CHANGELOG.md).
+
+## Visual Studio Marketplace
+
+This extension is available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph) for Visual Studio Code.

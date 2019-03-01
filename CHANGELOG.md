@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.4.0 - 2019-02-28
+* #12 Revert, cherry-pick & merge git commands are now available from the commit and branch context menus.
+* #7 Added a setting to enable / disable automatic centering of the commit details view.
+* #11 Context menu closes on the next mouse interaction, instead of when the mouse leaves the context menu.
+* #15 Support for portable git installations.
+* #18 Fixed handling of detached HEAD's.
+
 ## 1.3.3 - 2019-02-22
 * #3 & #9: Fixes an issue preventing the graph loading for a few git repositories.
 * #10: Fixes an issue where lines extending past the rightmost node of the graph would be cropped.

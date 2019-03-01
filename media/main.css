@@ -58,7 +58,7 @@ body.unableToLoad h1, body.unableToLoad p{
 }
 #commitTable th, #commitTable td{
 	white-space:nowrap;
-	font-size:14px;
+	font-size:13px;
 	cursor:default;
 }
 #commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td, #commitTable tr.commit.commitDetailsOpen td{
@@ -359,8 +359,10 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	border-radius:5px;
 	text-align:center;
 	max-width:360px;
+	max-height:90%;
 	z-index:10;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
+	overflow-y:scroll;
 }
 #dialog label{
 	margin-top:10px;

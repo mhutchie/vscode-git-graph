@@ -10,12 +10,12 @@ const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparato
 const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn', '%B'].join(gitLogSeparator);
 
 export class DataSource {
-	private execOptions: cp.ExecOptions;
+	private workspaceDir: string;
 	private gitPath!: string;
 	private gitExecPath!: string;
 
 	constructor(workspaceDir: string) {
-		this.execOptions = { cwd: workspaceDir };
+		this.workspaceDir = workspaceDir;
 		this.registerGitPath();
 	}
 
@@ -33,25 +33,28 @@ export class DataSource {
 	}
 
 	public getBranches(showRemoteBranches: boolean) {
-		return new Promise<string[]>((resolve) => {
+		return new Promise<{branches: string[], head: string | null}>((resolve) => {
 			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), (err, stdout) => {
+				let branchData = {
+					branches: <string[]> [],
+					head: <string | null> null
+				};
+
 				if (!err) {
 					let lines = stdout.split(eolRegex);
-					let branches: string[] = [];
 					for (let i = 0; i < lines.length - 1; i++) {
 						let name = lines[i].substring(2).split(' -> ')[0];
 						if (name.match(headRegex) !== null) continue;
 
 						if (lines[i][0] === '*') {
-							branches.unshift(name);
+							branchData.head = name;
+							branchData.branches.unshift(name);
 						} else {
-							branches.push(name);
+							branchData.branches.push(name);
 						}
 					}
-					resolve(branches);
-				} else {
-					resolve([]);
 				}
+				resolve(branchData);
 			});
 		});
 	}
@@ -285,13 +288,13 @@ export class DataSource {
 	}
 
 	private execGit(command: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
-		cp.exec(this.gitExecPath + ' ' + command, this.execOptions, callback);
+		cp.exec(this.gitExecPath + ' ' + command, { cwd: this.workspaceDir }, callback);
 	}
 
 	private spawnGit<T>(args: string[], successValue: { (stdout: string): T }, errorValue: T) {
 		return new Promise<T>((resolve) => {
 			let stdout = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, this.execOptions);
+			const cmd = cp.spawn(this.gitPath, args, { cwd: this.workspaceDir });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.on('error', () => {
 				resolve(errorValue);

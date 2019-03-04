@@ -4,7 +4,7 @@ import { Config } from './config';
 import { DataSource } from './dataSource';
 import { encodeDiffDocUri } from './diffDocProvider';
 import { GitFileChangeType, GitGraphViewSettings, RequestMessage, ResponseMessage } from './types';
-import { abbrevCommit } from './utils';
+import { abbrevCommit, copyToClipboard } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -73,7 +73,10 @@ export class GitGraphView {
 					});
 					return;
 				case 'copyCommitHashToClipboard':
-					this.copyCommitHashToClipboard(msg.commitHash);
+					this.sendMessage({
+						command: 'copyCommitHashToClipboard',
+						success: await copyToClipboard(msg.commitHash)
+					});
 					return;
 				case 'createBranch':
 					this.sendMessage({
@@ -96,7 +99,7 @@ export class GitGraphView {
 				case 'loadBranches':
 					this.sendMessage({
 						command: 'loadBranches',
-						branches: await this.dataSource.getBranches(msg.showRemoteBranches)
+						... await this.dataSource.getBranches(msg.showRemoteBranches)
 					});
 					return;
 				case 'loadCommits':
@@ -130,7 +133,10 @@ export class GitGraphView {
 					});
 					return;
 				case 'viewDiff':
-					this.viewDiff(msg.commitHash, msg.oldFilePath, msg.newFilePath, msg.type);
+					this.sendMessage({
+						command: 'viewDiff',
+						success: await this.viewDiff(msg.commitHash, msg.oldFilePath, msg.newFilePath, msg.type)
+					});
 					return;
 			}
 		}, null, this.disposables);
@@ -208,19 +214,15 @@ export class GitGraphView {
 		this.panel.webview.postMessage(msg);
 	}
 
-	private copyCommitHashToClipboard(commitHash: string) {
-		vscode.env.clipboard.writeText(commitHash).then(
-			() => this.sendMessage({ command: 'copyCommitHashToClipboard', success: true }),
-			() => this.sendMessage({ command: 'copyCommitHashToClipboard', success: false })
-		);
-	}
-
 	private viewDiff(commitHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
 		let abbrevHash = abbrevCommit(commitHash);
 		let pathComponents = newFilePath.split('/');
 		let title = pathComponents[pathComponents.length - 1] + ' (' + (type === 'A' ? 'Added in ' + abbrevHash : type === 'D' ? 'Deleted in ' + abbrevHash : abbrevCommit(commitHash) + '^ ↔ ' + abbrevCommit(commitHash)) + ')';
-		vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(oldFilePath, commitHash + '^'), encodeDiffDocUri(newFilePath, commitHash), title, { preview: true });
-		this.sendMessage({ command: 'viewDiff', success: true });
+		return new Promise<boolean>((resolve) => {
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(oldFilePath, commitHash + '^'), encodeDiffDocUri(newFilePath, commitHash), title, { preview: true })
+				.then(() => resolve(true))
+				.then(() => resolve(false));
+		});
 	}
 }
 

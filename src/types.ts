@@ -157,6 +157,7 @@ export interface RequestLoadBranches {
 export interface ResponseLoadBranches {
 	command: 'loadBranches';
 	branches: string[];
+	head: string | null;
 }
 
 export interface RequestLoadCommits {

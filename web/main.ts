@@ -220,7 +220,8 @@
 	}
 
 	class GitGraph {
-		private branchOptions: string[] = [];
+		private gitBranches: string[] = [];
+		private gitHead: string | null = null;
 		private commits: GG.GitCommitNode[] = [];
 		private selectedBranch: string | null = null;
 		private moreCommitsAvailable: boolean = false;
@@ -271,20 +272,21 @@
 				this.maxCommits = prevState.maxCommits;
 				this.expandedCommit = prevState.expandedCommit;
 				if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
-				if (prevState.branchOptions.length > 0) this.loadBranchOptions(prevState.branchOptions, false);
+				if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranchOptions(prevState.gitBranches, prevState.gitHead, false);
 			}
 			this.requestLoadBranchOptions();
 		}
 
 		/* Loading Data */
-		public loadBranchOptions(branchOptions: string[], reloadCommits: boolean) {
-			this.branchOptions = branchOptions;
-			if (this.selectedBranch !== null && this.branchOptions.indexOf(this.selectedBranch) === -1) this.selectedBranch = '';
+		public loadBranchOptions(branchOptions: string[], branchHead: string | null, reloadCommits: boolean) {
+			this.gitBranches = branchOptions;
+			this.gitHead = branchHead;
+			if (this.selectedBranch !== null && this.gitBranches.indexOf(this.selectedBranch) === -1) this.selectedBranch = '';
 			this.saveState();
 
 			let html = '<option' + (this.selectedBranch === null || this.selectedBranch === '' ? ' selected' : '') + ' value="">Show All</option>';
-			for (let i = 0; i < this.branchOptions.length; i++) {
-				html += '<option value="' + this.branchOptions[i] + '"' + (this.selectedBranch === this.branchOptions[i] ? ' selected' : '') + '>' + (this.branchOptions[i].indexOf('remotes/') === 0 ? this.branchOptions[i].substring(8) : this.branchOptions[i]) + '</option>';
+			for (let i = 0; i < this.gitBranches.length; i++) {
+				html += '<option value="' + this.gitBranches[i] + '"' + (this.selectedBranch === this.gitBranches[i] ? ' selected' : '') + '>' + (this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i]) + '</option>';
 			}
 			this.branchSelectElem.innerHTML = html;
 			if (reloadCommits) this.requestLoadCommits();
@@ -350,7 +352,8 @@
 		/* State */
 		private saveState() {
 			vscode.setState({
-				branchOptions: this.branchOptions,
+				gitBranches: this.gitBranches,
+				gitHead: this.gitHead,
 				commits: this.commits,
 				moreCommitsAvailable: this.moreCommitsAvailable,
 				selectedBranch: this.selectedBranch,
@@ -482,6 +485,7 @@
 					this.expandedCommit = null;
 					this.saveState();
 				} else {
+					this.expandedCommit.id = parseInt(elem.dataset.id!);
 					this.expandedCommit.srcElem = elem;
 					this.saveState();
 					if (this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
@@ -622,7 +626,7 @@
 								}
 							}
 						);
-						if (this.branchOptions.length > 0 && this.branchOptions[0] !== refName) {
+						if (this.gitHead !== refName && this.gitHead !== null) {
 							menu.push({
 								title: 'Merge into current branch',
 								onClick: () => {
@@ -768,7 +772,7 @@
 				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
 				break;
 			case 'loadBranches':
-				gitGraph.loadBranchOptions(msg.branches, true);
+				gitGraph.loadBranchOptions(msg.branches, msg.head, true);
 				break;
 			case 'loadCommits':
 				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable);

@@ -60,11 +60,13 @@ declare global {
 	}
 
 	interface WebViewState {
+		gitRepos: string[];
 		gitBranches: string[];
 		gitHead: string | null;
 		commits: GG.GitCommitNode[];
+		currentBranch: string | null;
+		currentRepo: string;
 		moreCommitsAvailable: boolean;
-		selectedBranch: string | null;
 		maxCommits: number;
 		showRemoteBranches: boolean;
 		expandedCommit: ExpandedCommit | null;

@@ -3,12 +3,12 @@ import { DataSource } from './dataSource';
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 	static scheme = 'git-graph';
-	private dataSource: DataSource | null;
+	private dataSource: DataSource;
 	private onDidChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>();
 	private docs = new Map<string, DiffDocument>();
 	private subscriptions: vscode.Disposable;
 
-	constructor(dataSource: DataSource | null) {
+	constructor(dataSource: DataSource) {
 		this.dataSource = dataSource;
 		this.subscriptions = vscode.workspace.onDidCloseTextDocument(doc => this.docs.delete(doc.uri.toString()));
 	}
@@ -26,10 +26,9 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 	public provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
 		let document = this.docs.get(uri.toString());
 		if (document) return document.value;
-		if (this.dataSource === null) return '';
 
 		let request = decodeDiffDocUri(uri);
-		return this.dataSource.getCommitFile(request.commit, request.filePath).then((data) => {
+		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath).then((data) => {
 			let document = new DiffDocument(data);
 			this.docs.set(uri.toString(), document);
 			return document.value;
@@ -49,10 +48,20 @@ class DiffDocument {
 	}
 }
 
-export function encodeDiffDocUri(path: string, commit: string): vscode.Uri {
-	return vscode.Uri.parse(DiffDocProvider.scheme + ':' + path.replace(/\\/g, '/') + '?' + commit);
+export function encodeDiffDocUri(repo: string, path: string, commit: string): vscode.Uri {
+	return vscode.Uri.parse(DiffDocProvider.scheme + ':' + path.replace(/\\/g, '/') + '?commit=' + encodeURIComponent(commit) + '&repo=' + encodeURIComponent(repo));
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri) {
-	return { filePath: uri.path, commit: uri.query };
+	let queryArgs = decodeUriQueryArgs(uri.query);
+	return { filePath: uri.path, commit: queryArgs.commit, repo: queryArgs.repo };
+}
+
+function decodeUriQueryArgs(query: string) {
+	let queryComps = query.split('&'), queryArgs: { [key: string]: string } = {}, i;
+	for (i = 0; i < queryComps.length; i++) {
+		let pair = queryComps[i].split('=');
+		queryArgs[pair[0]] = decodeURIComponent(pair[1]);
+	}
+	return queryArgs;
 }

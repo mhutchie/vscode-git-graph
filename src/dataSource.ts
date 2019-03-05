@@ -1,4 +1,5 @@
 import * as cp from 'child_process';
+import * as vscode from 'vscode';
 import { Config } from './config';
 import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
 
@@ -10,12 +11,10 @@ const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparato
 const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn', '%B'].join(gitLogSeparator);
 
 export class DataSource {
-	private workspaceDir: string;
 	private gitPath!: string;
 	private gitExecPath!: string;
 
-	constructor(workspaceDir: string) {
-		this.workspaceDir = workspaceDir;
+	constructor() {
 		this.registerGitPath();
 	}
 
@@ -24,20 +23,24 @@ export class DataSource {
 		this.gitExecPath = this.gitPath.indexOf(' ') > -1 ? '"' + this.gitPath + '"' : this.gitPath;
 	}
 
-	public isGitRepository() {
-		return new Promise<boolean>((resolve) => {
-			this.execGit('rev-parse --git-dir', (err) => {
-				resolve(!err);
-			});
-		});
+	public async getRepos() {
+		let rootFolders = vscode.workspace.workspaceFolders;
+		let repos = [], i, path;
+		if (typeof rootFolders !== 'undefined') {
+			for (i = 0; i < rootFolders.length; i++) {
+				path = rootFolders[i].uri.fsPath.replace(/\\/g, '/');
+				if (await this.isGitRepository(path)) repos.push(path);
+			}
+		}
+		return repos;
 	}
 
-	public getBranches(showRemoteBranches: boolean) {
-		return new Promise<{branches: string[], head: string | null}>((resolve) => {
-			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), (err, stdout) => {
+	public getBranches(repo: string, showRemoteBranches: boolean) {
+		return new Promise<{ branches: string[], head: string | null }>((resolve) => {
+			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), repo, (err, stdout) => {
 				let branchData = {
-					branches: <string[]> [],
-					head: <string | null> null
+					branches: <string[]>[],
+					head: <string | null>null
 				};
 
 				if (!err) {
@@ -59,9 +62,9 @@ export class DataSource {
 		});
 	}
 
-	public async getCommits(branch: string, maxCommits: number, showRemoteBranches: boolean) {
-		let commits = await this.getGitLog(branch, maxCommits + 1, showRemoteBranches);
-		let refData = await this.getRefs(showRemoteBranches);
+	public async getCommits(repo: string, branch: string, maxCommits: number, showRemoteBranches: boolean) {
+		let commits = await this.getGitLog(repo, branch, maxCommits + 1, showRemoteBranches);
+		let refData = await this.getRefs(repo, showRemoteBranches);
 		let i, unsavedChanges = null;
 
 		let moreCommitsAvailable = commits.length === maxCommits + 1;
@@ -70,7 +73,7 @@ export class DataSource {
 		if (refData.head !== null) {
 			for (i = 0; i < commits.length; i++) {
 				if (refData.head === commits[i].hash) {
-					unsavedChanges = (new Config()).showUncommittedChanges() ? await this.getGitUnsavedChanges() : null;
+					unsavedChanges = (new Config()).showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
 					if (unsavedChanges !== null) {
 						commits.unshift({ hash: '*', parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 					}
@@ -101,10 +104,10 @@ export class DataSource {
 		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
 	}
 
-	public async commitDetails(commitHash: string) {
+	public async commitDetails(repo: string, commitHash: string) {
 		try {
 			let details = await new Promise<GitCommitDetails>((resolve, reject) => {
-				this.execGit('show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', (err, stdout) => {
+				this.execGit('show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', repo, (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						let commitInfo = lines[0].split(gitLogSeparator);
@@ -125,7 +128,7 @@ export class DataSource {
 			});
 			let fileLookup: { [file: string]: number } = {};
 			await new Promise((resolve, reject) => {
-				this.execGit('diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, (err, stdout) => {
+				this.execGit('diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						for (let i = 1; i < lines.length - 1; i++) {
@@ -142,7 +145,7 @@ export class DataSource {
 				});
 			});
 			await new Promise((resolve, reject) => {
-				this.execGit('diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, (err, stdout) => {
+				this.execGit('diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						for (let i = 1; i < lines.length - 1; i++) {
@@ -167,53 +170,53 @@ export class DataSource {
 		}
 	}
 
-	public getCommitFile(commitHash: string, filePath: string) {
-		return this.spawnGit(['show', commitHash + ':' + filePath], stdout => stdout, '');
+	public getCommitFile(repo: string, commitHash: string, filePath: string) {
+		return this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout, '');
 	}
 
-	public addTag(tagName: string, commitHash: string) {
-		return this.runGitCommand('tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash);
+	public addTag(repo: string, tagName: string, commitHash: string) {
+		return this.runGitCommand('tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash, repo);
 	}
 
-	public deleteTag(tagName: string) {
-		return this.runGitCommand('tag -d ' + escapeRefName(tagName));
+	public deleteTag(repo: string, tagName: string) {
+		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
 	}
 
-	public createBranch(branchName: string, commitHash: string) {
-		return this.runGitCommand('branch ' + escapeRefName(branchName) + ' ' + commitHash);
+	public createBranch(repo: string, branchName: string, commitHash: string) {
+		return this.runGitCommand('branch ' + escapeRefName(branchName) + ' ' + commitHash, repo);
 	}
 
-	public checkoutBranch(branchName: string, remoteBranch: string | null) {
-		return this.runGitCommand('checkout ' + (remoteBranch === null ? escapeRefName(branchName) : ' -b ' + escapeRefName(branchName) + ' ' + escapeRefName(remoteBranch)));
+	public checkoutBranch(repo: string, branchName: string, remoteBranch: string | null) {
+		return this.runGitCommand('checkout ' + (remoteBranch === null ? escapeRefName(branchName) : ' -b ' + escapeRefName(branchName) + ' ' + escapeRefName(remoteBranch)), repo);
 	}
 
-	public deleteBranch(branchName: string, forceDelete: boolean) {
-		return this.runGitCommand('branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName));
+	public deleteBranch(repo: string, branchName: string, forceDelete: boolean) {
+		return this.runGitCommand('branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName), repo);
 	}
 
-	public renameBranch(oldName: string, newName: string) {
-		return this.runGitCommand('branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName));
+	public renameBranch(repo: string, oldName: string, newName: string) {
+		return this.runGitCommand('branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName), repo);
 	}
 
-	public mergeBranch(branchName: string, createNewCommit: boolean) {
-		return this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit ? ' --no-ff' : ''));
+	public mergeBranch(repo: string, branchName: string, createNewCommit: boolean) {
+		return this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit ? ' --no-ff' : ''), repo);
 	}
 
-	public cherrypickCommit(commitHash: string, parentIndex: number) {
-		return this.runGitCommand('cherry-pick ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''));
+	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number) {
+		return this.runGitCommand('cherry-pick ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
 	}
 
-	public revertCommit(commitHash: string, parentIndex: number) {
-		return this.runGitCommand('revert --no-edit ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''));
+	public revertCommit(repo: string, commitHash: string, parentIndex: number) {
+		return this.runGitCommand('revert --no-edit ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
 	}
 
-	public resetToCommit(commitHash: string, resetMode: GitResetMode) {
-		return this.runGitCommand('reset --' + resetMode + ' ' + commitHash);
+	public resetToCommit(repo: string, commitHash: string, resetMode: GitResetMode) {
+		return this.runGitCommand('reset --' + resetMode + ' ' + commitHash, repo);
 	}
 
-	private getRefs(showRemoteBranches: boolean) {
+	private getRefs(repo: string, showRemoteBranches: boolean) {
 		return new Promise<GitRefData>((resolve) => {
-			this.execGit('show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d --head', (err, stdout) => {
+			this.execGit('show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d --head', repo, (err, stdout) => {
 				let refData: GitRefData = { head: null, refs: [] };
 				if (!err) {
 					let lines = stdout.split(eolRegex);
@@ -240,7 +243,7 @@ export class DataSource {
 		});
 	}
 
-	private getGitLog(branch: string, num: number, showRemoteBranches: boolean) {
+	private getGitLog(repo: string, branch: string, num: number, showRemoteBranches: boolean) {
 		let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat, '--date-order'];
 		if (branch !== '') {
 			args.push(escapeRefName(branch));
@@ -249,7 +252,7 @@ export class DataSource {
 			if (showRemoteBranches) args.push('--remotes');
 		}
 
-		return this.spawnGit(args, (stdout) => {
+		return this.spawnGit(args, repo, (stdout) => {
 			let lines = stdout.split(eolRegex);
 			let gitCommits: GitCommit[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
@@ -261,9 +264,9 @@ export class DataSource {
 		}, []);
 	}
 
-	private getGitUnsavedChanges() {
+	private getGitUnsavedChanges(repo: string) {
 		return new Promise<GitUnsavedChanges | null>((resolve) => {
-			this.execGit('status -s --branch --untracked-files --porcelain', (err, stdout) => {
+			this.execGit('status -s --branch --untracked-files --porcelain', repo, (err, stdout) => {
 				if (!err) {
 					let lines = stdout.split(eolRegex);
 					resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
@@ -274,9 +277,9 @@ export class DataSource {
 		});
 	}
 
-	private runGitCommand(command: string) {
+	private runGitCommand(command: string, repo: string) {
 		return new Promise<GitCommandStatus>((resolve) => {
-			this.execGit(command, (err) => {
+			this.execGit(command, repo, (err) => {
 				if (!err) {
 					resolve(null);
 				} else {
@@ -287,14 +290,22 @@ export class DataSource {
 		});
 	}
 
-	private execGit(command: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
-		cp.exec(this.gitExecPath + ' ' + command, { cwd: this.workspaceDir }, callback);
+	private isGitRepository(folder: string) {
+		return new Promise<boolean>((resolve) => {
+			this.execGit('rev-parse --git-dir', folder, (err) => {
+				resolve(!err);
+			});
+		});
 	}
 
-	private spawnGit<T>(args: string[], successValue: { (stdout: string): T }, errorValue: T) {
+	private execGit(command: string, repo: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
+		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo }, callback);
+	}
+
+	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }, errorValue: T) {
 		return new Promise<T>((resolve) => {
 			let stdout = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: this.workspaceDir });
+			const cmd = cp.spawn(this.gitPath, args, { cwd: repo });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.on('error', () => {
 				resolve(errorValue);

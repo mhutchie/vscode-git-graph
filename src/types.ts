@@ -54,6 +54,7 @@ export interface GitGraphViewSettings {
 	graphStyle: GraphStyle;
 	initialLoadCommits: number;
 	loadMoreCommits: number;
+	repos: string[];
 }
 
 export interface GitFileChange {
@@ -75,6 +76,7 @@ export type GitFileChangeType = 'A' | 'M' | 'D' | 'R';
 
 export interface RequestAddTag {
 	command: 'addTag';
+	repo: string;
 	commitHash: string;
 	tagName: string;
 }
@@ -85,6 +87,7 @@ export interface ResponseAddTag {
 
 export interface RequestCheckoutBranch {
 	command: 'checkoutBranch';
+	repo: string;
 	branchName: string;
 	remoteBranch: string | null;
 }
@@ -95,6 +98,7 @@ export interface ResponseCheckoutBranch {
 
 export interface RequestCherrypickCommit {
 	command: 'cherrypickCommit';
+	repo: string;
 	commitHash: string;
 	parentIndex: number;
 }
@@ -105,6 +109,7 @@ export interface ResponseCherrypickCommit {
 
 export interface RequestCommitDetails {
 	command: 'commitDetails';
+	repo: string;
 	commitHash: string;
 }
 export interface ResponseCommitDetails {
@@ -114,6 +119,7 @@ export interface ResponseCommitDetails {
 
 export interface RequestCopyCommitHashToClipboard {
 	command: 'copyCommitHashToClipboard';
+	repo: string;
 	commitHash: string;
 }
 export interface ResponseCopyCommitHashToClipboard {
@@ -123,6 +129,7 @@ export interface ResponseCopyCommitHashToClipboard {
 
 export interface RequestCreateBranch {
 	command: 'createBranch';
+	repo: string;
 	commitHash: string;
 	branchName: string;
 }
@@ -133,6 +140,7 @@ export interface ResponseCreateBranch {
 
 export interface RequestDeleteBranch {
 	command: 'deleteBranch';
+	repo: string;
 	branchName: string;
 	forceDelete: boolean;
 }
@@ -143,6 +151,7 @@ export interface ResponseDeleteBranch {
 
 export interface RequestDeleteTag {
 	command: 'deleteTag';
+	repo: string;
 	tagName: string;
 }
 export interface ResponseDeleteTag {
@@ -152,6 +161,7 @@ export interface ResponseDeleteTag {
 
 export interface RequestLoadBranches {
 	command: 'loadBranches';
+	repo: string;
 	showRemoteBranches: boolean;
 }
 export interface ResponseLoadBranches {
@@ -162,6 +172,7 @@ export interface ResponseLoadBranches {
 
 export interface RequestLoadCommits {
 	command: 'loadCommits';
+	repo: string;
 	branchName: string;
 	maxCommits: number;
 	showRemoteBranches: boolean;
@@ -172,8 +183,17 @@ export interface ResponseLoadCommits {
 	moreCommitsAvailable: boolean;
 }
 
+export interface RequestLoadRepos {
+	command: 'loadRepos';
+}
+export interface ResponseLoadRepos {
+	command: 'loadRepos';
+	repos: string[];
+}
+
 export interface RequestMergeBranch {
 	command: 'mergeBranch';
+	repo: string;
 	branchName: string;
 	createNewCommit: boolean;
 }
@@ -184,6 +204,7 @@ export interface ResponseMergeBranch {
 
 export interface RequestRenameBranch {
 	command: 'renameBranch';
+	repo: string;
 	oldName: string;
 	newName: string;
 }
@@ -194,6 +215,7 @@ export interface ResponseRenameBranch {
 
 export interface RequestResetToCommit {
 	command: 'resetToCommit';
+	repo: string;
 	commitHash: string;
 	resetMode: GitResetMode;
 }
@@ -204,6 +226,7 @@ export interface ResponseResetToCommit {
 
 export interface RequestRevertCommit {
 	command: 'revertCommit';
+	repo: string;
 	commitHash: string;
 	parentIndex: number;
 }
@@ -214,6 +237,7 @@ export interface ResponseRevertCommit {
 
 export interface RequestViewDiff {
 	command: 'viewDiff';
+	repo: string;
 	commitHash: string;
 	oldFilePath: string;
 	newFilePath: string;
@@ -235,6 +259,7 @@ export type RequestMessage =
 	| RequestDeleteTag
 	| RequestLoadBranches
 	| RequestLoadCommits
+	| RequestLoadRepos
 	| RequestMergeBranch
 	| RequestRenameBranch
 	| RequestResetToCommit
@@ -252,6 +277,7 @@ export type ResponseMessage =
 	| ResponseDeleteTag
 	| ResponseLoadBranches
 	| ResponseLoadCommits
+	| ResponseLoadRepos
 	| ResponseMergeBranch
 	| ResponseRenameBranch
 	| ResponseResetToCommit

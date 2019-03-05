@@ -11,10 +11,11 @@ export class GitGraphView {
 
 	private readonly panel: vscode.WebviewPanel;
 	private readonly extensionPath: string;
-	private readonly dataSource: DataSource | null;
+	private readonly dataSource: DataSource;
 	private disposables: vscode.Disposable[] = [];
+	private changeWorkspaceFolderHandler: vscode.Disposable | null = null;
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource | null) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -32,16 +33,20 @@ export class GitGraphView {
 		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource | null) {
+	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource) {
 		this.panel = panel;
 		this.extensionPath = extensionPath;
 		this.dataSource = dataSource;
 
 		this.update();
+		this.startMonitoringWorkspaceFolders();
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 		this.panel.onDidChangeViewState(e => {
 			if (this.panel.visible) {
 				this.update();
+				this.startMonitoringWorkspaceFolders();
+			} else {
+				this.stopMonitoringWorkspaceFolders();
 			}
 		}, null, this.disposables);
 
@@ -51,25 +56,25 @@ export class GitGraphView {
 				case 'addTag':
 					this.sendMessage({
 						command: 'addTag',
-						status: await this.dataSource.addTag(msg.tagName, msg.commitHash)
+						status: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash)
 					});
 					return;
 				case 'checkoutBranch':
 					this.sendMessage({
 						command: 'checkoutBranch',
-						status: await this.dataSource.checkoutBranch(msg.branchName, msg.remoteBranch)
+						status: await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)
 					});
 					return;
 				case 'cherrypickCommit':
 					this.sendMessage({
 						command: 'cherrypickCommit',
-						status: await this.dataSource.cherrypickCommit(msg.commitHash, msg.parentIndex)
+						status: await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					return;
 				case 'commitDetails':
 					this.sendMessage({
 						command: 'commitDetails',
-						commitDetails: await this.dataSource.commitDetails(msg.commitHash)
+						commitDetails: await this.dataSource.commitDetails(msg.repo, msg.commitHash)
 					});
 					return;
 				case 'copyCommitHashToClipboard':
@@ -81,61 +86,67 @@ export class GitGraphView {
 				case 'createBranch':
 					this.sendMessage({
 						command: 'createBranch',
-						status: await this.dataSource.createBranch(msg.branchName, msg.commitHash)
+						status: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash)
 					});
 					return;
 				case 'deleteBranch':
 					this.sendMessage({
 						command: 'deleteBranch',
-						status: await this.dataSource.deleteBranch(msg.branchName, msg.forceDelete)
+						status: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
 					});
 					return;
 				case 'deleteTag':
 					this.sendMessage({
 						command: 'deleteTag',
-						status: await this.dataSource.deleteTag(msg.tagName)
+						status: await this.dataSource.deleteTag(msg.repo, msg.tagName)
 					});
 					return;
 				case 'loadBranches':
 					this.sendMessage({
 						command: 'loadBranches',
-						... await this.dataSource.getBranches(msg.showRemoteBranches)
+						... await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches)
 					});
 					return;
 				case 'loadCommits':
 					this.sendMessage({
 						command: 'loadCommits',
-						... await this.dataSource.getCommits(msg.branchName, msg.maxCommits, msg.showRemoteBranches)
+						... await this.dataSource.getCommits(msg.repo, msg.branchName, msg.maxCommits, msg.showRemoteBranches)
+					});
+					return;
+				case 'loadRepos':
+					this.sendMessage({
+						command: 'loadRepos',
+						repos: await this.dataSource.getRepos()
 					});
 					return;
 				case 'mergeBranch':
 					this.sendMessage({
 						command: 'mergeBranch',
-						status: await this.dataSource.mergeBranch(msg.branchName, msg.createNewCommit)
+						status: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit)
 					});
 					return;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',
-						status: await this.dataSource.renameBranch(msg.oldName, msg.newName)
+						status: await this.dataSource.renameBranch(msg.repo, msg.oldName, msg.newName)
 					});
 					return;
 				case 'resetToCommit':
 					this.sendMessage({
 						command: 'resetToCommit',
-						status: await this.dataSource.resetToCommit(msg.commitHash, msg.resetMode)
+						status: await this.dataSource.resetToCommit(msg.repo, msg.commitHash, msg.resetMode)
 					});
 					return;
 				case 'revertCommit':
 					this.sendMessage({
 						command: 'revertCommit',
-						status: await this.dataSource.revertCommit(msg.commitHash, msg.parentIndex)
+						status: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					return;
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
-						success: await this.viewDiff(msg.commitHash, msg.oldFilePath, msg.newFilePath, msg.type)
+						success: await this.viewDiff(msg.repo, msg.commitHash, msg.oldFilePath, msg.newFilePath, msg.type)
 					});
 					return;
 			}
@@ -145,6 +156,7 @@ export class GitGraphView {
 	public dispose() {
 		GitGraphView.currentPanel = undefined;
 		this.panel.dispose();
+		this.stopMonitoringWorkspaceFolders();
 		while (this.disposables.length) {
 			const x = this.disposables.pop();
 			if (x) {
@@ -155,6 +167,19 @@ export class GitGraphView {
 
 	private async update() {
 		this.panel.webview.html = await this.getHtmlForWebview();
+	}
+
+	private startMonitoringWorkspaceFolders() {
+		this.changeWorkspaceFolderHandler = vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+			this.sendMessage({
+				command: 'loadRepos',
+				repos: await this.dataSource.getRepos()
+			});
+		});
+	}
+
+	private stopMonitoringWorkspaceFolders() {
+		if (this.changeWorkspaceFolderHandler !== null) this.changeWorkspaceFolderHandler.dispose();
 	}
 
 	private async getHtmlForWebview() {
@@ -169,7 +194,8 @@ export class GitGraphView {
 			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),
 			initialLoadCommits: config.initialLoadCommits(),
-			loadMoreCommits: config.loadMoreCommits()
+			loadMoreCommits: config.loadMoreCommits(),
+			repos: await this.dataSource.getRepos()
 		};
 
 		let colourStyles = '', body;
@@ -177,9 +203,10 @@ export class GitGraphView {
 			colourStyles += '.colour' + i + ' { background-color:' + settings.graphColours[i] + '; } ';
 		}
 
-		if (this.dataSource !== null && await this.dataSource.isGitRepository()) {
+		if (this.dataSource !== null && settings.repos.length > 0) {
 			body = `<body>
 			<div id="controls">
+				<span id="repoControl"><span class="unselectable">Repo: </span><select id="repoSelect"></select></span>
 				<span class="unselectable">Branch: </span><select id="branchSelect"></select>
 				<label><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
 				<div id="refreshBtn" class="roundedBtn">Refresh</div>
@@ -214,12 +241,12 @@ export class GitGraphView {
 		this.panel.webview.postMessage(msg);
 	}
 
-	private viewDiff(commitHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
+	private viewDiff(repo: string, commitHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
 		let abbrevHash = abbrevCommit(commitHash);
 		let pathComponents = newFilePath.split('/');
 		let title = pathComponents[pathComponents.length - 1] + ' (' + (type === 'A' ? 'Added in ' + abbrevHash : type === 'D' ? 'Deleted in ' + abbrevHash : abbrevCommit(commitHash) + '^ ↔ ' + abbrevCommit(commitHash)) + ')';
 		return new Promise<boolean>((resolve) => {
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(oldFilePath, commitHash + '^'), encodeDiffDocUri(newFilePath, commitHash), title, { preview: true })
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, commitHash + '^'), encodeDiffDocUri(repo, newFilePath, commitHash), title, { preview: true })
 				.then(() => resolve(true))
 				.then(() => resolve(false));
 		});

@@ -5,8 +5,7 @@ import { DiffDocProvider } from './diffDocProvider';
 import { GitGraphView } from './gitGraphView';
 
 export function activate(context: vscode.ExtensionContext) {
-	let workspaceFolders = vscode.workspace.workspaceFolders;
-	const dataSource = workspaceFolders !== undefined && workspaceFolders.length > 0 ? new DataSource(workspaceFolders[0].uri.fsPath) : null;
+	const dataSource = new DataSource();
 
 	context.subscriptions.push(vscode.commands.registerCommand('git-graph.view', () => {
 		GitGraphView.createOrShow(context.extensionPath, dataSource);

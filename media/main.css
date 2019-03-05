@@ -287,11 +287,11 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	line-height:40px;
 	text-align:center;
 	font-weight:700;
-	font-size:14px;
+	font-size:13px;
 }
-#branchSelect{
+#repoSelect, #branchSelect{
 	margin-right:20px;
-	font-size:14px;
+	font-size:13px;
 }
 #showRemoteBranchesCheckbox{
 	width:14px;
@@ -308,10 +308,10 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 #loadMoreCommitsBtn{
 	width:180px;
-	height:30px;
+	height:28px;
 	margin:10px auto;
-	border-radius:15px;
-	line-height:30px;
+	border-radius:14px;
+	line-height:28px;
 }
 
 #controls select:focus, #controls input:focus{
@@ -379,11 +379,11 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 #dialog .roundedBtn{
 	display:inline-block;
-	line-height:24px;
+	line-height:20px;
 	padding:0 15px;
 	margin:10px 6px 0 6px;
-	height:24px;
-	border-radius:12px;
+	height:22px;
+	border-radius:11px;
 }
 #dialog .errorReason{
 	display:inline-block;
@@ -423,7 +423,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	display:block;
 	background-color:rgba(128,128,128,0.2);
 	border:1px solid rgba(128,128,128,0.5);
-	font-size:14px;
+	font-size:13px;
 	text-align:center;
 	cursor:pointer;
 }

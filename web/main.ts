@@ -220,40 +220,57 @@
 	}
 
 	class GitGraph {
+		private gitRepos: string[];
 		private gitBranches: string[] = [];
 		private gitHead: string | null = null;
 		private commits: GG.GitCommitNode[] = [];
-		private selectedBranch: string | null = null;
+		private commitLookup: { [hash: string]: number } = {};
+		private currentBranch: string | null = null;
+		private currentRepo: string;
+
+		private config: Config;
 		private moreCommitsAvailable: boolean = false;
 		private showRemoteBranches: boolean = true;
 		private expandedCommit: ExpandedCommit | null = null;
-
-		private config: Config;
-		private commitLookup: { [hash: string]: number } = {};
 		private maxCommits: number;
+
 		private nodes: Node[] = [];
 		private branches: Branch[] = [];
 		private availableColours: number[] = [];
+
 		private graphElem: HTMLElement;
 		private tableElem: HTMLElement;
+		private repoSelectElem: HTMLSelectElement;
 		private branchSelectElem: HTMLSelectElement;
 		private showRemoteBranchesElem: HTMLInputElement;
 
-		constructor(config: Config, prevState: WebViewState | null) {
+		constructor(repos: string[], config: Config, prevState: WebViewState | null) {
+			this.gitRepos = repos;
+			this.currentRepo = repos[0];
 			this.config = config;
 			this.maxCommits = config.initialLoadCommits;
 			this.graphElem = document.getElementById('commitGraph')!;
 			this.tableElem = document.getElementById('commitTable')!;
+			this.repoSelectElem = <HTMLSelectElement>document.getElementById('repoSelect')!;
 			this.branchSelectElem = <HTMLSelectElement>document.getElementById('branchSelect')!;
 			this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 
 			this.branchSelectElem.addEventListener('change', () => {
-				this.selectedBranch = this.branchSelectElem.value;
+				this.currentBranch = this.branchSelectElem.value;
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;
 				this.saveState();
 				this.renderShowLoading();
 				this.requestLoadCommits();
+			});
+			this.repoSelectElem.addEventListener('change', () => {
+				this.currentRepo = this.gitRepos[parseInt(this.repoSelectElem.value)];
+				this.maxCommits = this.config.initialLoadCommits;
+				this.expandedCommit = null;
+				this.currentBranch = '';
+				this.saveState();
+				this.renderShowLoading();
+				this.requestLoadBranchOptions();
 			});
 			this.showRemoteBranchesElem.addEventListener('change', () => {
 				this.showRemoteBranches = this.showRemoteBranchesElem.checked;
@@ -266,27 +283,48 @@
 
 			this.renderShowLoading();
 			if (prevState) {
-				this.selectedBranch = prevState.selectedBranch;
+				this.currentBranch = prevState.currentBranch;
 				this.showRemoteBranches = prevState.showRemoteBranches;
 				this.showRemoteBranchesElem.checked = this.showRemoteBranches;
-				this.maxCommits = prevState.maxCommits;
-				this.expandedCommit = prevState.expandedCommit;
-				if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
-				if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranchOptions(prevState.gitBranches, prevState.gitHead, false);
+				if (this.gitRepos.indexOf(prevState.currentRepo) > -1) {
+					this.currentRepo = prevState.currentRepo;
+					this.maxCommits = prevState.maxCommits;
+					this.expandedCommit = prevState.expandedCommit;
+					if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
+					if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranchOptions(prevState.gitBranches, prevState.gitHead, false);
+				}
 			}
+			this.loadRepoOptions(this.gitRepos);
 			this.requestLoadBranchOptions();
 		}
 
 		/* Loading Data */
+		public loadRepoOptions(repos: string[]) {
+			this.gitRepos = repos;
+			this.saveState();
+			let html = '', repoComps, curRepoIndex = this.gitRepos.indexOf(this.currentRepo);
+			for (let i = 0; i < this.gitRepos.length; i++) {
+				repoComps = this.gitRepos[i].split('/');
+				html += '<option value="' + i + '"' + (curRepoIndex === i ? ' selected' : '') + '>' + repoComps[repoComps.length - 1] + '</option>';
+			}
+			this.repoSelectElem.innerHTML = html;
+			document.getElementById('repoControl')!.style.display = this.gitRepos.length > 1 ? 'inline' : 'none';
+			if (curRepoIndex === -1) {
+				this.currentRepo = this.gitRepos[0];
+				this.saveState();
+				this.renderShowLoading();
+				this.requestLoadBranchOptions();
+			}
+		}
 		public loadBranchOptions(branchOptions: string[], branchHead: string | null, reloadCommits: boolean) {
 			this.gitBranches = branchOptions;
 			this.gitHead = branchHead;
-			if (this.selectedBranch !== null && this.gitBranches.indexOf(this.selectedBranch) === -1) this.selectedBranch = '';
+			if (this.currentBranch !== null && this.gitBranches.indexOf(this.currentBranch) === -1) this.currentBranch = '';
 			this.saveState();
 
-			let html = '<option' + (this.selectedBranch === null || this.selectedBranch === '' ? ' selected' : '') + ' value="">Show All</option>';
+			let html = '<option' + (this.currentBranch === null || this.currentBranch === '' ? ' selected' : '') + ' value="">Show All</option>';
 			for (let i = 0; i < this.gitBranches.length; i++) {
-				html += '<option value="' + this.gitBranches[i] + '"' + (this.selectedBranch === this.gitBranches[i] ? ' selected' : '') + '>' + (this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i]) + '</option>';
+				html += '<option value="' + this.gitBranches[i] + '"' + (this.currentBranch === this.gitBranches[i] ? ' selected' : '') + '>' + (this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i]) + '</option>';
 			}
 			this.branchSelectElem.innerHTML = html;
 			if (reloadCommits) this.requestLoadCommits();
@@ -338,12 +376,13 @@
 
 		/* Requests */
 		private requestLoadBranchOptions() {
-			sendMessage({ command: 'loadBranches', showRemoteBranches: this.showRemoteBranches });
+			sendMessage({ command: 'loadBranches', repo: this.currentRepo!, showRemoteBranches: this.showRemoteBranches });
 		}
 		private requestLoadCommits() {
 			sendMessage({
 				command: 'loadCommits',
-				branchName: (this.selectedBranch !== null ? this.selectedBranch : ''),
+				repo: this.currentRepo!,
+				branchName: (this.currentBranch !== null ? this.currentBranch : ''),
 				maxCommits: this.maxCommits,
 				showRemoteBranches: this.showRemoteBranches
 			});
@@ -352,11 +391,13 @@
 		/* State */
 		private saveState() {
 			vscode.setState({
+				gitRepos: this.gitRepos,
 				gitBranches: this.gitBranches,
 				gitHead: this.gitHead,
 				commits: this.commits,
+				currentBranch: this.currentBranch,
+				currentRepo: this.currentRepo,
 				moreCommitsAvailable: this.moreCommitsAvailable,
-				selectedBranch: this.selectedBranch,
 				maxCommits: this.maxCommits,
 				showRemoteBranches: this.showRemoteBranches,
 				expandedCommit: this.expandedCommit
@@ -505,7 +546,7 @@
 						title: 'Add Tag',
 						onClick: () => {
 							showInputDialog('Enter the name of the tag you would like to add to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Add Tag', (name) => {
-								sendMessage({ command: 'addTag', tagName: name, commitHash: hash });
+								sendMessage({ command: 'addTag', repo: this.currentRepo!, tagName: name, commitHash: hash });
 							}, sourceElem);
 						}
 					},
@@ -513,7 +554,7 @@
 						title: 'Create Branch from this Commit',
 						onClick: () => {
 							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
-								sendMessage({ command: 'createBranch', branchName: name, commitHash: hash });
+								sendMessage({ command: 'createBranch', repo: this.currentRepo!, branchName: name, commitHash: hash });
 							}, sourceElem);
 						}
 					},
@@ -522,7 +563,7 @@
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
 								showConfirmationDialog('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-									sendMessage({ command: 'cherrypickCommit', commitHash: hash, parentIndex: 0 });
+									sendMessage({ command: 'cherrypickCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: 0 });
 								}, sourceElem);
 							} else {
 								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
@@ -530,7 +571,7 @@
 									value: (index + 1).toString()
 								}));
 								showSelectDialog('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick commit', (parentIndex) => {
-									sendMessage({ command: 'cherrypickCommit', commitHash: hash, parentIndex: parseInt(parentIndex) });
+									sendMessage({ command: 'cherrypickCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: parseInt(parentIndex) });
 								}, sourceElem);
 							}
 						}
@@ -540,7 +581,7 @@
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
 								showConfirmationDialog('Are you sure you want to reverse commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-									sendMessage({ command: 'revertCommit', commitHash: hash, parentIndex: 0 });
+									sendMessage({ command: 'revertCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: 0 });
 								}, sourceElem);
 							} else {
 								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
@@ -548,7 +589,7 @@
 									value: (index + 1).toString()
 								}));
 								showSelectDialog('Are you sure you want to reverse merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to reverse the commit relative to:', '1', options, 'Yes, reverse commit', (parentIndex) => {
-									sendMessage({ command: 'revertCommit', commitHash: hash, parentIndex: parseInt(parentIndex) });
+									sendMessage({ command: 'revertCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: parseInt(parentIndex) });
 								}, sourceElem);
 							}
 						}
@@ -561,14 +602,14 @@
 								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 								{ name: 'Hard - Discard all changes', value: 'hard' }
 							], 'Yes, reset', (mode) => {
-								sendMessage({ command: 'resetToCommit', commitHash: hash, resetMode: <GG.GitResetMode>mode });
+								sendMessage({ command: 'resetToCommit', repo: this.currentRepo!, commitHash: hash, resetMode: <GG.GitResetMode>mode });
 							}, sourceElem);
 						}
 					},
 					{
 						title: 'Copy Commit Hash to Clipboard',
 						onClick: () => {
-							sendMessage({ command: 'copyCommitHashToClipboard', commitHash: hash });
+							sendMessage({ command: 'copyCommitHashToClipboard', repo: this.currentRepo!, commitHash: hash });
 						}
 					}
 				], sourceElem);
@@ -590,7 +631,7 @@
 						title: 'Delete Tag',
 						onClick: () => {
 							showConfirmationDialog('Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-								sendMessage({ command: 'deleteTag', tagName: refName });
+								sendMessage({ command: 'deleteTag', repo: this.currentRepo!, tagName: refName });
 							}, null);
 						}
 					}];
@@ -599,11 +640,11 @@
 						title: 'Checkout Branch',
 						onClick: () => {
 							if (sourceElem.classList.contains('head')) {
-								sendMessage({ command: 'checkoutBranch', branchName: refName, remoteBranch: null });
+								sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: refName, remoteBranch: null });
 							} else if (sourceElem.classList.contains('remote')) {
 								let refNameComps = refName.split('/');
 								showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
-									sendMessage({ command: 'checkoutBranch', branchName: newBranch, remoteBranch: refName });
+									sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: newBranch, remoteBranch: refName });
 								}, null);
 							}
 						}
@@ -614,14 +655,14 @@
 								title: 'Rename Branch',
 								onClick: () => {
 									showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
-										sendMessage({ command: 'renameBranch', oldName: refName, newName: newName });
+										sendMessage({ command: 'renameBranch', repo: this.currentRepo!, oldName: refName, newName: newName });
 									}, null);
 								}
 							}, {
 								title: 'Delete Branch',
 								onClick: () => {
 									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
-										sendMessage({ command: 'deleteBranch', branchName: refName, forceDelete: forceDelete });
+										sendMessage({ command: 'deleteBranch', repo: this.currentRepo!, branchName: refName, forceDelete: forceDelete });
 									}, null);
 								}
 							}
@@ -631,7 +672,7 @@
 								title: 'Merge into current branch',
 								onClick: () => {
 									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
-										sendMessage({ command: 'mergeBranch', branchName: refName, createNewCommit: createNewCommit });
+										sendMessage({ command: 'mergeBranch', repo: this.currentRepo!, branchName: refName, createNewCommit: createNewCommit });
 									}, null);
 								}
 							});
@@ -653,7 +694,7 @@
 			this.hideCommitDetails();
 			this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileTree: null };
 			this.saveState();
-			sendMessage({ command: 'commitDetails', commitHash: sourceElem.dataset.hash! });
+			sendMessage({ command: 'commitDetails', repo: this.currentRepo!, commitHash: sourceElem.dataset.hash! });
 		}
 		public hideCommitDetails() {
 			if (this.expandedCommit !== null) {
@@ -722,13 +763,13 @@
 			addListenerToClass('gitFile', 'click', (e) => {
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitFile')!;
 				if (this.expandedCommit === null || !sourceElem.classList.contains('gitDiffPossible')) return;
-				sendMessage({ command: 'viewDiff', commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
+				sendMessage({ command: 'viewDiff', repo: this.currentRepo!, commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 			});
 		}
 	}
 
 
-	let gitGraph = new GitGraph({
+	let gitGraph = new GitGraph(settings.repos, {
 		autoCenterCommitDetailsView: settings.autoCenterCommitDetailsView,
 		graphColours: settings.graphColours,
 		graphStyle: settings.graphStyle,
@@ -776,6 +817,9 @@
 				break;
 			case 'loadCommits':
 				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable);
+				break;
+			case 'loadRepos':
+				gitGraph.loadRepoOptions(msg.repos);
 				break;
 			case 'mergeBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');

@@ -1,5 +1,4 @@
-media/main.js
-media/main.min.js
+media/*.js
 node_modules
 out
 *.vsix

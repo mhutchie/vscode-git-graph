@@ -122,7 +122,7 @@
 		"clean": "node ./.vscode/clean.js",
 		"compile": "npm run clean && npm run compile-src && npm run compile-web",
 		"compile-src": "tsc -p ./src",
-		"compile-web": "tsc -p ./web && uglifyjs ./media/main.js --mangle --output ./media/main.min.js",
+		"compile-web": "tsc -p ./web && uglifyjs ./media/main.js --mangle --output ./media/main.min.js && uglifyjs ./media/dropdown.js --mangle --output ./media/dropdown.min.js",
 		"package": "vsce package",
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},

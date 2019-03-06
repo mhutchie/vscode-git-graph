@@ -183,10 +183,7 @@ export class GitGraphView {
 	}
 
 	private async getHtmlForWebview() {
-		const config = new Config();
-		const jsUri = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.min.js')).with({ scheme: 'vscode-resource' });
-		const cssUri = vscode.Uri.file(path.join(this.extensionPath, 'media', 'main.css')).with({ scheme: 'vscode-resource' });
-		const nonce = getNonce();
+		const config = new Config(), nonce = getNonce();
 
 		let settings: GitGraphViewSettings = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
@@ -206,18 +203,21 @@ export class GitGraphView {
 		if (this.dataSource !== null && settings.repos.length > 0) {
 			body = `<body>
 			<div id="controls">
-				<span id="repoControl"><span class="unselectable">Repo: </span><select id="repoSelect"></select></span>
-				<span class="unselectable">Branch: </span><select id="branchSelect"></select>
-				<label><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
+				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
+				<span id="branchControl"><span class="unselectable">Branch: </span><div id="branchSelect" class="dropdown"></div></span>
+				<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
 				<div id="refreshBtn" class="roundedBtn">Refresh</div>
 			</div>
-			<div id="commitGraph"></div>
-			<div id="commitTable"></div>
+			<div id="content">
+				<div id="commitGraph"></div>
+				<div id="commitTable"></div>
+			</div>
 			<ul id="contextMenu"></ul>
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
 			<script nonce="${nonce}">var settings = ${JSON.stringify(settings)};</script>
-			<script src="${jsUri}"></script>
+			<script src="${this.getMediaUri('dropdown.min.js')}"></script>
+			<script src="${this.getMediaUri('main.min.js')}"></script>
 			</body>`;
 		} else {
 			body = `<body class="unableToLoad"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
@@ -229,12 +229,17 @@ export class GitGraphView {
 				<meta charset="UTF-8">
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'nonce-${nonce}'; script-src vscode-resource: 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link rel="stylesheet" type="text/css" href="${cssUri}">
+				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
+				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
 				<title>Git Graph</title>
 				<style nonce="${nonce}">${colourStyles}</style>
 			</head>
 			${body}
 		</html>`;
+	}
+
+	private getMediaUri(file: string){
+		return vscode.Uri.file(path.join(this.extensionPath, 'media', file)).with({ scheme: 'vscode-resource' });
 	}
 
 	private sendMessage(msg: ResponseMessage) {

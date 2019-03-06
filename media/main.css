@@ -7,6 +7,11 @@ body.unableToLoad h1, body.unableToLoad p{
 	text-align:center;
 }
 
+/* Content */
+#content{
+	position:relative;
+}
+
 /* Commit Graph */
 #commitGraph{
 	display:block;
@@ -18,7 +23,7 @@ body.unableToLoad h1, body.unableToLoad p{
 	display:block;
 	position:absolute;
 	left:8px;
-	top:71px;
+	top:31px;
 }
 #commitGraph circle.current{
 	fill:var(--vscode-editor-background);
@@ -46,7 +51,7 @@ body.unableToLoad h1, body.unableToLoad p{
 	position:absolute;
 	left:0;
 	right:0;
-	top:40px;
+	top:0;
 }
 #commitTable table{
 	width:100%;
@@ -276,21 +281,24 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 /* Controls */
 #controls{
 	display:block;
-	position:absolute;
+	position: relative;
 	left:0;
 	right:0;
 	top:0;
-	height:40px;
-	padding-right:96px;
+	padding:4px 96px 4px 0;
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	background-color:rgba(128,128,128,0.2);
-	line-height:40px;
+	line-height:32px;
 	text-align:center;
 	font-weight:700;
 	font-size:13px;
 }
+#repoControl, #branchControl, #showRemoteBranchesControl{
+	white-space:nowrap;
+	margin:0 10px;
+}
 #repoSelect, #branchSelect{
-	margin-right:20px;
+	margin-left:3px;
 	font-size:13px;
 }
 #showRemoteBranchesCheckbox{
@@ -300,11 +308,12 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 #refreshBtn{
 	position:absolute;
 	right:8px;
-	top:8px;
+	top:50%;
 	width:80px;
 	height:22px;
 	line-height:22px;
 	border-radius:11px;
+	margin-top:-12px;
 }
 #loadMoreCommitsBtn{
 	width:180px;
@@ -421,14 +430,14 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 /* Buttons */
 .roundedBtn{
 	display:block;
-	background-color:rgba(128,128,128,0.2);
+	background-color:rgba(128,128,128,0.1);
 	border:1px solid rgba(128,128,128,0.5);
 	font-size:13px;
 	text-align:center;
 	cursor:pointer;
 }
 .roundedBtn:hover{
-	background-color:rgba(128,128,128,0.4);
+	background-color:rgba(128,128,128,0.2);
 }
 
 /* General */

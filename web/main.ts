@@ -240,8 +240,8 @@
 
 		private graphElem: HTMLElement;
 		private tableElem: HTMLElement;
-		private repoSelectElem: HTMLSelectElement;
-		private branchSelectElem: HTMLSelectElement;
+		private repoDropdown: Dropdown;
+		private branchDropdown: Dropdown;
 		private showRemoteBranchesElem: HTMLInputElement;
 
 		constructor(repos: string[], config: Config, prevState: WebViewState | null) {
@@ -251,20 +251,8 @@
 			this.maxCommits = config.initialLoadCommits;
 			this.graphElem = document.getElementById('commitGraph')!;
 			this.tableElem = document.getElementById('commitTable')!;
-			this.repoSelectElem = <HTMLSelectElement>document.getElementById('repoSelect')!;
-			this.branchSelectElem = <HTMLSelectElement>document.getElementById('branchSelect')!;
-			this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
-
-			this.branchSelectElem.addEventListener('change', () => {
-				this.currentBranch = this.branchSelectElem.value;
-				this.maxCommits = this.config.initialLoadCommits;
-				this.expandedCommit = null;
-				this.saveState();
-				this.renderShowLoading();
-				this.requestLoadCommits();
-			});
-			this.repoSelectElem.addEventListener('change', () => {
-				this.currentRepo = this.gitRepos[parseInt(this.repoSelectElem.value)];
+			this.repoDropdown = new Dropdown('repoSelect', (value) => {
+				this.currentRepo = this.gitRepos[parseInt(value)];
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;
 				this.currentBranch = '';
@@ -272,6 +260,15 @@
 				this.renderShowLoading();
 				this.requestLoadBranchOptions();
 			});
+			this.branchDropdown = new Dropdown('branchSelect', (value => {
+				this.currentBranch = value;
+				this.maxCommits = this.config.initialLoadCommits;
+				this.expandedCommit = null;
+				this.saveState();
+				this.renderShowLoading();
+				this.requestLoadCommits();
+			}))!;
+			this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 			this.showRemoteBranchesElem.addEventListener('change', () => {
 				this.showRemoteBranches = this.showRemoteBranchesElem.checked;
 				this.saveState();
@@ -302,16 +299,23 @@
 		public loadRepoOptions(repos: string[]) {
 			this.gitRepos = repos;
 			this.saveState();
-			let html = '', repoComps, curRepoIndex = this.gitRepos.indexOf(this.currentRepo);
-			for (let i = 0; i < this.gitRepos.length; i++) {
-				repoComps = this.gitRepos[i].split('/');
-				html += '<option value="' + i + '"' + (curRepoIndex === i ? ' selected' : '') + '>' + repoComps[repoComps.length - 1] + '</option>';
-			}
-			this.repoSelectElem.innerHTML = html;
-			document.getElementById('repoControl')!.style.display = this.gitRepos.length > 1 ? 'inline' : 'none';
+
+			let curRepoIndex = this.gitRepos.indexOf(this.currentRepo), changedRepo = false;
 			if (curRepoIndex === -1) {
 				this.currentRepo = this.gitRepos[0];
 				this.saveState();
+				changedRepo = true;
+			}
+
+			let options = [], repoComps, i;
+			for (i = 0; i < this.gitRepos.length; i++) {
+				repoComps = this.gitRepos[i].split('/');
+				options.push({ name: repoComps[repoComps.length - 1], value: i.toString() });
+			}
+			this.repoDropdown.setOptions(options, curRepoIndex.toString());
+			document.getElementById('repoControl')!.style.display = this.gitRepos.length > 1 ? 'inline' : 'none';
+
+			if (changedRepo) {
 				this.renderShowLoading();
 				this.requestLoadBranchOptions();
 			}
@@ -322,11 +326,11 @@
 			if (this.currentBranch !== null && this.gitBranches.indexOf(this.currentBranch) === -1) this.currentBranch = '';
 			this.saveState();
 
-			let html = '<option' + (this.currentBranch === null || this.currentBranch === '' ? ' selected' : '') + ' value="">Show All</option>';
+			let options = [{ name: 'Show All', value: '' }];
 			for (let i = 0; i < this.gitBranches.length; i++) {
-				html += '<option value="' + this.gitBranches[i] + '"' + (this.currentBranch === this.gitBranches[i] ? ' selected' : '') + '>' + (this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i]) + '</option>';
+				options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 			}
-			this.branchSelectElem.innerHTML = html;
+			this.branchDropdown.setOptions(options, this.currentBranch !== null ? this.currentBranch : '');
 			if (reloadCommits) this.requestLoadCommits();
 		}
 		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean) {

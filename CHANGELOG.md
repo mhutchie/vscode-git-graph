@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.4.1 - 2019-03-09
+* #13 Support for multiple Git repositories in multi-root workspaces.
+* #8 Improved control bar style, for improved support of different colour themes.
+* #23 Changed "Reverse this Commit" to "Revert this Commit", to match the corresponding Git command. Thanks @Larry850806!
+* Several minor consistency improvements.
+
 ## 1.4.0 - 2019-02-28
 * #12 Revert, cherry-pick & merge git commands are now available from the commit and branch context menus.
 * #7 Added a setting to enable / disable automatic centering of the commit details view.
@@ -11,7 +17,7 @@
 * #3 & #9: Fixes an issue preventing the graph loading for a few git repositories.
 * #10: Fixes an issue where lines extending past the rightmost node of the graph would be cropped.
 * Press escape to close any open Git Graph dialog.
-* FR#6: The command title in the Command Palette is changed to "Git Graph: View Git Graph (git log)".
+* #6: The command title in the Command Palette is changed to "Git Graph: View Git Graph (git log)".
 * Refined styling of the commit details view.
 
 ## 1.3.2 - 2019-02-18

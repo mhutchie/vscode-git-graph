@@ -279,12 +279,18 @@ export class DataSource {
 
 	private runGitCommand(command: string, repo: string) {
 		return new Promise<GitCommandStatus>((resolve) => {
-			this.execGit(command, repo, (err) => {
+			this.execGit(command, repo, (err, stdout, stderr) => {
 				if (!err) {
 					resolve(null);
 				} else {
-					let lines = err.message.split(eolRegex);
-					resolve(lines.slice(1, lines.length - 1).join('\n'));
+					let lines;
+					if (stdout !== '' || stderr !== '') {
+						lines = (stdout !== '' ? stdout : stderr !== '' ? stderr : '').split(eolRegex);
+					} else {
+						lines = err.message.split(eolRegex);
+						lines.shift();
+					}
+					resolve(lines.slice(0, lines.length - 1).join('\n'));
 				}
 			});
 		});

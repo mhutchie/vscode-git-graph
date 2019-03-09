@@ -111,6 +111,17 @@ export class DataSource {
 					if (!err) {
 						let lines = stdout.split(eolRegex);
 						let commitInfo = lines[0].split(gitLogSeparator);
+
+						let body: string = commitInfo[6];
+						if (lines[2]) {
+							// If lines[2] isn't an empty string, next lines will contain a description
+							body += '\n';
+							// There're always 2 empty lines at the end of array. Skip them
+							for (let i = 2; i < lines.length - 2; i++) {
+								body += '\n' + lines[i];
+							}
+						}
+
 						resolve({
 							hash: commitInfo[0],
 							parents: commitInfo[1].split(' '),
@@ -118,7 +129,7 @@ export class DataSource {
 							email: commitInfo[3],
 							date: parseInt(commitInfo[4]),
 							committer: commitInfo[5],
-							body: commitInfo[6],
+							body: body,
 							fileChanges: []
 						});
 					} else {

@@ -291,10 +291,10 @@
 						}
 					},
 					{
-						title: 'Reverse this Commit',
+						title: 'Revert this Commit',
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
-								showConfirmationDialog('Are you sure you want to reverse commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+								showConfirmationDialog('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
 									sendMessage({ command: 'revertCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: 0 });
 								}, sourceElem);
 							} else {
@@ -302,7 +302,7 @@
 									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 									value: (index + 1).toString()
 								}));
-								showSelectDialog('Are you sure you want to reverse merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to reverse the commit relative to:', '1', options, 'Yes, reverse commit', (parentIndex) => {
+								showSelectDialog('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert commit', (parentIndex) => {
 									sendMessage({ command: 'revertCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: parseInt(parentIndex) });
 								}, sourceElem);
 							}
@@ -543,7 +543,7 @@
 				refreshGraphOrDisplayError(msg.status, 'Unable to Reset to Commit');
 				break;
 			case 'revertCommit':
-				refreshGraphOrDisplayError(msg.status, 'Unable to Reverse Commit');
+				refreshGraphOrDisplayError(msg.status, 'Unable to Revert Commit');
 				break;
 			case 'viewDiff':
 				if (msg.success === false) showErrorDialog('Unable to view diff of file', null, null);

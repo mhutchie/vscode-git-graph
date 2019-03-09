@@ -195,7 +195,8 @@ export class GitGraphView {
 			graphStyle: config.graphStyle(),
 			initialLoadCommits: config.initialLoadCommits(),
 			loadMoreCommits: config.loadMoreCommits(),
-			repos: await this.dataSource.getRepos()
+			repos: await this.dataSource.getRepos(),
+			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
 
 		let colourStyles = '', body;

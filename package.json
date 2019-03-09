@@ -104,6 +104,11 @@
 					"default": 75,
 					"description": "Specifies the number of commits to load when the \"Load More Commits\" button is pressed (only shown when more commits are available)."
 				},
+				"git-graph.showCurrentBranchByDefault": {
+					"type": "boolean",
+					"default": false,
+					"description": "Show the current branch by default when Git Graph is opened. Default: false (show all branches)"
+				},
 				"git-graph.showStatusBarItem": {
 					"type": "boolean",
 					"default": true,

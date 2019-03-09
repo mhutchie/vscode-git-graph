@@ -16,6 +16,7 @@ declare global {
 		grid: { x: number, y: number, offsetX: number, offsetY: number };
 		initialLoadCommits: number;
 		loadMoreCommits: number;
+		showCurrentBranchByDefault: boolean;
 	}
 
 	interface ContextMenuItem {

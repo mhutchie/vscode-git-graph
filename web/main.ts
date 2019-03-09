@@ -53,7 +53,7 @@
 				this.currentRepo = this.gitRepos[parseInt(value)];
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;
-				this.currentBranch = '';
+				this.currentBranch = null;
 				this.saveState();
 				this.renderShowLoading();
 				this.requestLoadBranchOptions();
@@ -121,14 +121,16 @@
 		public loadBranchOptions(branchOptions: string[], branchHead: string | null, reloadCommits: boolean) {
 			this.gitBranches = branchOptions;
 			this.gitHead = branchHead;
-			if (this.currentBranch !== null && this.gitBranches.indexOf(this.currentBranch) === -1) this.currentBranch = '';
+			if (this.currentBranch === null || (this.currentBranch !== '' && this.gitBranches.indexOf(this.currentBranch) === -1)) {
+				this.currentBranch = this.config.showCurrentBranchByDefault && this.gitHead !== null ? this.gitHead : '';
+			}
 			this.saveState();
 
 			let options = [{ name: 'Show All', value: '' }];
 			for (let i = 0; i < this.gitBranches.length; i++) {
 				options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 			}
-			this.branchDropdown.setOptions(options, this.currentBranch !== null ? this.currentBranch : '');
+			this.branchDropdown.setOptions(options, this.currentBranch);
 			if (reloadCommits) this.requestLoadCommits();
 		}
 		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean) {
@@ -487,7 +489,8 @@
 		graphStyle: settings.graphStyle,
 		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12 },
 		initialLoadCommits: settings.initialLoadCommits,
-		loadMoreCommits: settings.loadMoreCommits
+		loadMoreCommits: settings.loadMoreCommits,
+		showCurrentBranchByDefault: settings.showCurrentBranchByDefault
 	}, vscode.getState());
 
 

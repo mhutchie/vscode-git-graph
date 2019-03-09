@@ -55,6 +55,7 @@ export interface GitGraphViewSettings {
 	initialLoadCommits: number;
 	loadMoreCommits: number;
 	repos: string[];
+	showCurrentBranchByDefault: boolean;
 }
 
 export interface GitFileChange {

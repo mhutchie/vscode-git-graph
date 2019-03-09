@@ -27,6 +27,9 @@ export class Config {
 	public loadMoreCommits() {
 		return this.workspaceConfiguration.get('loadMoreCommits', 75);
 	}
+	public showCurrentBranchByDefault() {
+		return this.workspaceConfiguration.get('showCurrentBranchByDefault', false);
+	}
 	public showStatusBarItem() {
 		return this.workspaceConfiguration.get('showStatusBarItem', true);
 	}

@@ -8,7 +8,7 @@ const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
 
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparator);
-const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn', '%B'].join(gitLogSeparator);
+const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn'].join(gitLogSeparator) + '%n%B';
 
 export class DataSource {
 	private gitPath!: string;
@@ -109,7 +109,8 @@ export class DataSource {
 			let details = await new Promise<GitCommitDetails>((resolve, reject) => {
 				this.execGit('show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', repo, (err, stdout) => {
 					if (!err) {
-						let lines = stdout.split(eolRegex);
+						let lines = stdout.split(eolRegex), lastLine = lines.length - 1;
+						while (lines.length > 0 && lines[lastLine] === '') lastLine--;
 						let commitInfo = lines[0].split(gitLogSeparator);
 						resolve({
 							hash: commitInfo[0],
@@ -118,7 +119,7 @@ export class DataSource {
 							email: commitInfo[3],
 							date: parseInt(commitInfo[4]),
 							committer: commitInfo[5],
-							body: commitInfo[6],
+							body: lines.slice(1, lastLine + 1).join('\n'),
 							fileChanges: []
 						});
 					} else {

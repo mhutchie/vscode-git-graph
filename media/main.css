@@ -350,6 +350,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 #contextMenu li:hover{
 	background-color:var(--vscode-menu-selectionBackground);
+	color:var(--vscode-menu-selectionForeground);
 }
 
 /* Dialogs */
@@ -371,7 +372,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	max-height:90%;
 	z-index:10;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
-	overflow-y:scroll;
+	overflow-y:auto;
 }
 #dialog label{
 	margin-top:10px;

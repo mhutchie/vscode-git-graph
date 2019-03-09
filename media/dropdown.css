@@ -15,11 +15,9 @@
 	border-radius:6px;
 	box-sizing:border-box;
 	height:26px;
-	line-height:initial;
+	line-height:24px;
 	padding-left:10px;
 	cursor:pointer;
-	padding-top:3px;
-	padding-bottom:5px;
 	user-select:none;
 	white-space:nowrap;
 }
@@ -57,16 +55,17 @@
 }
 
 .dropdownOption{
+	position:relative;
 	cursor:pointer;
 	padding:4px 10px;
 	user-select:none;
-	background-color:rgba(128,128,128,0.05);
 }
 .dropdownOption.selected{
 	background-color:rgba(128,128,128,0.15);
 }
 .dropdownOption:hover{
-	background-color:rgba(128,128,128,0.25);
+	background-color:var(--vscode-menu-selectionBackground);
+	color:var(--vscode-menu-selectionForeground);
 }
 
 .dropdown.dropdownOpen .dropdownCurrentValue{

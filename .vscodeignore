@@ -1,5 +1,7 @@
 .github/
 .vscode/
+media/dropdown.js
+media/graph.js
 media/main.js
 out/*.d.ts
 out/*.js.map

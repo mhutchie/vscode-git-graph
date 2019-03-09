@@ -14,6 +14,7 @@ export class GitGraphView {
 	private readonly dataSource: DataSource;
 	private disposables: vscode.Disposable[] = [];
 	private changeWorkspaceFolderHandler: vscode.Disposable | null = null;
+	private isGraphViewLoaded: boolean = false;
 
 	public static createOrShow(extensionPath: string, dataSource: DataSource) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
@@ -171,10 +172,12 @@ export class GitGraphView {
 
 	private startMonitoringWorkspaceFolders() {
 		this.changeWorkspaceFolderHandler = vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-			this.sendMessage({
-				command: 'loadRepos',
-				repos: await this.dataSource.getRepos()
-			});
+			let repos = await this.dataSource.getRepos();
+			if ((repos.length === 0 && this.isGraphViewLoaded) || (repos.length > 0 && !this.isGraphViewLoaded)) {
+				this.update();
+			} else {
+				this.sendMessage({ command: 'loadRepos', repos: repos });
+			}
 		});
 	}
 
@@ -200,7 +203,7 @@ export class GitGraphView {
 			colourStyles += '.colour' + i + ' { background-color:' + settings.graphColours[i] + '; } ';
 		}
 
-		if (this.dataSource !== null && settings.repos.length > 0) {
+		if (settings.repos.length > 0) {
 			body = `<body>
 			<div id="controls">
 				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
@@ -216,29 +219,29 @@ export class GitGraphView {
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
 			<script nonce="${nonce}">var settings = ${JSON.stringify(settings)};</script>
-			<script src="${this.getMediaUri('dropdown.min.js')}"></script>
-			<script src="${this.getMediaUri('main.min.js')}"></script>
+			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {
 			body = `<body class="unableToLoad"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
 		}
+		this.isGraphViewLoaded = settings.repos.length > 0;
 
 		return `<!DOCTYPE html>
 		<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'nonce-${nonce}'; script-src vscode-resource: 'nonce-${nonce}';">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
 				<title>Git Graph</title>
-				<style nonce="${nonce}">${colourStyles}</style>
+				<style>${colourStyles}</style>
 			</head>
 			${body}
 		</html>`;
 	}
 
-	private getMediaUri(file: string){
+	private getMediaUri(file: string) {
 		return vscode.Uri.file(path.join(this.extensionPath, 'media', file)).with({ scheme: 'vscode-resource' });
 	}
 

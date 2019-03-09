@@ -16,7 +16,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
         * Create, Checkout, Rename, Delete & Merge branches
         * Add & Delete tags
-        * Reverse & Cherry Pick commits
+        * Revert & Cherry Pick commits
         * Reset current branch to commit
         * Copy Commit Hash to Clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)

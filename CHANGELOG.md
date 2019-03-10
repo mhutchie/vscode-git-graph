@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.2 - 2019-03-10
+* #22 New setting to show the current branch by default when Git Graph is opened, instead of showing all branches. By default `git-graph.showCurrentBranchByDefault` is false.
+* #24 Display all lines of the commit body in the commit details view. Thanks @ShoshinNikita!
+
 ## 1.4.1 - 2019-03-09
 * #13 Support for multiple Git repositories in multi-root workspaces.
 * #8 Improved control bar style, for improved support of different colour themes.

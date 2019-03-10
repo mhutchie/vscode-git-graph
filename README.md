@@ -33,6 +33,7 @@ This extension contributes the following settings:
 * `git-graph.graphStyle`: Specifies the style of the graph.
 * `git-graph.initialLoadCommits`: Specifies the number of commits to initially load.
 * `git-graph.loadMoreCommits`: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
+* `git-graph.showCurrentBranchByDefault`: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * `git-graph.showStatusBarItem`: Show a Status Bar item which opens Git Graph when clicked.
 * `git-graph.showUncommittedChanges`: Show uncommitted changes (set to false to decrease load time on large repositories).
 

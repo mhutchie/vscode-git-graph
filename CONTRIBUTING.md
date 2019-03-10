@@ -38,7 +38,9 @@ We aim to respond promptly, and prioritise it as we and the community see approp
 
 ### Contributing To Development
 
-If you're interested in helping contribute, find an open issue you'd like to work on and comment on it.
+If you're interested in helping contribute, either:
+* Find an open issue you'd like to work on, and comment on it. Once the code owner has responded with some background information and initial ideas, it will be assigned to you to work on.
+* Raise an issue describing the feature you'd like to work on, mentioning that you'd like to implement it. Once reviewed by the code owner, it has been confirmed as a suitable feature of Git Graph and it will be assigned to you to work on.
 
 To set up your development environment, please follow these steps:
 1. Clone the repo
@@ -46,6 +48,8 @@ To set up your development environment, please follow these steps:
 3. In the terminal, run `npm run install` to download the required dependencies
 4. Install the tslint extension if it is not already installed
 5. Create and checkout a branch for the issue you're going to work on
+
+Review the [Codebase Outline](https://github.com/mhutchie/vscode-git-graph/wiki/Codebase-Outline), so you have an understanding of the structure of the code.
 
 The npm scripts are as follows:
 `npm run compile` compiles both front and backend code

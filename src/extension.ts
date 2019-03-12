@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
-import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { GitGraphView } from './gitGraphView';
+import { StatusBarItem } from './statusBarItem';
 
 export function activate(context: vscode.ExtensionContext) {
 	const dataSource = new DataSource();
+	const statusBarItem = new StatusBarItem(context, dataSource);
 
 	context.subscriptions.push(vscode.commands.registerCommand('git-graph.view', () => {
 		GitGraphView.createOrShow(context.extensionPath, dataSource);
@@ -15,22 +16,9 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource))
 	));
 
-	let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
-	statusBarItem.text = 'Git Graph';
-	statusBarItem.tooltip = 'View Git Graph';
-	statusBarItem.command = 'git-graph.view';
-	context.subscriptions.push(statusBarItem);
-
-	if (getConfig().showStatusBarItem()) {
-		statusBarItem.show();
-	}
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
 		if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
-			if (getConfig().showStatusBarItem()) {
-				statusBarItem.show();
-			} else {
-				statusBarItem.hide();
-			}
+			statusBarItem.refresh();
 		} else if (e.affectsConfiguration('git.path')) {
 			dataSource.registerGitPath();
 		}

@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
-import { Config } from './config';
+import { getConfig } from './config';
 import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
@@ -19,7 +19,7 @@ export class DataSource {
 	}
 
 	public registerGitPath() {
-		this.gitPath = (new Config()).gitPath();
+		this.gitPath = getConfig().gitPath();
 		this.gitExecPath = this.gitPath.indexOf(' ') > -1 ? '"' + this.gitPath + '"' : this.gitPath;
 	}
 
@@ -73,7 +73,7 @@ export class DataSource {
 		if (refData.head !== null) {
 			for (i = 0; i < commits.length; i++) {
 				if (refData.head === commits[i].hash) {
-					unsavedChanges = (new Config()).showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
+					unsavedChanges = getConfig().showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
 					if (unsavedChanges !== null) {
 						commits.unshift({ hash: '*', parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 					}

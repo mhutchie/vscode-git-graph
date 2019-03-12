@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Config } from './config';
+import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { GitGraphView } from './gitGraphView';
@@ -21,17 +21,17 @@ export function activate(context: vscode.ExtensionContext) {
 	statusBarItem.command = 'git-graph.view';
 	context.subscriptions.push(statusBarItem);
 
-	if ((new Config()).showStatusBarItem()) {
+	if (getConfig().showStatusBarItem()) {
 		statusBarItem.show();
 	}
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
 		if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
-			if ((new Config()).showStatusBarItem()) {
+			if (getConfig().showStatusBarItem()) {
 				statusBarItem.show();
 			} else {
 				statusBarItem.hide();
 			}
-		} else if (e.affectsConfiguration('git.path') && dataSource !== null) {
+		} else if (e.affectsConfiguration('git.path')) {
 			dataSource.registerGitPath();
 		}
 	}));

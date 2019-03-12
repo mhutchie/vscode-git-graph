@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Config } from './config';
+import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { encodeDiffDocUri } from './diffDocProvider';
 import { GitFileChangeType, GitGraphViewSettings, RequestMessage, ResponseMessage } from './types';
@@ -39,7 +39,7 @@ export class GitGraphView {
 		this.extensionPath = extensionPath;
 		this.dataSource = dataSource;
 
-		panel.iconPath = (new Config()).tabIconColourTheme() === 'colour'
+		panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
 			? this.getUri('resources', 'webview-icon.svg')
 			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
 
@@ -190,7 +190,7 @@ export class GitGraphView {
 	}
 
 	private async getHtmlForWebview() {
-		const config = new Config(), nonce = getNonce();
+		const config = getConfig(), nonce = getNonce();
 
 		let settings: GitGraphViewSettings = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),

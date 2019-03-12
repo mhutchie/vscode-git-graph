@@ -39,6 +39,10 @@ export class GitGraphView {
 		this.extensionPath = extensionPath;
 		this.dataSource = dataSource;
 
+		panel.iconPath = (new Config()).tabIconColourTheme() === 'colour'
+			? this.getUri('resources', 'webview-icon.svg')
+			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
+
 		this.update();
 		this.startMonitoringWorkspaceFolders();
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
@@ -243,7 +247,11 @@ export class GitGraphView {
 	}
 
 	private getMediaUri(file: string) {
-		return vscode.Uri.file(path.join(this.extensionPath, 'media', file)).with({ scheme: 'vscode-resource' });
+		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
+	}
+
+	private getUri(...pathComps: string[]) {
+		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
 	private sendMessage(msg: ResponseMessage) {

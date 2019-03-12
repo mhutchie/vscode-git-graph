@@ -118,6 +118,15 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Show uncommitted changes (set to false to decrease load time on large repositories)."
+				},
+				"git-graph.tabIconColourTheme": {
+					"type": "string",
+					"enum": [
+						"colour",
+						"grey"
+					],
+					"default": "colour",
+					"description": "Specifies the colour theme of the icon displayed on the Git Graph tab."
 				}
 			}
 		}

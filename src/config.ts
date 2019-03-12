@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DateFormat, GraphStyle } from './types';
+import { DateFormat, GraphStyle, TabIconColourTheme } from './types';
 
 export class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -35,6 +35,9 @@ export class Config {
 	}
 	public showUncommittedChanges() {
 		return this.workspaceConfiguration.get('showUncommittedChanges', true);
+	}
+	public tabIconColourTheme(): TabIconColourTheme {
+		return this.workspaceConfiguration.get('tabIconColourTheme', 'colour');
 	}
 	public gitPath(): string {
 		let path = vscode.workspace.getConfiguration('git').get('path', null);

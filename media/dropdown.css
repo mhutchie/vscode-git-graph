@@ -43,6 +43,7 @@
 	display:none;
 	position:absolute;
 	background-color:var(--vscode-menu-background);
+	color:var(--vscode-menu-foreground);
 	top:100%;
 	left:0;
 	z-index:100;

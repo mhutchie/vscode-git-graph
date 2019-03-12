@@ -361,6 +361,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	display:block;
 	position:fixed;
 	background-color:var(--vscode-menu-background);
+	color:var(--vscode-menu-foreground);
 	padding:10px;
 	left:50%;
 	top:50%;

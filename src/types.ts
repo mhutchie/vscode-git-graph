@@ -98,6 +98,16 @@ export interface ResponseCheckoutBranch {
 	status: GitCommandStatus;
 }
 
+export interface RequestCheckoutCommit {
+	command: 'checkoutCommit';
+	repo: string;
+	commitHash: string;
+}
+export interface ResponseCheckoutCommit {
+	command: 'checkoutCommit';
+	status: GitCommandStatus;
+}
+
 export interface RequestCherrypickCommit {
 	command: 'cherrypickCommit';
 	repo: string;
@@ -261,6 +271,7 @@ export interface ResponseViewDiff {
 export type RequestMessage = 
 	  RequestAddTag
 	| RequestCheckoutBranch
+	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCommitDetails
 	| RequestCopyCommitHashToClipboard
@@ -279,6 +290,7 @@ export type RequestMessage =
 export type ResponseMessage = 
 	  ResponseAddTag
 	| ResponseCheckoutBranch
+	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit
 	| ResponseCommitDetails
 	| ResponseCopyCommitHashToClipboard

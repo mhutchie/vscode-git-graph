@@ -93,6 +93,12 @@ export class GitGraphView {
 						status: await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)
 					});
 					break;
+				case 'checkoutCommit':
+					this.sendMessage({
+						command: 'checkoutCommit',
+						status: await this.dataSource.checkoutCommit(msg.repo, msg.commitHash)
+					});
+					break;
 				case 'cherrypickCommit':
 					this.sendMessage({
 						command: 'cherrypickCommit',

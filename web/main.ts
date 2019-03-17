@@ -326,6 +326,14 @@
 						}
 					},
 					{
+						title: 'Checkout this Commit',
+						onClick: () => {
+							showConfirmationDialog('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
+								sendMessage({ command: 'checkoutCommit', repo: this.currentRepo!, commitHash: hash });
+							}, sourceElem);
+						}
+					},
+					{
 						title: 'Cherry Pick this Commit',
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
@@ -560,6 +568,9 @@
 				break;
 			case 'checkoutBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Branch');
+				break;
+			case 'checkoutCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Commit');
 				break;
 			case 'cherrypickCommit':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Cherry Pick Commit');

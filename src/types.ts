@@ -165,11 +165,13 @@ export interface RequestLoadBranches {
 	command: 'loadBranches';
 	repo: string;
 	showRemoteBranches: boolean;
+	hard: boolean;
 }
 export interface ResponseLoadBranches {
 	command: 'loadBranches';
 	branches: string[];
 	head: string | null;
+	hard: boolean;
 }
 
 export interface RequestLoadCommits {
@@ -178,11 +180,13 @@ export interface RequestLoadCommits {
 	branchName: string;
 	maxCommits: number;
 	showRemoteBranches: boolean;
+	hard: boolean;
 }
 export interface ResponseLoadCommits {
 	command: 'loadCommits';
 	commits: GitCommitNode[];
 	moreCommitsAvailable: boolean;
+	hard: boolean;
 }
 
 export interface RequestLoadRepos {
@@ -202,6 +206,10 @@ export interface RequestMergeBranch {
 export interface ResponseMergeBranch {
 	command: 'mergeBranch';
 	status: GitCommandStatus;
+}
+
+export interface ResponseRefresh {
+	command: 'refresh';
 }
 
 export interface RequestRenameBranch {
@@ -281,6 +289,7 @@ export type ResponseMessage =
 	| ResponseLoadCommits
 	| ResponseLoadRepos
 	| ResponseMergeBranch
+	| ResponseRefresh
 	| ResponseRenameBranch
 	| ResponseResetToCommit
 	| ResponseRevertCommit

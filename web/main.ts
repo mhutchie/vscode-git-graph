@@ -42,6 +42,9 @@
 		private branchDropdown: Dropdown;
 		private showRemoteBranchesElem: HTMLInputElement;
 
+		private loadBranchesCallback: ((changes: boolean) => void) | null = null;
+		private loadCommitsCallback: ((changes: boolean) => void) | null = null;
+
 		constructor(repos: string[], config: Config, prevState: WebViewState | null) {
 			this.gitRepos = repos;
 			this.currentRepo = repos[0];
@@ -55,8 +58,7 @@
 				this.expandedCommit = null;
 				this.currentBranch = null;
 				this.saveState();
-				this.renderShowLoading();
-				this.requestLoadBranchOptions();
+				this.refresh(true);
 			});
 			this.branchDropdown = new Dropdown('branchSelect', (value => {
 				this.currentBranch = value;
@@ -64,16 +66,16 @@
 				this.expandedCommit = null;
 				this.saveState();
 				this.renderShowLoading();
-				this.requestLoadCommits();
+				this.requestLoadCommits(true, () => { });
 			}))!;
 			this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 			this.showRemoteBranchesElem.addEventListener('change', () => {
 				this.showRemoteBranches = this.showRemoteBranchesElem.checked;
 				this.saveState();
-				this.refresh();
+				this.refresh(true);
 			});
 			document.getElementById('refreshBtn')!.addEventListener('click', () => {
-				this.refresh();
+				this.refresh(true);
 			});
 
 			this.renderShowLoading();
@@ -85,12 +87,12 @@
 					this.currentRepo = prevState.currentRepo;
 					this.maxCommits = prevState.maxCommits;
 					this.expandedCommit = prevState.expandedCommit;
-					if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable);
-					if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranchOptions(prevState.gitBranches, prevState.gitHead, false);
+					if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable, true);
+					if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranches(prevState.gitBranches, prevState.gitHead, true);
 				}
 			}
 			this.loadRepoOptions(this.gitRepos);
-			this.requestLoadBranchOptions();
+			this.requestLoadBranchesAndCommits(false);
 		}
 
 		/* Loading Data */
@@ -114,11 +116,16 @@
 			this.repoDropdown.setOptions(options, curRepoIndex.toString());
 
 			if (changedRepo) {
-				this.renderShowLoading();
-				this.requestLoadBranchOptions();
+				this.refresh(true);
 			}
 		}
-		public loadBranchOptions(branchOptions: string[], branchHead: string | null, reloadCommits: boolean) {
+
+		public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean) {
+			if(!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitHead === branchHead){
+				this.triggerLoadBranchesCallback(false);
+				return;
+			}
+			
 			this.gitBranches = branchOptions;
 			this.gitHead = branchHead;
 			if (this.currentBranch === null || (this.currentBranch !== '' && this.gitBranches.indexOf(this.currentBranch) === -1)) {
@@ -131,9 +138,27 @@
 				options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 			}
 			this.branchDropdown.setOptions(options, this.currentBranch);
-			if (reloadCommits) this.requestLoadCommits();
+
+			this.triggerLoadBranchesCallback(true);
 		}
-		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean) {
+		private triggerLoadBranchesCallback(changes: boolean){
+			if (this.loadBranchesCallback !== null) {
+				this.loadBranchesCallback(changes);
+				this.loadBranchesCallback = null;
+			}
+		}
+
+		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean, hard: boolean) {
+			if(!hard && this.moreCommitsAvailable === moreAvailable && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && a.current === b.current && arraysEqual(a.refs, b.refs, (a, b) => a.name === b.name && a.type === b.type) && arraysEqual(a.parentHashes, b.parentHashes, (a, b) => a === b))){
+				if (this.commits.length > 0 && this.commits[0].hash === '*') {
+					this.commits[0] = commits[0];
+					this.saveState();
+					this.renderUncommitedChanges();
+				}
+				this.triggerLoadCommitsCallback(false);
+				return;
+			}
+
 			this.moreCommitsAvailable = moreAvailable;
 			this.commits = commits;
 			this.commitLookup = {};
@@ -152,30 +177,56 @@
 				this.saveState();
 			}
 			this.render();
+
+			this.triggerLoadCommitsCallback(true);
+		}
+		private triggerLoadCommitsCallback(changes: boolean){
+			if (this.loadCommitsCallback !== null) {
+				this.loadCommitsCallback(changes);
+				this.loadCommitsCallback = null;
+			}
 		}
 
 		/* Refresh */
-		public refresh() {
+		public refresh(hard: boolean) {
 			if (this.expandedCommit !== null) {
 				this.expandedCommit = null;
 				this.saveState();
 			}
-			this.renderShowLoading();
-			this.requestLoadBranchOptions();
+			if (hard) {
+				this.renderShowLoading();
+				this.requestLoadBranchesAndCommits(true);
+			} else {
+				this.requestLoadBranches(false, (branchChanges: boolean) => {
+					this.requestLoadCommits(false, (commitChanges: boolean) => {
+						if (branchChanges || commitChanges) {
+							hideDialogAndContextMenu();
+						}
+					});
+				});
+			}
 		}
 
 		/* Requests */
-		private requestLoadBranchOptions() {
-			sendMessage({ command: 'loadBranches', repo: this.currentRepo!, showRemoteBranches: this.showRemoteBranches });
+		private requestLoadBranches(hard: boolean, loadedCallback: (changes: boolean) => void) {
+			if (this.loadBranchesCallback !== null) return;
+			this.loadBranchesCallback = loadedCallback;
+			sendMessage({ command: 'loadBranches', repo: this.currentRepo!, showRemoteBranches: this.showRemoteBranches, hard: hard });
 		}
-		private requestLoadCommits() {
+		private requestLoadCommits(hard: boolean, loadedCallback: (changes: boolean) => void) {
+			if (this.loadCommitsCallback !== null) return;
+			this.loadCommitsCallback = loadedCallback;
 			sendMessage({
 				command: 'loadCommits',
 				repo: this.currentRepo!,
 				branchName: (this.currentBranch !== null ? this.currentBranch : ''),
 				maxCommits: this.maxCommits,
-				showRemoteBranches: this.showRemoteBranches
+				showRemoteBranches: this.showRemoteBranches,
+				hard: hard
 			});
+		}
+		private requestLoadBranchesAndCommits(hard: boolean) {
+			this.requestLoadBranches(hard, () => this.requestLoadCommits(hard, () => { }));
 		}
 
 		/* State */
@@ -226,7 +277,7 @@
 					this.maxCommits += this.config.loadMoreCommits;
 					this.hideCommitDetails();
 					this.saveState();
-					this.requestLoadCommits();
+					this.requestLoadCommits(true, () => { });
 				});
 			}
 
@@ -398,7 +449,12 @@
 				showContextMenu(<MouseEvent>e, menu, sourceElem);
 			});
 		}
+		private renderUncommitedChanges() {
+			let date = getCommitDate(this.commits[0].date);
+			document.getElementsByClassName('unsavedChanges')[0].innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td><td title="' + date.title + '">' + date.value + '</td><td title="* <>">*</td><td title="*">*</td>';
+		}
 		private renderShowLoading() {
+			hideDialogAndContextMenu();
 			this.graph.clear();
 			this.tableElem.innerHTML = '<table><tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr></table><h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 		}
@@ -482,7 +538,8 @@
 		}
 	}
 
-
+	let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
+	let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null;
 	let gitGraph = new GitGraphView(settings.repos, {
 		autoCenterCommitDetailsView: settings.autoCenterCommitDetailsView,
 		graphColours: settings.graphColours,
@@ -528,10 +585,10 @@
 				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
 				break;
 			case 'loadBranches':
-				gitGraph.loadBranchOptions(msg.branches, msg.head, true);
+				gitGraph.loadBranches(msg.branches, msg.head, msg.hard);
 				break;
 			case 'loadCommits':
-				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable);
+				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable, msg.hard);
 				break;
 			case 'loadRepos':
 				gitGraph.loadRepoOptions(msg.repos);
@@ -541,6 +598,9 @@
 				break;
 			case 'renameBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
+				break;
+			case 'refresh':
+				gitGraph.refresh(false);
 				break;
 			case 'resetToCommit':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Reset to Commit');
@@ -555,7 +615,7 @@
 	});
 	function refreshGraphOrDisplayError(status: GG.GitCommandStatus, errorMessage: string) {
 		if (status === null) {
-			gitGraph.refresh();
+			gitGraph.refresh(true);
 		} else {
 			showErrorDialog(errorMessage, status, null);
 		}
@@ -662,6 +722,13 @@
 	function abbrevCommit(commitHash: string) {
 		return commitHash.substring(0, 8);
 	}
+	function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) {
+		if (a.length !== b.length) return false;
+		for (let i = 0; i < a.length; i++) {
+			if (!equalElements(a[i], b[i])) return false;
+		}
+		return true;
+	}
 
 
 	/* HTML Escape / Unescape */
@@ -686,7 +753,6 @@
 
 
 	/* Context Menu */
-	let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
 	function showContextMenu(e: MouseEvent, items: ContextMenuItem[], sourceElem: HTMLElement) {
 		let html = '', i: number, event = <MouseEvent>e;
 		for (i = 0; i < items.length; i++) {
@@ -724,7 +790,6 @@
 
 
 	/* Dialogs */
-	let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null;
 	function showConfirmationDialog(message: string, confirmed: () => void, sourceElem: HTMLElement | null) {
 		showDialog(message, 'Yes', 'No', () => {
 			hideDialog();
@@ -796,11 +861,15 @@
 		}
 	}
 
+	function hideDialogAndContextMenu() {
+		if (dialog.classList.contains('active')) hideDialog();
+		if (contextMenu.classList.contains('active')) hideContextMenu();
+	}
+
 	/* Global Listeners */
 	document.addEventListener('keyup', (e) => {
 		if (e.key === 'Escape') {
-			if (dialog.classList.contains('active')) hideDialog();
-			hideContextMenuListener();
+			hideDialogAndContextMenu();
 		}
 	});
 	document.addEventListener('click', hideContextMenuListener);

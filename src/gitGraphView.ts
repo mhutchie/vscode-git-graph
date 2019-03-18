@@ -165,6 +165,12 @@ export class GitGraphView {
 						status: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit)
 					});
 					break;
+				case 'mergeCommit':
+					this.sendMessage({
+						command: 'mergeCommit',
+						status: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit)
+					});
+					break;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',

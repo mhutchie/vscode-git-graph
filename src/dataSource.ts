@@ -207,6 +207,10 @@ export class DataSource {
 		return this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit ? ' --no-ff' : ''), repo);
 	}
 
+	public mergeCommit(repo: string, commitHash: string, createNewCommit: boolean) {
+		return this.runGitCommand('merge ' + commitHash + (createNewCommit ? ' --no-ff' : ''), repo);
+	}
+
 	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number) {
 		return this.runGitCommand('cherry-pick ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
 	}

@@ -323,6 +323,7 @@
 							}, sourceElem);
 						}
 					},
+					null,
 					{
 						title: 'Checkout this Commit',
 						onClick: () => {
@@ -367,6 +368,15 @@
 							}
 						}
 					},
+					null,
+					{
+						title: 'Merge into current branch',
+						onClick: () => {
+							showCheckboxDialog('Are you sure you want to merge commit <b><i>' + abbrevCommit(hash) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
+								sendMessage({ command: 'mergeCommit', repo: this.currentRepo!, commitHash: hash, createNewCommit: createNewCommit });
+							}, null);
+						}
+					},
 					{
 						title: 'Reset current branch to this Commit',
 						onClick: () => {
@@ -379,6 +389,7 @@
 							}, sourceElem);
 						}
 					},
+					null,
 					{
 						title: 'Copy Commit Hash to Clipboard',
 						onClick: () => {
@@ -605,6 +616,9 @@
 			case 'mergeBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');
 				break;
+			case 'mergeCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Commit');
+				break;
 			case 'renameBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
 				break;
@@ -762,10 +776,10 @@
 
 
 	/* Context Menu */
-	function showContextMenu(e: MouseEvent, items: ContextMenuItem[], sourceElem: HTMLElement) {
+	function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem: HTMLElement) {
 		let html = '', i: number, event = <MouseEvent>e;
 		for (i = 0; i < items.length; i++) {
-			html += '<li class="contextMenuItem" data-index="' + i + '">' + items[i].title + '</li>';
+			html += items[i] !== null ? '<li class="contextMenuItem" data-index="' + i + '">' + items[i]!.title + '</li>' :  '<li class="contextMenuDivider"></li>';
 		}
 
 		hideContextMenuListener();
@@ -780,7 +794,7 @@
 		addListenerToClass('contextMenuItem', 'click', (e) => {
 			e.stopPropagation();
 			hideContextMenu();
-			items[parseInt((<HTMLElement>(e.target)).dataset.index!)].onClick();
+			items[parseInt((<HTMLElement>(e.target)).dataset.index!)]!.onClick();
 		});
 
 		contextMenuSource = sourceElem;

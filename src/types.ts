@@ -218,6 +218,17 @@ export interface ResponseMergeBranch {
 	status: GitCommandStatus;
 }
 
+export interface RequestMergeCommit {
+	command: 'mergeCommit';
+	repo: string;
+	commitHash: string;
+	createNewCommit: boolean;
+}
+export interface ResponseMergeCommit {
+	command: 'mergeCommit';
+	status: GitCommandStatus;
+}
+
 export interface ResponseRefresh {
 	command: 'refresh';
 }
@@ -282,6 +293,7 @@ export type RequestMessage =
 	| RequestLoadCommits
 	| RequestLoadRepos
 	| RequestMergeBranch
+	| RequestMergeCommit
 	| RequestRenameBranch
 	| RequestResetToCommit
 	| RequestRevertCommit
@@ -301,6 +313,7 @@ export type ResponseMessage =
 	| ResponseLoadCommits
 	| ResponseLoadRepos
 	| ResponseMergeBranch
+	| ResponseMergeCommit
 	| ResponseRefresh
 	| ResponseRenameBranch
 	| ResponseResetToCommit

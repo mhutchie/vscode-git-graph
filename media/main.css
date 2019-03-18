@@ -345,12 +345,19 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	display:block;
 }
 #contextMenu li{
-	padding:6px 20px;
 	cursor:default;
 }
-#contextMenu li:hover{
+#contextMenu li.contextMenuItem{
+	padding:6px 20px;
+}
+#contextMenu li.contextMenuItem:hover{
 	background-color:var(--vscode-menu-selectionBackground);
 	color:var(--vscode-menu-selectionForeground);
+}
+#contextMenu li.contextMenuDivider{
+	margin:4px 10px;
+	border-top:1px solid var(--vscode-menu-separatorBackground);
+	opacity:0.5;
 }
 
 /* Dialogs */

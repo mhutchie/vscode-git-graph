@@ -24,6 +24,8 @@ declare global {
 		onClick: () => void;
 	}
 
+	type ContextMenuElement = ContextMenuItem | null;
+
 	interface ExpandedCommit {
 		id: number;
 		hash: string;

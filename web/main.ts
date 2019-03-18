@@ -189,22 +189,14 @@
 
 		/* Refresh */
 		public refresh(hard: boolean) {
-			if (this.expandedCommit !== null) {
-				this.expandedCommit = null;
-				this.saveState();
-			}
 			if (hard) {
+				if (this.expandedCommit !== null) {
+					this.expandedCommit = null;
+					this.saveState();
+				}
 				this.renderShowLoading();
-				this.requestLoadBranchesAndCommits(true);
-			} else {
-				this.requestLoadBranches(false, (branchChanges: boolean) => {
-					this.requestLoadCommits(false, (commitChanges: boolean) => {
-						if (branchChanges || commitChanges) {
-							hideDialogAndContextMenu();
-						}
-					});
-				});
 			}
+			this.requestLoadBranchesAndCommits(hard);
 		}
 
 		/* Requests */
@@ -226,7 +218,13 @@
 			});
 		}
 		private requestLoadBranchesAndCommits(hard: boolean) {
-			this.requestLoadBranches(hard, () => this.requestLoadCommits(hard, () => { }));
+			this.requestLoadBranches(hard, (branchChanges: boolean) => {
+				this.requestLoadCommits(hard, (commitChanges: boolean) => {
+					if (!hard && (branchChanges || commitChanges)) {
+						hideDialogAndContextMenu();
+					}
+				});
+			});
 		}
 
 		/* State */

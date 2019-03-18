@@ -16,7 +16,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
         * Create, Checkout, Rename, Delete & Merge branches
         * Add & Delete tags
-        * Revert & Cherry Pick commits
+        * Checkout, Cherry Pick & Revert commits
         * Reset current branch to commit
         * Copy Commit Hash to Clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)
@@ -36,6 +36,7 @@ This extension contributes the following settings:
 * `git-graph.showCurrentBranchByDefault`: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * `git-graph.showStatusBarItem`: Show a Status Bar item which opens Git Graph when clicked.
 * `git-graph.showUncommittedChanges`: Show uncommitted changes (set to false to decrease load time on large repositories).
+* `git-graph.tabIconColourTheme`: Specifies the colour theme of the icon displayed on the Git Graph tab.
 
 This extension consumes the following settings:
 

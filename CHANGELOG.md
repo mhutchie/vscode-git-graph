@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.4.3 - 2019-03-17
+* #17 Automatic refresh when repo changes while Git Graph is visible.
+* #32 Checkout a specific commit from the commit context menu.
+* #20 Hide the "Git Graph" status bar item when the workspace has no Git repository.
+* #28 Fixed the text colour used for dropdowns and dialogs, to support use with other VSCode colour themes.
+* Added the Git Graph icon to the tab when Git Graph is opened. By default the icon is coloured, but it can be set to greyscale with the new configuration setting `git-graph.tabIconColourTheme`.
+
 ## 1.4.2 - 2019-03-10
 * #22 New setting to show the current branch by default when Git Graph is opened, instead of showing all branches. By default `git-graph.showCurrentBranchByDefault` is false.
 * #24 Display all lines of the commit body in the commit details view. Thanks @ShoshinNikita!

@@ -438,6 +438,19 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	line-height:20px;
 	vertical-align:sub;
 }
+#actionRunning{
+	margin:0 16px;
+	line-height:24px;
+}
+#actionRunning svg{
+	display:inline-block;
+	fill:rgb(128,128,128);
+	margin-right:10px;
+	vertical-align:top;
+	animation:loadingIconAnimation 2s linear infinite;
+	width:18px !important;
+	height:24px !important;
+}
 
 /* Buttons */
 .roundedBtn{

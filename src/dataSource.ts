@@ -183,6 +183,10 @@ export class DataSource {
 		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
 	}
 
+	public pushTag(repo: string, tagName: string){
+		return this.runGitCommand('push origin ' + escapeRefName(tagName), repo);
+	}
+
 	public createBranch(repo: string, branchName: string, commitHash: string) {
 		return this.runGitCommand('branch ' + escapeRefName(branchName) + ' ' + commitHash, repo);
 	}

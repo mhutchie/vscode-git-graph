@@ -121,11 +121,11 @@
 		}
 
 		public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean) {
-			if(!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitHead === branchHead){
+			if (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitHead === branchHead) {
 				this.triggerLoadBranchesCallback(false);
 				return;
 			}
-			
+
 			this.gitBranches = branchOptions;
 			this.gitHead = branchHead;
 			if (this.currentBranch === null || (this.currentBranch !== '' && this.gitBranches.indexOf(this.currentBranch) === -1)) {
@@ -141,7 +141,7 @@
 
 			this.triggerLoadBranchesCallback(true);
 		}
-		private triggerLoadBranchesCallback(changes: boolean){
+		private triggerLoadBranchesCallback(changes: boolean) {
 			if (this.loadBranchesCallback !== null) {
 				this.loadBranchesCallback(changes);
 				this.loadBranchesCallback = null;
@@ -149,7 +149,7 @@
 		}
 
 		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean, hard: boolean) {
-			if(!hard && this.moreCommitsAvailable === moreAvailable && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && a.current === b.current && arraysEqual(a.refs, b.refs, (a, b) => a.name === b.name && a.type === b.type) && arraysEqual(a.parentHashes, b.parentHashes, (a, b) => a === b))){
+			if (!hard && this.moreCommitsAvailable === moreAvailable && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && a.current === b.current && arraysEqual(a.refs, b.refs, (a, b) => a.name === b.name && a.type === b.type) && arraysEqual(a.parentHashes, b.parentHashes, (a, b) => a === b))) {
 				if (this.commits.length > 0 && this.commits[0].hash === '*') {
 					this.commits[0] = commits[0];
 					this.saveState();
@@ -180,7 +180,7 @@
 
 			this.triggerLoadCommitsCallback(true);
 		}
-		private triggerLoadCommitsCallback(changes: boolean){
+		private triggerLoadCommitsCallback(changes: boolean) {
 			if (this.loadCommitsCallback !== null) {
 				this.loadCommitsCallback(changes);
 				this.loadCommitsCallback = null;
@@ -418,6 +418,14 @@
 								sendMessage({ command: 'deleteTag', repo: this.currentRepo!, tagName: refName });
 							}, null);
 						}
+					}, {
+						title: 'Push Tag',
+						onClick: () => {
+							showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+								sendMessage({ command: 'pushTag', repo: this.currentRepo!, tagName: refName });
+								showActionRunningDialog('Pushing Tag');
+							}, null);
+						}
 					}];
 				} else {
 					menu = [{
@@ -619,6 +627,9 @@
 			case 'mergeCommit':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Commit');
 				break;
+			case 'pushTag':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Push Tag');
+				break;
 			case 'renameBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
 				break;
@@ -779,7 +790,7 @@
 	function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem: HTMLElement) {
 		let html = '', i: number, event = <MouseEvent>e;
 		for (i = 0; i < items.length; i++) {
-			html += items[i] !== null ? '<li class="contextMenuItem" data-index="' + i + '">' + items[i]!.title + '</li>' :  '<li class="contextMenuDivider"></li>';
+			html += items[i] !== null ? '<li class="contextMenuItem" data-index="' + i + '">' + items[i]!.title + '</li>' : '<li class="contextMenuDivider"></li>';
 		}
 
 		hideContextMenuListener();
@@ -863,6 +874,9 @@
 	}
 	function showErrorDialog(message: string, reason: string | null, sourceElem: HTMLElement | null) {
 		showDialog(svgIcons.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), null, 'Dismiss', null, sourceElem);
+	}
+	function showActionRunningDialog(command: string) {
+		showDialog('<span id="actionRunning">' + svgIcons.loading + command + ' ...</span>', null, 'Dismiss', null, null);
 	}
 	function showDialog(html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
 		dialogBacking.className = 'active';

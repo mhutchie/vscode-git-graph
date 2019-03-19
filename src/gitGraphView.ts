@@ -171,6 +171,12 @@ export class GitGraphView {
 						status: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit)
 					});
 					break;
+				case 'pushTag':
+					this.sendMessage({
+						command: 'pushTag',
+						status: await this.dataSource.pushTag(msg.repo, msg.tagName)
+					});
+					break;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',

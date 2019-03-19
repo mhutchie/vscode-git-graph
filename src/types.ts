@@ -229,6 +229,16 @@ export interface ResponseMergeCommit {
 	status: GitCommandStatus;
 }
 
+export interface RequestPushTag {
+	command: 'pushTag';
+	repo: string;
+	tagName: string;
+}
+export interface ResponsePushTag {
+	command: 'pushTag';
+	status: GitCommandStatus;
+}
+
 export interface ResponseRefresh {
 	command: 'refresh';
 }
@@ -294,6 +304,7 @@ export type RequestMessage =
 	| RequestLoadRepos
 	| RequestMergeBranch
 	| RequestMergeCommit
+	| RequestPushTag
 	| RequestRenameBranch
 	| RequestResetToCommit
 	| RequestRevertCommit
@@ -314,6 +325,7 @@ export type ResponseMessage =
 	| ResponseLoadRepos
 	| ResponseMergeBranch
 	| ResponseMergeCommit
+	| ResponsePushTag
 	| ResponseRefresh
 	| ResponseRenameBranch
 	| ResponseResetToCommit

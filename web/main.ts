@@ -430,16 +430,7 @@
 				} else {
 					menu = [{
 						title: 'Checkout Branch',
-						onClick: () => {
-							if (sourceElem.classList.contains('head')) {
-								sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: refName, remoteBranch: null });
-							} else if (sourceElem.classList.contains('remote')) {
-								let refNameComps = refName.split('/');
-								showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
-									sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: newBranch, remoteBranch: refName });
-								}, null);
-							}
-						}
+						onClick: () => this.checkoutBranchAction(sourceElem, refName)
 					}];
 					if (sourceElem.classList.contains('head')) {
 						menu.push(
@@ -473,6 +464,12 @@
 				}
 				showContextMenu(<MouseEvent>e, menu, sourceElem);
 			});
+			addListenerToClass('gitRef', 'click', (e: Event) => e.stopPropagation());
+			addListenerToClass('gitRef', 'dblclick', (e: Event) => {
+				e.stopPropagation();
+				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
+				this.checkoutBranchAction(sourceElem, unescapeHtml(sourceElem.dataset.name!));
+			});
 		}
 		private renderUncommitedChanges() {
 			let date = getCommitDate(this.commits[0].date);
@@ -482,6 +479,16 @@
 			hideDialogAndContextMenu();
 			this.graph.clear();
 			this.tableElem.innerHTML = '<table><tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr></table><h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
+		}
+		private checkoutBranchAction(sourceElem: HTMLElement, refName: string) {
+			if (sourceElem.classList.contains('head')) {
+				sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: refName, remoteBranch: null });
+			} else if (sourceElem.classList.contains('remote')) {
+				let refNameComps = refName.split('/');
+				showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
+					sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: newBranch, remoteBranch: refName });
+				}, null);
+			}
 		}
 
 		/* Commit Details */

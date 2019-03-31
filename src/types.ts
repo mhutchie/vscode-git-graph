@@ -47,12 +47,13 @@ export interface GitUnsavedChanges {
 	changes: number;
 }
 
-export interface GitGraphViewSettings {
+export interface GitGraphViewState {
 	autoCenterCommitDetailsView: boolean;
 	dateFormat: DateFormat;
 	graphColours: string[];
 	graphStyle: GraphStyle;
 	initialLoadCommits: number;
+	lastActiveRepo: string | null;
 	loadMoreCommits: number;
 	repos: string[];
 	showCurrentBranchByDefault: boolean;
@@ -205,6 +206,7 @@ export interface RequestLoadRepos {
 export interface ResponseLoadRepos {
 	command: 'loadRepos';
 	repos: string[];
+	lastActiveRepo: string | null;
 }
 
 export interface RequestMergeBranch {

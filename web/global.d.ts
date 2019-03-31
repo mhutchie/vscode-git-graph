@@ -7,7 +7,7 @@ declare global {
 		setState(state: WebViewState): void
 	};
 
-	var settings: GG.GitGraphViewSettings;
+	var viewState: GG.GitGraphViewState;
 
 	interface Config {
 		autoCenterCommitDetailsView: boolean;

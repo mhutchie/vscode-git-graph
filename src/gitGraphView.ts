@@ -3,9 +3,10 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { encodeDiffDocUri } from './diffDocProvider';
+import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoFolderWatcher } from './repoFolderWatcher';
-import { GitFileChangeType, GitGraphViewSettings, RequestMessage, ResponseMessage } from './types';
+import { GitFileChangeType, GitGraphViewState, RequestMessage, ResponseMessage } from './types';
 import { abbrevCommit, copyToClipboard } from './utils';
 
 export class GitGraphView {
@@ -14,6 +15,7 @@ export class GitGraphView {
 	private readonly panel: vscode.WebviewPanel;
 	private readonly extensionPath: string;
 	private readonly dataSource: DataSource;
+	private readonly extensionState: ExtensionState;
 	private readonly repoFileWatcher: RepoFileWatcher;
 	private readonly repoFolderWatcher: RepoFolderWatcher;
 	private disposables: vscode.Disposable[] = [];
@@ -21,7 +23,7 @@ export class GitGraphView {
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -36,13 +38,14 @@ export class GitGraphView {
 			]
 		});
 
-		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource);
+		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource) {
+	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState) {
 		this.panel = panel;
 		this.extensionPath = extensionPath;
 		this.dataSource = dataSource;
+		this.extensionState = extensionState;
 
 		panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
 			? this.getUri('resources', 'webview-icon.svg')
@@ -66,14 +69,15 @@ export class GitGraphView {
 
 		this.repoFileWatcher = new RepoFileWatcher(() => {
 			if (this.panel.visible) {
-				this.sendMessage({command: 'refresh'});
+				this.sendMessage({ command: 'refresh' });
 			}
 		});
-		this.repoFolderWatcher = new RepoFolderWatcher(dataSource, (repos) => {
+		this.repoFolderWatcher = new RepoFolderWatcher(async () => {
+			let repos = await this.dataSource.getRepos();
 			if ((repos.length === 0 && this.isGraphViewLoaded) || (repos.length > 0 && !this.isGraphViewLoaded)) {
 				this.update();
 			} else {
-				this.sendMessage({ command: 'loadRepos', repos: repos });
+				this.respondLoadRepos(repos);
 			}
 		});
 
@@ -143,6 +147,7 @@ export class GitGraphView {
 					});
 					if (msg.repo !== this.currentRepo) {
 						this.currentRepo = msg.repo;
+						this.extensionState.setLastActiveRepo(msg.repo);
 						this.repoFileWatcher.start(msg.repo);
 					}
 					break;
@@ -154,10 +159,7 @@ export class GitGraphView {
 					});
 					break;
 				case 'loadRepos':
-					this.sendMessage({
-						command: 'loadRepos',
-						repos: await this.dataSource.getRepos()
-					});
+					this.respondLoadRepos(await this.dataSource.getRepos());
 					break;
 				case 'mergeBranch':
 					this.sendMessage({
@@ -226,23 +228,24 @@ export class GitGraphView {
 	private async getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
 
-		let settings: GitGraphViewSettings = {
+		let viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
 			dateFormat: config.dateFormat(),
 			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),
 			initialLoadCommits: config.initialLoadCommits(),
+			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadMoreCommits: config.loadMoreCommits(),
 			repos: await this.dataSource.getRepos(),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
 
 		let colourStyles = '', body;
-		for (let i = 0; i < settings.graphColours.length; i++) {
-			colourStyles += '.colour' + i + ' { background-color:' + settings.graphColours[i] + '; } ';
+		for (let i = 0; i < viewState.graphColours.length; i++) {
+			colourStyles += '.colour' + i + ' { background-color:' + viewState.graphColours[i] + '; } ';
 		}
 
-		if (settings.repos.length > 0) {
+		if (viewState.repos.length > 0) {
 			body = `<body>
 			<div id="controls">
 				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
@@ -257,13 +260,13 @@ export class GitGraphView {
 			<ul id="contextMenu"></ul>
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
-			<script nonce="${nonce}">var settings = ${JSON.stringify(settings)};</script>
+			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
 			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {
 			body = `<body class="unableToLoad"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
 		}
-		this.isGraphViewLoaded = settings.repos.length > 0;
+		this.isGraphViewLoaded = viewState.repos.length > 0;
 
 		return `<!DOCTYPE html>
 		<html lang="en">
@@ -286,6 +289,14 @@ export class GitGraphView {
 
 	private getUri(...pathComps: string[]) {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
+	}
+
+	private respondLoadRepos(repos: string[]) {
+		this.sendMessage({
+			command: 'loadRepos',
+			repos: repos,
+			lastActiveRepo: this.extensionState.getLastActiveRepo()
+		});
 	}
 
 	private sendMessage(msg: ResponseMessage) {

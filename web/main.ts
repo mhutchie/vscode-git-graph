@@ -28,7 +28,7 @@
 		private commits: GG.GitCommitNode[] = [];
 		private commitLookup: { [hash: string]: number } = {};
 		private currentBranch: string | null = null;
-		private currentRepo: string;
+		private currentRepo!: string;
 
 		private graph: Graph;
 		private config: Config;
@@ -45,9 +45,8 @@
 		private loadBranchesCallback: ((changes: boolean) => void) | null = null;
 		private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-		constructor(repos: string[], config: Config, prevState: WebViewState | null) {
+		constructor(repos: string[], lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
 			this.gitRepos = repos;
-			this.currentRepo = repos[0];
 			this.config = config;
 			this.maxCommits = config.initialLoadCommits;
 			this.graph = new Graph('commitGraph', this.config);
@@ -91,18 +90,19 @@
 					if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranches(prevState.gitBranches, prevState.gitHead, true);
 				}
 			}
-			this.loadRepoOptions(this.gitRepos);
+			this.loadRepos(this.gitRepos, lastActiveRepo);
 			this.requestLoadBranchesAndCommits(false);
 		}
 
 		/* Loading Data */
-		public loadRepoOptions(repos: string[]) {
+		public loadRepos(repos: string[], lastActiveRepo: string | null) {
 			this.gitRepos = repos;
 			this.saveState();
 
 			let curRepoIndex = this.gitRepos.indexOf(this.currentRepo), changedRepo = false;
 			if (curRepoIndex === -1) {
-				this.currentRepo = this.gitRepos[0];
+				this.currentRepo = lastActiveRepo !== null && this.gitRepos.indexOf(lastActiveRepo) > -1 ? lastActiveRepo : this.gitRepos[0];
+				curRepoIndex = this.gitRepos.indexOf(this.currentRepo);
 				this.saveState();
 				changedRepo = true;
 			}
@@ -572,14 +572,14 @@
 
 	let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
 	let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null;
-	let gitGraph = new GitGraphView(settings.repos, {
-		autoCenterCommitDetailsView: settings.autoCenterCommitDetailsView,
-		graphColours: settings.graphColours,
-		graphStyle: settings.graphStyle,
+	let gitGraph = new GitGraphView(viewState.repos, viewState.lastActiveRepo, {
+		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
+		graphColours: viewState.graphColours,
+		graphStyle: viewState.graphStyle,
 		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12 },
-		initialLoadCommits: settings.initialLoadCommits,
-		loadMoreCommits: settings.loadMoreCommits,
-		showCurrentBranchByDefault: settings.showCurrentBranchByDefault
+		initialLoadCommits: viewState.initialLoadCommits,
+		loadMoreCommits: viewState.loadMoreCommits,
+		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault
 	}, vscode.getState());
 
 
@@ -626,7 +626,7 @@
 				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable, msg.hard);
 				break;
 			case 'loadRepos':
-				gitGraph.loadRepoOptions(msg.repos);
+				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo);
 				break;
 			case 'mergeBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');
@@ -672,7 +672,7 @@
 		let dateStr = date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
 		let timeStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
 
-		switch (settings.dateFormat) {
+		switch (viewState.dateFormat) {
 			case 'Date Only':
 				value = dateStr;
 				break;

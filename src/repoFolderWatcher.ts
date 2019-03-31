@@ -1,13 +1,10 @@
 import * as vscode from 'vscode';
-import { DataSource } from './dataSource';
 
 export class RepoFolderWatcher {
-	private readonly repoChangeCallback: (repo: string[]) => void;
-	private readonly dataSource: DataSource;
+	private readonly repoChangeCallback: () => void;
 	private changeHandler: vscode.Disposable | null = null;
 
-	constructor(dataSource: DataSource, repoChangeCallback: (repo: string[]) => void) {
-		this.dataSource = dataSource;
+	constructor(repoChangeCallback: () => void) {
 		this.repoChangeCallback = repoChangeCallback;
 		this.start();
 	}
@@ -17,9 +14,8 @@ export class RepoFolderWatcher {
 			this.stop();
 		}
 
-		this.changeHandler = vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-			let repos = await this.dataSource.getRepos();
-			this.repoChangeCallback(repos);
+		this.changeHandler = vscode.workspace.onDidChangeWorkspaceFolders(() => {
+			this.repoChangeCallback();
 		});
 	}
 

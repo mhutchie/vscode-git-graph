@@ -17,6 +17,7 @@
 	const htmlEscaper = /[&<>"'\/]/g;
 	const htmlUnescaper = /&lt;|&gt;|&amp;|&quot;|&#x27;|&#x2F;/g;
 	const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$/g;
+	const ELLIPSIS = '&#8230;';
 
 
 	/* Classes */
@@ -308,7 +309,7 @@
 				let hash = sourceElem.dataset.hash!;
 				showContextMenu(<MouseEvent>e, [
 					{
-						title: 'Add Tag',
+						title: 'Add Tag' + ELLIPSIS,
 						onClick: () => {
 							showInputDialog('Enter the name of the tag you would like to add to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Add Tag', (name) => {
 								sendMessage({ command: 'addTag', repo: this.currentRepo!, tagName: name, commitHash: hash });
@@ -316,7 +317,7 @@
 						}
 					},
 					{
-						title: 'Create Branch from this Commit',
+						title: 'Create Branch' + ELLIPSIS,
 						onClick: () => {
 							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
 								sendMessage({ command: 'createBranch', repo: this.currentRepo!, branchName: name, commitHash: hash });
@@ -325,7 +326,7 @@
 					},
 					null,
 					{
-						title: 'Checkout this Commit',
+						title: 'Checkout' + ELLIPSIS,
 						onClick: () => {
 							showConfirmationDialog('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
 								sendMessage({ command: 'checkoutCommit', repo: this.currentRepo!, commitHash: hash });
@@ -333,7 +334,7 @@
 						}
 					},
 					{
-						title: 'Cherry Pick this Commit',
+						title: 'Cherry Pick' + ELLIPSIS,
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
 								showConfirmationDialog('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
@@ -351,7 +352,7 @@
 						}
 					},
 					{
-						title: 'Revert this Commit',
+						title: 'Revert' + ELLIPSIS,
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
 								showConfirmationDialog('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
@@ -370,7 +371,7 @@
 					},
 					null,
 					{
-						title: 'Merge into current branch',
+						title: 'Merge into current branch' + ELLIPSIS,
 						onClick: () => {
 							showCheckboxDialog('Are you sure you want to merge commit <b><i>' + abbrevCommit(hash) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
 								sendMessage({ command: 'mergeCommit', repo: this.currentRepo!, commitHash: hash, createNewCommit: createNewCommit });
@@ -378,7 +379,7 @@
 						}
 					},
 					{
-						title: 'Reset current branch to this Commit',
+						title: 'Reset current branch to this Commit' + ELLIPSIS,
 						onClick: () => {
 							showSelectDialog('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'mixed', [
 								{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
@@ -412,14 +413,14 @@
 				let refName = unescapeHtml(sourceElem.dataset.name!), menu;
 				if (sourceElem.classList.contains('tag')) {
 					menu = [{
-						title: 'Delete Tag',
+						title: 'Delete Tag' + ELLIPSIS,
 						onClick: () => {
 							showConfirmationDialog('Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
 								sendMessage({ command: 'deleteTag', repo: this.currentRepo!, tagName: refName });
 							}, null);
 						}
 					}, {
-						title: 'Push Tag',
+						title: 'Push Tag' + ELLIPSIS,
 						onClick: () => {
 							showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
 								sendMessage({ command: 'pushTag', repo: this.currentRepo!, tagName: refName });
@@ -428,31 +429,28 @@
 						}
 					}];
 				} else {
-					menu = [{
-						title: 'Checkout Branch',
-						onClick: () => this.checkoutBranchAction(sourceElem, refName)
-					}];
 					if (sourceElem.classList.contains('head')) {
-						menu.push(
-							{
-								title: 'Rename Branch',
-								onClick: () => {
-									showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
-										sendMessage({ command: 'renameBranch', repo: this.currentRepo!, oldName: refName, newName: newName });
-									}, null);
-								}
-							}, {
-								title: 'Delete Branch',
-								onClick: () => {
-									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
-										sendMessage({ command: 'deleteBranch', repo: this.currentRepo!, branchName: refName, forceDelete: forceDelete });
-									}, null);
-								}
+						menu = [{
+							title: 'Checkout Branch',
+							onClick: () => this.checkoutBranchAction(sourceElem, refName)
+						}, {
+							title: 'Rename Branch' + ELLIPSIS,
+							onClick: () => {
+								showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+									sendMessage({ command: 'renameBranch', repo: this.currentRepo!, oldName: refName, newName: newName });
+								}, null);
 							}
-						);
+						}, {
+							title: 'Delete Branch' + ELLIPSIS,
+							onClick: () => {
+								showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
+									sendMessage({ command: 'deleteBranch', repo: this.currentRepo!, branchName: refName, forceDelete: forceDelete });
+								}, null);
+							}
+						}];
 						if (this.gitHead !== refName) {
 							menu.push({
-								title: 'Merge into current branch',
+								title: 'Merge into current branch' + ELLIPSIS,
 								onClick: () => {
 									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
 										sendMessage({ command: 'mergeBranch', repo: this.currentRepo!, branchName: refName, createNewCommit: createNewCommit });
@@ -460,6 +458,11 @@
 								}
 							});
 						}
+					} else {
+						menu = [{
+							title: 'Checkout Branch' + ELLIPSIS,
+							onClick: () => this.checkoutBranchAction(sourceElem, refName)
+						}];
 					}
 				}
 				showContextMenu(<MouseEvent>e, menu, sourceElem);

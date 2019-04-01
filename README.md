@@ -43,6 +43,8 @@ This extension consumes the following settings:
 
 * `git.path`: Specifies the path of a portable Git installation.
 
+More information on each setting, including detailed descriptions, default values and types is available [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings).
+
 ## Extension Commands
 
 This extension contributes the following commands:

@@ -59,6 +59,11 @@
 						"Date Only",
 						"Relative"
 					],
+					"enumDescriptions": [
+						"Show the date and time, for example \"19 Mar 2019 21:34\"",
+						"Show the date only, for example \"19 Mar 2019\"",
+						"Show relative times, for example \"5 minutes ago\""
+					],
 					"default": "Date & Time",
 					"description": "Specifies the date format to be used in the date column of Git Graph."
 				},
@@ -67,6 +72,10 @@
 					"enum": [
 						"Author Date",
 						"Commit Date"
+					],
+					"enumDescriptions": [
+						"Use the author date of a commit",
+						"Use the committer date of a commit"
 					],
 					"default": "Author Date",
 					"description": "Specifies the date type to be displayed throughout Git Graph."
@@ -100,6 +109,10 @@
 						"rounded",
 						"angular"
 					],
+					"enumDescriptions": [
+						"Use smooth curves when transitioning between branches on the graph",
+						"Use angular lines when transitioning between branches on the graph"
+					],
 					"default": "rounded",
 					"description": "Specifies the style of the graph."
 				},
@@ -110,7 +123,7 @@
 				},
 				"git-graph.loadMoreCommits": {
 					"type": "number",
-					"default": 75,
+					"default": 100,
 					"description": "Specifies the number of commits to load when the \"Load More Commits\" button is pressed (only shown when more commits are available)."
 				},
 				"git-graph.showCurrentBranchByDefault": {
@@ -133,6 +146,10 @@
 					"enum": [
 						"colour",
 						"grey"
+					],
+					"enumDescriptions": [
+						"Show a colour icon which suits most Visual Studio Code colour themes",
+						"Show a grey icon which suits Visual Studio Code colour themes that are predominantly grayscale"
 					],
 					"default": "colour",
 					"description": "Specifies the colour theme of the icon displayed on the Git Graph tab."

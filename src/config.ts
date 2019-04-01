@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DateFormat, GraphStyle, TabIconColourTheme } from './types';
+import { DateFormat, DateType, GraphStyle, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -14,6 +14,10 @@ class Config {
 
 	public dateFormat(): DateFormat {
 		return this.workspaceConfiguration.get('dateFormat', 'Date & Time');
+	}
+
+	public dateType(): DateType {
+		return this.workspaceConfiguration.get('dateType', 'Author Date');
 	}
 
 	public graphColours() {

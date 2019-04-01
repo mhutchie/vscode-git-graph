@@ -68,6 +68,7 @@ export interface GitFileChange {
 }
 
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
+export type DateType = 'Author Date' | 'Commit Date';
 export type GraphStyle = 'rounded' | 'angular';
 export type TabIconColourTheme = 'colour' | 'grey';
 export type GitCommandStatus = string | null;

@@ -5,22 +5,28 @@ import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileCh
 
 const eolRegex = /\r\n|\r|\n/g;
 const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
-
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
-const gitLogFormat = ['%H', '%P', '%an', '%ae', '%at', '%s'].join(gitLogSeparator);
-const gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', '%at', '%cn'].join(gitLogSeparator) + '%n%B';
 
 export class DataSource {
 	private gitPath!: string;
 	private gitExecPath!: string;
+	private gitLogFormat!: string;
+	private gitCommitDetailsFormat!: string;
 
 	constructor() {
 		this.registerGitPath();
+		this.generateGitCommandFormats();
 	}
 
 	public registerGitPath() {
 		this.gitPath = getConfig().gitPath();
 		this.gitExecPath = this.gitPath.indexOf(' ') > -1 ? '"' + this.gitPath + '"' : this.gitPath;
+	}
+
+	public generateGitCommandFormats(){
+		let dateType = getConfig().dateType() === 'Author Date' ? '%at' : '%ct';
+		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(gitLogSeparator);
+		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(gitLogSeparator) + '%n%B';
 	}
 
 	public async getRepos() {
@@ -107,7 +113,7 @@ export class DataSource {
 	public async commitDetails(repo: string, commitHash: string) {
 		try {
 			let details = await new Promise<GitCommitDetails>((resolve, reject) => {
-				this.execGit('show --quiet ' + commitHash + ' --format="' + gitCommitDetailsFormat + '"', repo, (err, stdout) => {
+				this.execGit('show --quiet ' + commitHash + ' --format="' + this.gitCommitDetailsFormat + '"', repo, (err, stdout) => {
 					if (!err) {
 						let lines = stdout.split(eolRegex), lastLine = lines.length - 1;
 						while (lines.length > 0 && lines[lastLine] === '') lastLine--;
@@ -264,7 +270,7 @@ export class DataSource {
 	}
 
 	private getGitLog(repo: string, branch: string, num: number, showRemoteBranches: boolean) {
-		let args = ['log', '--max-count=' + num, '--format=' + gitLogFormat, '--date-order'];
+		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--date-order'];
 		if (branch !== '') {
 			args.push(escapeRefName(branch));
 		} else {

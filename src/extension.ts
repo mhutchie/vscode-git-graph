@@ -21,6 +21,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
 		if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
 			statusBarItem.refresh();
+		} else if (e.affectsConfiguration('git-graph.dateType')) {
+			dataSource.generateGitCommandFormats();
 		} else if (e.affectsConfiguration('git.path')) {
 			dataSource.registerGitPath();
 		}

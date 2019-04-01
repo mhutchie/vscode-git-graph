@@ -60,7 +60,16 @@
 						"Relative"
 					],
 					"default": "Date & Time",
-					"description": "Specifies the date format to be used in the date column of the graph."
+					"description": "Specifies the date format to be used in the date column of Git Graph."
+				},
+				"git-graph.dateType": {
+					"type": "string",
+					"enum": [
+						"Author Date",
+						"Commit Date"
+					],
+					"default": "Author Date",
+					"description": "Specifies the date type to be displayed throughout Git Graph."
 				},
 				"git-graph.graphColours": {
 					"type": "array",

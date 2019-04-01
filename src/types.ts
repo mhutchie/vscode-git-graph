@@ -82,6 +82,8 @@ export interface RequestAddTag {
 	repo: string;
 	commitHash: string;
 	tagName: string;
+	lightweight: boolean;
+	message: string;
 }
 export interface ResponseAddTag {
 	command: 'addTag';

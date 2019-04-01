@@ -175,15 +175,22 @@ export class DataSource {
 		return this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout, '');
 	}
 
-	public addTag(repo: string, tagName: string, commitHash: string) {
-		return this.runGitCommand('tag -a ' + escapeRefName(tagName) + ' -m "" ' + commitHash, repo);
+	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
+		let args = ['tag'];
+		if (lightweight) {
+			args.push(tagName);
+		} else {
+			args.push('-a', tagName, '-m', message);
+		}
+		args.push(commitHash);
+		return this.runGitCommandSpawn(args, repo);
 	}
 
 	public deleteTag(repo: string, tagName: string) {
 		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
 	}
 
-	public pushTag(repo: string, tagName: string){
+	public pushTag(repo: string, tagName: string) {
 		return this.runGitCommand('push origin ' + escapeRefName(tagName), repo);
 	}
 
@@ -303,6 +310,28 @@ export class DataSource {
 						lines = err.message.split(eolRegex);
 						lines.shift();
 					}
+					resolve(lines.slice(0, lines.length - 1).join('\n'));
+				}
+			});
+		});
+	}
+
+	private runGitCommandSpawn(args: string[], repo: string) {
+		return new Promise<GitCommandStatus>((resolve) => {
+			let stdout = '', stderr = '', err = false;
+			const cmd = cp.spawn(this.gitPath, args, { cwd: repo });
+			cmd.stdout.on('data', d => { stdout += d; });
+			cmd.stderr.on('data', d => { stderr += d; });
+			cmd.on('error', e => {
+				resolve(e.message.split(eolRegex).join('\n'));
+				err = true;
+			});
+			cmd.on('exit', (code) => {
+				if (err) return;
+				if (code === 0) {
+					resolve(null);
+				} else {
+					let lines = (stdout !== '' ? stdout : stderr !== '' ? stderr : '').split(eolRegex);
 					resolve(lines.slice(0, lines.length - 1).join('\n'));
 				}
 			});

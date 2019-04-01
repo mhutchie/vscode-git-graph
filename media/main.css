@@ -382,20 +382,44 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 	overflow-y:auto;
 }
-#dialog label{
-	margin-top:10px;
-	display:inline-block;
+
+#dialog > table.dialogForm{
+	display:inline-table;
+    width:360px;
 }
-#dialog input[type=text], #dialog select{
-	margin-top:10px;
+#dialog > table.dialogForm td{
+	padding-top:10px;
+	text-align:left;
+	white-space:nowrap;	
+}
+#dialog > table.dialogForm td:last-child{
 	width:100%;
+}
+#dialog > table.dialogForm.multi td:nth-child(1){
+	padding-right:5px;
+}
+#dialog > table.dialogForm.single select{
+	width:100%;
+}
+#dialog > table.dialogForm.single .dialogFormCheckbox{
+	display:inline-block;
+    text-align:center;
+    width:100%;
+}
+#dialog > table.dialogForm input[type=text]{
+	width:100%;
+}
+#dialog > table.dialogForm input[type=checkbox]{
+	vertical-align:text-top;
+	outline-style:none;
+}
+#dialog > table.dialogForm.multi input[type=checkbox]{
+	margin-left:0;
+}
+#dialog > table.dialogForm input[type=text], #dialog > table.dialogForm select{
 	padding:4px;
 	box-sizing:border-box;
 	border:1px solid rgba(128,128,128,0.3);
-	outline-style:none;
-}
-#dialog input[type=checkbox]{
-	vertical-align:text-top;
 	outline-style:none;
 }
 #dialog .roundedBtn{

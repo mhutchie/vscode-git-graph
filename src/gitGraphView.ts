@@ -88,7 +88,7 @@ export class GitGraphView {
 				case 'addTag':
 					this.sendMessage({
 						command: 'addTag',
-						status: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash)
+						status: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
 					});
 					break;
 				case 'checkoutBranch':

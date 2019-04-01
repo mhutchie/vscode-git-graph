@@ -26,6 +26,31 @@ declare global {
 
 	type ContextMenuElement = ContextMenuItem | null;
 
+	interface DialogTextInput {
+		type: 'text';
+		name: string;
+		default: string;
+		placeholder: string | null;
+	}
+	interface DialogTextRefInput {
+		type: 'text-ref';
+		name: string;
+		default: string;
+	}
+	interface DialogSelectInput {
+		type: 'select';
+		name: string;
+		options: { name: string, value: string }[];
+		default: string;
+	}
+	interface DialogCheckboxInput {
+		type: 'checkbox';
+		name: string;
+		value: boolean;
+	}
+	type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
+	type DialogInputValue = string | boolean;
+
 	interface ExpandedCommit {
 		id: number;
 		hash: string;

@@ -311,15 +311,19 @@
 					{
 						title: 'Add Tag' + ELLIPSIS,
 						onClick: () => {
-							showInputDialog('Enter the name of the tag you would like to add to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Add Tag', (name) => {
-								sendMessage({ command: 'addTag', repo: this.currentRepo!, tagName: name, commitHash: hash });
+							showFormDialog('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
+								{ type: 'select' as 'select', name: 'Type: ', default: 'annotated', options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+								{ type: 'text' as 'text', name: 'Message: ', default: '', placeholder: 'Optional' }
+							], 'Add Tag', values => {
+								sendMessage({ command: 'addTag', repo: this.currentRepo!, tagName: values[0], commitHash: hash, lightweight: values[1] === 'lightweight', message: values[2] });
 							}, sourceElem);
 						}
 					},
 					{
 						title: 'Create Branch' + ELLIPSIS,
 						onClick: () => {
-							showInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
+							showRefInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
 								sendMessage({ command: 'createBranch', repo: this.currentRepo!, branchName: name, commitHash: hash });
 							}, sourceElem);
 						}
@@ -436,7 +440,7 @@
 						}, {
 							title: 'Rename Branch' + ELLIPSIS,
 							onClick: () => {
-								showInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+								showRefInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
 									sendMessage({ command: 'renameBranch', repo: this.currentRepo!, oldName: refName, newName: newName });
 								}, null);
 							}
@@ -488,7 +492,7 @@
 				sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: refName, remoteBranch: null });
 			} else if (sourceElem.classList.contains('remote')) {
 				let refNameComps = refName.split('/');
-				showInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
+				showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
 					sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: newBranch, remoteBranch: refName });
 				}, null);
 			}
@@ -840,47 +844,66 @@
 			confirmed();
 		}, sourceElem);
 	}
-	function showInputDialog(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
-		showDialog(message + '<br><input id="dialogInput" type="text"/>', actionName, 'Cancel', () => {
-			if (dialog.className === 'active noInput' || dialog.className === 'active inputInvalid') return;
-			let value = dialogInput.value;
-			hideDialog();
-			actioned(value);
-		}, sourceElem);
-
-		let dialogInput = <HTMLInputElement>document.getElementById('dialogInput'), dialogAction = document.getElementById('dialogAction')!;
-		if (defaultValue !== '') {
-			dialogInput.value = defaultValue;
-		} else {
-			dialog.className = 'active noInput';
-		}
-		dialogInput.focus();
-		dialogInput.addEventListener('keyup', () => {
-			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(refInvalid) !== null;
-			let newClassName = 'active' + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
-			if (dialog.className !== newClassName) {
-				dialog.className = newClassName;
-				dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';
-			}
-		});
+	function showRefInputDialog(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
+		showFormDialog(message, [{ type: 'text-ref', name: '', default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
 	}
 	function showCheckboxDialog(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
-		showDialog(message + '<br><label><input id="dialogInput" type="checkbox"' + (checkboxValue ? ' checked' : '') + '/>' + checkboxLabel + '</label>', actionName, 'Cancel', () => {
-			let value = (<HTMLInputElement>document.getElementById('dialogInput')).checked;
-			hideDialog();
-			actioned(value);
-		}, sourceElem);
+		showFormDialog(message, [{ type: 'checkbox', name: checkboxLabel, value: checkboxValue}], actionName, values => actioned(values[0] === 'checked'), sourceElem);
 	}
 	function showSelectDialog(message: string, defaultValue: string, options: { name: string, value: string }[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
-		let selectOptions = '', i;
-		for (i = 0; i < options.length; i++) {
-			selectOptions += '<option value="' + options[i].value + '"' + (options[i].value === defaultValue ? ' selected' : '') + '>' + options[i].name + '</option>';
+		showFormDialog(message, [{ type: 'select', name: '', options: options, default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
+	}
+	function showFormDialog(message: string, inputs: DialogInput[], actionName: string, actioned: (values: string[]) => void, sourceElem: HTMLElement | null) {
+		let textRefInput = -1, multiElementForm = inputs.length > 1;
+		let html = message + '<br><table class="dialogForm ' + (multiElementForm ? 'multi' : 'single') + '">';
+		for (let i = 0; i < inputs.length; i++) {
+			let input = inputs[i];
+			html += '<tr>' + (multiElementForm ? '<td>' + input.name + '</td>' : '') + '<td>';
+			if (input.type === 'select') {
+				html += '<select id="dialogInput' + i + '">';
+				for (let j = 0; j < input.options.length; j++) {
+					html += '<option value="' + input.options[j].value + '"' + (input.options[j].value === input.default ? ' selected' : '') + '>' + input.options[j].name + '</option>';
+				}
+				html += '</select>';
+			} else if (input.type === 'checkbox') {
+				html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElementForm ? '' : input.name) + '</label></span>';
+			} else {
+				html += '<input id="dialogInput' + i + '" type="text" value="' + input.default + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + input.placeholder + '"' : '') + '/>';
+				if (input.type === 'text-ref') textRefInput = i;
+			}
+			html += '</td></tr>';
 		}
-		showDialog(message + '<br><select id="dialogInput">' + selectOptions + '</select>', actionName, 'Cancel', () => {
-			let value = (<HTMLSelectElement>document.getElementById('dialogInput')).value;
+		html += '</table>';
+		showDialog(html, actionName, 'Cancel', () => {
+			if (dialog.className === 'active noInput' || dialog.className === 'active inputInvalid') return;
+			let values = [];
+			for (let i = 0; i < inputs.length; i++) {
+				let input = inputs[i], elem = document.getElementById('dialogInput' + i);
+				if (input.type === 'select') {
+					values.push((<HTMLSelectElement>elem).value);
+				} else if (input.type === 'checkbox') {
+					values.push((<HTMLInputElement>elem).checked ? 'checked' : 'unchecked');
+				} else {
+					values.push((<HTMLInputElement>elem).value);
+				}
+			}
 			hideDialog();
-			actioned(value);
+			actioned(values);
 		}, sourceElem);
+
+		if (textRefInput > -1) {
+			let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
+			if (dialogInput.value === '') dialog.className = 'active noInput';
+			dialogInput.focus();
+			dialogInput.addEventListener('keyup', () => {
+				let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(refInvalid) !== null;
+				let newClassName = 'active' + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
+				if (dialog.className !== newClassName) {
+					dialog.className = newClassName;
+					dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';
+				}
+			});
+		}
 	}
 	function showErrorDialog(message: string, reason: string | null, sourceElem: HTMLElement | null) {
 		showDialog(svgIcons.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), null, 'Dismiss', null, sourceElem);

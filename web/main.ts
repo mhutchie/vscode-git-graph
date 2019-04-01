@@ -474,6 +474,7 @@
 			addListenerToClass('gitRef', 'click', (e: Event) => e.stopPropagation());
 			addListenerToClass('gitRef', 'dblclick', (e: Event) => {
 				e.stopPropagation();
+				hideDialogAndContextMenu();
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
 				this.checkoutBranchAction(sourceElem, unescapeHtml(sourceElem.dataset.name!));
 			});

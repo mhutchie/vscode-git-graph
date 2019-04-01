@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.4.4 - 2019-04-01
+* #27 Add lightweight or annotated tags. Add message (optional) to annotated tags.
+* #35 Merge a specific commit from the commit context menu.
+* #38 Push a tag to origin from the tag context menu.
+* #39 Checkout a branch by double clicking on the branch label.
+* #40 Reworded context menu actions. Use ellipses to differentiate non-immediate actions. Added support for dividers in the context menus to better segment actions.
+* #41 Load the last viewed repo when opening Git Graph in a multi-root workspace.
+* #42 New setting `git-graph.dateType` to specify the date type to be displayed, either the author or commit date.
+
 ## 1.4.3 - 2019-03-17
 * #17 Automatic refresh when repo changes while Git Graph is visible.
 * #32 Checkout a specific commit from the commit context menu.

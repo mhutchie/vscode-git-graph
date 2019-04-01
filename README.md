@@ -15,8 +15,8 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * View the Visual Studio Code Diff of a file change by clicking on it in the commit details view
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
         * Create, Checkout, Rename, Delete & Merge branches
-        * Add & Delete tags
-        * Checkout, Cherry Pick & Revert commits
+        * Add, Delete & Push tags
+        * Checkout, Cherry Pick, Merge & Revert commits
         * Reset current branch to commit
         * Copy Commit Hash to Clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)
@@ -29,6 +29,7 @@ This extension contributes the following settings:
 
 * `git-graph.autoCenterCommitDetailsView`: Automatically center the commit details view when it is opened.
 * `git-graph.dateFormat`: Specifies the date format to be used in the date column of the graph.
+* `git-graph.dateType`: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
 * `git-graph.graphColours`: Specifies the colours used on the graph.
 * `git-graph.graphStyle`: Specifies the style of the graph.
 * `git-graph.initialLoadCommits`: Specifies the number of commits to initially load.

@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.4.3",
+	"version": "1.4.4",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -147,7 +147,7 @@
 		"compile-src": "tsc -p ./src",
 		"compile-web": "tsc -p ./web && uglifyjs ./media/dropdown.js ./media/graph.js ./media/main.js --mangle --output ./media/out.min.js",
 		"compile-web-debug": "tsc -p ./web && uglifyjs ./media/dropdown.js ./media/graph.js ./media/main.js -b --output ./media/out.min.js",
-		"package": "vsce package",
+		"package": "npm run clean && vsce package",
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"devDependencies": {

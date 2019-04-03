@@ -1,5 +1,3 @@
-const expandedCommitHeight = 250;
-
 class Branch {
 	private vertices: Vertex[];
 	private lines: Line[];
@@ -55,15 +53,15 @@ class Branch {
 			y2 = this.lines[i].p2.y * config.grid.y + config.grid.offsetY;
 			if (expandAt > -1) {
 				if (this.lines[i].p1.y > expandAt) {
-					y1 += expandedCommitHeight; y2 += expandedCommitHeight;
+					y1 += config.grid.expandY; y2 += config.grid.expandY;
 				} else if (this.lines[i].p2.y > expandAt) {
 					if (x1 < x2) {
-						this.drawLine(svg, x2, y1 + config.grid.y, x2, y2 + expandedCommitHeight, this.lines[i].isCommitted ? colour : '#808080', config);
+						this.drawLine(svg, x2, y1 + config.grid.y, x2, y2 + config.grid.expandY, this.lines[i].isCommitted ? colour : '#808080', config);
 					} else if (x1 > x2) {
-						this.drawLine(svg, x1, y1, x1, y2 - config.grid.y + expandedCommitHeight, this.lines[i].isCommitted ? colour : '#808080', config);
-						y1 += expandedCommitHeight; y2 += expandedCommitHeight;
+						this.drawLine(svg, x1, y1, x1, y2 - config.grid.y + config.grid.expandY, this.lines[i].isCommitted ? colour : '#808080', config);
+						y1 += config.grid.expandY; y2 += config.grid.expandY;
 					} else {
-						y2 += expandedCommitHeight;
+						y2 += config.grid.expandY;
 					}
 				}
 			}
@@ -185,7 +183,7 @@ class Vertex {
 		let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 		let colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
 		circle.setAttribute('cx', (this.x * config.grid.x + config.grid.offsetX).toString());
-		circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY + (expandOffset ? expandedCommitHeight : 0)).toString());
+		circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString());
 		circle.setAttribute('r', '4');
 		if (this.isCurrent) {
 			circle.setAttribute('class', 'current');
@@ -265,7 +263,7 @@ class Graph {
 	}
 
 	public getHeight(expandedCommit: ExpandedCommit | null) {
-		return this.vertices.length * this.config.grid.y + (expandedCommit !== null ? expandedCommitHeight : 0);
+		return this.vertices.length * this.config.grid.y + this.config.grid.offsetY - this.config.grid.y / 2 + (expandedCommit !== null ? this.config.grid.expandY : 0);
 	}
 
 	public getVertexColour(v: number) {

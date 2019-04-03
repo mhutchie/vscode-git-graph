@@ -37,8 +37,10 @@
 		private showRemoteBranches: boolean = true;
 		private expandedCommit: ExpandedCommit | null = null;
 		private maxCommits: number;
+		private windowSize: { width: number, height: number };
 
 		private tableElem: HTMLElement;
+		private footerElem: HTMLElement;
 		private repoDropdown: Dropdown;
 		private branchDropdown: Dropdown;
 		private showRemoteBranchesElem: HTMLInputElement;
@@ -52,6 +54,7 @@
 			this.maxCommits = config.initialLoadCommits;
 			this.graph = new Graph('commitGraph', this.config);
 			this.tableElem = document.getElementById('commitTable')!;
+			this.footerElem = document.getElementById('footer')!;
 			this.repoDropdown = new Dropdown('repoSelect', (value) => {
 				this.currentRepo = this.gitRepos[parseInt(value)];
 				this.maxCommits = this.config.initialLoadCommits;
@@ -77,6 +80,14 @@
 			document.getElementById('refreshBtn')!.addEventListener('click', () => {
 				this.refresh(true);
 			});
+			this.windowSize = { width: window.outerWidth, height: window.outerHeight };
+			window.addEventListener('resize', () => {
+				if (this.windowSize.width === window.outerWidth && this.windowSize.height === window.outerHeight) {
+					this.renderGraph();
+				} else {
+					this.windowSize = { width: window.outerWidth, height: window.outerHeight };
+				}
+			});
 
 			this.renderShowLoading();
 			if (prevState) {
@@ -87,8 +98,8 @@
 					this.currentRepo = prevState.currentRepo;
 					this.maxCommits = prevState.maxCommits;
 					this.expandedCommit = prevState.expandedCommit;
-					if (prevState.commits.length > 0) this.loadCommits(prevState.commits, prevState.moreCommitsAvailable, true);
-					if (prevState.gitBranches.length > 0 || prevState.gitHead !== null) this.loadBranches(prevState.gitBranches, prevState.gitHead, true);
+					this.loadCommits(prevState.commits, prevState.moreCommitsAvailable, true);
+					this.loadBranches(prevState.gitBranches, prevState.gitHead, true);
 				}
 			}
 			this.loadRepos(this.gitRepos, lastActiveRepo);
@@ -246,10 +257,14 @@
 
 		/* Renderers */
 		private render() {
-			this.renderGraph();
 			this.renderTable();
+			this.renderGraph();
 		}
 		private renderGraph() {
+			let headerHeight = document.getElementById('tableHeaderGraphCol')!.parentElement!.clientHeight + 1;
+			this.config.grid.expandY = this.expandedCommit !== null ? document.getElementById('commitDetails')!.getBoundingClientRect().height : this.config.grid.expandY;
+			this.config.grid.y = this.commits.length > 0 ? (this.tableElem.children[0].clientHeight - headerHeight - (this.expandedCommit !== null ? this.config.grid.expandY : 0)) / this.commits.length : this.config.grid.y;
+			this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
 			this.graph.render(this.expandedCommit);
 		}
 		private renderTable() {
@@ -263,10 +278,8 @@
 
 				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '"><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 			}
-			if (this.moreCommitsAvailable) {
-				html += '<tr><td colspan="5"><div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div></td></tr>';
-			}
 			this.tableElem.innerHTML = '<table>' + html + '</table>';
+			this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
 
 			document.getElementById('tableHeaderGraphCol')!.style.padding = '0 ' + Math.round((Math.max(this.graph.getWidth() + 16, 64) - (document.getElementById('tableHeaderGraphCol')!.offsetWidth - 24)) / 2) + 'px';
 
@@ -487,6 +500,7 @@
 			hideDialogAndContextMenu();
 			this.graph.clear();
 			this.tableElem.innerHTML = '<table><tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr></table><h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
+			this.footerElem.innerHTML = '';
 		}
 		private checkoutBranchAction(sourceElem: HTMLElement, refName: string) {
 			if (sourceElem.classList.contains('head')) {
@@ -539,9 +553,9 @@
 
 			newElem.id = 'commitDetails';
 			newElem.innerHTML = html;
+			insertAfter(newElem, this.expandedCommit.srcElem);
 
 			this.renderGraph();
-			insertAfter(newElem, this.expandedCommit.srcElem);
 
 			if (this.config.autoCenterCommitDetailsView) {
 				// Center Commit Detail View setting is enabled
@@ -551,10 +565,10 @@
 				// Commit Detail View is opening above what is visible on screen
 				// control menu height [40px] + newElem y - commit height [24px] - desired gap from top [8px] < pageYOffset
 				window.scrollTo(0, newElem.offsetTop + 8);
-			} else if (newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48 > window.pageYOffset) {
+			} else if (newElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48 > window.pageYOffset) {
 				// Commit Detail View is opening below what is visible on screen
 				// control menu height [40px] + newElem y + commit details view height [250px] + desired gap from bottom [8px] - window height > pageYOffset
-				window.scrollTo(0, newElem.offsetTop + expandedCommitHeight - window.innerHeight + 48);
+				window.scrollTo(0, newElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48);
 			}
 
 			document.getElementById('commitDetailsClose')!.addEventListener('click', () => {
@@ -584,7 +598,7 @@
 		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
 		graphColours: viewState.graphColours,
 		graphStyle: viewState.graphStyle,
-		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12 },
+		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
 		initialLoadCommits: viewState.initialLoadCommits,
 		loadMoreCommits: viewState.loadMoreCommits,
 		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault
@@ -849,7 +863,7 @@
 		showFormDialog(message, [{ type: 'text-ref', name: '', default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
 	}
 	function showCheckboxDialog(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
-		showFormDialog(message, [{ type: 'checkbox', name: checkboxLabel, value: checkboxValue}], actionName, values => actioned(values[0] === 'checked'), sourceElem);
+		showFormDialog(message, [{ type: 'checkbox', name: checkboxLabel, value: checkboxValue }], actionName, values => actioned(values[0] === 'checked'), sourceElem);
 	}
 	function showSelectDialog(message: string, defaultValue: string, options: { name: string, value: string }[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
 		showFormDialog(message, [{ type: 'select', name: '', options: options, default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);

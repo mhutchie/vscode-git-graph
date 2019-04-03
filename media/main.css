@@ -17,13 +17,8 @@ body.unableToLoad h1, body.unableToLoad p{
 	display:block;
 	position:absolute;
 	left:8px;
-	top:71px;
-}
-#commitGraph{
-	display:block;
-	position:absolute;
-	left:8px;
-	top:31px;
+	top:0px;
+	z-index:-1;
 }
 #commitGraph circle.current{
 	fill:var(--vscode-editor-background);
@@ -46,13 +41,6 @@ body.unableToLoad h1, body.unableToLoad p{
 }
 
 /* Commit Table */
-#commitTable{
-	display:block;
-	position:absolute;
-	left:0;
-	right:0;
-	top:0;
-}
 #commitTable table{
 	width:100%;
 	border-collapse:collapse;

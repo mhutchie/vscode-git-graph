@@ -257,6 +257,7 @@ export class GitGraphView {
 				<div id="commitGraph"></div>
 				<div id="commitTable"></div>
 			</div>
+			<div id="footer"></div>
 			<ul id="contextMenu"></ul>
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>

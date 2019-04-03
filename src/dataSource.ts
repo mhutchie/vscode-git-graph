@@ -274,7 +274,7 @@ export class DataSource {
 		if (branch !== '') {
 			args.push(escapeRefName(branch));
 		} else {
-			args.push('--branches');
+			args.push('--branches', '--tags');
 			if (showRemoteBranches) args.push('--remotes');
 		}
 

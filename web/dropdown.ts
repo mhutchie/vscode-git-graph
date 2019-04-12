@@ -55,6 +55,10 @@ class Dropdown {
 		this.selectedOption = selectedOption;
 		this.render();
 	}
+	
+	public refresh() {
+		if (this.options.length > 0) this.render();
+	}
 
 	private render() {
 		this.elem.classList.add('loaded');

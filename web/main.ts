@@ -88,6 +88,7 @@
 					this.windowSize = { width: window.outerWidth, height: window.outerHeight };
 				}
 			});
+			this.observeWebviewStyleChanges();
 
 			this.renderShowLoading();
 			if (prevState) {
@@ -513,6 +514,18 @@
 			}
 		}
 
+		private observeWebviewStyleChanges() {
+			let fontFamily = getVSCodeStyle('--vscode-editor-font-family');
+			(new MutationObserver(() => {
+				let ff = getVSCodeStyle('--vscode-editor-font-family');
+				if (ff !== fontFamily) {
+					fontFamily = ff;
+					this.repoDropdown.refresh();
+					this.branchDropdown.refresh();
+				}
+			})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+		}
+
 		/* Commit Details */
 		private loadCommitDetails(sourceElem: HTMLElement) {
 			this.hideCommitDetails();
@@ -812,6 +825,12 @@
 	}
 	function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
 		referenceNode.parentNode!.insertBefore(newNode, referenceNode.nextSibling);
+	}
+
+
+	/* VSCode Helper */
+	function getVSCodeStyle(name: string) {
+		return document.documentElement.style.getPropertyValue(name);
 	}
 
 

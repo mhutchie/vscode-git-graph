@@ -29,7 +29,7 @@
 	"license": "MIT",
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.30.0"
+		"vscode": "^1.31.0"
 	},
 	"activationEvents": [
 		"*"
@@ -41,6 +41,11 @@
 				"category": "Git Graph",
 				"command": "git-graph.view",
 				"title": "View Git Graph (git log)"
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.clearAvatarCache",
+				"title": "Clear Avatar Cache"
 			}
 		],
 		"configuration": {
@@ -79,6 +84,11 @@
 					],
 					"default": "Author Date",
 					"description": "Specifies the date type to be displayed throughout Git Graph."
+				},
+				"git-graph.fetchAvatars": {
+					"type": "boolean",
+					"default": false,
+					"description": "Fetch avatars of commit authors and committers. By enabling this setting, you consent to commit author and committer email addresses being sent GitHub, GitLab or Gravatar, depending on the repositories remote origin."
 				},
 				"git-graph.graphColours": {
 					"type": "array",

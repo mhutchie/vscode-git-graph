@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { encodeDiffDocUri } from './diffDocProvider';
@@ -14,6 +15,7 @@ export class GitGraphView {
 
 	private readonly panel: vscode.WebviewPanel;
 	private readonly extensionPath: string;
+	private readonly avatarManager: AvatarManager;
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly repoFileWatcher: RepoFileWatcher;
@@ -23,7 +25,7 @@ export class GitGraphView {
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -38,14 +40,16 @@ export class GitGraphView {
 			]
 		});
 
-		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState);
+		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState, avatarManager);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState) {
+	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager) {
 		this.panel = panel;
 		this.extensionPath = extensionPath;
+		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
+		this.avatarManager.registerView(this);
 
 		panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
 			? this.getUri('resources', 'webview-icon.svg')
@@ -90,6 +94,9 @@ export class GitGraphView {
 						command: 'addTag',
 						status: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
 					});
+					break;
+				case 'fetchAvatar':
+					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.commits);
 					break;
 				case 'checkoutBranch':
 					this.sendMessage({
@@ -208,9 +215,14 @@ export class GitGraphView {
 		}, null, this.disposables);
 	}
 
+	public sendMessage(msg: ResponseMessage) {
+		this.panel.webview.postMessage(msg);
+	}
+
 	public dispose() {
 		GitGraphView.currentPanel = undefined;
 		this.panel.dispose();
+		this.avatarManager.deregisterView();
 		this.repoFileWatcher.stop();
 		this.repoFolderWatcher.stop();
 		while (this.disposables.length) {
@@ -231,6 +243,7 @@ export class GitGraphView {
 		let viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
 			dateFormat: config.dateFormat(),
+			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),
 			initialLoadCommits: config.initialLoadCommits(),
@@ -273,7 +286,7 @@ export class GitGraphView {
 		<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}';">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}'; img-src data:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
@@ -298,10 +311,6 @@ export class GitGraphView {
 			repos: repos,
 			lastActiveRepo: this.extensionState.getLastActiveRepo()
 		});
-	}
-
-	private sendMessage(msg: ResponseMessage) {
-		this.panel.webview.postMessage(msg);
 	}
 
 	private viewDiff(repo: string, commitHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {

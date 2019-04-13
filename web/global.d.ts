@@ -11,6 +11,7 @@ declare global {
 
 	interface Config {
 		autoCenterCommitDetailsView: boolean;
+		fetchAvatars: boolean;
 		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';
 		grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
@@ -87,11 +88,14 @@ declare global {
 		y: number;
 	}
 
+	type AvatarImageCollection = { [email: string]: string };
+
 	interface WebViewState {
 		gitRepos: string[];
 		gitBranches: string[];
 		gitHead: string | null;
 		commits: GG.GitCommitNode[];
+		avatars: AvatarImageCollection;
 		currentBranch: string | null;
 		currentRepo: string;
 		moreCommitsAvailable: boolean;

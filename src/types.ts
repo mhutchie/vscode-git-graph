@@ -50,6 +50,7 @@ export interface GitUnsavedChanges {
 export interface GitGraphViewState {
 	autoCenterCommitDetailsView: boolean;
 	dateFormat: DateFormat;
+	fetchAvatars: boolean;
 	graphColours: string[];
 	graphStyle: GraphStyle;
 	initialLoadCommits: number;
@@ -66,6 +67,13 @@ export interface GitFileChange {
 	additions: number | null;
 	deletions: number | null;
 }
+
+export interface Avatar {
+	image: string;
+	timestamp: number;
+	identicon: boolean;
+}
+export type AvatarCache = { [email: string]: Avatar };
 
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type DateType = 'Author Date' | 'Commit Date';
@@ -173,6 +181,18 @@ export interface RequestDeleteTag {
 export interface ResponseDeleteTag {
 	command: 'deleteTag';
 	status: GitCommandStatus;
+}
+
+export interface RequestFetchAvatar {
+	command: 'fetchAvatar';
+	repo: string;
+	email: string;
+	commits: string[];
+}
+export interface ResponseFetchAvatar {
+	command: 'fetchAvatar';
+	email: string;
+	image: string;
 }
 
 export interface RequestLoadBranches {
@@ -304,6 +324,7 @@ export type RequestMessage =
 	| RequestCreateBranch
 	| RequestDeleteBranch
 	| RequestDeleteTag
+	| RequestFetchAvatar
 	| RequestLoadBranches
 	| RequestLoadCommits
 	| RequestLoadRepos
@@ -325,6 +346,7 @@ export type ResponseMessage =
 	| ResponseCreateBranch
 	| ResponseDeleteBranch
 	| ResponseDeleteTag
+	| ResponseFetchAvatar
 	| ResponseLoadBranches
 	| ResponseLoadCommits
 	| ResponseLoadRepos

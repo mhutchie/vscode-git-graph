@@ -28,6 +28,7 @@
 		private gitHead: string | null = null;
 		private commits: GG.GitCommitNode[] = [];
 		private commitLookup: { [hash: string]: number } = {};
+		private avatars: AvatarImageCollection = {};
 		private currentBranch: string | null = null;
 		private currentRepo!: string;
 
@@ -99,6 +100,7 @@
 					this.currentRepo = prevState.currentRepo;
 					this.maxCommits = prevState.maxCommits;
 					this.expandedCommit = prevState.expandedCommit;
+					this.avatars = prevState.avatars;
 					this.loadCommits(prevState.commits, prevState.moreCommitsAvailable, true);
 					this.loadBranches(prevState.gitBranches, prevState.gitHead, true);
 				}
@@ -177,10 +179,17 @@
 			this.commitLookup = {};
 			this.saveState();
 
-			let i: number, expandedCommitVisible = false;
+			let i: number, expandedCommitVisible = false, avatarsNeeded: { [email: string]: string[] } = {};
 			for (i = 0; i < this.commits.length; i++) {
 				this.commitLookup[this.commits[i].hash] = i;
 				if (this.expandedCommit !== null && this.expandedCommit.hash === this.commits[i].hash) expandedCommitVisible = true;
+				if (this.config.fetchAvatars && typeof this.avatars[this.commits[i].email] !== 'string' && this.commits[i].email !== '') {
+					if (typeof avatarsNeeded[this.commits[i].email] === 'undefined') {
+						avatarsNeeded[this.commits[i].email] = [this.commits[i].hash];
+					} else {
+						avatarsNeeded[this.commits[i].email].push(this.commits[i].hash);
+					}
+				}
 			}
 
 			this.graph.loadCommits(this.commits, this.commitLookup);
@@ -192,11 +201,23 @@
 			this.render();
 
 			this.triggerLoadCommitsCallback(true);
+			this.fetchAvatars(avatarsNeeded);
 		}
 		private triggerLoadCommitsCallback(changes: boolean) {
 			if (this.loadCommitsCallback !== null) {
 				this.loadCommitsCallback(changes);
 				this.loadCommitsCallback = null;
+			}
+		}
+
+		public loadAvatar(email: string, image: string) {
+			this.avatars[email] = image;
+			this.saveState();
+			let avatarsElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('avatar');
+			for (let i = 0; i < avatarsElems.length; i++) {
+				if (avatarsElems[i].dataset.email === email) {
+					avatarsElems[i].innerHTML = '<img class="avatarImg" src="' + image + '">';
+				}
 			}
 		}
 
@@ -239,6 +260,12 @@
 				});
 			});
 		}
+		private fetchAvatars(avatars: { [email: string]: string[] }) {
+			let emails = Object.keys(avatars);
+			for (let i = 0; i < emails.length; i++) {
+				sendMessage({ command: 'fetchAvatar', repo: this.currentRepo!, email: emails[i], commits: avatars[emails[i]] });
+			}
+		}
 
 		/* State */
 		private saveState() {
@@ -247,6 +274,7 @@
 				gitBranches: this.gitBranches,
 				gitHead: this.gitHead,
 				commits: this.commits,
+				avatars: this.avatars,
 				currentBranch: this.currentBranch,
 				currentRepo: this.currentRepo,
 				moreCommitsAvailable: this.moreCommitsAvailable,
@@ -277,7 +305,7 @@
 					refs += '<span class="gitRef ' + this.commits[i].refs[j].type + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch).replace('viewBox', 'class="colour' + this.graph.getVertexColour(i) + '" viewBox') + refName + '</span>';
 				}
 
-				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '"><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
+				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '"><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + this.commits[i].email + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 			}
 			this.tableElem.innerHTML = '<table>' + html + '</table>';
 			this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
@@ -554,11 +582,14 @@
 			this.saveState();
 
 			let newElem = document.createElement('tr'), html = '<td></td><td colspan="4"><div id="commitDetailsSummary">';
+			html += '<span class="commitDetailsSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="commitDetailsSummaryTopRow"><span class="commitDetailsSummaryKeyValues">';
 			html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
 			html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
 			html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
 			html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
-			html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '<br><br>';
+			html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
+			if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="commitDetailsSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
+			html += '</span></span><br><br>';
 			html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>') + '</div>';
 			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(fileTree, commitDetails.fileChanges) + '</table></div>';
 			html += '<div id="commitDetailsClose">' + svgIcons.close + '</div>';
@@ -609,6 +640,7 @@
 	let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null;
 	let gitGraph = new GitGraphView(viewState.repos, viewState.lastActiveRepo, {
 		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
+		fetchAvatars: viewState.fetchAvatars,
 		graphColours: viewState.graphColours,
 		graphStyle: viewState.graphStyle,
 		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
@@ -653,6 +685,9 @@
 				break;
 			case 'deleteTag':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
+				break;
+			case 'fetchAvatar':
+				gitGraph.loadAvatar(msg.email, msg.image);
 				break;
 			case 'loadBranches':
 				gitGraph.loadBranches(msg.branches, msg.head, msg.hard);

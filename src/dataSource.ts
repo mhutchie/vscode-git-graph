@@ -23,7 +23,7 @@ export class DataSource {
 		this.gitExecPath = this.gitPath.indexOf(' ') > -1 ? '"' + this.gitPath + '"' : this.gitPath;
 	}
 
-	public generateGitCommandFormats(){
+	public generateGitCommandFormats() {
 		let dateType = getConfig().dateType() === 'Author Date' ? '%at' : '%ct';
 		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(gitLogSeparator);
 		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(gitLogSeparator) + '%n%B';
@@ -179,6 +179,14 @@ export class DataSource {
 
 	public getCommitFile(repo: string, commitHash: string, filePath: string) {
 		return this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout, '');
+	}
+
+	public async getRemoteUrl(repo: string) {
+		return new Promise<string | null>(resolve => {
+			this.execGit('config --get remote.origin.url', repo, (err, stdout) => {
+				resolve(!err ? stdout.split(eolRegex)[0] : null);
+			});
+		});
 	}
 
 	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {

@@ -82,7 +82,7 @@ body.unableToLoad h1, body.unableToLoad p{
 	max-width:0;
 }
 #commitTable td:nth-child(4), #commitTable th:nth-child(4){
-	max-width:120px;
+	max-width:124px;
 	text-overflow:ellipsis;
 	overflow:hidden;
 }
@@ -124,11 +124,37 @@ body.unableToLoad h1, body.unableToLoad p{
 	padding:10px;
 	box-sizing:border-box;
 	overflow-x:hidden;
-	overflow-y:scroll;
+	overflow-y:auto;
 	text-overflow:ellipsis;
 	border-left:1px solid rgba(128,128,128,0.2);
 	border-right:1px solid rgba(128,128,128,0.2);
 	user-select:text;
+}
+.commitDetailsSummaryTop{
+	display:inline-table;
+    width:100%;
+}
+.commitDetailsSummaryTopRow{
+	display:table-row;
+}
+.commitDetailsSummaryKeyValues, .commitDetailsSummaryAvatar{
+	display:table-cell;
+    vertical-align:top;
+}
+.commitDetailsSummaryKeyValues{
+	max-width:0px;
+    overflow-x:hidden;
+    text-overflow:ellipsis;
+}
+.commitDetailsSummaryTop.withAvatar .commitDetailsSummaryKeyValues{
+	padding-right:10px;
+}
+.commitDetailsSummaryAvatar{
+    width:54px;
+}
+.commitDetailsSummaryAvatar > img{
+	width:54px;
+	border-radius:4px;
 }
 #commitDetailsFiles{
 	position:absolute;
@@ -222,6 +248,15 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 .gitFileRename{
 	cursor:help;
+}
+
+.commit .avatar > img{
+	display:inline-block;
+	width:18px;
+    border-radius:4px;
+    vertical-align:top;
+    margin-top:3px;
+    margin-right:4px;
 }
 
 /* Ref labels */

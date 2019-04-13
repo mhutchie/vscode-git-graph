@@ -259,6 +259,17 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
     margin-right:4px;
 }
 
+.commitHeadDot{
+	width:6px;
+    height:6px;
+    border:2px solid var(--git-graph-color);
+    display:inline-block;
+    border-radius:6px;
+    margin-right:5px;
+    vertical-align:top;
+    margin-top:7px;
+}
+
 /* Ref labels */
 .gitRef {
 	display:inline-block;
@@ -274,7 +285,11 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	font-size:12px;
 	cursor:default;
 }
+.gitRef.active{
+	border-color:var(--git-graph-color);
+}
 .gitRef > svg{
+	background-color:var(--git-graph-color);
 	fill:var(--vscode-editor-background);
 	width:14px;
 	height:14px;

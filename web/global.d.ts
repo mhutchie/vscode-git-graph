@@ -93,8 +93,9 @@ declare global {
 	interface WebViewState {
 		gitRepos: string[];
 		gitBranches: string[];
-		gitHead: string | null;
+		gitBranchHead: string | null;
 		commits: GG.GitCommitNode[];
+		commitHead: string | null;
 		avatars: AvatarImageCollection;
 		currentBranch: string | null;
 		currentRepo: string;

@@ -93,7 +93,7 @@ export class DataSource {
 
 		for (i = 0; i < commits.length; i++) {
 			commitLookup[commits[i].hash] = i;
-			commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [], current: false });
+			commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [] });
 		}
 		for (i = 0; i < refData.refs.length; i++) {
 			if (typeof commitLookup[refData.refs[i].hash] === 'number') {
@@ -101,13 +101,7 @@ export class DataSource {
 			}
 		}
 
-		if (unsavedChanges !== null) {
-			commitNodes[0].current = true;
-		} else if (refData.head !== null && typeof commitLookup[refData.head] === 'number') {
-			commitNodes[commitLookup[refData.head]].current = true;
-		}
-
-		return { commits: commitNodes, moreCommitsAvailable: moreCommitsAvailable };
+		return { commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable };
 	}
 
 	public async commitDetails(repo: string, commitHash: string) {

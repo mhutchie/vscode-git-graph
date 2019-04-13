@@ -25,8 +25,9 @@
 	class GitGraphView {
 		private gitRepos: string[];
 		private gitBranches: string[] = [];
-		private gitHead: string | null = null;
+		private gitBranchHead: string | null = null;
 		private commits: GG.GitCommitNode[] = [];
+		private commitHead: string | null = null;
 		private commitLookup: { [hash: string]: number } = {};
 		private avatars: AvatarImageCollection = {};
 		private currentBranch: string | null = null;
@@ -101,8 +102,8 @@
 					this.maxCommits = prevState.maxCommits;
 					this.expandedCommit = prevState.expandedCommit;
 					this.avatars = prevState.avatars;
-					this.loadCommits(prevState.commits, prevState.moreCommitsAvailable, true);
-					this.loadBranches(prevState.gitBranches, prevState.gitHead, true);
+					this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true);
+					this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
 				}
 			}
 			this.loadRepos(this.gitRepos, lastActiveRepo);
@@ -136,15 +137,15 @@
 		}
 
 		public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean) {
-			if (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitHead === branchHead) {
+			if (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitBranchHead === branchHead) {
 				this.triggerLoadBranchesCallback(false);
 				return;
 			}
 
 			this.gitBranches = branchOptions;
-			this.gitHead = branchHead;
+			this.gitBranchHead = branchHead;
 			if (this.currentBranch === null || (this.currentBranch !== '' && this.gitBranches.indexOf(this.currentBranch) === -1)) {
-				this.currentBranch = this.config.showCurrentBranchByDefault && this.gitHead !== null ? this.gitHead : '';
+				this.currentBranch = this.config.showCurrentBranchByDefault && this.gitBranchHead !== null ? this.gitBranchHead : '';
 			}
 			this.saveState();
 
@@ -163,8 +164,8 @@
 			}
 		}
 
-		public loadCommits(commits: GG.GitCommitNode[], moreAvailable: boolean, hard: boolean) {
-			if (!hard && this.moreCommitsAvailable === moreAvailable && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && a.current === b.current && arraysEqual(a.refs, b.refs, (a, b) => a.name === b.name && a.type === b.type) && arraysEqual(a.parentHashes, b.parentHashes, (a, b) => a === b))) {
+		public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
+			if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysEqual(a.refs, b.refs, (a, b) => a.name === b.name && a.type === b.type) && arraysEqual(a.parentHashes, b.parentHashes, (a, b) => a === b))) {
 				if (this.commits.length > 0 && this.commits[0].hash === '*') {
 					this.commits[0] = commits[0];
 					this.saveState();
@@ -176,6 +177,7 @@
 
 			this.moreCommitsAvailable = moreAvailable;
 			this.commits = commits;
+			this.commitHead = commitHead;
 			this.commitLookup = {};
 			this.saveState();
 
@@ -192,7 +194,7 @@
 				}
 			}
 
-			this.graph.loadCommits(this.commits, this.commitLookup);
+			this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
 
 			if (this.expandedCommit !== null && !expandedCommitVisible) {
 				this.expandedCommit = null;
@@ -272,8 +274,9 @@
 			vscode.setState({
 				gitRepos: this.gitRepos,
 				gitBranches: this.gitBranches,
-				gitHead: this.gitHead,
+				gitBranchHead: this.gitBranchHead,
 				commits: this.commits,
+				commitHead: this.commitHead,
 				avatars: this.avatars,
 				currentBranch: this.currentBranch,
 				currentRepo: this.currentRepo,
@@ -297,15 +300,16 @@
 			this.graph.render(this.expandedCommit);
 		}
 		private renderTable() {
-			let html = '<tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr>', i;
+			let html = '<tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
 			for (i = 0; i < this.commits.length; i++) {
-				let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName;
+				let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml;
 				for (j = 0; j < this.commits[i].refs.length; j++) {
 					refName = escapeHtml(this.commits[i].refs[j].name);
-					refs += '<span class="gitRef ' + this.commits[i].refs[j].type + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch).replace('viewBox', 'class="colour' + this.graph.getVertexColour(i) + '" viewBox') + refName + '</span>';
+					refActive = this.commits[i].refs[j].type === 'head' && this.commits[i].refs[j].name === this.gitBranchHead;
+					refHtml = '<span class="gitRef ' + this.commits[i].refs[j].type + (refActive ? ' active' : '') + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch) + refName + '</span>';
+					refs = refActive ? refHtml + refs : refs + refHtml;
 				}
-
-				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '"><td></td><td>' + refs + (this.commits[i].hash !== '*' ? message : '<b>' + message + '</b>') + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + this.commits[i].email + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
+				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '" data-color="' + this.graph.getVertexColour(i) + '"><td></td><td>' + (this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '') + refs + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + this.commits[i].email + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 			}
 			this.tableElem.innerHTML = '<table>' + html + '</table>';
 			this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
@@ -494,7 +498,7 @@
 								}, null);
 							}
 						}];
-						if (this.gitHead !== refName) {
+						if (this.gitBranchHead !== refName) {
 							menu.push({
 								title: 'Merge into current branch' + ELLIPSIS,
 								onClick: () => {
@@ -693,7 +697,7 @@
 				gitGraph.loadBranches(msg.branches, msg.head, msg.hard);
 				break;
 			case 'loadCommits':
-				gitGraph.loadCommits(msg.commits, msg.moreCommitsAvailable, msg.hard);
+				gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
 				break;
 			case 'loadRepos':
 				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo);

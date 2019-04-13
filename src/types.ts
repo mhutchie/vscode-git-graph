@@ -8,7 +8,6 @@ export interface GitCommitNode {
 	date: number;
 	message: string;
 	refs: GitRef[];
-	current: boolean;
 }
 
 export interface GitCommit {
@@ -219,6 +218,7 @@ export interface RequestLoadCommits {
 export interface ResponseLoadCommits {
 	command: 'loadCommits';
 	commits: GitCommitNode[];
+	head: string | null;
 	moreCommitsAvailable: boolean;
 	hard: boolean;
 }

@@ -253,13 +253,13 @@ export class GitGraphView {
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
 
-		let colourStyles = '', body;
+		let body, colorVars = '', colorParams = '';
 		for (let i = 0; i < viewState.graphColours.length; i++) {
-			colourStyles += '.colour' + i + ' { background-color:' + viewState.graphColours[i] + '; } ';
+			colorVars += '--git-graph-color' + i + ':' + viewState.graphColours[i] + '; ';
+			colorParams += '[data-color="'+i+'"]{--git-graph-color:var(--git-graph-color'+i+');} ';
 		}
-
 		if (viewState.repos.length > 0) {
-			body = `<body>
+			body = `<body style="${colorVars}">
 			<div id="controls">
 				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
 				<span id="branchControl"><span class="unselectable">Branch: </span><div id="branchSelect" class="dropdown"></div></span>
@@ -278,7 +278,7 @@ export class GitGraphView {
 			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {
-			body = `<body class="unableToLoad"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
+			body = `<body class="unableToLoad" style="${colorVars}"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
 		}
 		this.isGraphViewLoaded = viewState.repos.length > 0;
 
@@ -291,7 +291,7 @@ export class GitGraphView {
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
 				<title>Git Graph</title>
-				<style>${colourStyles}</style>
+				<style>${colorParams}"</style>
 			</head>
 			${body}
 		</html>`;

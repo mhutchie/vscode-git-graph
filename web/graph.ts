@@ -103,24 +103,17 @@ class Branch {
 }
 
 class Vertex {
-	private x: number;
+	private x: number = 0;
 	private y: number;
-	private parents: Vertex[];
-	private nextParent: number;
-	private onBranch: Branch | null;
-	private isCommitted: boolean;
-	private isCurrent: boolean;
-	private nextX: number;
+	private parents: Vertex[] = [];
+	private nextParent: number = 0;
+	private onBranch: Branch | null = null;
+	private isCommitted: boolean = true;
+	private isCurrent: boolean = false;
+	private nextX: number = 0;
 
-	constructor(y: number, isCommitted: boolean, isCurrent: boolean) {
-		this.x = 0;
+	constructor(y: number) {
 		this.y = y;
-		this.parents = [];
-		this.nextParent = 0;
-		this.onBranch = null;
-		this.isCommitted = isCommitted;
-		this.isCurrent = isCurrent;
-		this.nextX = 0;
 	}
 
 	public addParent(vertex: Vertex) {
@@ -177,6 +170,12 @@ class Vertex {
 	public getColour() {
 		return this.onBranch !== null ? this.onBranch.getColour() : 0;
 	}
+	public setNotCommited() {
+		this.isCommitted = false;
+	}
+	public setCurrent() {
+		this.isCurrent = true;
+	}
 	public draw(svg: SVGElement, config: Config, expandOffset: boolean) {
 		if (this.onBranch === null) return;
 
@@ -209,20 +208,29 @@ class Graph {
 		this.config = config;
 	}
 
-	public loadCommits(commits: GG.GitCommitNode[], commitLookup: { [hash: string]: number }) {
+	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
 		this.vertices = [];
 		this.branches = [];
 		this.availableColours = [];
 
 		let i: number, j: number;
 		for (i = 0; i < commits.length; i++) {
-			this.vertices.push(new Vertex(i, commits[i].hash !== '*', commits[i].current));
+			this.vertices.push(new Vertex(i));
 		}
 		for (i = 0; i < commits.length; i++) {
 			for (j = 0; j < commits[i].parentHashes.length; j++) {
 				if (typeof commitLookup[commits[i].parentHashes[j]] === 'number') {
 					this.vertices[i].addParent(this.vertices[commitLookup[commits[i].parentHashes[j]]]);
 				}
+			}
+		}
+
+		if (commits.length > 0) {
+			if (commits[0].hash === '*') {
+				this.vertices[0].setCurrent();
+				this.vertices[0].setNotCommited();
+			} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
+				this.vertices[commitLookup[commitHead]].setCurrent();
 			}
 		}
 
@@ -267,7 +275,7 @@ class Graph {
 	}
 
 	public getVertexColour(v: number) {
-		return this.vertices[v].getColour();
+		return this.vertices[v].getColour() % this.config.graphColours.length;
 	}
 
 	private determinePath(startAt: number) {

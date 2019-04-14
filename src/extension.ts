@@ -8,7 +8,7 @@ import { StatusBarItem } from './statusBarItem';
 
 export function activate(context: vscode.ExtensionContext) {
 	const extensionState = new ExtensionState(context);
-	const dataSource = new DataSource();
+	const dataSource = new DataSource(extensionState);
 	const avatarManager = new AvatarManager(dataSource, extensionState);
 	const statusBarItem = new StatusBarItem(context, dataSource);
 

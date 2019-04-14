@@ -41,6 +41,11 @@ export interface GitRefData {
 	refs: GitRef[];
 }
 
+export type GitRepoSet = { [repo: string]: GitRepoState };
+export interface GitRepoState {
+	columnWidths: number[] | null;
+}
+
 export interface GitUnsavedChanges {
 	branch: string;
 	changes: number;
@@ -55,7 +60,7 @@ export interface GitGraphViewState {
 	initialLoadCommits: number;
 	lastActiveRepo: string | null;
 	loadMoreCommits: number;
-	repos: string[];
+	repos: GitRepoSet;
 	showCurrentBranchByDefault: boolean;
 }
 
@@ -228,7 +233,7 @@ export interface RequestLoadRepos {
 }
 export interface ResponseLoadRepos {
 	command: 'loadRepos';
-	repos: string[];
+	repos: GitRepoSet;
 	lastActiveRepo: string | null;
 }
 
@@ -301,6 +306,12 @@ export interface ResponseRevertCommit {
 	status: GitCommandStatus;
 }
 
+export interface RequestSaveRepoState {
+	command: 'saveRepoState';
+	repo: string;
+	state: GitRepoState;
+}
+
 export interface RequestViewDiff {
 	command: 'viewDiff';
 	repo: string;
@@ -314,8 +325,8 @@ export interface ResponseViewDiff {
 	success: boolean;
 }
 
-export type RequestMessage = 
-	  RequestAddTag
+export type RequestMessage =
+	RequestAddTag
 	| RequestCheckoutBranch
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
@@ -334,10 +345,11 @@ export type RequestMessage =
 	| RequestRenameBranch
 	| RequestResetToCommit
 	| RequestRevertCommit
+	| RequestSaveRepoState
 	| RequestViewDiff;
 
-export type ResponseMessage = 
-	  ResponseAddTag
+export type ResponseMessage =
+	ResponseAddTag
 	| ResponseCheckoutBranch
 	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit

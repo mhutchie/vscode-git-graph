@@ -20,7 +20,7 @@ export class StatusBarItem {
 	}
 
 	public async refresh() {
-		if (getConfig().showStatusBarItem() && (await this.dataSource.getRepos()).length > 0) {
+		if (getConfig().showStatusBarItem() && Object.keys(await this.dataSource.getRepos()).length > 0) {
 			this.statusBarItem.show();
 		} else {
 			this.statusBarItem.hide();

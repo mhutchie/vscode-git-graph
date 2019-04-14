@@ -53,6 +53,8 @@ body.unableToLoad h1, body.unableToLoad p{
 	white-space:nowrap;
 	font-size:13px;
 	cursor:default;
+	text-overflow:ellipsis;
+	overflow:hidden;
 }
 #commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td, #commitTable tr.commit.commitDetailsOpen td{
 	background-color:rgba(128,128,128,0.15);
@@ -65,26 +67,42 @@ body.unableToLoad h1, body.unableToLoad p{
 	padding:0 4px;
 }
 #commitTable th{
-	border-left:1px solid rgba(128,128,128,0.5);
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	background-color:rgba(128,128,128,0.2);
 	line-height:18px;
 	padding:6px 12px;
 }
-#commitTable th:first-child{
-	border-left-width:0;
-}
 
-#commitTable td:nth-child(2), #commitTable th:nth-child(2){
+#commitTable.fixedLayout table{
+	table-layout:fixed;
+}
+#commitTable.autoLayout td:nth-child(2), #commitTable.autoLayout th:nth-child(2){
 	width:100%;
-	text-overflow:ellipsis;
-	overflow:hidden;
 	max-width:0;
 }
-#commitTable td:nth-child(4), #commitTable th:nth-child(4){
+#commitTable.autoLayout td:nth-child(4), #commitTable.autoLayout th:nth-child(4){
 	max-width:124px;
-	text-overflow:ellipsis;
-	overflow:hidden;
+}
+#tableColHeaders.resizing th{
+	cursor:col-resize;
+}
+.tableColHeader{
+	position:relative;
+}
+.resizeCol{
+	position:absolute;
+	top:0px;
+	height:100%;
+	display:block;
+	width:6px;
+	cursor:col-resize;
+}
+.resizeCol.left{
+	left:0px;
+	border-left:1px solid rgba(128,128,128,0.5);
+}
+.resizeCol.right{
+	right:0px;
 }
 
 /* Commit Details View */

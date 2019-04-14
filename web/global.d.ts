@@ -91,7 +91,7 @@ declare global {
 	type AvatarImageCollection = { [email: string]: string };
 
 	interface WebViewState {
-		gitRepos: string[];
+		gitRepos: GG.GitRepoSet;
 		gitBranches: string[];
 		gitBranchHead: string | null;
 		commits: GG.GitCommitNode[];

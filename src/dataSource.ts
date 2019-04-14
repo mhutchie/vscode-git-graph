@@ -1,19 +1,22 @@
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
+import { ExtensionState } from './extensionState';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitRepoSet, GitResetMode, GitUnsavedChanges } from './types';
 
 const eolRegex = /\r\n|\r|\n/g;
 const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
+	private readonly extensionState: ExtensionState;
 	private gitPath!: string;
 	private gitExecPath!: string;
 	private gitLogFormat!: string;
 	private gitCommitDetailsFormat!: string;
 
-	constructor() {
+	constructor(extensionState: ExtensionState) {
+		this.extensionState = extensionState;
 		this.registerGitPath();
 		this.generateGitCommandFormats();
 	}
@@ -30,12 +33,12 @@ export class DataSource {
 	}
 
 	public async getRepos() {
-		let rootFolders = vscode.workspace.workspaceFolders;
-		let repos = [], i, path;
+		let rootFolders = vscode.workspace.workspaceFolders, repoConfig = this.extensionState.getRepoConfig();
+		let repos: GitRepoSet = {}, i, path;
 		if (typeof rootFolders !== 'undefined') {
 			for (i = 0; i < rootFolders.length; i++) {
 				path = rootFolders[i].uri.fsPath.replace(/\\/g, '/');
-				if (await this.isGitRepository(path)) repos.push(path);
+				if (await this.isGitRepository(path)) repos[path] = typeof repoConfig[path] !== 'undefined' ? repoConfig[path] : { columnWidths: null };
 			}
 		}
 		return repos;

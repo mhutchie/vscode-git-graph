@@ -196,16 +196,42 @@ class Vertex {
 }
 
 class Graph {
-	private elem: HTMLElement;
 	private config: Config;
+
+	private svg: SVGElement;
+	private svgGroup: SVGGElement | null = null;
+	private svgMaskRect: SVGRectElement;
+	private svgGradientStop1: SVGStopElement;
+	private svgGradientStop2: SVGStopElement;
+	private maxWidth: number = -1;
 
 	private vertices: Vertex[] = [];
 	private branches: Branch[] = [];
 	private availableColours: number[] = [];
 
 	constructor(id: string, config: Config) {
-		this.elem = document.getElementById(id)!;
 		this.config = config;
+
+		let svgNamespace = 'http://www.w3.org/2000/svg';
+		let defs = document.createElementNS(svgNamespace, 'defs'), linearGradient = document.createElementNS(svgNamespace, 'linearGradient'), mask = document.createElementNS(svgNamespace, 'mask');
+		this.svg = <SVGElement>document.createElementNS(svgNamespace, 'svg');
+		this.svgMaskRect = <SVGRectElement>document.createElementNS(svgNamespace, 'rect');
+		this.svgGradientStop1 = <SVGStopElement>document.createElementNS(svgNamespace, 'stop');
+		this.svgGradientStop2 = <SVGStopElement>document.createElementNS(svgNamespace, 'stop');
+
+		linearGradient.setAttribute('id', 'GraphGradient');
+		this.svgGradientStop1.setAttribute('stop-color', 'white');
+		linearGradient.appendChild(this.svgGradientStop1);
+		this.svgGradientStop2.setAttribute('stop-color', 'black');
+		linearGradient.appendChild(this.svgGradientStop2);
+		defs.appendChild(linearGradient);
+		mask.setAttribute('id', 'GraphMask');
+		this.svgMaskRect.setAttribute('fill', 'url(#GraphGradient)');
+		mask.appendChild(this.svgMaskRect);
+		defs.appendChild(mask);
+		this.svg.appendChild(defs);
+		this.setDimensions(0, 0);
+		document.getElementById(id)!.appendChild(this.svg);
 	}
 
 	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
@@ -240,24 +266,28 @@ class Graph {
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
-		let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'), i;
-		svg.setAttribute('width', this.getWidth().toString());
-		svg.setAttribute('height', this.getHeight(expandedCommit).toString());
+		let group = <SVGGElement>document.createElementNS('http://www.w3.org/2000/svg', 'g'), i, width = this.getWidth();
+		group.setAttribute('mask', 'url(#GraphMask)');
 
 		for (i = 0; i < this.branches.length; i++) {
-			this.branches[i].draw(svg, this.config, expandedCommit !== null ? expandedCommit.id : -1);
+			this.branches[i].draw(group, this.config, expandedCommit !== null ? expandedCommit.id : -1);
 		}
 		for (i = 0; i < this.vertices.length; i++) {
-			this.vertices[i].draw(svg, this.config, expandedCommit !== null && i > expandedCommit.id);
+			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.id);
 		}
 
-		this.clear();
-		this.elem.appendChild(svg);
+		if (this.svgGroup !== null) this.svg.removeChild(this.svgGroup);
+		this.svg.appendChild(group);
+		this.svgGroup = group;
+		this.setDimensions(width, this.getHeight(expandedCommit));
+		this.applyMaxWidth(width);
 	}
 
 	public clear() {
-		if (this.elem.firstChild) {
-			this.elem.removeChild(this.elem.firstChild);
+		if (this.svgGroup !== null) {
+			this.svg.removeChild(this.svgGroup);
+			this.svgGroup = null;
+			this.setDimensions(0, 0);
 		}
 	}
 
@@ -276,6 +306,25 @@ class Graph {
 
 	public getVertexColour(v: number) {
 		return this.vertices[v].getColour() % this.config.graphColours.length;
+	}
+
+	public limitMaxWidth(maxWidth: number) {
+		this.maxWidth = maxWidth;
+		this.applyMaxWidth(this.getWidth());
+	}
+
+	private setDimensions(width: number, height: number) {
+		this.svg.setAttribute('width', width.toString());
+		this.svg.setAttribute('height', height.toString());
+		this.svgMaskRect.setAttribute('width', width.toString());
+		this.svgMaskRect.setAttribute('height', height.toString());
+	}
+
+	private applyMaxWidth(width: number) {
+		let offset1 = this.maxWidth > -1 ? (this.maxWidth - 12) / width : 1;
+		let offset2 = this.maxWidth > -1 ? this.maxWidth / width : 1;
+		this.svgGradientStop1.setAttribute('offset', offset1.toString());
+		this.svgGradientStop2.setAttribute('offset', offset2.toString());
 	}
 
 	private determinePath(startAt: number) {

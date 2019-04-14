@@ -23,7 +23,7 @@
 	/* Classes */
 
 	class GitGraphView {
-		private gitRepos: string[];
+		private gitRepos: GG.GitRepoSet;
 		private gitBranches: string[] = [];
 		private gitBranchHead: string | null = null;
 		private commits: GG.GitCommitNode[] = [];
@@ -50,29 +50,29 @@
 		private loadBranchesCallback: ((changes: boolean) => void) | null = null;
 		private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-		constructor(repos: string[], lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
+		constructor(repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
 			this.gitRepos = repos;
 			this.config = config;
 			this.maxCommits = config.initialLoadCommits;
 			this.graph = new Graph('commitGraph', this.config);
 			this.tableElem = document.getElementById('commitTable')!;
 			this.footerElem = document.getElementById('footer')!;
-			this.repoDropdown = new Dropdown('repoSelect', (value) => {
-				this.currentRepo = this.gitRepos[parseInt(value)];
+			this.repoDropdown = new Dropdown('repoSelect', value => {
+				this.currentRepo = value;
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;
 				this.currentBranch = null;
 				this.saveState();
 				this.refresh(true);
 			});
-			this.branchDropdown = new Dropdown('branchSelect', (value => {
+			this.branchDropdown = new Dropdown('branchSelect', value => {
 				this.currentBranch = value;
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;
 				this.saveState();
 				this.renderShowLoading();
 				this.requestLoadCommits(true, () => { });
-			}))!;
+			});
 			this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 			this.showRemoteBranchesElem.addEventListener('change', () => {
 				this.showRemoteBranches = this.showRemoteBranchesElem.checked;
@@ -97,7 +97,7 @@
 				this.currentBranch = prevState.currentBranch;
 				this.showRemoteBranches = prevState.showRemoteBranches;
 				this.showRemoteBranchesElem.checked = this.showRemoteBranches;
-				if (this.gitRepos.indexOf(prevState.currentRepo) > -1) {
+				if (typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
 					this.currentRepo = prevState.currentRepo;
 					this.maxCommits = prevState.maxCommits;
 					this.expandedCommit = prevState.expandedCommit;
@@ -111,25 +111,24 @@
 		}
 
 		/* Loading Data */
-		public loadRepos(repos: string[], lastActiveRepo: string | null) {
+		public loadRepos(repos: GG.GitRepoSet, lastActiveRepo: string | null) {
 			this.gitRepos = repos;
 			this.saveState();
 
-			let curRepoIndex = this.gitRepos.indexOf(this.currentRepo), changedRepo = false;
-			if (curRepoIndex === -1) {
-				this.currentRepo = lastActiveRepo !== null && this.gitRepos.indexOf(lastActiveRepo) > -1 ? lastActiveRepo : this.gitRepos[0];
-				curRepoIndex = this.gitRepos.indexOf(this.currentRepo);
+			let repoPaths = Object.keys(repos), changedRepo = false;
+			if (typeof repos[this.currentRepo] === 'undefined') {
+				this.currentRepo = lastActiveRepo !== null && typeof repos[lastActiveRepo] !== 'undefined' ? lastActiveRepo : repoPaths[0];
 				this.saveState();
 				changedRepo = true;
 			}
 
 			let options = [], repoComps, i;
-			for (i = 0; i < this.gitRepos.length; i++) {
-				repoComps = this.gitRepos[i].split('/');
-				options.push({ name: repoComps[repoComps.length - 1], value: i.toString() });
+			for (i = 0; i < repoPaths.length; i++) {
+				repoComps = repoPaths[i].split('/');
+				options.push({ name: repoComps[repoComps.length - 1], value: repoPaths[i] });
 			}
-			document.getElementById('repoControl')!.style.display = this.gitRepos.length > 1 ? 'inline' : 'none';
-			this.repoDropdown.setOptions(options, curRepoIndex.toString());
+			document.getElementById('repoControl')!.style.display = repoPaths.length > 1 ? 'inline' : 'none';
+			this.repoDropdown.setOptions(options, this.currentRepo);
 
 			if (changedRepo) {
 				this.refresh(true);
@@ -300,7 +299,7 @@
 			this.graph.render(this.expandedCommit);
 		}
 		private renderTable() {
-			let html = '<tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
+			let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
 			for (i = 0; i < this.commits.length; i++) {
 				let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml;
 				for (j = 0; j < this.commits[i].refs.length; j++) {
@@ -313,8 +312,7 @@
 			}
 			this.tableElem.innerHTML = '<table>' + html + '</table>';
 			this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
-
-			document.getElementById('tableHeaderGraphCol')!.style.padding = '0 ' + Math.round((Math.max(this.graph.getWidth() + 16, 64) - (document.getElementById('tableHeaderGraphCol')!.offsetWidth - 24)) / 2) + 'px';
+			this.makeTableResizable();
 
 			if (this.moreCommitsAvailable) {
 				document.getElementById('loadMoreCommitsBtn')!.addEventListener('click', () => {
@@ -532,7 +530,7 @@
 		private renderShowLoading() {
 			hideDialogAndContextMenu();
 			this.graph.clear();
-			this.tableElem.innerHTML = '<table><tr><th id="tableHeaderGraphCol">Graph</th><th>Description</th><th>Date</th><th>Author</th><th>Commit</th></tr></table><h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
+			this.tableElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 			this.footerElem.innerHTML = '';
 		}
 		private checkoutBranchAction(sourceElem: HTMLElement, refName: string) {
@@ -543,6 +541,82 @@
 				showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
 					sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: newBranch, remoteBranch: refName });
 				}, null);
+			}
+		}
+		private makeTableResizable() {
+			let colHeadersElem = document.getElementById('tableColHeaders')!, cols = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tableColHeader');
+			let columnWidths = this.gitRepos[this.currentRepo].columnWidths, mouseX = -1, col = -1, that = this;
+
+			for (let i = 0; i < cols.length; i++) {
+				cols[i].innerHTML += (i > 0 ? '<span class="resizeCol left" data-col="' + (i - 1) + '"></span>' : '') + (i < cols.length - 1 ? '<span class="resizeCol right" data-col="' + i + '"></span>' : '');
+			}
+			if (columnWidths !== null) {
+				makeTableFixedLayout();
+			} else {
+				this.tableElem.className = 'autoLayout';
+				this.graph.limitMaxWidth(-1);
+				cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getWidth() + 16, 64) - (cols[0].offsetWidth - 24)) / 2) + 'px';
+			}
+
+			addListenerToClass('resizeCol', 'mousedown', (e) => {
+				col = parseInt((<HTMLElement>e.target).dataset.col!);
+				mouseX = (<MouseEvent>e).clientX;
+				if (columnWidths === null) {
+					columnWidths = [cols[0].clientWidth - 24, cols[2].clientWidth - 24, cols[3].clientWidth - 24, cols[4].clientWidth - 24];
+					makeTableFixedLayout();
+				}
+				colHeadersElem.classList.add('resizing');
+			});
+			colHeadersElem.addEventListener('mousemove', (e) => {
+				if (col > -1 && columnWidths !== null) {
+					let mouseEvent = <MouseEvent>e;
+					let mouseDeltaX = mouseEvent.clientX - mouseX;
+					switch (col) {
+						case 0:
+							if (columnWidths[0] + mouseDeltaX < 40) mouseDeltaX = -columnWidths[0] + 40;
+							if (cols[1].clientWidth - mouseDeltaX < 64) mouseDeltaX = cols[1].clientWidth - 64;
+							columnWidths[0] += mouseDeltaX;
+							cols[0].style.width = columnWidths[0] + 'px';
+							this.graph.limitMaxWidth(columnWidths[0] + 16);
+							break;
+						case 1:
+							if (cols[1].clientWidth + mouseDeltaX < 64) mouseDeltaX = -cols[1].clientWidth + 64;
+							if (columnWidths[1] - mouseDeltaX < 40) mouseDeltaX = columnWidths[1] - 40;
+							columnWidths[1] -= mouseDeltaX;
+							cols[2].style.width = columnWidths[1] + 'px';
+							break;
+						default:
+							if (columnWidths[col - 1] + mouseDeltaX < 40) mouseDeltaX = -columnWidths[col - 1] + 40;
+							if (columnWidths[col] - mouseDeltaX < 40) mouseDeltaX = columnWidths[col] - 40;
+							columnWidths[col - 1] += mouseDeltaX;
+							columnWidths[col] -= mouseDeltaX;
+							cols[col].style.width = columnWidths[col - 1] + 'px';
+							cols[col + 1].style.width = columnWidths[col] + 'px';
+					}
+					mouseX = mouseEvent.clientX;
+				}
+			});
+			colHeadersElem.addEventListener('mouseup', stopResizing);
+			colHeadersElem.addEventListener('mouseleave', stopResizing);
+			function stopResizing() {
+				if (col > -1 && columnWidths !== null) {
+					col = -1;
+					mouseX = -1;
+					colHeadersElem.classList.remove('resizing');
+					that.gitRepos[that.currentRepo].columnWidths = columnWidths;
+					sendMessage({ command: 'saveRepoState', repo: that.currentRepo, state: that.gitRepos[that.currentRepo] });
+				}
+			}
+			function makeTableFixedLayout() {
+				if (columnWidths !== null) {
+					cols[0].style.width = columnWidths[0] + 'px';
+					cols[0].style.padding = '';
+					cols[2].style.width = columnWidths[1] + 'px';
+					cols[3].style.width = columnWidths[2] + 'px';
+					cols[4].style.width = columnWidths[3] + 'px';
+					that.tableElem.className = 'fixedLayout';
+					that.graph.limitMaxWidth(columnWidths[0] + 16);
+				}
 			}
 		}
 

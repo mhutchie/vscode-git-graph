@@ -7,7 +7,7 @@ import { encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoFolderWatcher } from './repoFolderWatcher';
-import { GitFileChangeType, GitGraphViewState, RequestMessage, ResponseMessage } from './types';
+import { GitFileChangeType, GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
 import { abbrevCommit, copyToClipboard } from './utils';
 
 export class GitGraphView {
@@ -78,7 +78,8 @@ export class GitGraphView {
 		});
 		this.repoFolderWatcher = new RepoFolderWatcher(async () => {
 			let repos = await this.dataSource.getRepos();
-			if ((repos.length === 0 && this.isGraphViewLoaded) || (repos.length > 0 && !this.isGraphViewLoaded)) {
+			let numRepos = Object.keys(repos).length;
+			if ((numRepos === 0 && this.isGraphViewLoaded) || (numRepos > 0 && !this.isGraphViewLoaded)) {
 				this.update();
 			} else {
 				this.respondLoadRepos(repos);
@@ -204,6 +205,9 @@ export class GitGraphView {
 						status: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					break;
+				case 'saveRepoState':
+					this.extensionState.setRepoState(msg.repo, msg.state);
+					break;
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
@@ -253,12 +257,12 @@ export class GitGraphView {
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
 
-		let body, colorVars = '', colorParams = '';
+		let body, numRepos = Object.keys(viewState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < viewState.graphColours.length; i++) {
 			colorVars += '--git-graph-color' + i + ':' + viewState.graphColours[i] + '; ';
 			colorParams += '[data-color="'+i+'"]{--git-graph-color:var(--git-graph-color'+i+');} ';
 		}
-		if (viewState.repos.length > 0) {
+		if (numRepos > 0) {
 			body = `<body style="${colorVars}">
 			<div id="controls">
 				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
@@ -280,7 +284,7 @@ export class GitGraphView {
 		} else {
 			body = `<body class="unableToLoad" style="${colorVars}"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
 		}
-		this.isGraphViewLoaded = viewState.repos.length > 0;
+		this.isGraphViewLoaded = numRepos > 0;
 
 		return `<!DOCTYPE html>
 		<html lang="en">
@@ -305,7 +309,7 @@ export class GitGraphView {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
-	private respondLoadRepos(repos: string[]) {
+	private respondLoadRepos(repos: GitRepoSet) {
 		this.sendMessage({
 			command: 'loadRepos',
 			repos: repos,

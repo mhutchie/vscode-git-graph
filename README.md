@@ -30,6 +30,7 @@ This extension contributes the following settings:
 * `git-graph.autoCenterCommitDetailsView`: Automatically center the commit details view when it is opened.
 * `git-graph.dateFormat`: Specifies the date format to be used in the date column of the graph.
 * `git-graph.dateType`: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
+* `git-graph.fetchAvatars`: Fetch avatars of commit authors and committers. Default: false (disabled)
 * `git-graph.graphColours`: Specifies the colours used on the graph.
 * `git-graph.graphStyle`: Specifies the style of the graph.
 * `git-graph.initialLoadCommits`: Specifies the number of commits to initially load.
@@ -50,6 +51,7 @@ More information on each setting, including detailed descriptions, default value
 This extension contributes the following commands:
 
 * `git-graph.view`: Git Graph: View Git Graph
+* `git-graph.clearAvatarCache`: Git Graph: Clear Avatar Cache
 
 ## Release Notes
 

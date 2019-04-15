@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.4.5 - 2019-04-15
+* #26 Fetch and show commit author / committer avatars from GitHub, GitLab & Gravatar. If you'd like to use this feature, you must enable the setting `git-graph.fetchAvatars`. Thanks @meierw for helping with the development of this!
+* #37 Columns can be resized by dragging the dividers in the table header.
+* #43 Add more emphasis to the head commit.
+* #44 Improved the documentation and descriptions of extension settings.
+* #45 Include commits from heads that are only referenced by tags.
+* #46 Fixed graph node misalignment when Visual Studio Code is zoomed.
+* #51 Observe Visual Studio Code theme changes while Git Graph is open, now required due to a change in Visual Studio Code 1.33.0.
+
 ## 1.4.4 - 2019-04-01
 * #27 Add lightweight or annotated tags. Add message (optional) to annotated tags.
 * #35 Merge a specific commit from the commit context menu.

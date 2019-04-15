@@ -39,7 +39,6 @@
 		private showRemoteBranches: boolean = true;
 		private expandedCommit: ExpandedCommit | null = null;
 		private maxCommits: number;
-		private windowSize: { width: number, height: number };
 
 		private tableElem: HTMLElement;
 		private footerElem: HTMLElement;
@@ -82,14 +81,7 @@
 			document.getElementById('refreshBtn')!.addEventListener('click', () => {
 				this.refresh(true);
 			});
-			this.windowSize = { width: window.outerWidth, height: window.outerHeight };
-			window.addEventListener('resize', () => {
-				if (this.windowSize.width === window.outerWidth && this.windowSize.height === window.outerHeight) {
-					this.renderGraph();
-				} else {
-					this.windowSize = { width: window.outerWidth, height: window.outerHeight };
-				}
-			});
+			this.observeWindowSizeChanges();
 			this.observeWebviewStyleChanges();
 
 			this.renderShowLoading();
@@ -214,9 +206,9 @@
 		public loadAvatar(email: string, image: string) {
 			this.avatars[email] = image;
 			this.saveState();
-			let avatarsElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('avatar');
+			let avatarsElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('avatar'), escapedEmail = escapeHtml(email);
 			for (let i = 0; i < avatarsElems.length; i++) {
-				if (avatarsElems[i].dataset.email === email) {
+				if (avatarsElems[i].dataset.email === escapedEmail) {
 					avatarsElems[i].innerHTML = '<img class="avatarImg" src="' + image + '">';
 				}
 			}
@@ -292,8 +284,10 @@
 			this.renderGraph();
 		}
 		private renderGraph() {
-			let headerHeight = document.getElementById('tableHeaderGraphCol')!.parentElement!.clientHeight + 1;
-			this.config.grid.expandY = this.expandedCommit !== null ? document.getElementById('commitDetails')!.getBoundingClientRect().height : this.config.grid.expandY;
+			let colHeadersElem = document.getElementById('tableColHeaders');
+			if (colHeadersElem === null) return;
+			let headerHeight = colHeadersElem.clientHeight + 1, expandedCommitElem = this.expandedCommit !== null ? document.getElementById('commitDetails') : null;
+			this.config.grid.expandY = expandedCommitElem !== null ? expandedCommitElem.getBoundingClientRect().height : this.config.grid.expandY;
 			this.config.grid.y = this.commits.length > 0 ? (this.tableElem.children[0].clientHeight - headerHeight - (this.expandedCommit !== null ? this.config.grid.expandY : 0)) / this.commits.length : this.config.grid.y;
 			this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
 			this.graph.render(this.expandedCommit);
@@ -308,7 +302,7 @@
 					refHtml = '<span class="gitRef ' + this.commits[i].refs[j].type + (refActive ? ' active' : '') + '" data-name="' + refName + '">' + (this.commits[i].refs[j].type === 'tag' ? svgIcons.tag : svgIcons.branch) + refName + '</span>';
 					refs = refActive ? refHtml + refs : refs + refHtml;
 				}
-				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '" data-color="' + this.graph.getVertexColour(i) + '"><td></td><td>' + (this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '') + refs + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + this.commits[i].email + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
+				html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '" data-color="' + this.graph.getVertexColour(i) + '"><td></td><td>' + (this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '') + refs + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 			}
 			this.tableElem.innerHTML = '<table>' + html + '</table>';
 			this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
@@ -620,6 +614,18 @@
 			}
 		}
 
+		/* Observers */
+		private observeWindowSizeChanges() {
+			let windowWidth = window.outerWidth, windowHeight = window.outerHeight;
+			window.addEventListener('resize', () => {
+				if (windowWidth === window.outerWidth && windowHeight === window.outerHeight) {
+					this.renderGraph();
+				} else {
+					windowWidth = window.outerWidth;
+					windowHeight = window.outerHeight;
+				}
+			});
+		}
 		private observeWebviewStyleChanges() {
 			let fontFamily = getVSCodeStyle('--vscode-editor-font-family');
 			(new MutationObserver(() => {

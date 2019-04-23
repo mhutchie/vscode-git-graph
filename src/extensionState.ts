@@ -64,6 +64,11 @@ export class ExtensionState {
 		avatars[email] = avatar;
 		this.globalState.update(AVATAR_CACHE, avatars);
 	}
+	public removeAvatarFromCache(email: string) {
+		let avatars = this.getAvatarCache();
+		delete avatars[email];
+		this.globalState.update(AVATAR_CACHE, avatars);
+	}
 	public clearAvatarCache() {
 		this.globalState.update(AVATAR_CACHE, {});
 		fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {

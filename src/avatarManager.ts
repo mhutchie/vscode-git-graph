@@ -46,7 +46,11 @@ export class AvatarManager {
 			}
 			if (this.avatars[email].image !== null) {
 				// Avatar image is available
-				this.sendAvatarToWebView(email);
+				this.sendAvatarToWebView(email, () => {
+					// Avatar couldn't be found, request it again
+					this.removeAvatarFromCache(email);
+					this.queue.add(email, repo, commits, true);
+				});
 			}
 		} else {
 			// Avatar not in the cache, request it
@@ -60,6 +64,11 @@ export class AvatarManager {
 
 	public deregisterView() {
 		this.view = null;
+	}
+
+	public removeAvatarFromCache(email: string) {
+		delete this.avatars[email];
+		this.extensionState.removeAvatarFromCache(email);
 	}
 
 	public clearCache() {
@@ -261,14 +270,16 @@ export class AvatarManager {
 			this.avatars[email] = { image: image, timestamp: (new Date()).getTime(), identicon: identicon };
 		}
 		this.extensionState.saveAvatar(email, this.avatars[email]);
-		this.sendAvatarToWebView(email);
+		this.sendAvatarToWebView(email, () => { });
 	}
 
-	private sendAvatarToWebView(email: string) {
+	private sendAvatarToWebView(email: string, onError: () => void) {
 		if (this.view !== null) {
 			fs.readFile(this.avatarStorageFolder + '/' + this.avatars[email].image, (err, data) => {
-				// Read the avatar, and send it as a base64 encoded data uri
-				if (!err && this.view !== null) {
+				if (err) {
+					onError();
+				} else if (this.view !== null) {
+					// Send avatar to the webview as a base64 encoded data uri
 					this.view.sendMessage({
 						command: 'fetchAvatar',
 						email: email,

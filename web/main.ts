@@ -436,7 +436,7 @@
 					{
 						title: 'Copy Commit Hash to Clipboard',
 						onClick: () => {
-							sendMessage({ command: 'copyCommitHashToClipboard', repo: this.currentRepo!, commitHash: hash });
+							sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
 						}
 					}
 				], sourceElem);
@@ -452,7 +452,7 @@
 			addListenerToClass('gitRef', 'contextmenu', (e: Event) => {
 				e.stopPropagation();
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
-				let refName = unescapeHtml(sourceElem.dataset.name!), menu;
+				let refName = unescapeHtml(sourceElem.dataset.name!), menu: ContextMenuElement[], copyType: string;
 				if (sourceElem.classList.contains('tag')) {
 					menu = [{
 						title: 'Delete Tag' + ELLIPSIS,
@@ -470,6 +470,7 @@
 							}, null);
 						}
 					}];
+					copyType = 'Tag Name';
 				} else {
 					if (sourceElem.classList.contains('head')) {
 						menu = [{
@@ -506,7 +507,14 @@
 							onClick: () => this.checkoutBranchAction(sourceElem, refName)
 						}];
 					}
+					copyType = 'Branch Name';
 				}
+				menu.push(null, {
+					title: 'Copy ' + copyType + ' to Clipboard',
+					onClick: () => {
+						sendMessage({ command: 'copyToClipboard', type: copyType, data: refName });
+					}
+				});
 				showContextMenu(<MouseEvent>e, menu, sourceElem);
 			});
 			addListenerToClass('gitRef', 'click', (e: Event) => e.stopPropagation());
@@ -758,8 +766,8 @@
 					gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
 				}
 				break;
-			case 'copyCommitHashToClipboard':
-				if (msg.success === false) showErrorDialog('Unable to Copy Commit Hash to Clipboard', null, null);
+			case 'copyToClipboard':
+				if (msg.success === false) showErrorDialog('Unable to Copy ' + msg.type + ' to Clipboard', null, null);
 				break;
 			case 'createBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Create Branch');

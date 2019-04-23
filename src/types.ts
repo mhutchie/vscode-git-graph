@@ -145,13 +145,14 @@ export interface ResponseCommitDetails {
 	commitDetails: GitCommitDetails | null;
 }
 
-export interface RequestCopyCommitHashToClipboard {
-	command: 'copyCommitHashToClipboard';
-	repo: string;
-	commitHash: string;
+export interface RequestCopyToClipboard {
+	command: 'copyToClipboard';
+	type: string;
+	data: string;
 }
-export interface ResponseCopyCommitHashToClipboard {
-	command: 'copyCommitHashToClipboard';
+export interface ResponseCopyToClipboard {
+	command: 'copyToClipboard';
+	type: string;
 	success: boolean;
 }
 
@@ -331,7 +332,7 @@ export type RequestMessage =
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCommitDetails
-	| RequestCopyCommitHashToClipboard
+	| RequestCopyToClipboard
 	| RequestCreateBranch
 	| RequestDeleteBranch
 	| RequestDeleteTag
@@ -354,7 +355,7 @@ export type ResponseMessage =
 	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit
 	| ResponseCommitDetails
-	| ResponseCopyCommitHashToClipboard
+	| ResponseCopyToClipboard
 	| ResponseCreateBranch
 	| ResponseDeleteBranch
 	| ResponseDeleteTag

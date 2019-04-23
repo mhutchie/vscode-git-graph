@@ -123,10 +123,11 @@ export class GitGraphView {
 						commitDetails: await this.dataSource.commitDetails(msg.repo, msg.commitHash)
 					});
 					break;
-				case 'copyCommitHashToClipboard':
+				case 'copyToClipboard':
 					this.sendMessage({
-						command: 'copyCommitHashToClipboard',
-						success: await copyToClipboard(msg.commitHash)
+						command: 'copyToClipboard',
+						type: msg.type,
+						success: await copyToClipboard(msg.data)
 					});
 					break;
 				case 'createBranch':

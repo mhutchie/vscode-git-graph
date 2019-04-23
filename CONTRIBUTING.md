@@ -46,7 +46,7 @@ Step 1: To set up your development environment, please follow these steps:
 1. Install [Node.js](https://nodejs.org/en/) if it is not already installed.
 2. Clone the [vscode-git-graph](https://github.com/mhutchie/vscode-git-graph) repo on GitHub.
 3. Open the repo in Visual Studio Code.
-4. In the Visual Studio Code terminal, run `npm run install` to automatically download all of the required Node.js dependencies.
+4. In the Visual Studio Code terminal, run `npm install` to automatically download all of the required Node.js dependencies.
 5. Install the [TSLint](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-typescript-tslint-plugin) extension if it is not already installed.
 6. Create and checkout a branch for the issue you're going to work on.
 

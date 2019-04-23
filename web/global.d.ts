@@ -77,16 +77,32 @@ declare global {
 	type GitFolderOrFile = GitFolder | GitFile;
 	type GitFolderContents = { [name: string]: GitFolderOrFile };
 
-	interface Line {
-		p1: Point;
-		p2: Point;
-		isCommitted: boolean;
-	}
-
 	interface Point {
 		x: number;
 		y: number;
 	}
+	interface Line {
+		p1: Point;
+		p2: Point;
+		lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+	}
+
+	interface Pixel {
+		x: number;
+		y: number;
+	}
+	interface PlacedLine {
+		p1: Pixel;
+		p2: Pixel;
+		isCommitted: boolean;
+		lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+	}
+
+	interface UnavailablePoint {
+		connectsTo: VertexOrNull;
+		onBranch: Branch;
+	}
+	type VertexOrNull = Vertex | null;
 
 	type AvatarImageCollection = { [email: string]: string };
 

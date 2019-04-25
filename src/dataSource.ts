@@ -1,22 +1,19 @@
 import * as cp from 'child_process';
-import * as vscode from 'vscode';
 import { getConfig } from './config';
-import { ExtensionState } from './extensionState';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitRepoSet, GitResetMode, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
+import { getPathFromStr } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
 const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
 const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
-	private readonly extensionState: ExtensionState;
 	private gitPath!: string;
 	private gitExecPath!: string;
 	private gitLogFormat!: string;
 	private gitCommitDetailsFormat!: string;
 
-	constructor(extensionState: ExtensionState) {
-		this.extensionState = extensionState;
+	constructor() {
 		this.registerGitPath();
 		this.generateGitCommandFormats();
 	}
@@ -30,18 +27,6 @@ export class DataSource {
 		let dateType = getConfig().dateType() === 'Author Date' ? '%at' : '%ct';
 		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(gitLogSeparator);
 		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(gitLogSeparator) + '%n%B';
-	}
-
-	public async getRepos() {
-		let rootFolders = vscode.workspace.workspaceFolders, repoConfig = this.extensionState.getRepoConfig();
-		let repos: GitRepoSet = {}, i, path;
-		if (typeof rootFolders !== 'undefined') {
-			for (i = 0; i < rootFolders.length; i++) {
-				path = rootFolders[i].uri.fsPath.replace(/\\/g, '/');
-				if (await this.isGitRepository(path)) repos[path] = typeof repoConfig[path] !== 'undefined' ? repoConfig[path] : { columnWidths: null };
-			}
-		}
-		return repos;
 	}
 
 	public getBranches(repo: string, showRemoteBranches: boolean) {
@@ -138,7 +123,7 @@ export class DataSource {
 						for (let i = 1; i < lines.length - 1; i++) {
 							let line = lines[i].split('\t');
 							if (line.length < 2) break;
-							let oldFilePath = line[1].replace(/\\/g, '/'), newFilePath = line[line.length - 1].replace(/\\/g, '/');
+							let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
 							fileLookup[newFilePath] = details.fileChanges.length;
 							details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
 						}
@@ -182,6 +167,14 @@ export class DataSource {
 		return new Promise<string | null>(resolve => {
 			this.execGit('config --get remote.origin.url', repo, (err, stdout) => {
 				resolve(!err ? stdout.split(eolRegex)[0] : null);
+			});
+		});
+	}
+
+	public isGitRepository(path: string) {
+		return new Promise<boolean>(resolve => {
+			this.execGit('rev-parse --git-dir', path, (err) => {
+				resolve(!err);
 			});
 		});
 	}
@@ -345,14 +338,6 @@ export class DataSource {
 					let lines = (stdout !== '' ? stdout : stderr !== '' ? stderr : '').split(eolRegex);
 					resolve(lines.slice(0, lines.length - 1).join('\n'));
 				}
-			});
-		});
-	}
-
-	private isGitRepository(folder: string) {
-		return new Promise<boolean>((resolve) => {
-			this.execGit('rev-parse --git-dir', folder, (err) => {
-				resolve(!err);
 			});
 		});
 	}

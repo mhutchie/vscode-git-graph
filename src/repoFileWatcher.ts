@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getPathFromUri } from './utils';
 
 const fileChangeRegex = /(^\.git\/(config|index|HEAD|refs\/stash|refs\/heads\/.*|refs\/remotes\/.*|refs\/tags\/.*)$)|(^(?!\.git).*$)|(^\.git[^\/]+$)/;
 
@@ -20,8 +21,7 @@ export class RepoFileWatcher {
 		}
 
 		this.repo = repo;
-		let ws = vscode.workspace.workspaceFolders!.find(f => f.uri.fsPath.replace(/\\/g, '/') === repo)!;
-		this.fsWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(ws, '**'));
+		this.fsWatcher = vscode.workspace.createFileSystemWatcher(repo + '/**');
 		this.fsWatcher.onDidCreate(uri => this.refesh(uri));
 		this.fsWatcher.onDidChange(uri => this.refesh(uri));
 		this.fsWatcher.onDidDelete(uri => this.refesh(uri));
@@ -45,7 +45,7 @@ export class RepoFileWatcher {
 
 	private async refesh(uri: vscode.Uri) {
 		if (this.muted) return;
-		if (!uri.fsPath.replace(/\\/g, '/').replace(this.repo + '/', '').match(fileChangeRegex)) return;
+		if (!getPathFromUri(uri).replace(this.repo + '/', '').match(fileChangeRegex)) return;
 		if ((new Date()).getTime() < this.resumeAt) return;
 
 		if (this.refreshTimeout !== null) {

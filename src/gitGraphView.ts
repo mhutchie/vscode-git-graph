@@ -6,7 +6,7 @@ import { DataSource } from './dataSource';
 import { encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
-import { RepoFolderWatcher } from './repoFolderWatcher';
+import { RepoManager } from './repoManager';
 import { GitFileChangeType, GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
 import { abbrevCommit, copyToClipboard } from './utils';
 
@@ -19,13 +19,13 @@ export class GitGraphView {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly repoFileWatcher: RepoFileWatcher;
-	private readonly repoFolderWatcher: RepoFolderWatcher;
+	private readonly repoManager: RepoManager;
 	private disposables: vscode.Disposable[] = [];
 	private isGraphViewLoaded: boolean = false;
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -40,15 +40,16 @@ export class GitGraphView {
 			]
 		});
 
-		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState, avatarManager);
+		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState, avatarManager, repoManager);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager) {
+	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager) {
 		this.panel = panel;
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
+		this.repoManager = repoManager;
 		this.avatarManager.registerView(this);
 
 		panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
@@ -61,11 +62,9 @@ export class GitGraphView {
 			if (this.panel.visible !== this.isPanelVisible) {
 				if (this.panel.visible) {
 					this.update();
-					this.repoFolderWatcher.start();
 				} else {
 					this.currentRepo = null;
 					this.repoFileWatcher.stop();
-					this.repoFolderWatcher.stop();
 				}
 				this.isPanelVisible = this.panel.visible;
 			}
@@ -76,9 +75,8 @@ export class GitGraphView {
 				this.sendMessage({ command: 'refresh' });
 			}
 		});
-		this.repoFolderWatcher = new RepoFolderWatcher(async () => {
-			let repos = await this.dataSource.getRepos();
-			let numRepos = Object.keys(repos).length;
+		this.repoManager.registerViewCallback((repos: GitRepoSet, numRepos: number) => {
+			if (!this.panel.visible) return;
 			if ((numRepos === 0 && this.isGraphViewLoaded) || (numRepos > 0 && !this.isGraphViewLoaded)) {
 				this.update();
 			} else {
@@ -168,7 +166,7 @@ export class GitGraphView {
 					});
 					break;
 				case 'loadRepos':
-					this.respondLoadRepos(await this.dataSource.getRepos());
+					this.respondLoadRepos(await this.repoManager.getRepos(true));
 					break;
 				case 'mergeBranch':
 					this.sendMessage({
@@ -207,7 +205,7 @@ export class GitGraphView {
 					});
 					break;
 				case 'saveRepoState':
-					this.extensionState.setRepoState(msg.repo, msg.state);
+					this.repoManager.setRepoState(msg.repo, msg.state);
 					break;
 				case 'viewDiff':
 					this.sendMessage({
@@ -229,12 +227,10 @@ export class GitGraphView {
 		this.panel.dispose();
 		this.avatarManager.deregisterView();
 		this.repoFileWatcher.stop();
-		this.repoFolderWatcher.stop();
+		this.repoManager.deregisterViewCallback();
 		while (this.disposables.length) {
 			const x = this.disposables.pop();
-			if (x) {
-				x.dispose();
-			}
+			if (x) x.dispose();
 		}
 	}
 
@@ -254,14 +250,14 @@ export class GitGraphView {
 			initialLoadCommits: config.initialLoadCommits(),
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadMoreCommits: config.loadMoreCommits(),
-			repos: await this.dataSource.getRepos(),
+			repos: await this.repoManager.getRepos(true),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
 
 		let body, numRepos = Object.keys(viewState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < viewState.graphColours.length; i++) {
 			colorVars += '--git-graph-color' + i + ':' + viewState.graphColours[i] + '; ';
-			colorParams += '[data-color="'+i+'"]{--git-graph-color:var(--git-graph-color'+i+');} ';
+			colorParams += '[data-color="' + i + '"]{--git-graph-color:var(--git-graph-color' + i + ');} ';
 		}
 		if (numRepos > 0) {
 			body = `<body style="${colorVars}">

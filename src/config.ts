@@ -41,6 +41,10 @@ class Config {
 		return this.workspaceConfiguration.get('loadMoreCommits', 75);
 	}
 
+	public maxDepthOfRepoSearch() {
+		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
+	} 
+
 	public showCurrentBranchByDefault() {
 		return this.workspaceConfiguration.get('showCurrentBranchByDefault', false);
 	}

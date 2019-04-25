@@ -136,6 +136,11 @@
 					"default": 100,
 					"description": "Specifies the number of commits to load when the \"Load More Commits\" button is pressed (only shown when more commits are available)."
 				},
+				"git-graph.maxDepthOfRepoSearch": {
+					"type": "number",
+					"default": 0,
+					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
+				},
 				"git-graph.showCurrentBranchByDefault": {
 					"type": "boolean",
 					"default": false,

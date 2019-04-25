@@ -53,9 +53,10 @@ class Dropdown {
 			}
 		}
 		this.selectedOption = selectedOption;
+		if (options.length <= 1) this.close();
 		this.render();
 	}
-	
+
 	public refresh() {
 		if (this.options.length > 0) this.render();
 	}

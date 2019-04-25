@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
+import { getPathFromStr } from './utils';
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 	static scheme = 'git-graph';
@@ -49,7 +50,7 @@ class DiffDocument {
 }
 
 export function encodeDiffDocUri(repo: string, path: string, commit: string): vscode.Uri {
-	return vscode.Uri.parse(DiffDocProvider.scheme + ':' + path.replace(/\\/g, '/') + '?commit=' + encodeURIComponent(commit) + '&repo=' + encodeURIComponent(repo));
+	return vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(path) + '?commit=' + encodeURIComponent(commit) + '&repo=' + encodeURIComponent(repo));
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri) {

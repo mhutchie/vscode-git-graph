@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
-import { Avatar, AvatarCache, GitRepoSet, GitRepoState } from './types';
+import { Avatar, AvatarCache, GitRepoSet } from './types';
+import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
@@ -17,7 +18,7 @@ export class ExtensionState {
 		this.globalState = context.globalState;
 		this.workspaceState = context.workspaceState;
 
-		this.globalStoragePath = context.globalStoragePath.replace(/\\/g, '/');
+		this.globalStoragePath = getPathFromStr(context.globalStoragePath);
 		fs.stat(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err) => {
 			if (!err) {
 				this.avatarStorageAvailable = true;
@@ -31,22 +32,20 @@ export class ExtensionState {
 		});
 	}
 
+	/* Discovered Repos */
+	public getRepos() {
+		return this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
+	}
+	public saveRepos(gitRepoSet: GitRepoSet) {
+		this.workspaceState.update(REPO_STATES, gitRepoSet);
+	}
+
 	/* Last Active Repo */
 	public getLastActiveRepo() {
 		return this.workspaceState.get<string | null>(LAST_ACTIVE_REPO, null);
 	}
 	public setLastActiveRepo(repo: string | null) {
 		this.workspaceState.update(LAST_ACTIVE_REPO, repo);
-	}
-
-	/* Repo Config */
-	public getRepoConfig() {
-		return this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
-	}
-	public setRepoState(repo: string, state: GitRepoState) {
-		let config = this.getRepoConfig();
-		config[repo] = state;
-		this.workspaceState.update(REPO_STATES, config);
 	}
 
 	/* Avatars */

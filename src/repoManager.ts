@@ -5,7 +5,7 @@ import { DataSource } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
-import { getPathFromUri } from './utils';
+import { evalPromises, getPathFromUri } from './utils';
 
 export class RepoManager {
 	private readonly dataSource: DataSource;
@@ -28,15 +28,15 @@ export class RepoManager {
 		this.searchWorkspaceForRepos();
 		this.startWatchingFolders();
 
-		this.folderChangeHandler = vscode.workspace.onDidChangeWorkspaceFolders(e => {
+		this.folderChangeHandler = vscode.workspace.onDidChangeWorkspaceFolders(async e => {
 			if (e.added.length > 0) {
-				let promises = [], path;
+				let path, changes = false;
 				for (let i = 0; i < e.added.length; i++) {
 					path = getPathFromUri(e.added[i].uri);
-					promises.push(this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch));
+					if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
 					this.startWatchingFolder(path);
 				}
-				this.checkSearchResults(promises);
+				if (changes) this.sendRepos();
 			}
 			if (e.removed.length > 0) {
 				let changes = false, path;
@@ -62,18 +62,22 @@ export class RepoManager {
 	}
 
 	// Gets all known repos, checking to ensure they still exist.
-	public async getRepos(notify: boolean) {
-		let repoPaths = Object.keys(this.repos).sort(), repos: GitRepoSet = {}, changes = false;
-		for (let i = 0; i < repoPaths.length; i++) {
-			if (await this.dataSource.isGitRepository(repoPaths[i])) {
-				repos[repoPaths[i]] = this.repos[repoPaths[i]];
-			} else {
-				this.removeRepo(repoPaths[i]);
-				changes = true;
-			}
-		}
-		if (notify && changes) this.statusBarItem.setNumRepos(Object.keys(repos).length);
-		return repos;
+	public getRepos(notify: boolean) {
+		return new Promise<GitRepoSet>(resolve => {
+			let repoPaths = Object.keys(this.repos).sort(), repos: GitRepoSet = {}, changes = false;
+			evalPromises(repoPaths, 3, path => this.dataSource.isGitRepository(path)).then(results => {
+				for (let i = 0; i < repoPaths.length; i++) {
+					if (results[i]) {
+						repos[repoPaths[i]] = this.repos[repoPaths[i]];
+					} else {
+						this.removeRepo(repoPaths[i]);
+						changes = true;
+					}
+				}
+				if (notify && changes) this.statusBarItem.setNumRepos(Object.keys(repos).length);
+				resolve(repos);
+			});
+		});
 	}
 
 	public registerViewCallback(viewCallback: (repos: GitRepoSet, numRepos: number) => void) {
@@ -141,14 +145,14 @@ export class RepoManager {
 	}
 
 	/* Repo Searching */
-	private searchWorkspaceForRepos() {
-		let rootFolders = vscode.workspace.workspaceFolders, promises = [];
+	private async searchWorkspaceForRepos() {
+		let rootFolders = vscode.workspace.workspaceFolders, changes = false;
 		if (typeof rootFolders !== 'undefined') {
 			for (let i = 0; i < rootFolders.length; i++) {
-				promises.push(this.searchDirectoryForRepos(getPathFromUri(rootFolders[i].uri), this.maxDepthOfRepoSearch));
+				if (await this.searchDirectoryForRepos(getPathFromUri(rootFolders[i].uri), this.maxDepthOfRepoSearch)) changes = true;
 			}
 		}
-		this.checkSearchResults(promises);
+		if (changes) this.sendRepos();
 	}
 	private searchDirectoryForRepos(directory: string, maxDepth: number) { // Returns a promise resolving to a boolean, that indicates if new repositories were found.
 		return new Promise<boolean>(resolve => {
@@ -164,23 +168,18 @@ export class RepoManager {
 						resolve(true);
 						return;
 					} else if (maxDepth > 0) {
-						let promises = [];
+						let dirs = [];
 						for (let i = 0; i < dirContents.length; i++) {
 							if (await isDirectory(directory + '/' + dirContents[i])) {
-								promises.push(this.searchDirectoryForRepos(directory + '/' + dirContents[i], maxDepth - 1));
+								dirs.push(directory + '/' + dirContents[i]);
 							}
 						}
-						resolve((await Promise.all(promises)).indexOf(true) > -1);
+						resolve((await evalPromises(dirs, 2, dir => this.searchDirectoryForRepos(dir, maxDepth - 1))).indexOf(true) > -1);
 						return;
 					}
 				}
 				resolve(false);
 			});
-		});
-	}
-	private checkSearchResults(promises: Promise<boolean>[]) {
-		Promise.all(promises).then(results => {
-			if (results.indexOf(true) > -1) this.sendRepos();
 		});
 	}
 

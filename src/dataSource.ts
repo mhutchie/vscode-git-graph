@@ -56,48 +56,55 @@ export class DataSource {
 		});
 	}
 
-	public async getCommits(repo: string, branch: string, maxCommits: number, showRemoteBranches: boolean) {
-		let commits = await this.getGitLog(repo, branch, maxCommits + 1, showRemoteBranches);
-		let refData = await this.getRefs(repo, showRemoteBranches);
-		let i, unsavedChanges = null;
+	public getCommits(repo: string, branch: string, maxCommits: number, showRemoteBranches: boolean) {
+		return new Promise<{ commits: GitCommitNode[], head: string | null, moreCommitsAvailable: boolean }>(resolve => {
+			Promise.all([
+				this.getGitLog(repo, branch, maxCommits + 1, showRemoteBranches),
+				this.getRefs(repo, showRemoteBranches)
+			]).then(async results => {
+				let commits = results[0], refData = results[1], i, unsavedChanges = null;
+				let moreCommitsAvailable = commits.length === maxCommits + 1;
+				if (moreCommitsAvailable) commits.pop();
 
-		let moreCommitsAvailable = commits.length === maxCommits + 1;
-		if (moreCommitsAvailable) commits.pop();
-
-		if (refData.head !== null) {
-			for (i = 0; i < commits.length; i++) {
-				if (refData.head === commits[i].hash) {
-					unsavedChanges = getConfig().showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
-					if (unsavedChanges !== null) {
-						commits.unshift({ hash: '*', parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+				if (refData.head !== null) {
+					for (i = 0; i < commits.length; i++) {
+						if (refData.head === commits[i].hash) {
+							unsavedChanges = getConfig().showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
+							if (unsavedChanges !== null) {
+								commits.unshift({ hash: '*', parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+							}
+							break;
+						}
 					}
-					break;
 				}
-			}
-		}
 
-		let commitNodes: GitCommitNode[] = [];
-		let commitLookup: { [hash: string]: number } = {};
+				let commitNodes: GitCommitNode[] = [];
+				let commitLookup: { [hash: string]: number } = {};
 
-		for (i = 0; i < commits.length; i++) {
-			commitLookup[commits[i].hash] = i;
-			commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [] });
-		}
-		for (i = 0; i < refData.refs.length; i++) {
-			if (typeof commitLookup[refData.refs[i].hash] === 'number') {
-				commitNodes[commitLookup[refData.refs[i].hash]].refs.push(refData.refs[i]);
-			}
-		}
+				for (i = 0; i < commits.length; i++) {
+					commitLookup[commits[i].hash] = i;
+					commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [] });
+				}
+				for (i = 0; i < refData.refs.length; i++) {
+					if (typeof commitLookup[refData.refs[i].hash] === 'number') {
+						commitNodes[commitLookup[refData.refs[i].hash]].refs.push(refData.refs[i]);
+					}
+				}
 
-		return { commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable };
+				resolve({ commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable });
+			});
+		});
 	}
 
-	public async commitDetails(repo: string, commitHash: string) {
-		try {
-			let details = await new Promise<GitCommitDetails>((resolve, reject) => {
-				this.execGit('show --quiet ' + commitHash + ' --format="' + this.gitCommitDetailsFormat + '"', repo, (err, stdout) => {
-					if (!err) {
-						let lines = stdout.split(eolRegex), lastLine = lines.length - 1;
+	public commitDetails(repo: string, commitHash: string) {
+		return new Promise<GitCommitDetails | null>(resolve => {
+			Promise.all([
+				new Promise<GitCommitDetails>((resolve, reject) => this.execGit('show --quiet ' + commitHash + ' --format="' + this.gitCommitDetailsFormat + '"', repo, (err, stdout) => {
+					if (err) {
+						reject();
+					} else {
+						let lines = stdout.split(eolRegex);
+						let lastLine = lines.length - 1;
 						while (lines.length > 0 && lines[lastLine] === '') lastLine--;
 						let commitInfo = lines[0].split(gitLogSeparator);
 						resolve({
@@ -110,53 +117,37 @@ export class DataSource {
 							body: lines.slice(1, lastLine + 1).join('\n'),
 							fileChanges: []
 						});
-					} else {
-						reject();
 					}
-				});
-			});
-			let fileLookup: { [file: string]: number } = {};
-			await new Promise((resolve, reject) => {
-				this.execGit('diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
-					if (!err) {
-						let lines = stdout.split(eolRegex);
-						for (let i = 1; i < lines.length - 1; i++) {
-							let line = lines[i].split('\t');
-							if (line.length < 2) break;
-							let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
-							fileLookup[newFilePath] = details.fileChanges.length;
-							details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
-						}
-						resolve();
-					} else {
-						reject();
-					}
-				});
-			});
-			await new Promise((resolve, reject) => {
-				this.execGit('diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
-					if (!err) {
-						let lines = stdout.split(eolRegex);
-						for (let i = 1; i < lines.length - 1; i++) {
-							let line = lines[i].split('\t');
-							if (line.length !== 3) break;
-							let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
-							if (typeof fileLookup[fileName] === 'number') {
-								details.fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
-								details.fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
-							}
-						}
-						resolve();
-					} else {
-						reject();
-					}
+				})),
+				new Promise<string[]>((resolve, reject) => this.execGit('diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
+					if (err) reject(); else resolve(stdout.split(eolRegex));
+				})),
+				new Promise<string[]>((resolve, reject) => this.execGit('diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
+					if (err) reject(); else resolve(stdout.split(eolRegex));
+				}))
+			]).then(results => {
+				let details = results[0], fileLookup: { [file: string]: number } = {};
 
-				});
-			});
-			return details;
-		} catch (e) {
-			return null;
-		}
+				for (let i = 1; i < results[1].length - 1; i++) {
+					let line = results[1][i].split('\t');
+					if (line.length < 2) break;
+					let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
+					fileLookup[newFilePath] = details.fileChanges.length;
+					details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
+				}
+
+				for (let i = 1; i < results[2].length - 1; i++) {
+					let line = results[2][i].split('\t');
+					if (line.length !== 3) break;
+					let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
+					if (typeof fileLookup[fileName] === 'number') {
+						details.fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
+						details.fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
+					}
+				}
+				resolve(details);
+			}).catch(() => resolve(null));
+		});
 	}
 
 	public getCommitFile(repo: string, commitHash: string, filePath: string) {

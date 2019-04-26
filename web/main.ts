@@ -473,26 +473,30 @@
 					copyType = 'Tag Name';
 				} else {
 					if (sourceElem.classList.contains('head')) {
-						menu = [{
-							title: 'Checkout Branch',
-							onClick: () => this.checkoutBranchAction(sourceElem, refName)
-						}, {
+						menu = [];
+						if (this.gitBranchHead !== refName) {
+							menu.push({
+								title: 'Checkout Branch',
+								onClick: () => this.checkoutBranchAction(sourceElem, refName)
+							});
+						}
+						menu.push({
 							title: 'Rename Branch' + ELLIPSIS,
 							onClick: () => {
 								showRefInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
 									sendMessage({ command: 'renameBranch', repo: this.currentRepo!, oldName: refName, newName: newName });
 								}, null);
 							}
-						}, {
-							title: 'Delete Branch' + ELLIPSIS,
-							onClick: () => {
-								showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
-									sendMessage({ command: 'deleteBranch', repo: this.currentRepo!, branchName: refName, forceDelete: forceDelete });
-								}, null);
-							}
-						}];
+						});
 						if (this.gitBranchHead !== refName) {
 							menu.push({
+								title: 'Delete Branch' + ELLIPSIS,
+								onClick: () => {
+									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
+										sendMessage({ command: 'deleteBranch', repo: this.currentRepo!, branchName: refName, forceDelete: forceDelete });
+									}, null);
+								}
+							}, {
 								title: 'Merge into current branch' + ELLIPSIS,
 								onClick: () => {
 									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {

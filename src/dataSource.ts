@@ -30,14 +30,17 @@ export class DataSource {
 	}
 
 	public getBranches(repo: string, showRemoteBranches: boolean) {
-		return new Promise<{ branches: string[], head: string | null }>((resolve) => {
+		return new Promise<{ branches: string[], head: string | null, error: boolean }>((resolve) => {
 			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), repo, (err, stdout) => {
 				let branchData = {
 					branches: <string[]>[],
-					head: <string | null>null
+					head: <string | null>null,
+					error: false
 				};
 
-				if (!err) {
+				if (err) {
+					branchData.error = true;
+				} else {
 					let lines = stdout.split(eolRegex);
 					for (let i = 0; i < lines.length - 1; i++) {
 						let name = lines[i].substring(2).split(' -> ')[0];

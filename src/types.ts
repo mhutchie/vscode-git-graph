@@ -211,6 +211,7 @@ export interface ResponseLoadBranches {
 	branches: string[];
 	head: string | null;
 	hard: boolean;
+	isRepo: boolean;
 }
 
 export interface RequestLoadCommits {
@@ -231,6 +232,7 @@ export interface ResponseLoadCommits {
 
 export interface RequestLoadRepos {
 	command: 'loadRepos';
+	check: boolean;
 }
 export interface ResponseLoadRepos {
 	command: 'loadRepos';

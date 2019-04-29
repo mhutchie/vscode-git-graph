@@ -147,10 +147,17 @@ export class GitGraphView {
 					});
 					break;
 				case 'loadBranches':
+					let branchData = await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches), isRepo = true;
+					if (branchData.error) {
+						// If an error occurred, check to make sure the repo still exists
+						isRepo = await this.dataSource.isGitRepository(msg.repo);
+					}
 					this.sendMessage({
 						command: 'loadBranches',
-						... await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches),
-						hard: msg.hard
+						branches: branchData.branches,
+						head: branchData.head,
+						hard: msg.hard,
+						isRepo: isRepo
 					});
 					if (msg.repo !== this.currentRepo) {
 						this.currentRepo = msg.repo;
@@ -166,7 +173,10 @@ export class GitGraphView {
 					});
 					break;
 				case 'loadRepos':
-					this.respondLoadRepos(await this.repoManager.getRepos(true));
+					if (!msg.check || !await this.repoManager.checkReposExist()) {
+						// If not required to check repos, or no changes were found when checking, respond with repos
+						this.respondLoadRepos(this.repoManager.getRepos());
+					}
 					break;
 				case 'mergeBranch':
 					this.sendMessage({
@@ -238,10 +248,9 @@ export class GitGraphView {
 		this.panel.webview.html = await this.getHtmlForWebview();
 	}
 
-	private async getHtmlForWebview() {
+	private getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
-
-		let viewState: GitGraphViewState = {
+		const viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
 			dateFormat: config.dateFormat(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
@@ -250,7 +259,7 @@ export class GitGraphView {
 			initialLoadCommits: config.initialLoadCommits(),
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadMoreCommits: config.loadMoreCommits(),
-			repos: await this.repoManager.getRepos(true),
+			repos: this.repoManager.getRepos(),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
 
@@ -279,7 +288,11 @@ export class GitGraphView {
 			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {
-			body = `<body class="unableToLoad" style="${colorVars}"><h1>Git Graph</h1><p>Unable to load Git Graph. Either the current workspace is not a Git Repository, or the Git executable could not found.</p></body>`;
+			body = `<body class="unableToLoad" style="${colorVars}">
+			<h2>Unable to load Git Graph</h2>
+			<p>Either the current workspace does not contain a Git repository, or the Git executable could not be found.</p>
+			<p>If you are using a portable Git installation, make sure you have set the Visual Studio Code Setting "git.path" to the path of your portable installation (e.g. "C:\\Program Files\\Git\\bin\\git.exe" on Windows).</p>
+			</body>`;
 		}
 		this.isGraphViewLoaded = numRepos > 0;
 

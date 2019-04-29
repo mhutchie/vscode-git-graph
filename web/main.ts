@@ -46,7 +46,7 @@
 		private branchDropdown: Dropdown;
 		private showRemoteBranchesElem: HTMLInputElement;
 
-		private loadBranchesCallback: ((changes: boolean) => void) | null = null;
+		private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 		private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
 		constructor(repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
@@ -94,7 +94,7 @@
 					this.maxCommits = prevState.maxCommits;
 					this.expandedCommit = prevState.expandedCommit;
 					this.avatars = prevState.avatars;
-					this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true);
+					this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
 					this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
 				}
 			}
@@ -127,9 +127,13 @@
 			}
 		}
 
-		public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean) {
+		public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean, isRepo: boolean) {
+			if (!isRepo) {
+				this.triggerLoadBranchesCallback(false, isRepo);
+				return;
+			}
 			if (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitBranchHead === branchHead) {
-				this.triggerLoadBranchesCallback(false);
+				this.triggerLoadBranchesCallback(false, isRepo);
 				return;
 			}
 
@@ -146,11 +150,11 @@
 			}
 			this.branchDropdown.setOptions(options, this.currentBranch);
 
-			this.triggerLoadBranchesCallback(true);
+			this.triggerLoadBranchesCallback(true, isRepo);
 		}
-		private triggerLoadBranchesCallback(changes: boolean) {
+		private triggerLoadBranchesCallback(changes: boolean, isRepo: boolean) {
 			if (this.loadBranchesCallback !== null) {
-				this.loadBranchesCallback(changes);
+				this.loadBranchesCallback(changes, isRepo);
 				this.loadBranchesCallback = null;
 			}
 		}
@@ -227,7 +231,7 @@
 		}
 
 		/* Requests */
-		private requestLoadBranches(hard: boolean, loadedCallback: (changes: boolean) => void) {
+		private requestLoadBranches(hard: boolean, loadedCallback: (changes: boolean, isRepo: boolean) => void) {
 			if (this.loadBranchesCallback !== null) return;
 			this.loadBranchesCallback = loadedCallback;
 			sendMessage({ command: 'loadBranches', repo: this.currentRepo!, showRemoteBranches: this.showRemoteBranches, hard: hard });
@@ -245,12 +249,16 @@
 			});
 		}
 		private requestLoadBranchesAndCommits(hard: boolean) {
-			this.requestLoadBranches(hard, (branchChanges: boolean) => {
-				this.requestLoadCommits(hard, (commitChanges: boolean) => {
-					if (!hard && (branchChanges || commitChanges)) {
-						hideDialogAndContextMenu();
-					}
-				});
+			this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
+				if (isRepo) {
+					this.requestLoadCommits(hard, (commitChanges: boolean) => {
+						if (!hard && (branchChanges || commitChanges)) {
+							hideDialogAndContextMenu();
+						}
+					});
+				} else {
+					sendMessage({ command: 'loadRepos', check: true });
+				}
 			});
 		}
 		private fetchAvatars(avatars: { [email: string]: string[] }) {
@@ -497,13 +505,13 @@
 									}, null);
 								}
 							}, {
-								title: 'Merge into current branch' + ELLIPSIS,
-								onClick: () => {
-									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
-										sendMessage({ command: 'mergeBranch', repo: this.currentRepo!, branchName: refName, createNewCommit: createNewCommit });
-									}, null);
-								}
-							});
+									title: 'Merge into current branch' + ELLIPSIS,
+									onClick: () => {
+										showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
+											sendMessage({ command: 'mergeBranch', repo: this.currentRepo!, branchName: refName, createNewCommit: createNewCommit });
+										}, null);
+									}
+								});
 						}
 					} else {
 						menu = [{
@@ -786,7 +794,7 @@
 				gitGraph.loadAvatar(msg.email, msg.image);
 				break;
 			case 'loadBranches':
-				gitGraph.loadBranches(msg.branches, msg.head, msg.hard);
+				gitGraph.loadBranches(msg.branches, msg.head, msg.hard, msg.isRepo);
 				break;
 			case 'loadCommits':
 				gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);

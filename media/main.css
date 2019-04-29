@@ -3,7 +3,10 @@ body{
 	margin:0;
 	padding:0;
 }
-body.unableToLoad h1, body.unableToLoad p{
+body.unableToLoad{
+	margin:0 20px;
+}
+body.unableToLoad h2, body.unableToLoad p{
 	text-align:center;
 }
 

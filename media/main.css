@@ -358,7 +358,6 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 #repoSelect, #branchSelect{
 	margin-left:3px;
-	font-size:13px;
 }
 #showRemoteBranchesCheckbox{
 	width:14px;

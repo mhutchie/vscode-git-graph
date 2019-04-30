@@ -6,23 +6,47 @@ class Dropdown {
 
 	private elem: HTMLElement;
 	private currentValueElem: HTMLDivElement;
-	private dropdownOptionsElem: HTMLDivElement;
+	private menuElem: HTMLDivElement;
+	private optionsElem: HTMLDivElement;
+	private noResultsElem: HTMLDivElement;
+	private filterInput: HTMLInputElement;
 
-	constructor(id: string, changeCallback: { (value: string): void }) {
+	constructor(id: string, dropdownType: string, changeCallback: { (value: string): void }) {
 		this.changeCallback = changeCallback;
 		this.elem = document.getElementById(id)!;
+
+		let filter = document.createElement('div');
+		filter.className = 'dropdownFilter';
+		this.filterInput = document.createElement('input');
+		this.filterInput.className = 'dropdownFilterInput';
+		this.filterInput.placeholder = 'Filter ' + dropdownType + '...';
+		filter.appendChild(this.filterInput);
+		this.menuElem = document.createElement('div');
+		this.menuElem.className = 'dropdownMenu';
+		this.menuElem.appendChild(filter);
+		this.optionsElem = document.createElement('div');
+		this.optionsElem.className = 'dropdownOptions';
+		this.menuElem.appendChild(this.optionsElem);
+		this.noResultsElem = document.createElement('div');
+		this.noResultsElem.className = 'dropdownNoResults';
+		this.noResultsElem.innerHTML = 'No results found.';
+		this.menuElem.appendChild(this.noResultsElem);
 		this.currentValueElem = document.createElement('div');
 		this.currentValueElem.className = 'dropdownCurrentValue';
-		this.dropdownOptionsElem = document.createElement('div');
-		this.dropdownOptionsElem.className = 'dropdownOptions';
 		this.elem.appendChild(this.currentValueElem);
-		this.elem.appendChild(this.dropdownOptionsElem);
+		this.elem.appendChild(this.menuElem);
 
 		document.addEventListener('click', (e) => {
+			if (!e.target) return;
 			if (e.target === this.currentValueElem) {
-				this.elem.classList.toggle('dropdownOpen');
 				this.dropdownVisible = !this.dropdownVisible;
-			} else if (e.target && (<HTMLElement>e.target).parentNode === this.dropdownOptionsElem) {
+				if (this.dropdownVisible) {
+					this.filterInput.value = '';
+					this.filter();
+				}
+				this.elem.classList.toggle('dropdownOpen');
+				if (this.dropdownVisible) this.filterInput.focus();
+			} else if ((<HTMLElement>e.target).parentNode === this.optionsElem) {
 				if (typeof (<HTMLElement>e.target).dataset.id !== 'undefined') {
 					let selectedOption = parseInt((<HTMLElement>e.target).dataset.id!);
 					this.close();
@@ -32,7 +56,7 @@ class Dropdown {
 						this.changeCallback(this.options[this.selectedOption].value);
 					}
 				}
-			} else {
+			} else if ((<HTMLElement>e.target).closest('.dropdown') !== this.elem) {
 				this.close();
 			}
 		}, true);
@@ -42,12 +66,13 @@ class Dropdown {
 		document.addEventListener('keyup', (e) => {
 			if (e.key === 'Escape') this.close();
 		}, true);
+		this.filterInput.addEventListener('keyup', () => this.filter());
 	}
 
 	public setOptions(options: DropdownOption[], selected: string) {
 		this.options = options;
-		var i = 0, selectedOption = 0;
-		for (i = 0; i < options.length; i++) {
+		let selectedOption = 0;
+		for (let i = 0; i < options.length; i++) {
 			if (options[i].value === selected) {
 				selectedOption = i;
 			}
@@ -64,15 +89,28 @@ class Dropdown {
 	private render() {
 		this.elem.classList.add('loaded');
 		this.currentValueElem.innerHTML = this.options[this.selectedOption].name;
-		var html = '', i;
-		for (i = 0; i < this.options.length; i++) {
+		let html = '';
+		for (let i = 0; i < this.options.length; i++) {
 			html += '<div class="dropdownOption' + (this.selectedOption === i ? ' selected' : '') + '" data-id="' + i + '">' + this.options[i].name + '</div>';
 		}
-		html += '';
-		this.dropdownOptionsElem.innerHTML = html;
-		this.dropdownOptionsElem.style.cssText = 'opacity:0; display:block;';
-		this.currentValueElem.style.width = (this.dropdownOptionsElem.offsetWidth + 12) + 'px';
-		this.dropdownOptionsElem.style.cssText = 'right:0; overflow-y:auto; max-height:294px;';
+		this.optionsElem.innerHTML = html;
+		this.filterInput.style.display = 'none';
+		this.noResultsElem.style.display = 'none';
+		this.menuElem.style.cssText = 'opacity:0; display:block;';
+		this.currentValueElem.style.width = Math.max(this.menuElem.offsetWidth + 12, 130) + 'px';
+		this.menuElem.style.cssText = 'right:0; overflow-y:auto; max-height:294px;';
+		if (this.dropdownVisible) this.filter();
+	}
+
+	private filter() {
+		let val = this.filterInput.value.toLowerCase(), match, matches = false;
+		for (let i = 0; i < this.options.length; i++) {
+			match = this.options[i].name.toLowerCase().indexOf(val) > -1;
+			(<HTMLElement>this.optionsElem.children[i]).style.display = match ? 'block' : 'none';
+			if (match) matches = true;
+		}
+		this.filterInput.style.display = 'block';
+		this.noResultsElem.style.display = matches ? 'none' : 'block';
 	}
 
 	private close() {

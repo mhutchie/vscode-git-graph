@@ -56,7 +56,7 @@
 			this.graph = new Graph('commitGraph', this.config);
 			this.tableElem = document.getElementById('commitTable')!;
 			this.footerElem = document.getElementById('footer')!;
-			this.repoDropdown = new Dropdown('repoSelect', value => {
+			this.repoDropdown = new Dropdown('repoSelect', 'Repos', value => {
 				this.currentRepo = value;
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;
@@ -64,7 +64,7 @@
 				this.saveState();
 				this.refresh(true);
 			});
-			this.branchDropdown = new Dropdown('branchSelect', value => {
+			this.branchDropdown = new Dropdown('branchSelect', 'Branches', value => {
 				this.currentBranch = value;
 				this.maxCommits = this.config.initialLoadCommits;
 				this.expandedCommit = null;

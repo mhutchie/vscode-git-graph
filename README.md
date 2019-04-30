@@ -18,7 +18,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Add, Delete & Push tags
         * Checkout, Cherry Pick, Merge & Revert commits
         * Reset current branch to commit
-        * Copy Commit Hash to Clipboard
+        * Copy commit hashes, tag names & branch names to the clipboard
 * Configurable settings (e.g. graph style, branch colours, and more...)
 * "Git Graph: View Git Graph" launch command in the Command Palette
 * "Git Graph" launch button in the Status Bar
@@ -34,6 +34,7 @@ This extension contributes the following settings:
 * `git-graph.graphColours`: Specifies the colours used on the graph.
 * `git-graph.graphStyle`: Specifies the style of the graph.
 * `git-graph.initialLoadCommits`: Specifies the number of commits to initially load.
+* `git-graph.maxDepthOfRepoSearch`: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
 * `git-graph.loadMoreCommits`: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * `git-graph.showCurrentBranchByDefault`: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * `git-graph.showStatusBarItem`: Show a Status Bar item which opens Git Graph when clicked.

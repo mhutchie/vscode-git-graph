@@ -8,6 +8,7 @@
 		"outDir": "../out",
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
+		"removeComments": true,
 		"sourceMap": true,
 		"strict": true,
 		"target": "es6"

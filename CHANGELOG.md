@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.4.6 - 2019-04-30
+* #33 Support for git repositories in subfolders. New setting `git-graph.maxDepthOfRepoSearch` specifies the maximum depth of subfolders to search (default: 0).
+* #50 Branch and repo dropdowns now have a filter to make it faster to find the desired item.
+* #52 Copy branch and tag names to the clipboard.
+* #53 Flattened the control bar and column header elements, to better suit the majority of Visual Studio Code Themes.
+* #54 Graph rendering algorithm changes: performance improvements, and better layout of intermediate branch merges.
+* #55 Robustness improvements of the avatar caching mechanism.
+* #58 Removed the checkout and delete actions from the context menu of the checked out branch.
+* #59 Various performance improvements for: opening Git Graph, loading commits, and opening the commit details view.
+
 ## 1.4.5 - 2019-04-15
 * #26 Fetch and show commit author / committer avatars from GitHub, GitLab & Gravatar. If you'd like to use this feature, you must enable the setting `git-graph.fetchAvatars`. Thanks @meierw for helping with the development of this!
 * #37 Columns can be resized by dragging the dividers in the table header.

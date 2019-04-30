@@ -45,6 +45,7 @@
 		private repoDropdown: Dropdown;
 		private branchDropdown: Dropdown;
 		private showRemoteBranchesElem: HTMLInputElement;
+		private scrollShadowElem: HTMLElement;
 
 		private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 		private loadCommitsCallback: ((changes: boolean) => void) | null = null;
@@ -78,11 +79,13 @@
 				this.saveState();
 				this.refresh(true);
 			});
+			this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 			document.getElementById('refreshBtn')!.addEventListener('click', () => {
 				this.refresh(true);
 			});
 			this.observeWindowSizeChanges();
 			this.observeWebviewStyleChanges();
+			this.observeWebviewScroll();
 
 			this.renderShowLoading();
 			if (prevState) {
@@ -656,6 +659,16 @@
 					this.branchDropdown.refresh();
 				}
 			})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+		}
+		private observeWebviewScroll() {
+			let active = window.scrollY > 0;
+			this.scrollShadowElem.className = active ? 'active' : '';
+			document.addEventListener('scroll', () => {
+				if (active !== window.scrollY > 0) {
+					active = window.scrollY > 0;
+					this.scrollShadowElem.className = active ? 'active' : '';
+				}
+			});
 		}
 
 		/* Commit Details */

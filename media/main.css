@@ -9,6 +9,15 @@ body.unableToLoad{
 body.unableToLoad h2, body.unableToLoad p{
 	text-align:center;
 }
+#scrollShadow.active{
+	position:fixed;
+	top:0px;
+	left:0px;
+	width:100%;
+	height:0px;
+	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
+	z-index:200;
+}
 
 /* Content */
 #content{
@@ -71,7 +80,6 @@ body.unableToLoad h2, body.unableToLoad p{
 }
 #commitTable th{
 	border-bottom:1px solid rgba(128,128,128,0.5);
-	background-color:rgba(128,128,128,0.2);
 	line-height:18px;
 	padding:6px 12px;
 }
@@ -102,7 +110,7 @@ body.unableToLoad h2, body.unableToLoad p{
 }
 .resizeCol.left{
 	left:0px;
-	border-left:1px solid rgba(128,128,128,0.5);
+	border-left:1px solid rgba(128,128,128,0.25);
 }
 .resizeCol.right{
 	right:0px;
@@ -153,25 +161,25 @@ body.unableToLoad h2, body.unableToLoad p{
 }
 .commitDetailsSummaryTop{
 	display:inline-table;
-    width:100%;
+	width:100%;
 }
 .commitDetailsSummaryTopRow{
 	display:table-row;
 }
 .commitDetailsSummaryKeyValues, .commitDetailsSummaryAvatar{
 	display:table-cell;
-    vertical-align:top;
+	vertical-align:top;
 }
 .commitDetailsSummaryKeyValues{
 	max-width:0px;
-    overflow-x:hidden;
-    text-overflow:ellipsis;
+	overflow-x:hidden;
+	text-overflow:ellipsis;
 }
 .commitDetailsSummaryTop.withAvatar .commitDetailsSummaryKeyValues{
 	padding-right:10px;
 }
 .commitDetailsSummaryAvatar{
-    width:54px;
+	width:54px;
 }
 .commitDetailsSummaryAvatar > img{
 	width:54px;
@@ -274,21 +282,21 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .commit .avatar > img{
 	display:inline-block;
 	width:18px;
-    border-radius:4px;
-    vertical-align:top;
-    margin-top:3px;
-    margin-right:4px;
+	border-radius:4px;
+	vertical-align:top;
+	margin-top:3px;
+	margin-right:4px;
 }
 
 .commitHeadDot{
 	width:6px;
-    height:6px;
-    border:2px solid var(--git-graph-color);
-    display:inline-block;
-    border-radius:6px;
-    margin-right:5px;
-    vertical-align:top;
-    margin-top:7px;
+	height:6px;
+	border:2px solid var(--git-graph-color);
+	display:inline-block;
+	border-radius:6px;
+	margin-right:5px;
+	vertical-align:top;
+	margin-top:7px;
 }
 
 /* Ref labels */
@@ -346,7 +354,6 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	top:0;
 	padding:4px 96px 4px 0;
 	border-bottom:1px solid rgba(128,128,128,0.5);
-	background-color:rgba(128,128,128,0.2);
 	line-height:32px;
 	text-align:center;
 	font-weight:700;
@@ -443,7 +450,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 
 #dialog > table.dialogForm{
 	display:inline-table;
-    width:360px;
+	width:360px;
 }
 #dialog > table.dialogForm td{
 	padding-top:10px;
@@ -461,8 +468,8 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 #dialog > table.dialogForm.single .dialogFormCheckbox{
 	display:inline-block;
-    text-align:center;
-    width:100%;
+	text-align:center;
+	width:100%;
 }
 #dialog > table.dialogForm input[type=text]{
 	width:100%;

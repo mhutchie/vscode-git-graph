@@ -284,6 +284,7 @@ export class GitGraphView {
 			<ul id="contextMenu"></ul>
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
+			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
 			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;

@@ -11,6 +11,7 @@
 	display:inline-block;
 }
 .dropdownCurrentValue{
+	background-color:rgba(128,128,128,0.1);
 	border:1px solid rgba(128,128,128,0.5);
 	border-radius:6px;
 	box-sizing:border-box;
@@ -22,7 +23,7 @@
 	white-space:nowrap;
 }
 .dropdownCurrentValue:hover{
-	background-color:rgba(128,128,128,0.15);
+	background-color:rgba(128,128,128,0.2);
 }
 .dropdownCurrentValue:after{
 	position:absolute;

@@ -2,7 +2,10 @@ class Dropdown {
 	private options: DropdownOption[] = [];
 	private selectedOption: number = 0;
 	private dropdownVisible: boolean = false;
+	private showInfo: boolean;
 	private changeCallback: { (value: string): void };
+	private escapeHtml: { (input: string): string };
+	private svgIcons: SvgIcons;
 
 	private elem: HTMLElement;
 	private currentValueElem: HTMLDivElement;
@@ -11,8 +14,11 @@ class Dropdown {
 	private noResultsElem: HTMLDivElement;
 	private filterInput: HTMLInputElement;
 
-	constructor(id: string, dropdownType: string, changeCallback: { (value: string): void }) {
+	constructor(id: string, showInfo: boolean, dropdownType: string, changeCallback: { (value: string): void }, escapeHtml: { (str: string): string }, svgIcons: SvgIcons) {
+		this.showInfo = showInfo;
 		this.changeCallback = changeCallback;
+		this.escapeHtml = escapeHtml;
+		this.svgIcons = svgIcons;
 		this.elem = document.getElementById(id)!;
 
 		let filter = document.createElement('div');
@@ -46,23 +52,24 @@ class Dropdown {
 				}
 				this.elem.classList.toggle('dropdownOpen');
 				if (this.dropdownVisible) this.filterInput.focus();
-			} else if ((<HTMLElement>e.target).parentNode === this.optionsElem) {
-				if (typeof (<HTMLElement>e.target).dataset.id !== 'undefined') {
-					let selectedOption = parseInt((<HTMLElement>e.target).dataset.id!);
+			} else if (this.dropdownVisible) {
+				if ((<HTMLElement>e.target).closest('.dropdown') !== this.elem) {
 					this.close();
-					if (this.selectedOption !== selectedOption) {
-						this.selectedOption = selectedOption;
-						this.render();
-						this.changeCallback(this.options[this.selectedOption].value);
+				} else {
+					let option = <HTMLElement | null>(<HTMLElement>e.target).closest('.dropdownOption');
+					if (option !== null && option.parentNode === this.optionsElem && typeof option.dataset.id !== 'undefined') {
+						let selectedOption = parseInt(option.dataset.id!);
+						this.close();
+						if (this.selectedOption !== selectedOption) {
+							this.selectedOption = selectedOption;
+							this.render();
+							this.changeCallback(this.options[this.selectedOption].value);
+						}
 					}
 				}
-			} else if ((<HTMLElement>e.target).closest('.dropdown') !== this.elem) {
-				this.close();
 			}
 		}, true);
-		document.addEventListener('contextmenu', () => {
-			this.close();
-		}, true);
+		document.addEventListener('contextmenu', () => this.close(), true);
 		document.addEventListener('keyup', (e) => {
 			if (e.key === 'Escape') this.close();
 		}, true);
@@ -91,14 +98,17 @@ class Dropdown {
 		this.currentValueElem.innerHTML = this.options[this.selectedOption].name;
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
-			html += '<div class="dropdownOption' + (this.selectedOption === i ? ' selected' : '') + '" data-id="' + i + '">' + this.options[i].name + '</div>';
+			html += '<div class="dropdownOption' + (this.selectedOption === i ? ' selected' : '') + '" data-id="' + i + '">' + this.escapeHtml(this.options[i].name) + (this.showInfo ? '<div class="dropdownOptionInfo" title="' + this.escapeHtml(this.options[i].value) + '">' + this.svgIcons.info + '</div>' : '') + '</div>';
 		}
+		this.optionsElem.className = 'dropdownOptions' + (this.showInfo ? ' showInfo' : '');
 		this.optionsElem.innerHTML = html;
 		this.filterInput.style.display = 'none';
 		this.noResultsElem.style.display = 'none';
 		this.menuElem.style.cssText = 'opacity:0; display:block;';
-		this.currentValueElem.style.width = Math.max(this.menuElem.offsetWidth + 12, 130) + 'px';
-		this.menuElem.style.cssText = 'right:0; overflow-y:auto; max-height:294px;';
+		// Width must be at least 130px for the filter elements. Max height for the dropdown is [filter (31px) + 9.5 * dropdown item (28px) = 297px]
+		// Don't need to add 12px if showing info icons and scrollbar isn't needed. The scrollbar isn't needed if: menuElem height + filter input (25px) < 297px
+		this.currentValueElem.style.width = Math.max(this.menuElem.offsetWidth + (this.showInfo && this.menuElem.offsetHeight < 272 ? 0 : 12), 130) + 'px';
+		this.menuElem.style.cssText = 'right:0; overflow-y:auto; max-height:297px;';
 		if (this.dropdownVisible) this.filter();
 	}
 

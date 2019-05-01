@@ -62,12 +62,29 @@
 	padding:4px 10px;
 	user-select:none;
 }
+.dropdownOptions.showInfo .dropdownOption{
+	padding-right:30px;
+}
 .dropdownOption.selected{
 	background-color:rgba(128,128,128,0.15);
 }
 .dropdownOption:hover{
 	background-color:var(--vscode-menu-selectionBackground);
 	color:var(--vscode-menu-selectionForeground);
+}
+.dropdownOptionInfo{
+	position:absolute;
+	width:14px;
+	height:16px;
+	top:6px;
+	right:10px;
+}
+.dropdownOptionInfo svg{
+	fill:var(--vscode-menu-foreground);
+	opacity:0.35;
+}
+.dropdownOptionInfo:hover svg{
+	fill:var(--vscode-menu-selectionForeground);
 }
 
 .dropdown.dropdownOpen .dropdownCurrentValue{
@@ -91,6 +108,7 @@
 	border-radius:4px;
 	padding:3px 6px;
 	font-size:13px;
+	line-height:17px;
 	font-weight:normal;
 	font-family:var(--vscode-editor-font-family);
 	color:var(--vscode-menu-foreground);

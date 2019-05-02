@@ -3,7 +3,7 @@ import { DataSource } from './dataSource';
 import { getPathFromStr } from './utils';
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
-	static scheme = 'git-graph';
+	public static scheme = 'git-graph';
 	private dataSource: DataSource;
 	private onDidChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>();
 	private docs = new Map<string, DiffDocument>();
@@ -14,7 +14,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 		this.subscriptions = vscode.workspace.onDidCloseTextDocument(doc => this.docs.delete(doc.uri.toString()));
 	}
 
-	dispose() {
+	public dispose() {
 		this.subscriptions.dispose();
 		this.docs.clear();
 		this.onDidChangeEventEmitter.dispose();

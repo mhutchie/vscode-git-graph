@@ -4,8 +4,6 @@ class Dropdown {
 	private dropdownVisible: boolean = false;
 	private showInfo: boolean;
 	private changeCallback: { (value: string): void };
-	private escapeHtml: { (input: string): string };
-	private svgIcons: SvgIcons;
 
 	private elem: HTMLElement;
 	private currentValueElem: HTMLDivElement;
@@ -14,11 +12,9 @@ class Dropdown {
 	private noResultsElem: HTMLDivElement;
 	private filterInput: HTMLInputElement;
 
-	constructor(id: string, showInfo: boolean, dropdownType: string, changeCallback: { (value: string): void }, escapeHtml: { (str: string): string }, svgIcons: SvgIcons) {
+	constructor(id: string, showInfo: boolean, dropdownType: string, changeCallback: { (value: string): void }) {
 		this.showInfo = showInfo;
 		this.changeCallback = changeCallback;
-		this.escapeHtml = escapeHtml;
-		this.svgIcons = svgIcons;
 		this.elem = document.getElementById(id)!;
 
 		let filter = document.createElement('div');
@@ -98,7 +94,7 @@ class Dropdown {
 		this.currentValueElem.innerHTML = this.options[this.selectedOption].name;
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
-			html += '<div class="dropdownOption' + (this.selectedOption === i ? ' selected' : '') + '" data-id="' + i + '">' + this.escapeHtml(this.options[i].name) + (this.showInfo ? '<div class="dropdownOptionInfo" title="' + this.escapeHtml(this.options[i].value) + '">' + this.svgIcons.info + '</div>' : '') + '</div>';
+			html += '<div class="dropdownOption' + (this.selectedOption === i ? ' selected' : '') + '" data-id="' + i + '">' + escapeHtml(this.options[i].name) + (this.showInfo ? '<div class="dropdownOptionInfo" title="' + escapeHtml(this.options[i].value) + '">' + svgIcons.info + '</div>' : '') + '</div>';
 		}
 		this.optionsElem.className = 'dropdownOptions' + (this.showInfo ? ' showInfo' : '');
 		this.optionsElem.innerHTML = html;

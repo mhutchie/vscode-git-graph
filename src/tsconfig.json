@@ -8,6 +8,8 @@
 		"outDir": "../out",
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"removeComments": true,
 		"sourceMap": true,
 		"strict": true,

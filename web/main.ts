@@ -963,6 +963,7 @@ function hideContextMenu() {
 
 
 /* Dialogs */
+const DIALOG_FORM_ID = 'formDialog-form';
 function showConfirmationDialog(message: string, confirmed: () => void, sourceElem: HTMLElement | null) {
 	showDialog(message, 'Yes', 'No', () => {
 		hideDialog();
@@ -982,18 +983,18 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	let textRefInput = -1, multiElementForm = inputs.length > 1;
 	let html = message + '<br><table class="dialogForm ' + (multiElementForm ? 'multi' : 'single') + '">';
 	for (let i = 0; i < inputs.length; i++) {
-		let input = inputs[i];
+		const input = inputs[i];
 		html += '<tr>' + (multiElementForm ? '<td>' + input.name + '</td>' : '') + '<td>';
 		if (input.type === 'select') {
-			html += '<select id="dialogInput' + i + '">';
+			html += '<select form="' + DIALOG_FORM_ID + '" id="dialogInput' + i + '">';
 			for (let j = 0; j < input.options.length; j++) {
 				html += '<option value="' + input.options[j].value + '"' + (input.options[j].value === input.default ? ' selected' : '') + '>' + input.options[j].name + '</option>';
 			}
 			html += '</select>';
 		} else if (input.type === 'checkbox') {
-			html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElementForm ? '' : input.name) + '</label></span>';
+			html += '<span class="dialogFormCheckbox"><label><input form="' + DIALOG_FORM_ID + '" id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElementForm ? '' : input.name) + '</label></span>';
 		} else {
-			html += '<input id="dialogInput' + i + '" type="text" value="' + input.default + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + input.placeholder + '"' : '') + '/>';
+			html += '<input form="' + DIALOG_FORM_ID + '" id="dialogInput' + i + '" type="text" value="' + input.default + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + input.placeholder + '"' : '') + '/>';
 			if (input.type === 'text-ref') textRefInput = i;
 		}
 		html += '</td></tr>';
@@ -1040,7 +1041,13 @@ function showDialog(html: string, actionName: string | null, dismissName: string
 	dialogBacking.className = 'active';
 	dialog.className = 'active';
 	dialog.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
-	if (actionName !== null && actioned !== null) document.getElementById('dialogAction')!.addEventListener('click', actioned);
+	var formEl = document.createElement('form');
+	formEl.id = DIALOG_FORM_ID;
+	dialog.appendChild(formEl);
+	if (actionName !== null && actioned !== null) {
+		formEl.addEventListener('submit', actioned);
+		document.getElementById('dialogAction')!.addEventListener('click', actioned);
+	}
 	document.getElementById('dialogDismiss')!.addEventListener('click', hideDialog);
 
 	dialogMenuSource = sourceElem;

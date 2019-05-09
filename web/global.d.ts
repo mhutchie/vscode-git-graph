@@ -2,9 +2,9 @@ import * as GG from "../out/types";
 
 declare global {
 	function acquireVsCodeApi(): {
-		getState(): WebViewState | null,
+		getState(): WebviewState | null,
 		postMessage(message: GG.RequestMessage): void,
-		setState(state: WebViewState): void
+		setState(state: WebviewState): void
 	};
 
 	var viewState: GG.GitGraphViewState;
@@ -106,7 +106,7 @@ declare global {
 
 	type AvatarImageCollection = { [email: string]: string };
 
-	interface WebViewState {
+	interface WebviewState {
 		gitRepos: GG.GitRepoSet;
 		gitBranches: string[];
 		gitBranchHead: string | null;

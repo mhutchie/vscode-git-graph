@@ -46,7 +46,7 @@ export class AvatarManager {
 			}
 			if (this.avatars[email].image !== null) {
 				// Avatar image is available
-				this.sendAvatarToWebView(email, () => {
+				this.sendAvatarToWebview(email, () => {
 					// Avatar couldn't be found, request it again
 					this.removeAvatarFromCache(email);
 					this.queue.add(email, repo, commits, true);
@@ -270,10 +270,10 @@ export class AvatarManager {
 			this.avatars[email] = { image: image, timestamp: (new Date()).getTime(), identicon: identicon };
 		}
 		this.extensionState.saveAvatar(email, this.avatars[email]);
-		this.sendAvatarToWebView(email, () => { });
+		this.sendAvatarToWebview(email, () => { });
 	}
 
-	private sendAvatarToWebView(email: string, onError: () => void) {
+	private sendAvatarToWebview(email: string, onError: () => void) {
 		if (this.view !== null) {
 			fs.readFile(this.avatarStorageFolder + '/' + this.avatars[email].image, (err, data) => {
 				if (err) {

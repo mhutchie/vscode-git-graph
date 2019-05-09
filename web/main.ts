@@ -26,7 +26,7 @@ class GitGraphView {
 	private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-	constructor(repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
+	constructor(repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebviewState | null) {
 		this.gitRepos = repos;
 		this.config = config;
 		this.maxCommits = config.initialLoadCommits;

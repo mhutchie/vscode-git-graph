@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { AssetLoader } from './assetLoader';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
@@ -9,12 +10,13 @@ import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitFileChangeType, GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
 import { abbrevCommit, copyToClipboard } from './utils';
+import { WebviewHtmlGenerator } from './webviewHtmlGenerator';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
 
 	private readonly panel: vscode.WebviewPanel;
-	private readonly extensionPath: string;
+	private readonly assetLoader: AssetLoader;
 	private readonly avatarManager: AvatarManager;
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
@@ -45,7 +47,7 @@ export class GitGraphView {
 
 	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager) {
 		this.panel = panel;
-		this.extensionPath = extensionPath;
+		this.assetLoader = new AssetLoader(extensionPath);
 		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
@@ -53,8 +55,11 @@ export class GitGraphView {
 		this.avatarManager.registerView(this);
 
 		panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
-			? this.getUri('resources', 'webview-icon.svg')
-			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
+			? this.assetLoader.getUri('resources', 'webview-icon.svg')
+			: {
+					light: this.assetLoader.getUri('resources', 'webview-icon-light.svg'),
+					dark: this.assetLoader.getUri('resources', 'webview-icon-dark.svg')
+				};
 
 		this.update();
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
@@ -245,11 +250,7 @@ export class GitGraphView {
 	}
 
 	private async update() {
-		this.panel.webview.html = await this.getHtmlForWebview();
-	}
-
-	private getHtmlForWebview() {
-		const config = getConfig(), nonce = getNonce();
+		const config = getConfig();
 		const viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
 			dateFormat: config.dateFormat(),
@@ -262,62 +263,9 @@ export class GitGraphView {
 			repos: this.repoManager.getRepos(),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
-
-		let body, numRepos = Object.keys(viewState.repos).length, colorVars = '', colorParams = '';
-		for (let i = 0; i < viewState.graphColours.length; i++) {
-			colorVars += '--git-graph-color' + i + ':' + viewState.graphColours[i] + '; ';
-			colorParams += '[data-color="' + i + '"]{--git-graph-color:var(--git-graph-color' + i + ');} ';
-		}
-		if (numRepos > 0) {
-			body = `<body style="${colorVars}">
-			<div id="controls">
-				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
-				<span id="branchControl"><span class="unselectable">Branch: </span><div id="branchSelect" class="dropdown"></div></span>
-				<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
-				<div id="refreshBtn" class="roundedBtn">Refresh</div>
-			</div>
-			<div id="content">
-				<div id="commitGraph"></div>
-				<div id="commitTable"></div>
-			</div>
-			<div id="footer"></div>
-			<ul id="contextMenu"></ul>
-			<div id="dialogBacking"></div>
-			<div id="dialog"></div>
-			<div id="scrollShadow"></div>
-			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
-			<script src="${this.getMediaUri('out.min.js')}"></script>
-			</body>`;
-		} else {
-			body = `<body class="unableToLoad" style="${colorVars}">
-			<h2>Unable to load Git Graph</h2>
-			<p>Either the current workspace does not contain a Git repository, or the Git executable could not be found.</p>
-			<p>If you are using a portable Git installation, make sure you have set the Visual Studio Code Setting "git.path" to the path of your portable installation (e.g. "C:\\Program Files\\Git\\bin\\git.exe" on Windows).</p>
-			</body>`;
-		}
+		this.panel.webview.html = await new WebviewHtmlGenerator(this.assetLoader, viewState).getHtmlForWebview();
+		const numRepos = Object.keys(this.repoManager.getRepos()).length;
 		this.isGraphViewLoaded = numRepos > 0;
-
-		return `<!DOCTYPE html>
-		<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}'; img-src data:;">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
-				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
-				<title>Git Graph</title>
-				<style>${colorParams}"</style>
-			</head>
-			${body}
-		</html>`;
-	}
-
-	private getMediaUri(file: string) {
-		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
-	}
-
-	private getUri(...pathComps: string[]) {
-		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
 	private respondLoadRepos(repos: GitRepoSet) {
@@ -338,13 +286,4 @@ export class GitGraphView {
 				.then(() => resolve(false));
 		});
 	}
-}
-
-function getNonce() {
-	let text = '';
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
 }

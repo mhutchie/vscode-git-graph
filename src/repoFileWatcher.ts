@@ -22,9 +22,9 @@ export class RepoFileWatcher {
 
 		this.repo = repo;
 		this.fsWatcher = vscode.workspace.createFileSystemWatcher(repo + '/**');
-		this.fsWatcher.onDidCreate(uri => this.refesh(uri));
-		this.fsWatcher.onDidChange(uri => this.refesh(uri));
-		this.fsWatcher.onDidDelete(uri => this.refesh(uri));
+		this.fsWatcher.onDidCreate(uri => this.refresh(uri));
+		this.fsWatcher.onDidChange(uri => this.refresh(uri));
+		this.fsWatcher.onDidDelete(uri => this.refresh(uri));
 	}
 
 	public stop() {
@@ -43,7 +43,7 @@ export class RepoFileWatcher {
 		this.resumeAt = (new Date()).getTime() + 1500;
 	}
 
-	private async refesh(uri: vscode.Uri) {
+	private async refresh(uri: vscode.Uri) {
 		if (this.muted) return;
 		if (!getPathFromUri(uri).replace(this.repo + '/', '').match(fileChangeRegex)) return;
 		if ((new Date()).getTime() < this.resumeAt) return;

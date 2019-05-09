@@ -280,7 +280,18 @@ class GitGraphView {
 		this.graph.render(this.expandedCommit);
 	}
 	private renderTable() {
-		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
+		let html = `
+			<thead>
+				<tr id="tableColHeaders">
+					<th id="tableHeaderGraphCol" class="tableColHeader">Graph</th>
+					<th class="tableColHeader">Description</th>
+					<th class="tableColHeader">Date</th>
+					<th class="tableColHeader">Author</th>
+					<th class="tableColHeader">Commit</th>
+				</tr>
+			</thead>
+			<tbody>`,
+			i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
 		for (i = 0; i < this.commits.length; i++) {
 			let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml;
 			for (j = 0; j < this.commits[i].refs.length; j++) {
@@ -291,7 +302,7 @@ class GitGraphView {
 			}
 			html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '" data-color="' + this.graph.getVertexColour(i) + '"><td></td><td>' + (this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '') + refs + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 		}
-		this.tableElem.innerHTML = '<table>' + html + '</table>';
+		this.tableElem.innerHTML = "<table>" + html + "</tbody></table>";
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
 		this.makeTableResizable();
 

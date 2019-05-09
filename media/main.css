@@ -1,3 +1,17 @@
+/* variables */
+body {
+	--controls-line-height: 32px;
+	--controls-padding-topBottom: 4px;
+	--controls-border-width: 1px;
+	--controls-height: calc(var(--controls-line-height) + var(--controls-padding-topBottom) + var(--controls-border-width));
+	--tableTh-height: 30px;
+	--z-index-commitGraph: -1;
+	--z-index-scrollShadow: 5;
+	--z-index-commitTable: 7;
+	--z-index-controls: 8;
+	--z-index-dialogBacking: 9;
+	--z-index-dialog: 10;
+}
 /* Body */
 body{
 	margin:0;
@@ -11,17 +25,18 @@ body.unableToLoad h2, body.unableToLoad p{
 }
 #scrollShadow.active{
 	position:fixed;
-	top:0px;
-	left:0px;
+	top:calc(var(--controls-height) + var(--tableTh-height));
+	left:0;
 	width:100%;
-	height:0px;
+	height:0;
 	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
-	z-index:200;
+	z-index:var(--z-index-scrollShadow);
 }
 
 /* Content */
 #content{
 	position:relative;
+	margin-top: calc(var(--controls-height) - var(--controls-border-width));
 }
 
 /* Commit Graph */
@@ -29,8 +44,8 @@ body.unableToLoad h2, body.unableToLoad p{
 	display:block;
 	position:absolute;
 	left:8px;
-	top:0px;
-	z-index:-1;
+	top:0;
+	z-index:var(--z-index-commitGraph);
 }
 #commitGraph circle.current{
 	fill:var(--vscode-editor-background);
@@ -41,7 +56,7 @@ body.unableToLoad h2, body.unableToLoad p{
 	stroke-width:1;
 	stroke-opacity:0.75;
 }
-#commitGraph path.shaddow{
+#commitGraph path.shadow{
 	fill:none;
 	stroke:var(--vscode-editor-background);
 	stroke-opacity:0.75;
@@ -79,7 +94,11 @@ body.unableToLoad h2, body.unableToLoad p{
 	padding:0 4px;
 }
 #commitTable th{
+	position: sticky;
+	top: calc(var(--controls-height) - var(--controls-border-width));
+	z-index: var(--z-index-commitTable);
 	border-bottom:1px solid rgba(128,128,128,0.5);
+	background-color: var(--vscode-editor-background);
 	line-height:18px;
 	padding:6px 12px;
 }
@@ -102,18 +121,18 @@ body.unableToLoad h2, body.unableToLoad p{
 }
 .resizeCol{
 	position:absolute;
-	top:0px;
+	top:0;
 	height:100%;
 	display:block;
 	width:6px;
 	cursor:col-resize;
 }
 .resizeCol.left{
-	left:0px;
+	left:0;
 	border-left:1px solid rgba(128,128,128,0.25);
 }
 .resizeCol.right{
-	right:0px;
+	right:0;
 }
 
 /* Commit Details View */
@@ -171,7 +190,7 @@ body.unableToLoad h2, body.unableToLoad p{
 	vertical-align:top;
 }
 .commitDetailsSummaryKeyValues{
-	max-width:0px;
+	max-width:0;
 	overflow-x:hidden;
 	text-overflow:ellipsis;
 }
@@ -202,8 +221,8 @@ body.unableToLoad h2, body.unableToLoad p{
 	list-style-type:none;
 	-webkit-margin-before:0;
 	-webkit-margin-after:0;
-	-webkit-margin-start:0px;
-	-webkit-margin-end:0px;
+	-webkit-margin-start:0;
+	-webkit-margin-end:0;
 	-webkit-padding-start:30px;
 }
 #commitDetailsFiles > ul{
@@ -348,13 +367,15 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 /* Controls */
 #controls{
 	display:block;
-	position: relative;
+	position: fixed;
 	left:0;
 	right:0;
 	top:0;
-	padding:4px 96px 4px 0;
-	border-bottom:1px solid rgba(128,128,128,0.5);
-	line-height:32px;
+	padding:var(--controls-padding-topBottom) 96px var(--controls-padding-topBottom) 0;
+	border-bottom:var(--controls-border-width) solid rgba(128,128,128,0.5);
+	background-color: var(--vscode-editor-background);
+	z-index: var(--z-index-controls);
+	line-height: var(--controls-line-height);
 	text-align:center;
 	font-weight:700;
 	font-size:13px;
@@ -443,7 +464,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	text-align:center;
 	max-width:360px;
 	max-height:80%;
-	z-index:10;
+	z-index:var(--z-index-dialog);
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 	overflow-y:auto;
 }
@@ -455,7 +476,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 #dialog > table.dialogForm td{
 	padding-top:10px;
 	text-align:left;
-	white-space:nowrap;	
+	white-space:nowrap;
 }
 #dialog > table.dialogForm td:last-child{
 	width:100%;
@@ -508,7 +529,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	right:0;
 	top:0;
 	bottom:0;
-	z-index:9;
+	z-index:var(--z-index-dialogBacking);
 }
 #dialog.noInput #dialogAction, #dialog.inputInvalid #dialogAction{
 	background-color:rgba(128,128,128,0.2);

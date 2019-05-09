@@ -54,7 +54,7 @@ class Branch {
 			lines.push({ p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 }, isCommitted: i >= this.numUncommitted, lockedFirst: this.lines[i].lockedFirst });
 		}
 
-		// Simplify consecutive lines that are straight by removing the 'middle' point 
+		// Simplify consecutive lines that are straight by removing the 'middle' point
 		i = 0;
 		while (i < lines.length - 1) {
 			if (lines[i].p1.x === lines[i].p2.x && lines[i].p2.x === lines[i + 1].p1.x && lines[i + 1].p1.x === lines[i + 1].p2.x && lines[i].p2.y === lines[i + 1].p1.y && lines[i].isCommitted === lines[i + 1].isCommitted) {
@@ -98,7 +98,7 @@ class Branch {
 	}
 	private drawPath(svg: SVGElement, path: string, colour: string) {
 		let line1 = document.createElementNS('http://www.w3.org/2000/svg', 'path'), line2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		line1.setAttribute('class', 'shaddow');
+		line1.setAttribute('class', 'shadow');
 		line1.setAttribute('d', path);
 		line2.setAttribute('class', 'line');
 		line2.setAttribute('d', path);

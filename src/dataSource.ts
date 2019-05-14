@@ -122,10 +122,10 @@ export class DataSource {
 						});
 					}
 				})),
-				new Promise<string[]>((resolve, reject) => this.execGit('diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
+				new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
 					if (err) reject(); else resolve(stdout.split(eolRegex));
 				})),
-				new Promise<string[]>((resolve, reject) => this.execGit('diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
+				new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
 					if (err) reject(); else resolve(stdout.split(eolRegex));
 				}))
 			]).then(results => {

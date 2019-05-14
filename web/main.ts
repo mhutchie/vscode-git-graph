@@ -399,8 +399,12 @@ class GitGraphView {
 				{
 					title: 'Merge into current branch' + ELLIPSIS,
 					onClick: () => {
-						showCheckboxDialog('Are you sure you want to merge commit <b><i>' + abbrevCommit(hash) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
-							sendMessage({ command: 'mergeCommit', repo: this.currentRepo, commitHash: hash, createNewCommit: createNewCommit });
+						showFormDialog('Are you sure you want to merge commit <b><i>' + abbrevCommit(hash) + '</i></b> into the current branch?', [
+							{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: true },
+							{ type: 'checkbox', name: 'Squash commits', value: false }
+						], 'Yes, merge', values => {
+							showActionRunningDialog('Merging Commit');
+							sendMessage({ command: 'mergeCommit', repo: this.currentRepo, commitHash: hash, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' });
 						}, null);
 					}
 				},
@@ -484,8 +488,12 @@ class GitGraphView {
 							}, {
 								title: 'Merge into current branch' + ELLIPSIS,
 								onClick: () => {
-									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
-										sendMessage({ command: 'mergeBranch', repo: this.currentRepo, branchName: refName, createNewCommit: createNewCommit });
+									showFormDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', [
+										{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: true },
+										{ type: 'checkbox', name: 'Squash commits', value: false }
+									], 'Yes, merge', values => {
+										showActionRunningDialog('Merging Branch');
+										sendMessage({ command: 'mergeBranch', repo: this.currentRepo, branchName: refName, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' });
 									}, null);
 								}
 							}
@@ -1030,11 +1038,22 @@ function showSelectDialog(message: string, defaultValue: string, options: { name
 	showFormDialog(message, [{ type: 'select', name: '', options: options, default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
 }
 function showFormDialog(message: string, inputs: DialogInput[], actionName: string, actioned: (values: string[]) => void, sourceElem: HTMLElement | null) {
-	let textRefInput = -1, multiElementForm = inputs.length > 1;
-	let html = message + '<br><table class="dialogForm ' + (multiElementForm ? 'multi' : 'single') + '">';
+	let textRefInput = -1, multiElement = inputs.length > 1;
+	let multiCheckbox = multiElement;
+
+	if (multiElement) { // If has multiple elements, then check if they are all checkboxes. If so, then the form is a checkbox multi
+		for (let i = 0; i < inputs.length; i++) {
+			if (inputs[i].type !== 'checkbox') {
+				multiCheckbox = false;
+				break;
+			}
+		}
+	}
+
+	let html = message + '<br><table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">';
 	for (let i = 0; i < inputs.length; i++) {
 		let input = inputs[i];
-		html += '<tr>' + (multiElementForm ? '<td>' + input.name + '</td>' : '') + '<td>';
+		html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + '</td>' : '') + '<td>';
 		if (input.type === 'select') {
 			html += '<select id="dialogInput' + i + '">';
 			for (let j = 0; j < input.options.length; j++) {
@@ -1042,7 +1061,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 			}
 			html += '</select>';
 		} else if (input.type === 'checkbox') {
-			html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElementForm ? '' : input.name) + '</label></span>';
+			html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElement && !multiCheckbox ? '' : input.name) + '</label></span>';
 		} else {
 			html += '<input id="dialogInput' + i + '" type="text" value="' + input.default + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + input.placeholder + '"' : '') + '/>';
 			if (input.type === 'text-ref') textRefInput = i;
@@ -1050,6 +1069,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 		html += '</td></tr>';
 	}
 	html += '</table>';
+
 	showDialog(html, actionName, 'Cancel', () => {
 		if (dialog.className === 'active noInput' || dialog.className === 'active inputInvalid') return;
 		let values = [];

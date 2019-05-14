@@ -216,12 +216,24 @@ export class DataSource {
 		return this.runGitCommand('branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName), repo);
 	}
 
-	public mergeBranch(repo: string, branchName: string, createNewCommit: boolean) {
-		return this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit ? ' --no-ff' : ''), repo);
+	public async mergeBranch(repo: string, branchName: string, createNewCommit: boolean, squash: boolean) {
+		let mergeStatus = await this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit && !squash ? ' --no-ff' : '') + (squash ? ' --squash' : ''), repo);
+		if (mergeStatus === null && squash) {
+			if (await this.areStagedChanges(repo)) {
+				return this.runGitCommand('commit -m "Merge branch \'' + escapeRefName(branchName) + '\'"', repo);
+			}
+		}
+		return mergeStatus;
 	}
 
-	public mergeCommit(repo: string, commitHash: string, createNewCommit: boolean) {
-		return this.runGitCommand('merge ' + commitHash + (createNewCommit ? ' --no-ff' : ''), repo);
+	public async mergeCommit(repo: string, commitHash: string, createNewCommit: boolean, squash: boolean) {
+		let mergeStatus = await this.runGitCommand('merge ' + commitHash + (createNewCommit && !squash ? ' --no-ff' : '') + (squash ? ' --squash' : ''), repo);
+		if (mergeStatus === null && squash) {
+			if (await this.areStagedChanges(repo)) {
+				return this.runGitCommand('commit -m "Merge commit \'' + commitHash + '\'"', repo);
+			}
+		}
+		return mergeStatus;
 	}
 
 	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number) {
@@ -296,6 +308,12 @@ export class DataSource {
 					resolve(null);
 				}
 			});
+		});
+	}
+
+	private areStagedChanges(repo: string) {
+		return new Promise<boolean>(resolve => {
+			this.execGit('diff-index HEAD', repo, (err, stdout) => resolve(!err && stdout !== ''));
 		});
 	}
 

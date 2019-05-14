@@ -256,6 +256,7 @@ export interface RequestMergeBranch {
 	repo: string;
 	branchName: string;
 	createNewCommit: boolean;
+	squash: boolean;
 }
 export interface ResponseMergeBranch {
 	command: 'mergeBranch';
@@ -267,6 +268,7 @@ export interface RequestMergeCommit {
 	repo: string;
 	commitHash: string;
 	createNewCommit: boolean;
+	squash: boolean;
 }
 export interface ResponseMergeCommit {
 	command: 'mergeCommit';

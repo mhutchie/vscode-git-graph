@@ -187,13 +187,13 @@ export class GitGraphView {
 				case 'mergeBranch':
 					this.sendMessage({
 						command: 'mergeBranch',
-						status: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit)
+						status: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit, msg.squash)
 					});
 					break;
 				case 'mergeCommit':
 					this.sendMessage({
 						command: 'mergeCommit',
-						status: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit)
+						status: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit, msg.squash)
 					});
 					break;
 				case 'pushTag':

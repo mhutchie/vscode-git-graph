@@ -481,6 +481,9 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 #dialog > table.dialogForm.multi input[type=checkbox]{
 	margin-left:0;
 }
+#dialog > table.dialogForm.single input[type=checkbox], #dialog > table.dialogForm.multiCheckbox input[type=checkbox]{
+	margin-right:5px;
+}
 #dialog > table.dialogForm input[type=text], #dialog > table.dialogForm select{
 	padding:4px;
 	box-sizing:border-box;

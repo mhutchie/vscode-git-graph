@@ -510,6 +510,14 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	bottom:0;
 	z-index:9;
 }
+#dialog #dialogAction{
+	background-color:rgba(128,128,128,0.15);
+	border-color:rgba(128,128,128,0.8);
+	box-shadow:0 0 1px 1px rgba(128,128,128,0.2);
+}
+#dialog #dialogAction:hover{
+	background-color:rgba(128,128,128,0.25);
+}
 #dialog.noInput #dialogAction, #dialog.inputInvalid #dialogAction{
 	background-color:rgba(128,128,128,0.2);
 	opacity:0.5;

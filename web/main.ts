@@ -62,6 +62,7 @@ class GitGraphView {
 		this.observeWindowSizeChanges();
 		this.observeWebviewStyleChanges();
 		this.observeWebviewScroll();
+		this.observeKeyboardEvents();
 
 		this.renderShowLoading();
 		if (prevState) {
@@ -646,6 +647,42 @@ class GitGraphView {
 			}
 		});
 	}
+	private observeKeyboardEvents() {
+		document.addEventListener('keydown', e => {
+			if (graphFocus) {
+				if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+					this.refresh(true);
+				} else if (this.expandedCommit !== null) { // Commit Details View is open
+					if (e.key === 'Escape') {
+						this.hideCommitDetails();
+					} else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+						let hashIndex = -1;
+						if (e.key === 'ArrowUp' && this.commitLookup[this.expandedCommit.hash] > 0) {
+							hashIndex = this.commitLookup[this.expandedCommit.hash] - 1;
+						} else if (e.key === 'ArrowDown' && this.commitLookup[this.expandedCommit.hash] < this.commits.length - 1) {
+							hashIndex = this.commitLookup[this.expandedCommit.hash] + 1;
+						}
+						if (hashIndex > -1 && this.commits[hashIndex].hash !== '*') {
+							e.preventDefault();
+							let hash = this.commits[hashIndex].hash, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+							for (let i = 0; i < elems.length; i++) {
+								if (hash === elems[i].dataset.hash) {
+									this.loadCommitDetails(elems[i]);
+									break;
+								}
+							}
+						}
+					}
+				}
+			} else {
+				if (e.key === 'Escape') {
+					hideDialogAndContextMenu();
+				} else if (e.key === 'Enter' && dialogAction !== null) {
+					dialogAction();
+				}
+			}
+		});
+	}
 
 	/* Commit Details */
 	private loadCommitDetails(sourceElem: HTMLElement) {
@@ -729,8 +766,10 @@ class GitGraphView {
 	}
 }
 
+let graphFocus = true;
 let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
-let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null;
+let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null;
+
 let gitGraph = new GitGraphView(viewState.repos, viewState.lastActiveRepo, {
 	autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
 	fetchAvatars: viewState.fetchAvatars,
@@ -947,6 +986,7 @@ function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem:
 
 	contextMenuSource = sourceElem;
 	contextMenuSource.classList.add('contextMenuActive');
+	graphFocus = false;
 }
 function hideContextMenu() {
 	contextMenu.className = '';
@@ -957,6 +997,7 @@ function hideContextMenu() {
 		contextMenuSource.classList.remove('contextMenuActive');
 		contextMenuSource = null;
 	}
+	graphFocus = true;
 }
 
 
@@ -1038,11 +1079,15 @@ function showDialog(html: string, actionName: string | null, dismissName: string
 	dialogBacking.className = 'active';
 	dialog.className = 'active';
 	dialog.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
-	if (actionName !== null && actioned !== null) document.getElementById('dialogAction')!.addEventListener('click', actioned);
+	if (actionName !== null && actioned !== null) {
+		document.getElementById('dialogAction')!.addEventListener('click', actioned);
+		dialogAction = actioned;
+	}
 	document.getElementById('dialogDismiss')!.addEventListener('click', hideDialog);
 
 	dialogMenuSource = sourceElem;
 	if (dialogMenuSource !== null) dialogMenuSource.classList.add('dialogActive');
+	graphFocus = false;
 }
 function hideDialog() {
 	dialogBacking.className = '';
@@ -1052,6 +1097,8 @@ function hideDialog() {
 		dialogMenuSource.classList.remove('dialogActive');
 		dialogMenuSource = null;
 	}
+	dialogAction = null;
+	graphFocus = true;
 }
 
 function hideDialogAndContextMenu() {
@@ -1060,9 +1107,6 @@ function hideDialogAndContextMenu() {
 }
 
 /* Global Listeners */
-document.addEventListener('keyup', (e) => {
-	if (e.key === 'Escape') hideDialogAndContextMenu();
-});
 document.addEventListener('click', hideContextMenuListener);
 document.addEventListener('contextmenu', hideContextMenuListener);
 document.addEventListener('mouseleave', hideContextMenuListener);

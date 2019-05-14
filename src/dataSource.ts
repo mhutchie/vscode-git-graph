@@ -208,6 +208,10 @@ export class DataSource {
 		return this.runGitCommand('branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName), repo);
 	}
 
+	public deleteRemoteBranch(repo: string, branchName: string, remote: string) {
+		return this.runGitCommand('push ' + escapeRefName(remote) + ' --delete ' + escapeRefName(branchName), repo);
+	}
+
 	public renameBranch(repo: string, oldName: string, newName: string) {
 		return this.runGitCommand('branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName), repo);
 	}

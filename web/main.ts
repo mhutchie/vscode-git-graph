@@ -449,8 +449,8 @@ class GitGraphView {
 					title: 'Push Tag' + ELLIPSIS,
 					onClick: () => {
 						showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-							sendMessage({ command: 'pushTag', repo: this.currentRepo, tagName: refName });
 							showActionRunningDialog('Pushing Tag');
+							sendMessage({ command: 'pushTag', repo: this.currentRepo, tagName: refName });
 						}, null);
 					}
 				}];
@@ -493,6 +493,15 @@ class GitGraphView {
 					}
 				} else {
 					menu = [{
+						title: 'Delete Remote Branch' + ELLIPSIS,
+						onClick: () => {
+							showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+								showActionRunningDialog('Deleting Remote Branch');
+								let sep = refName.indexOf('/');
+								sendMessage({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: sep > -1 ? refName.substr(sep + 1) : refName, remote: sep > -1 ? refName.substr(0, sep) : 'origin' });
+							}, null);
+						}
+					}, {
 						title: 'Checkout Branch' + ELLIPSIS,
 						onClick: () => this.checkoutBranchAction(refName, true)
 					}];
@@ -814,6 +823,9 @@ window.addEventListener('message', event => {
 			break;
 		case 'deleteBranch':
 			refreshGraphOrDisplayError(msg.status, 'Unable to Delete Branch');
+			break;
+		case 'deleteRemoteBranch':
+			refreshGraphOrDisplayError(msg.status, 'Unable to Delete Remote Branch');
 			break;
 		case 'deleteTag':
 			refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');

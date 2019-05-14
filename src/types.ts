@@ -178,6 +178,17 @@ export interface ResponseDeleteBranch {
 	status: GitCommandStatus;
 }
 
+export interface RequestDeleteRemoteBranch {
+	command: 'deleteRemoteBranch';
+	repo: string;
+	branchName: string;
+	remote: string;
+}
+export interface ResponseDeleteRemoteBranch {
+	command: 'deleteRemoteBranch';
+	status: GitCommandStatus;
+}
+
 export interface RequestDeleteTag {
 	command: 'deleteTag';
 	repo: string;
@@ -337,6 +348,7 @@ export type RequestMessage =
 	| RequestCopyToClipboard
 	| RequestCreateBranch
 	| RequestDeleteBranch
+	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
 	| RequestFetchAvatar
 	| RequestLoadBranches
@@ -360,6 +372,7 @@ export type ResponseMessage =
 	| ResponseCopyToClipboard
 	| ResponseCreateBranch
 	| ResponseDeleteBranch
+	| ResponseDeleteRemoteBranch
 	| ResponseDeleteTag
 	| ResponseFetchAvatar
 	| ResponseLoadBranches

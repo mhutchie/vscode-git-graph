@@ -140,6 +140,12 @@ export class GitGraphView {
 						status: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
 					});
 					break;
+				case 'deleteRemoteBranch':
+					this.sendMessage({
+						command: 'deleteRemoteBranch',
+						status: await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.remote)
+					});
+					break;
 				case 'deleteTag':
 					this.sendMessage({
 						command: 'deleteTag',

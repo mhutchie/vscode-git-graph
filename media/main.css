@@ -41,7 +41,7 @@ body.unableToLoad h2, body.unableToLoad p{
 	stroke-width:1;
 	stroke-opacity:0.75;
 }
-#commitGraph path.shaddow{
+#commitGraph path.shadow{
 	fill:none;
 	stroke:var(--vscode-editor-background);
 	stroke-opacity:0.75;

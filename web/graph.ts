@@ -97,14 +97,12 @@ class Branch {
 		this.drawPath(svg, curPath, curColour); // Draw the remaining path
 	}
 	private drawPath(svg: SVGElement, path: string, colour: string) {
-		let line1 = document.createElementNS('http://www.w3.org/2000/svg', 'path'), line2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		line1.setAttribute('class', 'shaddow');
-		line1.setAttribute('d', path);
-		line2.setAttribute('class', 'line');
-		line2.setAttribute('d', path);
-		line2.setAttribute('stroke', colour);
-		svg.appendChild(line1);
-		svg.appendChild(line2);
+		let shadow = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path')), line = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path'));
+		shadow.setAttribute('class', 'shadow');
+		shadow.setAttribute('d', path);
+		line.setAttribute('class', 'line');
+		line.setAttribute('d', path);
+		line.setAttribute('stroke', colour);
 	}
 }
 
@@ -195,7 +193,7 @@ class Vertex {
 	public draw(svg: SVGElement, config: Config, expandOffset: boolean) {
 		if (this.onBranch === null) return;
 
-		let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		let circle = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'circle'));
 		let colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
 		circle.setAttribute('cx', (this.x * config.grid.x + config.grid.offsetX).toString());
 		circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString());
@@ -206,8 +204,6 @@ class Vertex {
 		} else {
 			circle.setAttribute('fill', colour);
 		}
-
-		svg.appendChild(circle);
 	}
 }
 
@@ -228,24 +224,21 @@ class Graph {
 	constructor(id: string, config: Config) {
 		this.config = config;
 
-		let svgNamespace = 'http://www.w3.org/2000/svg';
-		let defs = document.createElementNS(svgNamespace, 'defs'), linearGradient = document.createElementNS(svgNamespace, 'linearGradient'), mask = document.createElementNS(svgNamespace, 'mask');
-		this.svg = <SVGElement>document.createElementNS(svgNamespace, 'svg');
-		this.svgMaskRect = <SVGRectElement>document.createElementNS(svgNamespace, 'rect');
-		this.svgGradientStop1 = <SVGStopElement>document.createElementNS(svgNamespace, 'stop');
-		this.svgGradientStop2 = <SVGStopElement>document.createElementNS(svgNamespace, 'stop');
+		this.svg = document.createElementNS(SVG_NAMESPACE, 'svg');
+		let defs = this.svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'defs'));
 
+		let linearGradient = defs.appendChild(document.createElementNS(SVG_NAMESPACE, 'linearGradient'));
 		linearGradient.setAttribute('id', 'GraphGradient');
+		this.svgGradientStop1 = linearGradient.appendChild(document.createElementNS(SVG_NAMESPACE, 'stop'));
 		this.svgGradientStop1.setAttribute('stop-color', 'white');
-		linearGradient.appendChild(this.svgGradientStop1);
+		this.svgGradientStop2 = linearGradient.appendChild(document.createElementNS(SVG_NAMESPACE, 'stop'));
 		this.svgGradientStop2.setAttribute('stop-color', 'black');
-		linearGradient.appendChild(this.svgGradientStop2);
-		defs.appendChild(linearGradient);
+
+		let mask = defs.appendChild(document.createElementNS(SVG_NAMESPACE, 'mask'));
 		mask.setAttribute('id', 'GraphMask');
+		this.svgMaskRect = mask.appendChild(document.createElementNS(SVG_NAMESPACE, 'rect'));
 		this.svgMaskRect.setAttribute('fill', 'url(#GraphGradient)');
-		mask.appendChild(this.svgMaskRect);
-		defs.appendChild(mask);
-		this.svg.appendChild(defs);
+
 		this.setDimensions(0, 0);
 		document.getElementById(id)!.appendChild(this.svg);
 	}
@@ -282,7 +275,7 @@ class Graph {
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
-		let group = <SVGGElement>document.createElementNS('http://www.w3.org/2000/svg', 'g'), i, width = this.getWidth();
+		let group = document.createElementNS(SVG_NAMESPACE, 'g'), i, width = this.getWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
 		for (i = 0; i < this.branches.length; i++) {

@@ -18,6 +18,7 @@ const htmlEscaper = /[&<>"'\/]/g;
 const htmlUnescaper = /&lt;|&gt;|&amp;|&quot;|&#x27;|&#x2F;/g;
 const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$/g;
 const ELLIPSIS = '&#8230;';
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 
 /* General Helpers */

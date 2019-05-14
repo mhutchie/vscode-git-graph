@@ -29,7 +29,7 @@ for (let i = 0; i < packageFiles.length; i++) {
 	fileContents += fs.readFileSync(packageFiles[i]).toString().replace('"use strict";\r\n', '') + '\r\n';
 	fs.unlinkSync(packageFiles[i])
 }
-fs.writeFileSync(MEDIA_DIRECTORY + OUTPUT_TMP_FILE, '"use strict";\r\n(function(){\r\n' + fileContents + '})();\r\n');
+fs.writeFileSync(MEDIA_DIRECTORY + OUTPUT_TMP_FILE, '"use strict";\r\n(function(document, window){\r\n' + fileContents + '})(document, window);\r\n');
 
 
 // Run uglifyjs with the required arguments

@@ -107,11 +107,7 @@ class GitGraphView {
 	}
 
 	public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean, isRepo: boolean) {
-		if (!isRepo) {
-			this.triggerLoadBranchesCallback(false, isRepo);
-			return;
-		}
-		if (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitBranchHead === branchHead) {
+		if (!isRepo || (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitBranchHead === branchHead)) {
 			this.triggerLoadBranchesCallback(false, isRepo);
 			return;
 		}
@@ -123,7 +119,7 @@ class GitGraphView {
 		}
 		this.saveState();
 
-		let options = [{ name: 'Show All', value: '' }];
+		let options: DropdownOption[] = [{ name: 'Show All', value: '' }];
 		for (let i = 0; i < this.gitBranches.length; i++) {
 			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 		}
@@ -213,14 +209,14 @@ class GitGraphView {
 	private requestLoadBranches(hard: boolean, loadedCallback: (changes: boolean, isRepo: boolean) => void) {
 		if (this.loadBranchesCallback !== null) return;
 		this.loadBranchesCallback = loadedCallback;
-		sendMessage({ command: 'loadBranches', repo: this.currentRepo!, showRemoteBranches: this.showRemoteBranches, hard: hard });
+		sendMessage({ command: 'loadBranches', repo: this.currentRepo, showRemoteBranches: this.showRemoteBranches, hard: hard });
 	}
 	private requestLoadCommits(hard: boolean, loadedCallback: (changes: boolean) => void) {
 		if (this.loadCommitsCallback !== null) return;
 		this.loadCommitsCallback = loadedCallback;
 		sendMessage({
 			command: 'loadCommits',
-			repo: this.currentRepo!,
+			repo: this.currentRepo,
 			branchName: (this.currentBranch !== null ? this.currentBranch : ''),
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.showRemoteBranches,
@@ -243,7 +239,7 @@ class GitGraphView {
 	private fetchAvatars(avatars: { [email: string]: string[] }) {
 		let emails = Object.keys(avatars);
 		for (let i = 0; i < emails.length; i++) {
-			sendMessage({ command: 'fetchAvatar', repo: this.currentRepo!, email: emails[i], commits: avatars[emails[i]] });
+			sendMessage({ command: 'fetchAvatar', repo: this.currentRepo, email: emails[i], commits: avatars[emails[i]] });
 		}
 	}
 
@@ -297,7 +293,7 @@ class GitGraphView {
 
 		if (this.moreCommitsAvailable) {
 			document.getElementById('loadMoreCommitsBtn')!.addEventListener('click', () => {
-				(<HTMLElement>document.getElementById('loadMoreCommitsBtn')!.parentNode!).innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
+				this.footerElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 				this.maxCommits += this.config.loadMoreCommits;
 				this.hideCommitDetails();
 				this.saveState();
@@ -341,7 +337,7 @@ class GitGraphView {
 							{ type: 'select' as 'select', name: 'Type: ', default: 'annotated', options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
 							{ type: 'text' as 'text', name: 'Message: ', default: '', placeholder: 'Optional' }
 						], 'Add Tag', values => {
-							sendMessage({ command: 'addTag', repo: this.currentRepo!, tagName: values[0], commitHash: hash, lightweight: values[1] === 'lightweight', message: values[2] });
+							sendMessage({ command: 'addTag', repo: this.currentRepo, tagName: values[0], commitHash: hash, lightweight: values[1] === 'lightweight', message: values[2] });
 						}, sourceElem);
 					}
 				},
@@ -349,7 +345,7 @@ class GitGraphView {
 					title: 'Create Branch' + ELLIPSIS,
 					onClick: () => {
 						showRefInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
-							sendMessage({ command: 'createBranch', repo: this.currentRepo!, branchName: name, commitHash: hash });
+							sendMessage({ command: 'createBranch', repo: this.currentRepo, branchName: name, commitHash: hash });
 						}, sourceElem);
 					}
 				},
@@ -358,7 +354,7 @@ class GitGraphView {
 					title: 'Checkout' + ELLIPSIS,
 					onClick: () => {
 						showConfirmationDialog('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
-							sendMessage({ command: 'checkoutCommit', repo: this.currentRepo!, commitHash: hash });
+							sendMessage({ command: 'checkoutCommit', repo: this.currentRepo, commitHash: hash });
 						}, sourceElem);
 					}
 				},
@@ -367,7 +363,7 @@ class GitGraphView {
 					onClick: () => {
 						if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
 							showConfirmationDialog('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-								sendMessage({ command: 'cherrypickCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: 0 });
+								sendMessage({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 });
 							}, sourceElem);
 						} else {
 							let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
@@ -375,7 +371,7 @@ class GitGraphView {
 								value: (index + 1).toString()
 							}));
 							showSelectDialog('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick commit', (parentIndex) => {
-								sendMessage({ command: 'cherrypickCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: parseInt(parentIndex) });
+								sendMessage({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) });
 							}, sourceElem);
 						}
 					}
@@ -385,7 +381,7 @@ class GitGraphView {
 					onClick: () => {
 						if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
 							showConfirmationDialog('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-								sendMessage({ command: 'revertCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: 0 });
+								sendMessage({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 });
 							}, sourceElem);
 						} else {
 							let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
@@ -393,7 +389,7 @@ class GitGraphView {
 								value: (index + 1).toString()
 							}));
 							showSelectDialog('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert commit', (parentIndex) => {
-								sendMessage({ command: 'revertCommit', repo: this.currentRepo!, commitHash: hash, parentIndex: parseInt(parentIndex) });
+								sendMessage({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) });
 							}, sourceElem);
 						}
 					}
@@ -403,7 +399,7 @@ class GitGraphView {
 					title: 'Merge into current branch' + ELLIPSIS,
 					onClick: () => {
 						showCheckboxDialog('Are you sure you want to merge commit <b><i>' + abbrevCommit(hash) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
-							sendMessage({ command: 'mergeCommit', repo: this.currentRepo!, commitHash: hash, createNewCommit: createNewCommit });
+							sendMessage({ command: 'mergeCommit', repo: this.currentRepo, commitHash: hash, createNewCommit: createNewCommit });
 						}, null);
 					}
 				},
@@ -415,7 +411,7 @@ class GitGraphView {
 							{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 							{ name: 'Hard - Discard all changes', value: 'hard' }
 						], 'Yes, reset', (mode) => {
-							sendMessage({ command: 'resetToCommit', repo: this.currentRepo!, commitHash: hash, resetMode: <GG.GitResetMode>mode });
+							sendMessage({ command: 'resetToCommit', repo: this.currentRepo, commitHash: hash, resetMode: <GG.GitResetMode>mode });
 						}, sourceElem);
 					}
 				},
@@ -445,14 +441,14 @@ class GitGraphView {
 					title: 'Delete Tag' + ELLIPSIS,
 					onClick: () => {
 						showConfirmationDialog('Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-							sendMessage({ command: 'deleteTag', repo: this.currentRepo!, tagName: refName });
+							sendMessage({ command: 'deleteTag', repo: this.currentRepo, tagName: refName });
 						}, null);
 					}
 				}, {
 					title: 'Push Tag' + ELLIPSIS,
 					onClick: () => {
 						showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-							sendMessage({ command: 'pushTag', repo: this.currentRepo!, tagName: refName });
+							sendMessage({ command: 'pushTag', repo: this.currentRepo, tagName: refName });
 							showActionRunningDialog('Pushing Tag');
 						}, null);
 					}
@@ -464,14 +460,14 @@ class GitGraphView {
 					if (this.gitBranchHead !== refName) {
 						menu.push({
 							title: 'Checkout Branch',
-							onClick: () => this.checkoutBranchAction(sourceElem, refName)
+							onClick: () => this.checkoutBranchAction(refName, false)
 						});
 					}
 					menu.push({
 						title: 'Rename Branch' + ELLIPSIS,
 						onClick: () => {
 							showRefInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
-								sendMessage({ command: 'renameBranch', repo: this.currentRepo!, oldName: refName, newName: newName });
+								sendMessage({ command: 'renameBranch', repo: this.currentRepo, oldName: refName, newName: newName });
 							}, null);
 						}
 					});
@@ -481,14 +477,14 @@ class GitGraphView {
 								title: 'Delete Branch' + ELLIPSIS,
 								onClick: () => {
 									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
-										sendMessage({ command: 'deleteBranch', repo: this.currentRepo!, branchName: refName, forceDelete: forceDelete });
+										sendMessage({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: forceDelete });
 									}, null);
 								}
 							}, {
 								title: 'Merge into current branch' + ELLIPSIS,
 								onClick: () => {
 									showCheckboxDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', 'Create a new commit even if fast-forward is possible', true, 'Yes, merge', (createNewCommit) => {
-										sendMessage({ command: 'mergeBranch', repo: this.currentRepo!, branchName: refName, createNewCommit: createNewCommit });
+										sendMessage({ command: 'mergeBranch', repo: this.currentRepo, branchName: refName, createNewCommit: createNewCommit });
 									}, null);
 								}
 							}
@@ -497,7 +493,7 @@ class GitGraphView {
 				} else {
 					menu = [{
 						title: 'Checkout Branch' + ELLIPSIS,
-						onClick: () => this.checkoutBranchAction(sourceElem, refName)
+						onClick: () => this.checkoutBranchAction(refName, true)
 					}];
 				}
 				copyType = 'Branch Name';
@@ -515,7 +511,9 @@ class GitGraphView {
 			e.stopPropagation();
 			hideDialogAndContextMenu();
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
-			this.checkoutBranchAction(sourceElem, unescapeHtml(sourceElem.dataset.name!));
+			if (!sourceElem.classList.contains('tag')) {
+				this.checkoutBranchAction(unescapeHtml(sourceElem.dataset.name!), sourceElem.classList.contains('remote'));
+			}
 		});
 	}
 	private renderUncommitedChanges() {
@@ -528,14 +526,14 @@ class GitGraphView {
 		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 		this.footerElem.innerHTML = '';
 	}
-	private checkoutBranchAction(sourceElem: HTMLElement, refName: string) {
-		if (sourceElem.classList.contains('head')) {
-			sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: refName, remoteBranch: null });
-		} else if (sourceElem.classList.contains('remote')) {
+	private checkoutBranchAction(refName: string, isRemote: boolean) {
+		if (isRemote) {
 			let refNameComps = refName.split('/');
-			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(sourceElem.dataset.name!) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
-				sendMessage({ command: 'checkoutBranch', repo: this.currentRepo!, branchName: newBranch, remoteBranch: refName });
+			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', refNameComps[refNameComps.length - 1], 'Checkout Branch', (newBranch) => {
+				sendMessage({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName });
 			}, null);
+		} else {
+			sendMessage({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null });
 		}
 	}
 	private makeTableResizable() {
@@ -654,7 +652,7 @@ class GitGraphView {
 		this.hideCommitDetails();
 		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileTree: null };
 		this.saveState();
-		sendMessage({ command: 'commitDetails', repo: this.currentRepo!, commitHash: sourceElem.dataset.hash! });
+		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
 	}
 	public hideCommitDetails() {
 		if (this.expandedCommit !== null) {
@@ -726,7 +724,7 @@ class GitGraphView {
 		addListenerToClass('gitFile', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitFile')!;
 			if (this.expandedCommit === null || !sourceElem.classList.contains('gitDiffPossible')) return;
-			sendMessage({ command: 'viewDiff', repo: this.currentRepo!, commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
+			sendMessage({ command: 'viewDiff', repo: this.currentRepo, commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 		});
 	}
 }

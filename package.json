@@ -26,7 +26,8 @@
 	"bugs": {
 		"url": "https://github.com/mhutchie/vscode-git-graph/issues"
 	},
-	"license": "MIT",
+	"qna": "https://gitter.im/mhutchie/vscode-git-graph",
+	"license": "SEE LICENSE IN 'LICENSE'",
 	"icon": "resources/icon.png",
 	"engines": {
 		"vscode": "^1.31.0"

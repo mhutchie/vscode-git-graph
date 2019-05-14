@@ -17,25 +17,26 @@ class Dropdown {
 		this.changeCallback = changeCallback;
 		this.elem = document.getElementById(id)!;
 
-		let filter = document.createElement('div');
-		filter.className = 'dropdownFilter';
-		this.filterInput = document.createElement('input');
-		this.filterInput.className = 'dropdownFilterInput';
-		this.filterInput.placeholder = 'Filter ' + dropdownType + '...';
-		filter.appendChild(this.filterInput);
 		this.menuElem = document.createElement('div');
 		this.menuElem.className = 'dropdownMenu';
-		this.menuElem.appendChild(filter);
-		this.optionsElem = document.createElement('div');
+
+		let filter = this.menuElem.appendChild(document.createElement('div'));
+		filter.className = 'dropdownFilter';
+		
+		this.filterInput = filter.appendChild(document.createElement('input'));
+		this.filterInput.className = 'dropdownFilterInput';
+		this.filterInput.placeholder = 'Filter ' + dropdownType + '...';
+
+		this.optionsElem = this.menuElem.appendChild(document.createElement('div'));
 		this.optionsElem.className = 'dropdownOptions';
-		this.menuElem.appendChild(this.optionsElem);
-		this.noResultsElem = document.createElement('div');
+
+		this.noResultsElem = this.menuElem.appendChild(document.createElement('div'));
 		this.noResultsElem.className = 'dropdownNoResults';
 		this.noResultsElem.innerHTML = 'No results found.';
-		this.menuElem.appendChild(this.noResultsElem);
-		this.currentValueElem = document.createElement('div');
+
+		this.currentValueElem = this.elem.appendChild(document.createElement('div'));
 		this.currentValueElem.className = 'dropdownCurrentValue';
-		this.elem.appendChild(this.currentValueElem);
+
 		this.elem.appendChild(this.menuElem);
 
 		document.addEventListener('click', (e) => {
@@ -78,10 +79,11 @@ class Dropdown {
 		for (let i = 0; i < options.length; i++) {
 			if (options[i].value === selected) {
 				selectedOption = i;
+				break;
 			}
 		}
 		this.selectedOption = selectedOption;
-		if (options.length <= 1) this.close();
+		if (this.dropdownVisible && options.length <= 1) this.close();
 		this.render();
 	}
 

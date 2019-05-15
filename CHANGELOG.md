@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.5.0 - 2019-05-15
+* #29 Compare commits: When the Commit Details View is open for a commit, CTRL/CMD click on another commit to see all of the changes between the two commits.
+* #60 Added a tooltip on repo dropdown items, indicating the full path of the repository.
+* #62 Support for non-ASCII file names in the Commit Details View.
+* #63 Commits can be squashed when merging if the "Squash commits" checkbox is checked on the commit and branch merge dialogs.
+* #64 Delete remote branches from the right click context menu of the remote branch.
+* #73 New keyboard shortcuts:
+    * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
+    * CTRL/CMD + r: Refresh the Git Graph.
+    * Enter: If a dialog is open, pressing enter submits the dialog, taking the primary (left) action.
+* #74 Dock the Commit Details View to the bottom of the Git Graph view with the new setting `git-graph.commitDetailsViewLocation`, instead of rendering inline with the graph. Default: Inline (with graph)
+
 ## 1.4.6 - 2019-04-30
 * #33 Support for git repositories in subfolders. New setting `git-graph.maxDepthOfRepoSearch` specifies the maximum depth of subfolders to search (default: 0).
 * #50 Branch and repo dropdowns now have a filter to make it faster to find the desired item.

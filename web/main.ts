@@ -16,27 +16,32 @@ class GitGraphView {
 	private expandedCommit: ExpandedCommit | null = null;
 	private maxCommits: number;
 
+	private viewElem: HTMLElement;
+	private controlsElem: HTMLElement;
 	private tableElem: HTMLElement;
 	private footerElem: HTMLElement;
 	private repoDropdown: Dropdown;
 	private branchDropdown: Dropdown;
 	private showRemoteBranchesElem: HTMLInputElement;
+	private dockedCommitDetailsView: HTMLElement;
 	private scrollShadowElem: HTMLElement;
 
 	private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-	constructor(repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
+	constructor(viewElem: HTMLElement, repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
 		this.gitRepos = repos;
 		this.config = config;
 		this.maxCommits = config.initialLoadCommits;
 		this.graph = new Graph('commitGraph', this.config);
+		this.viewElem = viewElem;
+		this.controlsElem = document.getElementById('controls')!;
 		this.tableElem = document.getElementById('commitTable')!;
 		this.footerElem = document.getElementById('footer')!;
 		this.repoDropdown = new Dropdown('repoSelect', true, 'Repos', value => {
 			this.currentRepo = value;
 			this.maxCommits = this.config.initialLoadCommits;
-			this.expandedCommit = null;
+			this.closeCommitDetails(false);
 			this.currentBranch = null;
 			this.saveState();
 			this.refresh(true);
@@ -44,7 +49,7 @@ class GitGraphView {
 		this.branchDropdown = new Dropdown('branchSelect', false, 'Branches', value => {
 			this.currentBranch = value;
 			this.maxCommits = this.config.initialLoadCommits;
-			this.expandedCommit = null;
+			this.closeCommitDetails(false);
 			this.saveState();
 			this.renderShowLoading();
 			this.requestLoadCommits(true, () => { });
@@ -55,6 +60,7 @@ class GitGraphView {
 			this.saveState();
 			this.refresh(true);
 		});
+		this.dockedCommitDetailsView = document.getElementById('dockedCommitDetailsView')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 		document.getElementById('refreshBtn')!.addEventListener('click', () => {
 			this.refresh(true);
@@ -140,7 +146,7 @@ class GitGraphView {
 			if (this.commits.length > 0 && this.commits[0].hash === '*') {
 				this.commits[0] = commits[0];
 				this.saveState();
-				this.renderUncommitedChanges();
+				this.renderUncommittedChanges();
 			}
 			this.triggerLoadCommitsCallback(false);
 			return;
@@ -174,7 +180,7 @@ class GitGraphView {
 		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
 
 		if (this.expandedCommit !== null && (!expandedCommitVisible || (this.expandedCommit.compareWithHash !== null && !expandedCompareWithCommitVisible))) {
-			this.expandedCommit = null;
+			this.closeCommitDetails(false);
 			this.saveState();
 		}
 		this.render();
@@ -204,7 +210,7 @@ class GitGraphView {
 	public refresh(hard: boolean) {
 		if (hard) {
 			if (this.expandedCommit !== null) {
-				this.expandedCommit = null;
+				this.closeCommitDetails(false);
 				this.saveState();
 			}
 			this.renderShowLoading();
@@ -276,11 +282,12 @@ class GitGraphView {
 	private renderGraph() {
 		let colHeadersElem = document.getElementById('tableColHeaders');
 		if (colHeadersElem === null) return;
-		let headerHeight = colHeadersElem.clientHeight + 1, expandedCommitElem = this.expandedCommit !== null ? document.getElementById('commitDetails') : null;
+		let expandedCommit = this.config.commitDetailsViewLocation === 'Inline' ? this.expandedCommit : null;
+		let headerHeight = colHeadersElem.clientHeight + 1, expandedCommitElem = expandedCommit !== null ? document.getElementById('commitDetails') : null;
 		this.config.grid.expandY = expandedCommitElem !== null ? expandedCommitElem.getBoundingClientRect().height : this.config.grid.expandY;
-		this.config.grid.y = this.commits.length > 0 ? (this.tableElem.children[0].clientHeight - headerHeight - (this.expandedCommit !== null ? this.config.grid.expandY : 0)) / this.commits.length : this.config.grid.y;
+		this.config.grid.y = this.commits.length > 0 ? (this.tableElem.children[0].clientHeight - headerHeight - (expandedCommit !== null ? this.config.grid.expandY : 0)) / this.commits.length : this.config.grid.y;
 		this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
-		this.graph.render(this.expandedCommit);
+		this.graph.render(expandedCommit);
 	}
 	private renderTable() {
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
@@ -302,7 +309,7 @@ class GitGraphView {
 			document.getElementById('loadMoreCommitsBtn')!.addEventListener('click', () => {
 				this.footerElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 				this.maxCommits += this.config.loadMoreCommits;
-				this.hideCommitDetails();
+				this.closeCommitDetails(true);
 				this.saveState();
 				this.requestLoadCommits(true, () => { });
 			});
@@ -321,7 +328,7 @@ class GitGraphView {
 				}
 			}
 			if (elem === null || (this.expandedCommit.compareWithHash !== null && compareWithElem === null)) {
-				this.expandedCommit = null;
+				this.closeCommitDetails(false);
 				this.saveState();
 			} else {
 				this.expandedCommit.id = parseInt(elem.dataset.id!);
@@ -453,10 +460,10 @@ class GitGraphView {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
 			if (this.expandedCommit !== null) {
 				if (this.expandedCommit.hash === sourceElem.dataset.hash!) {
-					this.hideCommitDetails();
+					this.closeCommitDetails(true);
 				} else if ((<MouseEvent>e).ctrlKey || (<MouseEvent>e).metaKey) {
 					if (this.expandedCommit.compareWithHash === sourceElem.dataset.hash!) {
-						this.hideCommitComparison(true);
+						this.closeCommitComparison(true);
 					} else {
 						this.loadCommitComparison(sourceElem);
 					}
@@ -564,7 +571,7 @@ class GitGraphView {
 			}
 		});
 	}
-	private renderUncommitedChanges() {
+	private renderUncommittedChanges() {
 		let date = getCommitDate(this.commits[0].date);
 		document.getElementsByClassName('unsavedChanges')[0].innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td><td title="' + date.title + '">' + date.value + '</td><td title="* <>">*</td><td title="*">*</td>';
 	}
@@ -685,12 +692,12 @@ class GitGraphView {
 		})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 	}
 	private observeWebviewScroll() {
-		let active = window.scrollY > 0;
-		this.scrollShadowElem.className = active ? 'active' : '';
-		document.addEventListener('scroll', () => {
-			if (active !== window.scrollY > 0) {
-				active = window.scrollY > 0;
-				this.scrollShadowElem.className = active ? 'active' : '';
+		let active = this.viewElem.scrollTop > 0;
+		this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
+		this.viewElem.addEventListener('scroll', () => {
+			if (active !== this.viewElem.scrollTop > 0) {
+				active = this.viewElem.scrollTop > 0;
+				this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
 			}
 		});
 	}
@@ -701,7 +708,7 @@ class GitGraphView {
 					this.refresh(true);
 				} else if (this.expandedCommit !== null) { // Commit Details View is open
 					if (e.key === 'Escape') {
-						this.hideCommitDetails();
+						this.closeCommitDetails(true);
 					} else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
 						let hashIndex = -1;
 						if (e.key === 'ArrowUp' && this.commitLookup[this.expandedCommit.hash] > 0) {
@@ -733,20 +740,27 @@ class GitGraphView {
 
 	/* Commit Details */
 	private loadCommitDetails(sourceElem: HTMLElement) {
-		this.hideCommitDetails();
+		this.closeCommitDetails(true);
 		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileChanges: null, fileTree: null, compareWithHash: null, compareWithSrcElem: null };
 		this.saveState();
 		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
 	}
-	public hideCommitDetails() {
+	public closeCommitDetails(saveAndRender: boolean) {
 		if (this.expandedCommit !== null) {
-			let elem = document.getElementById('commitDetails');
-			if (typeof elem === 'object' && elem !== null) elem.remove();
+			if (this.config.commitDetailsViewLocation === 'Inline') {
+				let elem = document.getElementById('commitDetails');
+				if (typeof elem === 'object' && elem !== null) elem.remove();
+			} else {
+				document.body.classList.remove(CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN);
+				this.dockedCommitDetailsView.innerHTML = '';
+			}
 			if (typeof this.expandedCommit.srcElem === 'object' && this.expandedCommit.srcElem !== null) this.expandedCommit.srcElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
 			this.expandedCommit = null;
-			this.saveState();
-			this.renderGraph();
+			if (saveAndRender) {
+				this.saveState();
+				if (this.config.commitDetailsViewLocation === 'Inline') this.renderGraph();
+			}
 		}
 	}
 	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: GitFolder) {
@@ -765,7 +779,7 @@ class GitGraphView {
 
 	private loadCommitComparison(compareWithSrcElem: HTMLElement) {
 		if (this.expandedCommit !== null) {
-			this.hideCommitComparison(false);
+			this.closeCommitComparison(false);
 			this.expandedCommit.compareWithHash = compareWithSrcElem.dataset.hash!;
 			this.expandedCommit.compareWithSrcElem = compareWithSrcElem;
 			this.saveState();
@@ -778,7 +792,7 @@ class GitGraphView {
 			});
 		}
 	}
-	public hideCommitComparison(fallbackToDetails: boolean) {
+	public closeCommitComparison(fallbackToDetails: boolean) {
 		if (this.expandedCommit !== null && this.expandedCommit.compareWithHash) {
 			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
 			this.expandedCommit.compareWithHash = null;
@@ -803,11 +817,12 @@ class GitGraphView {
 
 	private renderCommitDetailsView() {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null) return;
-		let viewElem = document.getElementById('commitDetails'), html = '';
-		if (viewElem === null) {
-			viewElem = document.createElement('tr');
-			viewElem.id = 'commitDetails';
-			insertAfter(viewElem, this.expandedCommit.srcElem);
+		let isDocked = this.config.commitDetailsViewLocation !== 'Inline';
+		let elem = isDocked ? this.dockedCommitDetailsView : document.getElementById('commitDetails'), html = '';
+		if (elem === null) {
+			elem = document.createElement('tr');
+			elem.id = 'commitDetails';
+			insertAfter(elem, this.expandedCommit.srcElem);
 		}
 		if (this.expandedCommit.compareWithHash === null) {
 			// Commit details should be shown
@@ -830,24 +845,39 @@ class GitGraphView {
 			html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + commitOrder.to + '</b></div>';
 			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
 		}
-		viewElem.innerHTML = '<td></td><td colspan="4"><div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose">' + svgIcons.close + '</div></td>';
+		html = '<div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose">' + svgIcons.close + '</div>';
 
-		if (this.config.autoCenterCommitDetailsView) {
-			// Center Commit Detail View setting is enabled
-			// control menu height [40px] + newElem.y + (commit details view height [250px] + commit height [24px]) / 2 - (window height) / 2
-			window.scrollTo(0, viewElem.offsetTop + 177 - window.innerHeight / 2);
-		} else if (viewElem.offsetTop + 8 < window.pageYOffset) {
-			// Commit Detail View is opening above what is visible on screen
-			// control menu height [40px] + newElem y - commit height [24px] - desired gap from top [8px] < pageYOffset
-			window.scrollTo(0, viewElem.offsetTop + 8);
-		} else if (viewElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48 > window.pageYOffset) {
-			// Commit Detail View is opening below what is visible on screen
-			// control menu height [40px] + newElem y + commit details view height [250px] + desired gap from bottom [8px] - window height > pageYOffset
-			window.scrollTo(0, viewElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48);
+		elem.innerHTML = isDocked ? html : '<td></td><td colspan="4">' + html + '</td>';
+
+		if (isDocked) {
+			document.body.classList.add(CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN);
+			let elemTop = this.controlsElem.clientHeight + this.expandedCommit.srcElem.offsetTop;
+			if (elemTop - 8 < this.viewElem.scrollTop) {
+				// Commit is above what is visible on screen
+				this.viewElem.scroll(0, elemTop - 8);
+			} else if (elemTop - this.viewElem.clientHeight + 32 > this.viewElem.scrollTop) {
+				// Commit is below what is visible on screen
+				this.viewElem.scroll(0, elemTop - this.viewElem.clientHeight + 32);
+			}
+		} else {
+			let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
+			if (this.config.autoCenterCommitDetailsView) {
+				// Center Commit Detail View setting is enabled
+				// elemTop - commit height [24px] + (commit details view height + commit height [24px]) / 2 - (view height) / 2
+				this.viewElem.scroll(0, elemTop - 12 + (this.config.grid.expandY - this.viewElem.clientHeight) / 2);
+			} else if (elemTop - 32 < this.viewElem.scrollTop) {
+				// Commit Detail View is opening above what is visible on screen
+				// elemTop - commit height [24px] - desired gap from top [8px] < view scroll offset
+				this.viewElem.scroll(0, elemTop - 32);
+			} else if (elemTop + this.config.grid.expandY - this.viewElem.clientHeight + 8 > this.viewElem.scrollTop) {
+				// Commit Detail View is opening below what is visible on screen
+				// elemTop + commit details view height + desired gap from bottom [8px] - view height > view scroll offset
+				this.viewElem.scroll(0, elemTop + this.config.grid.expandY - this.viewElem.clientHeight + 8);
+			}
 		}
 
 		document.getElementById('commitDetailsClose')!.addEventListener('click', () => {
-			this.hideCommitDetails();
+			this.closeCommitDetails(true);
 		});
 		addListenerToClass('gitFolder', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target!).closest('.gitFolder');
@@ -876,12 +906,13 @@ class GitGraphView {
 	}
 }
 
-let graphFocus = true;
+let viewElem = document.getElementById('view')!, graphFocus = true;
 let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
 let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null;
 
-let gitGraph = new GitGraphView(viewState.repos, viewState.lastActiveRepo, {
+let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, {
 	autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
+	commitDetailsViewLocation: viewState.commitDetailsViewLocation,
 	fetchAvatars: viewState.fetchAvatars,
 	graphColours: viewState.graphColours,
 	graphStyle: viewState.graphStyle,
@@ -910,7 +941,7 @@ window.addEventListener('message', event => {
 			break;
 		case 'commitDetails':
 			if (msg.commitDetails === null) {
-				gitGraph.hideCommitDetails();
+				gitGraph.closeCommitDetails(true);
 				showErrorDialog('Unable to load commit details', null, null);
 			} else {
 				gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
@@ -918,7 +949,7 @@ window.addEventListener('message', event => {
 			break;
 		case 'compareCommits':
 			if (msg.fileChanges === null) {
-				gitGraph.hideCommitComparison(true);
+				gitGraph.closeCommitComparison(true);
 				showErrorDialog('Unable to compare commits', null, null);
 			} else {
 				gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges));
@@ -1092,11 +1123,11 @@ function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem:
 
 	hideContextMenuListener();
 	contextMenu.style.opacity = '0';
-	contextMenu.className = 'active';
+	contextMenu.className = CLASS_ACTIVE;
 	contextMenu.innerHTML = html;
 	let bounds = contextMenu.getBoundingClientRect();
-	contextMenu.style.left = ((event.pageX - window.pageXOffset) + bounds.width < window.innerWidth ? event.pageX - 2 : event.pageX - bounds.width + 2) + 'px';
-	contextMenu.style.top = ((event.pageY - window.pageYOffset) + bounds.height < window.innerHeight ? event.pageY - 2 : event.pageY - bounds.height + 2) + 'px';
+	contextMenu.style.left = (viewElem.scrollLeft + event.pageX + (event.pageX + bounds.width < viewElem.clientWidth ? -2 : 2 - bounds.width)) + 'px';
+	contextMenu.style.top = (viewElem.scrollTop + event.pageY + (event.pageY + bounds.height < viewElem.clientHeight ? -2 : 2 - bounds.height)) + 'px';
 	contextMenu.style.opacity = '1';
 
 	addListenerToClass('contextMenuItem', 'click', (e) => {
@@ -1106,7 +1137,7 @@ function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem:
 	});
 
 	contextMenuSource = sourceElem;
-	contextMenuSource.classList.add('contextMenuActive');
+	contextMenuSource.classList.add(CLASS_CONTEXT_MENU_ACTIVE);
 	graphFocus = false;
 }
 function hideContextMenu() {
@@ -1115,7 +1146,7 @@ function hideContextMenu() {
 	contextMenu.style.left = '0px';
 	contextMenu.style.top = '0px';
 	if (contextMenuSource !== null) {
-		contextMenuSource.classList.remove('contextMenuActive');
+		contextMenuSource.classList.remove(CLASS_CONTEXT_MENU_ACTIVE);
 		contextMenuSource = null;
 	}
 	graphFocus = true;
@@ -1172,7 +1203,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	html += '</table>';
 
 	showDialog(html, actionName, 'Cancel', () => {
-		if (dialog.className === 'active noInput' || dialog.className === 'active inputInvalid') return;
+		if (dialog.className === CLASS_ACTIVE + ' noInput' || dialog.className === CLASS_ACTIVE + ' inputInvalid') return;
 		let values = [];
 		for (let i = 0; i < inputs.length; i++) {
 			let input = inputs[i], elem = document.getElementById('dialogInput' + i);
@@ -1190,11 +1221,11 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 
 	if (textRefInput > -1) {
 		let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
-		if (dialogInput.value === '') dialog.className = 'active noInput';
+		if (dialogInput.value === '') dialog.className = CLASS_ACTIVE + ' noInput';
 		dialogInput.focus();
 		dialogInput.addEventListener('keyup', () => {
 			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(refInvalid) !== null;
-			let newClassName = 'active' + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
+			let newClassName = CLASS_ACTIVE + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
 			if (dialog.className !== newClassName) {
 				dialog.className = newClassName;
 				dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';
@@ -1209,8 +1240,8 @@ function showActionRunningDialog(command: string) {
 	showDialog('<span id="actionRunning">' + svgIcons.loading + command + ' ...</span>', null, 'Dismiss', null, null);
 }
 function showDialog(html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-	dialogBacking.className = 'active';
-	dialog.className = 'active';
+	dialogBacking.className = CLASS_ACTIVE;
+	dialog.className = CLASS_ACTIVE;
 	dialog.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
 	if (actionName !== null && actioned !== null) {
 		document.getElementById('dialogAction')!.addEventListener('click', actioned);
@@ -1219,7 +1250,7 @@ function showDialog(html: string, actionName: string | null, dismissName: string
 	document.getElementById('dialogDismiss')!.addEventListener('click', hideDialog);
 
 	dialogMenuSource = sourceElem;
-	if (dialogMenuSource !== null) dialogMenuSource.classList.add('dialogActive');
+	if (dialogMenuSource !== null) dialogMenuSource.classList.add(CLASS_DIALOG_ACTIVE);
 	graphFocus = false;
 }
 function hideDialog() {
@@ -1227,7 +1258,7 @@ function hideDialog() {
 	dialog.className = '';
 	dialog.innerHTML = '';
 	if (dialogMenuSource !== null) {
-		dialogMenuSource.classList.remove('dialogActive');
+		dialogMenuSource.classList.remove(CLASS_DIALOG_ACTIVE);
 		dialogMenuSource = null;
 	}
 	dialogAction = null;
@@ -1235,8 +1266,8 @@ function hideDialog() {
 }
 
 function hideDialogAndContextMenu() {
-	if (dialog.classList.contains('active')) hideDialog();
-	if (contextMenu.classList.contains('active')) hideContextMenu();
+	if (dialog.classList.contains(CLASS_ACTIVE)) hideDialog();
+	if (contextMenu.classList.contains(CLASS_ACTIVE)) hideContextMenu();
 }
 
 /* Global Listeners */
@@ -1244,5 +1275,5 @@ document.addEventListener('click', hideContextMenuListener);
 document.addEventListener('contextmenu', hideContextMenuListener);
 document.addEventListener('mouseleave', hideContextMenuListener);
 function hideContextMenuListener() {
-	if (contextMenu.classList.contains('active')) hideContextMenu();
+	if (contextMenu.classList.contains(CLASS_ACTIVE)) hideContextMenu();
 }

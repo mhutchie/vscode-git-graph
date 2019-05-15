@@ -11,6 +11,7 @@ declare global {
 
 	interface Config {
 		autoCenterCommitDetailsView: boolean;
+		commitDetailsViewLocation: GG.CommitDetailsViewLocation;
 		fetchAvatars: boolean;
 		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';

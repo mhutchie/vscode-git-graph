@@ -265,6 +265,7 @@ export class GitGraphView {
 		const config = getConfig(), nonce = getNonce();
 		const viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
+			commitDetailsViewLocation: config.commitDetailsViewLocation(),
 			dateFormat: config.dateFormat(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 			graphColours: config.graphColours(),
@@ -283,18 +284,21 @@ export class GitGraphView {
 		}
 		if (numRepos > 0) {
 			body = `<body style="${colorVars}">
-			<div id="controls">
-				<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
-				<span id="branchControl"><span class="unselectable">Branch: </span><div id="branchSelect" class="dropdown"></div></span>
-				<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
-				<div id="refreshBtn" class="roundedBtn">Refresh</div>
+			<div id="view">
+				<div id="controls">
+					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
+					<span id="branchControl"><span class="unselectable">Branch: </span><div id="branchSelect" class="dropdown"></div></span>
+					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
+					<div id="refreshBtn" class="roundedBtn">Refresh</div>
+				</div>
+				<div id="content">
+					<div id="commitGraph"></div>
+					<div id="commitTable"></div>
+				</div>
+				<div id="footer"></div>
+				<ul id="contextMenu"></ul>
 			</div>
-			<div id="content">
-				<div id="commitGraph"></div>
-				<div id="commitTable"></div>
-			</div>
-			<div id="footer"></div>
-			<ul id="contextMenu"></ul>
+			<div id="dockedCommitDetailsView"></div>
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
 			<div id="scrollShadow"></div>

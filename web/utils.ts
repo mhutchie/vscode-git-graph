@@ -20,8 +20,12 @@ const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$
 const ELLIPSIS = '&#8230;';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
+const CLASS_ACTIVE = 'active';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_COMPARE_COMMIT_OPEN = 'compareCommitOpen';
+const CLASS_CONTEXT_MENU_ACTIVE = 'contextMenuActive';
+const CLASS_DIALOG_ACTIVE = 'dialogActive';
+const CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN = 'dockedCommitDetailsViewOpen';
 
 
 /* General Helpers */

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DateFormat, DateType, GraphStyle, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, DateFormat, DateType, GraphStyle, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -10,6 +10,10 @@ class Config {
 
 	public autoCenterCommitDetailsView() {
 		return this.workspaceConfiguration.get('autoCenterCommitDetailsView', true);
+	}
+
+	public commitDetailsViewLocation(): CommitDetailsViewLocation {
+		return this.workspaceConfiguration.get('commitDetailsViewLocation', 'Inline');
 	}
 
 	public dateFormat(): DateFormat {
@@ -43,7 +47,7 @@ class Config {
 
 	public maxDepthOfRepoSearch() {
 		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
-	} 
+	}
 
 	public showCurrentBranchByDefault() {
 		return this.workspaceConfiguration.get('showCurrentBranchByDefault', false);

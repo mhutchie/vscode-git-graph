@@ -53,6 +53,7 @@ export interface GitUnsavedChanges {
 
 export interface GitGraphViewState {
 	autoCenterCommitDetailsView: boolean;
+	commitDetailsViewLocation: CommitDetailsViewLocation;
 	dateFormat: DateFormat;
 	fetchAvatars: boolean;
 	graphColours: string[];
@@ -79,6 +80,7 @@ export interface Avatar {
 }
 export type AvatarCache = { [email: string]: Avatar };
 
+export type CommitDetailsViewLocation = 'Inline' | 'Docked to Bottom';
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type DateType = 'Author Date' | 'Commit Date';
 export type GraphStyle = 'rounded' | 'angular';

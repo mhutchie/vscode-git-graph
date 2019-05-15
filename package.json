@@ -58,6 +58,19 @@
 					"default": true,
 					"description": "Automatically center the commit details view when it is opened."
 				},
+				"git-graph.commitDetailsViewLocation": {
+					"type": "string",
+					"enum": [
+						"Inline",
+						"Docked to Bottom"
+					],
+					"enumDescriptions": [
+						"Show the Commit Details View inline with the graph",
+						"Show the Commit Details View docked to the bottom of the Git Graph view"
+					],
+					"default": "Inline",
+					"description": "Specifies where the Commit Details View is rendered in the Git Graph view."
+				},
 				"git-graph.dateFormat": {
 					"type": "string",
 					"enum": [

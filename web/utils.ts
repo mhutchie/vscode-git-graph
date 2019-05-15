@@ -20,6 +20,9 @@ const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$
 const ELLIPSIS = '&#8230;';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
+const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
+const CLASS_COMPARE_COMMIT_OPEN = 'compareCommitOpen';
+
 
 /* General Helpers */
 function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) {

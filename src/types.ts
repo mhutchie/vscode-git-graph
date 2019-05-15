@@ -145,6 +145,21 @@ export interface ResponseCommitDetails {
 	commitDetails: GitCommitDetails | null;
 }
 
+export interface RequestCompareCommits {
+	command: 'compareCommits';
+	repo: string;
+	commitHash: string;
+	compareWithHash: string;
+	fromHash: string;
+	toHash: string;
+}
+export interface ResponseCompareCommits {
+	command: 'compareCommits';
+	commitHash: string;
+	compareWithHash: string;
+	fileChanges: GitFileChange[] | null;
+}
+
 export interface RequestCopyToClipboard {
 	command: 'copyToClipboard';
 	type: string;
@@ -331,7 +346,8 @@ export interface RequestSaveRepoState {
 export interface RequestViewDiff {
 	command: 'viewDiff';
 	repo: string;
-	commitHash: string;
+	fromHash: string;
+	toHash: string;
 	oldFilePath: string;
 	newFilePath: string;
 	type: GitFileChangeType;
@@ -347,6 +363,7 @@ export type RequestMessage =
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCommitDetails
+	| RequestCompareCommits
 	| RequestCopyToClipboard
 	| RequestCreateBranch
 	| RequestDeleteBranch
@@ -370,6 +387,7 @@ export type ResponseMessage =
 	| ResponseCheckoutBranch
 	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit
+	| ResponseCompareCommits
 	| ResponseCommitDetails
 	| ResponseCopyToClipboard
 	| ResponseCreateBranch

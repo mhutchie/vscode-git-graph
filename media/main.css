@@ -68,7 +68,7 @@ body.unableToLoad h2, body.unableToLoad p{
 	text-overflow:ellipsis;
 	overflow:hidden;
 }
-#commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td, #commitTable tr.commit.commitDetailsOpen td{
+#commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td{
 	background-color:rgba(128,128,128,0.15);
 }
 #commitTable tr.commit:hover td{
@@ -138,10 +138,10 @@ body.unableToLoad h2, body.unableToLoad p{
 	height:2px;
 	background-color:rgba(128,128,128,0.2);
 }
-#commitTable tr.commit.commitDetailsOpen td{
+#commitTable tr.commit.commitDetailsOpen td, #commitTable tr.commit.compareCommitOpen td{
 	background-color:rgba(128,128,128,0.25);
 }
-#commitTable tr.commit.commitDetailsOpen:hover td{
+#commitTable tr.commit.commitDetailsOpen:hover td, #commitTable tr.commit.compareCommitOpen:hover td{
 	background-color:rgba(128,128,128,0.35);
 }
 #commitDetailsSummary{

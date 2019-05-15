@@ -152,10 +152,16 @@ class GitGraphView {
 		this.commitLookup = {};
 		this.saveState();
 
-		let i: number, expandedCommitVisible = false, avatarsNeeded: { [email: string]: string[] } = {};
+		let i: number, expandedCommitVisible = false, expandedCompareWithCommitVisible = false, avatarsNeeded: { [email: string]: string[] } = {};
 		for (i = 0; i < this.commits.length; i++) {
 			this.commitLookup[this.commits[i].hash] = i;
-			if (this.expandedCommit !== null && this.expandedCommit.hash === this.commits[i].hash) expandedCommitVisible = true;
+			if (this.expandedCommit !== null) {
+				if (this.expandedCommit.hash === this.commits[i].hash) {
+					expandedCommitVisible = true;
+				} else if (this.expandedCommit.compareWithHash === this.commits[i].hash) {
+					expandedCompareWithCommitVisible = true;
+				}
+			}
 			if (this.config.fetchAvatars && typeof this.avatars[this.commits[i].email] !== 'string' && this.commits[i].email !== '') {
 				if (typeof avatarsNeeded[this.commits[i].email] === 'undefined') {
 					avatarsNeeded[this.commits[i].email] = [this.commits[i].hash];
@@ -167,7 +173,7 @@ class GitGraphView {
 
 		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
 
-		if (this.expandedCommit !== null && !expandedCommitVisible) {
+		if (this.expandedCommit !== null && (!expandedCommitVisible || (this.expandedCommit.compareWithHash !== null && !expandedCompareWithCommitVisible))) {
 			this.expandedCommit = null;
 			this.saveState();
 		}
@@ -303,25 +309,39 @@ class GitGraphView {
 		}
 
 		if (this.expandedCommit !== null) {
-			let elem = null, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+			let elem = null, compareWithElem = null, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
 			for (i = 0; i < elems.length; i++) {
-				if (this.expandedCommit.hash === elems[i].dataset.hash) {
-					elem = elems[i];
-					break;
+				if (this.expandedCommit.hash === elems[i].dataset.hash || this.expandedCommit.compareWithHash === elems[i].dataset.hash) {
+					if (this.expandedCommit.hash === elems[i].dataset.hash) {
+						elem = elems[i];
+					} else {
+						compareWithElem = elems[i];
+					}
+					if (elem !== null && (this.expandedCommit.compareWithHash === null || compareWithElem !== null)) break;
 				}
 			}
-			if (elem === null) {
+			if (elem === null || (this.expandedCommit.compareWithHash !== null && compareWithElem === null)) {
 				this.expandedCommit = null;
 				this.saveState();
 			} else {
 				this.expandedCommit.id = parseInt(elem.dataset.id!);
 				this.expandedCommit.srcElem = elem;
+				this.expandedCommit.compareWithSrcElem = compareWithElem;
 				this.saveState();
-				if (this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
-					this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree);
+				if (this.expandedCommit.compareWithHash === null) {
+					if (this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
+						this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree);
+					} else {
+						this.loadCommitDetails(elem);
+					}
 				} else {
-					this.loadCommitDetails(elem);
+					if (this.expandedCommit.fileChanges !== null && this.expandedCommit.fileTree !== null) {
+						this.showCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, this.expandedCommit.fileChanges, this.expandedCommit.fileTree);
+					} else {
+						this.loadCommitComparison(compareWithElem!);
+					}
 				}
+
 			}
 		}
 
@@ -431,8 +451,18 @@ class GitGraphView {
 		});
 		addListenerToClass('commit', 'click', (e: Event) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
-			if (this.expandedCommit !== null && this.expandedCommit.hash === sourceElem.dataset.hash!) {
-				this.hideCommitDetails();
+			if (this.expandedCommit !== null) {
+				if (this.expandedCommit.hash === sourceElem.dataset.hash!) {
+					this.hideCommitDetails();
+				} else if ((<MouseEvent>e).ctrlKey || (<MouseEvent>e).metaKey) {
+					if (this.expandedCommit.compareWithHash === sourceElem.dataset.hash!) {
+						this.hideCommitComparison(true);
+					} else {
+						this.loadCommitComparison(sourceElem);
+					}
+				} else {
+					this.loadCommitDetails(sourceElem);
+				}
 			} else {
 				this.loadCommitDetails(sourceElem);
 			}
@@ -704,7 +734,7 @@ class GitGraphView {
 	/* Commit Details */
 	private loadCommitDetails(sourceElem: HTMLElement) {
 		this.hideCommitDetails();
-		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileTree: null };
+		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileChanges: null, fileTree: null, compareWithHash: null, compareWithSrcElem: null };
 		this.saveState();
 		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
 	}
@@ -712,7 +742,8 @@ class GitGraphView {
 		if (this.expandedCommit !== null) {
 			let elem = document.getElementById('commitDetails');
 			if (typeof elem === 'object' && elem !== null) elem.remove();
-			if (typeof this.expandedCommit.srcElem === 'object' && this.expandedCommit.srcElem !== null) this.expandedCommit.srcElem.classList.remove('commitDetailsOpen');
+			if (typeof this.expandedCommit.srcElem === 'object' && this.expandedCommit.srcElem !== null) this.expandedCommit.srcElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
+			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
 			this.expandedCommit = null;
 			this.saveState();
 			this.renderGraph();
@@ -724,42 +755,95 @@ class GitGraphView {
 		if (typeof elem === 'object' && elem !== null) elem.remove();
 
 		this.expandedCommit.commitDetails = commitDetails;
+		this.expandedCommit.fileChanges = commitDetails.fileChanges;
 		this.expandedCommit.fileTree = fileTree;
-		this.expandedCommit.srcElem.classList.add('commitDetailsOpen');
+		this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 		this.saveState();
 
-		let newElem = document.createElement('tr'), html = '<td></td><td colspan="4"><div id="commitDetailsSummary">';
-		html += '<span class="commitDetailsSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="commitDetailsSummaryTopRow"><span class="commitDetailsSummaryKeyValues">';
-		html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
-		html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
-		html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
-		html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
-		html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
-		if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="commitDetailsSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
-		html += '</span></span><br><br>';
-		html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>') + '</div>';
-		html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(fileTree, commitDetails.fileChanges) + '</table></div>';
-		html += '<div id="commitDetailsClose">' + svgIcons.close + '</div>';
-		html += '</td>';
+		this.renderCommitDetailsView();
+	}
 
-		newElem.id = 'commitDetails';
-		newElem.innerHTML = html;
-		insertAfter(newElem, this.expandedCommit.srcElem);
+	private loadCommitComparison(compareWithSrcElem: HTMLElement) {
+		if (this.expandedCommit !== null) {
+			this.hideCommitComparison(false);
+			this.expandedCommit.compareWithHash = compareWithSrcElem.dataset.hash!;
+			this.expandedCommit.compareWithSrcElem = compareWithSrcElem;
+			this.saveState();
+			let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+			sendMessage({
+				command: 'compareCommits',
+				repo: this.currentRepo,
+				commitHash: this.expandedCommit.hash, compareWithHash: this.expandedCommit.compareWithHash,
+				fromHash: commitOrder.from, toHash: commitOrder.to
+			});
+		}
+	}
+	public hideCommitComparison(fallbackToDetails: boolean) {
+		if (this.expandedCommit !== null && this.expandedCommit.compareWithHash) {
+			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
+			this.expandedCommit.compareWithHash = null;
+			this.expandedCommit.compareWithSrcElem = null;
+			this.expandedCommit.fileChanges = null;
+			this.expandedCommit.fileTree = null;
+			this.saveState();
+			if (fallbackToDetails) sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
+		}
+	}
+	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder) {
+		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.compareWithSrcElem === null || this.expandedCommit.hash !== commitHash || this.expandedCommit.compareWithHash !== compareWithHash) return;
+		this.expandedCommit.commitDetails = null;
+		this.expandedCommit.fileChanges = fileChanges;
+		this.expandedCommit.fileTree = fileTree;
+		this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
+		this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMPARE_COMMIT_OPEN);
+		this.saveState();
 
-		this.renderGraph();
+		this.renderCommitDetailsView();
+	}
+
+	private renderCommitDetailsView() {
+		if (this.expandedCommit === null || this.expandedCommit.srcElem === null) return;
+		let viewElem = document.getElementById('commitDetails'), html = '';
+		if (viewElem === null) {
+			viewElem = document.createElement('tr');
+			viewElem.id = 'commitDetails';
+			insertAfter(viewElem, this.expandedCommit.srcElem);
+		}
+		if (this.expandedCommit.compareWithHash === null) {
+			// Commit details should be shown
+			let commitDetails = this.expandedCommit.commitDetails!;
+			html += '<span class="commitDetailsSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="commitDetailsSummaryTopRow"><span class="commitDetailsSummaryKeyValues">';
+			html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
+			html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
+			html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
+			html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
+			html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
+			if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="commitDetailsSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
+			html += '</span></span><br><br>';
+			html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>') + '</div>';
+			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
+
+			this.renderGraph();
+		} else {
+			// Commit comparision should be shown
+			let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+			html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + commitOrder.to + '</b></div>';
+			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
+		}
+		viewElem.innerHTML = '<td></td><td colspan="4"><div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose">' + svgIcons.close + '</div></td>';
 
 		if (this.config.autoCenterCommitDetailsView) {
 			// Center Commit Detail View setting is enabled
 			// control menu height [40px] + newElem.y + (commit details view height [250px] + commit height [24px]) / 2 - (window height) / 2
-			window.scrollTo(0, newElem.offsetTop + 177 - window.innerHeight / 2);
-		} else if (newElem.offsetTop + 8 < window.pageYOffset) {
+			window.scrollTo(0, viewElem.offsetTop + 177 - window.innerHeight / 2);
+		} else if (viewElem.offsetTop + 8 < window.pageYOffset) {
 			// Commit Detail View is opening above what is visible on screen
 			// control menu height [40px] + newElem y - commit height [24px] - desired gap from top [8px] < pageYOffset
-			window.scrollTo(0, newElem.offsetTop + 8);
-		} else if (newElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48 > window.pageYOffset) {
+			window.scrollTo(0, viewElem.offsetTop + 8);
+		} else if (viewElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48 > window.pageYOffset) {
 			// Commit Detail View is opening below what is visible on screen
 			// control menu height [40px] + newElem y + commit details view height [250px] + desired gap from bottom [8px] - window height > pageYOffset
-			window.scrollTo(0, newElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48);
+			window.scrollTo(0, viewElem.offsetTop + this.config.grid.expandY - window.innerHeight + 48);
 		}
 
 		document.getElementById('commitDetailsClose')!.addEventListener('click', () => {
@@ -778,8 +862,17 @@ class GitGraphView {
 		addListenerToClass('gitFile', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitFile')!;
 			if (this.expandedCommit === null || !sourceElem.classList.contains('gitDiffPossible')) return;
-			sendMessage({ command: 'viewDiff', repo: this.currentRepo, commitHash: this.expandedCommit.hash, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
+			let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash === null ? this.expandedCommit.hash : this.expandedCommit.compareWithHash);
+			sendMessage({ command: 'viewDiff', repo: this.currentRepo, fromHash: commitOrder.from, toHash: commitOrder.to, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 		});
+	}
+
+	private getCommitOrder(hash1: string, hash2: string) {
+		if (this.commitLookup[hash1] > this.commitLookup[hash2]) {
+			return { from: hash1, to: hash2 };
+		} else {
+			return { from: hash2, to: hash1 };
+		}
 	}
 }
 
@@ -821,6 +914,14 @@ window.addEventListener('message', event => {
 				showErrorDialog('Unable to load commit details', null, null);
 			} else {
 				gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
+			}
+			break;
+		case 'compareCommits':
+			if (msg.fileChanges === null) {
+				gitGraph.hideCommitComparison(true);
+				showErrorDialog('Unable to compare commits', null, null);
+			} else {
+				gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges));
 			}
 			break;
 		case 'copyToClipboard':

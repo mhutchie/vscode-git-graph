@@ -57,7 +57,10 @@ declare global {
 		hash: string;
 		srcElem: HTMLElement | null;
 		commitDetails: GG.GitCommitDetails | null;
+		fileChanges: GG.GitFileChange[] | null;
 		fileTree: GitFolder | null;
+		compareWithHash: string | null;
+		compareWithSrcElem: HTMLElement | null;
 	}
 
 	interface GitFile {

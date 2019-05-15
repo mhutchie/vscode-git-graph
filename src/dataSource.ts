@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
 import { getPathFromStr } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
@@ -122,34 +122,21 @@ export class DataSource {
 						});
 					}
 				})),
-				new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
-					if (err) reject(); else resolve(stdout.split(eolRegex));
-				})),
-				new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + commitHash, repo, (err, stdout) => {
-					if (err) reject(); else resolve(stdout.split(eolRegex));
-				}))
+				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
+				this.getDiffTreeNumStat(repo, commitHash, commitHash)
 			]).then(results => {
-				let details = results[0], fileLookup: { [file: string]: number } = {};
-
-				for (let i = 1; i < results[1].length - 1; i++) {
-					let line = results[1][i].split('\t');
-					if (line.length < 2) break;
-					let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
-					fileLookup[newFilePath] = details.fileChanges.length;
-					details.fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
-				}
-
-				for (let i = 1; i < results[2].length - 1; i++) {
-					let line = results[2][i].split('\t');
-					if (line.length !== 3) break;
-					let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
-					if (typeof fileLookup[fileName] === 'number') {
-						details.fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
-						details.fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
-					}
-				}
-				resolve(details);
+				results[0].fileChanges = generateFileChanges(results[1], results[2], 1);
+				resolve(results[0]);
 			}).catch(() => resolve(null));
+		});
+	}
+
+	public compareCommits(repo: string, fromHash: string, toHash: string) {
+		return new Promise<GitFileChange[] | null>(resolve => {
+			Promise.all([
+				this.getDiffTreeNameStatus(repo, fromHash, toHash),
+				this.getDiffTreeNumStat(repo, fromHash, toHash)
+			]).then(results => resolve(generateFileChanges(results[0], results[1], 0))).catch(() => resolve(null));
 		});
 	}
 
@@ -311,6 +298,18 @@ export class DataSource {
 		});
 	}
 
+	private getDiffTreeNameStatus(repo: string, fromHash: string, toHash: string) {
+		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (fromHash !== toHash ? ' ' + toHash : ''), repo, (err, stdout) => {
+			if (err) reject(); else resolve(stdout.split(eolRegex));
+		}));
+	}
+
+	private getDiffTreeNumStat(repo: string, fromHash: string, toHash: string) {
+		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (fromHash !== toHash ? ' ' + toHash : ''), repo, (err, stdout) => {
+			if (err) reject(); else resolve(stdout.split(eolRegex));
+		}));
+	}
+
 	private areStagedChanges(repo: string) {
 		return new Promise<boolean>(resolve => {
 			this.execGit('diff-index HEAD', repo, (err, stdout) => resolve(!err && stdout !== ''));
@@ -381,4 +380,29 @@ export class DataSource {
 
 function escapeRefName(str: string) {
 	return str.replace(/'/g, '\'');
+}
+
+// Generates a list of file changes from each diff-tree output
+function generateFileChanges(nameStatusResults: string[], numStatResults: string[], startAt: number) {
+	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {};
+
+	for (let i = startAt; i < nameStatusResults.length - 1; i++) {
+		let line = nameStatusResults[i].split('\t');
+		if (line.length < 2) break;
+		let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
+		fileLookup[newFilePath] = fileChanges.length;
+		fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
+	}
+
+	for (let i = startAt; i < numStatResults.length - 1; i++) {
+		let line = numStatResults[i].split('\t');
+		if (line.length !== 3) break;
+		let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
+		if (typeof fileLookup[fileName] === 'number') {
+			fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
+			fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
+		}
+	}
+
+	return fileChanges;
 }

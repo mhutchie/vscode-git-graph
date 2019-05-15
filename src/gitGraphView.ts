@@ -121,6 +121,13 @@ export class GitGraphView {
 						commitDetails: await this.dataSource.commitDetails(msg.repo, msg.commitHash)
 					});
 					break;
+				case 'compareCommits':
+					this.sendMessage({
+						command: 'compareCommits',
+						commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
+						fileChanges: await this.dataSource.compareCommits(msg.repo, msg.fromHash, msg.toHash)
+					});
+					break;
 				case 'copyToClipboard':
 					this.sendMessage({
 						command: 'copyToClipboard',
@@ -226,7 +233,7 @@ export class GitGraphView {
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
-						success: await this.viewDiff(msg.repo, msg.commitHash, msg.oldFilePath, msg.newFilePath, msg.type)
+						success: await this.viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
 					});
 					break;
 			}
@@ -334,12 +341,14 @@ export class GitGraphView {
 		});
 	}
 
-	private viewDiff(repo: string, commitHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
-		let abbrevHash = abbrevCommit(commitHash);
-		let pathComponents = newFilePath.split('/');
-		let title = pathComponents[pathComponents.length - 1] + ' (' + (type === 'A' ? 'Added in ' + abbrevHash : type === 'D' ? 'Deleted in ' + abbrevHash : abbrevCommit(commitHash) + '^ ↔ ' + abbrevCommit(commitHash)) + ')';
+	private viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
+		let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = abbrevCommit(toHash), pathComponents = newFilePath.split('/');
+		let desc = fromHash === toHash
+			? (type === 'A' ? 'Added in ' + abbrevToHash : type === 'D' ? 'Deleted in ' + abbrevToHash : abbrevFromHash + '^ ↔ ' + abbrevToHash)
+			: (type === 'A' ? 'Added between ' + abbrevFromHash + ' & ' + abbrevToHash : type === 'D' ? 'Deleted between ' + abbrevFromHash + ' & ' + abbrevToHash : abbrevFromHash + ' ↔ ' + abbrevToHash);
+		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 		return new Promise<boolean>((resolve) => {
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, commitHash + '^'), encodeDiffDocUri(repo, newFilePath, commitHash), title, { preview: true })
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash), encodeDiffDocUri(repo, newFilePath, toHash), title, { preview: true })
 				.then(() => resolve(true))
 				.then(() => resolve(false));
 		});

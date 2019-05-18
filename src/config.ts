@@ -49,6 +49,10 @@ class Config {
 		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
 	}
 
+	public maxStdoutBufferSize() {
+		return this.workspaceConfiguration.get('maxStdoutBufferSize', 200 * 1024);
+	}
+
 	public showCurrentBranchByDefault() {
 		return this.workspaceConfiguration.get('showCurrentBranchByDefault', false);
 	}

@@ -155,6 +155,11 @@
 					"default": 0,
 					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
 				},
+				"git-graph.maxStdoutBufferSize": {
+					"type": "number",
+					"default": 204800,
+					"description": "Specifies the maximum stdout buffer size (in bytes)."
+				},
 				"git-graph.showCurrentBranchByDefault": {
 					"type": "boolean",
 					"default": false,

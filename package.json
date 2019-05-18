@@ -182,6 +182,11 @@
 					],
 					"default": "colour",
 					"description": "Specifies the colour theme of the icon displayed on the Git Graph tab."
+				},
+				"git-graph.retainContextWhenHidden": {
+					"type": "boolean",
+					"default": false,
+					"description": "Controls if the Git Graph View is kept around even when the panel is no longer visible (e.g. moved to background tab)."
 				}
 			}
 		}

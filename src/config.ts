@@ -65,6 +65,10 @@ class Config {
 		return this.workspaceConfiguration.get('tabIconColourTheme', 'colour');
 	}
 
+	public retainContextWhenHidden(): boolean {
+		return this.workspaceConfiguration.get('retainContextWhenHidden', false);
+	}
+
 	public gitPath(): string {
 		let path = vscode.workspace.getConfiguration('git').get('path', null);
 		return path !== null ? path : 'git';

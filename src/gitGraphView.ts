@@ -37,7 +37,8 @@ export class GitGraphView {
 			enableScripts: true,
 			localResourceRoots: [
 				vscode.Uri.file(path.join(extensionPath, 'media'))
-			]
+			],
+			retainContextWhenHidden: getConfig().retainContextWhenHidden()
 		});
 
 		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState, avatarManager, repoManager);

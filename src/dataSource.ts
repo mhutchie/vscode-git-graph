@@ -236,34 +236,34 @@ export class DataSource {
 	}
 
 	private getRefs(repo: string, showRemoteBranches: boolean) {
-		return new Promise<GitRefData>((resolve) => {
-			this.execGit('show-ref ' + (showRemoteBranches ? '' : '--heads --tags') + ' -d --head', repo, (err, stdout) => {
-				let refData: GitRefData = { head: null, refs: [] };
-				if (!err) {
-					let lines = stdout.split(eolRegex);
-					for (let i = 0; i < lines.length - 1; i++) {
-						let line = lines[i].split(' ');
-						if (line.length < 2) continue;
-
-						let hash = line.shift()!;
-						let ref = line.join(' ');
-
-						if (ref.startsWith('refs/heads/')) {
-							refData.refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
-						} else if (ref.startsWith('refs/tags/')) {
-							refData.refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
-						} else if (ref.startsWith('refs/remotes/')) {
-							refData.refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
-						} else if (ref === 'HEAD') {
-							refData.head = hash;
-						}
-					}
+		let args = ['show-ref'];
+		if (!showRemoteBranches) args.push('--heads', '--tags');
+		args.push('-d', '--head');
+	
+		return this.spawnGit<GitRefData>(args, repo, stdout => {
+			let refData: GitRefData = { head: null, refs: [] };
+			let lines = stdout.split(eolRegex);
+			for (let i = 0; i < lines.length - 1; i++) {
+				let line = lines[i].split(' ');
+				if (line.length < 2) continue;
+	
+				let hash = line.shift()!;
+				let ref = line.join(' ');
+	
+				if (ref.startsWith('refs/heads/')) {
+					refData.refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
+				} else if (ref.startsWith('refs/tags/')) {
+					refData.refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
+				} else if (ref.startsWith('refs/remotes/')) {
+					refData.refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
+				} else if (ref === 'HEAD') {
+					refData.head = hash;
 				}
-				resolve(refData);
-			});
-		});
+			}
+			return refData;
+		}, { head: null, refs: [] });
 	}
-
+	
 	private getGitLog(repo: string, branch: string, num: number, showRemoteBranches: boolean) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--date-order'];
 		if (branch !== '') {

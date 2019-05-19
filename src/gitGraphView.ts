@@ -24,36 +24,45 @@ export class GitGraphView {
 	private isGraphViewLoaded: boolean = false;
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
+	private loadRepo: string | null = null;
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, loadRepo: string | null) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
+			// If Git Graph panel already exists
+			if (GitGraphView.currentPanel.isPanelVisible) {
+				// If the Git Graph panel is visible
+				if (loadRepo !== null && loadRepo !== GitGraphView.currentPanel.currentRepo) {
+					GitGraphView.currentPanel.loadRepo = loadRepo;
+					GitGraphView.currentPanel.respondLoadRepos(repoManager.getRepos(), loadRepo);
+				}
+			} else {
+				// If the Git Graph panel is not visible 
+				GitGraphView.currentPanel.loadRepo = loadRepo;
+			}
 			GitGraphView.currentPanel.panel.reveal(column);
-			return;
+		} else {
+			// If Git Graph panel doesn't already exist
+			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo, column);
 		}
-
-		const panel = vscode.window.createWebviewPanel('git-graph', 'Git Graph', column || vscode.ViewColumn.One, {
-			enableScripts: true,
-			localResourceRoots: [
-				vscode.Uri.file(path.join(extensionPath, 'media'))
-			],
-			retainContextWhenHidden: getConfig().retainContextWhenHidden()
-		});
-
-		GitGraphView.currentPanel = new GitGraphView(panel, extensionPath, dataSource, extensionState, avatarManager, repoManager);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager) {
-		this.panel = panel;
+	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, loadRepo: string | null, column: vscode.ViewColumn | undefined) {
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.repoManager = repoManager;
+		this.loadRepo = loadRepo;
 		this.avatarManager.registerView(this);
 
-		panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
+		this.panel = vscode.window.createWebviewPanel('git-graph', 'Git Graph', column || vscode.ViewColumn.One, {
+			enableScripts: true,
+			localResourceRoots: [vscode.Uri.file(path.join(extensionPath, 'media'))],
+			retainContextWhenHidden: getConfig().retainContextWhenHidden()
+		});
+		this.panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
 			? this.getUri('resources', 'webview-icon.svg')
 			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
 
@@ -81,7 +90,7 @@ export class GitGraphView {
 			if ((numRepos === 0 && this.isGraphViewLoaded) || (numRepos > 0 && !this.isGraphViewLoaded)) {
 				this.update();
 			} else {
-				this.respondLoadRepos(repos);
+				this.respondLoadRepos(repos, null);
 			}
 		});
 
@@ -189,7 +198,7 @@ export class GitGraphView {
 				case 'loadRepos':
 					if (!msg.check || !await this.repoManager.checkReposExist()) {
 						// If not required to check repos, or no changes were found when checking, respond with repos
-						this.respondLoadRepos(this.repoManager.getRepos());
+						this.respondLoadRepos(this.repoManager.getRepos(), null);
 					}
 					break;
 				case 'mergeBranch':
@@ -274,6 +283,7 @@ export class GitGraphView {
 			initialLoadCommits: config.initialLoadCommits(),
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadMoreCommits: config.loadMoreCommits(),
+			loadRepo: this.loadRepo,
 			repos: this.repoManager.getRepos(),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
@@ -314,6 +324,7 @@ export class GitGraphView {
 			</body>`;
 		}
 		this.isGraphViewLoaded = numRepos > 0;
+		this.loadRepo = null;
 
 		return `<!DOCTYPE html>
 		<html lang="en">
@@ -338,11 +349,12 @@ export class GitGraphView {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
-	private respondLoadRepos(repos: GitRepoSet) {
+	private respondLoadRepos(repos: GitRepoSet, loadRepo: string | null) {
 		this.sendMessage({
 			command: 'loadRepos',
 			repos: repos,
-			lastActiveRepo: this.extensionState.getLastActiveRepo()
+			lastActiveRepo: this.extensionState.getLastActiveRepo(),
+			loadRepo: loadRepo
 		});
 	}
 

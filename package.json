@@ -41,7 +41,11 @@
 			{
 				"category": "Git Graph",
 				"command": "git-graph.view",
-				"title": "View Git Graph (git log)"
+				"title": "View Git Graph (git log)",
+				"icon": {
+					"light": "resources/cmd-icon-light.svg",
+					"dark": "resources/cmd-icon-dark.svg"
+				}
 			},
 			{
 				"category": "Git Graph",
@@ -175,6 +179,19 @@
 					"default": true,
 					"description": "Show uncommitted changes (set to false to decrease load time on large repositories)."
 				},
+				"git-graph.sourceCodeProviderIntegrationLocation": {
+					"type": "string",
+					"enum": [
+						"inline",
+						"more-actions"
+					],
+					"enumDescriptions": [
+						"Show the 'View Git Graph' action on the title of SCM Providers",
+						"Show the 'View Git Graph' action in the 'More actions...' menu on the title of SCM Providers"
+					],
+					"default": "inline",
+					"description": "Specifies where the 'View Git Graph' action appears on the title of SCM Providers."
+				},
 				"git-graph.tabIconColourTheme": {
 					"type": "string",
 					"enum": [
@@ -189,6 +206,20 @@
 					"description": "Specifies the colour theme of the icon displayed on the Git Graph tab."
 				}
 			}
+		},
+		"menus": {
+			"scm/title": [
+				{
+					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'inline'",
+					"command": "git-graph.view",
+					"group": "navigation"
+				},
+				{
+					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'more-actions'",
+					"command": "git-graph.view",
+					"group": "inline"
+				}
+			]
 		}
 	},
 	"scripts": {

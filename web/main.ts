@@ -29,7 +29,7 @@ class GitGraphView {
 	private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-	constructor(viewElem: HTMLElement, repos: GG.GitRepoSet, lastActiveRepo: string | null, config: Config, prevState: WebViewState | null) {
+	constructor(viewElem: HTMLElement, repos: GG.GitRepoSet, lastActiveRepo: string | null, loadRepo: string | null, config: Config, prevState: WebViewState | null) {
 		this.gitRepos = repos;
 		this.config = config;
 		this.maxCommits = config.initialLoadCommits;
@@ -84,17 +84,21 @@ class GitGraphView {
 				this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
 			}
 		}
-		this.loadRepos(this.gitRepos, lastActiveRepo);
+		this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo);
 		this.requestLoadBranchesAndCommits(false);
 	}
 
 	/* Loading Data */
-	public loadRepos(repos: GG.GitRepoSet, lastActiveRepo: string | null) {
+	public loadRepos(repos: GG.GitRepoSet, lastActiveRepo: string | null, loadRepo: string | null) {
 		this.gitRepos = repos;
 		this.saveState();
 
 		let repoPaths = Object.keys(repos), changedRepo = false;
-		if (typeof repos[this.currentRepo] === 'undefined') {
+		if (loadRepo !== null && this.currentRepo !== loadRepo && typeof repos[loadRepo] !== 'undefined') {
+			this.currentRepo = loadRepo;
+			this.saveState();
+			changedRepo = true;
+		} else if (typeof repos[this.currentRepo] === 'undefined') {
 			this.currentRepo = lastActiveRepo !== null && typeof repos[lastActiveRepo] !== 'undefined' ? lastActiveRepo : repoPaths[0];
 			this.saveState();
 			changedRepo = true;
@@ -910,7 +914,7 @@ let viewElem = document.getElementById('view')!, graphFocus = true;
 let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
 let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null;
 
-let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, {
+let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
 	autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
 	commitDetailsViewLocation: viewState.commitDetailsViewLocation,
 	fetchAvatars: viewState.fetchAvatars,
@@ -980,7 +984,7 @@ window.addEventListener('message', event => {
 			gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
 			break;
 		case 'loadRepos':
-			gitGraph.loadRepos(msg.repos, msg.lastActiveRepo);
+			gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
 			break;
 		case 'mergeBranch':
 			refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');

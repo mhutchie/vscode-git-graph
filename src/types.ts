@@ -61,6 +61,7 @@ export interface GitGraphViewState {
 	initialLoadCommits: number;
 	lastActiveRepo: string | null;
 	loadMoreCommits: number;
+	loadRepo: string | null;
 	repos: GitRepoSet;
 	showCurrentBranchByDefault: boolean;
 }
@@ -266,6 +267,7 @@ export interface ResponseLoadRepos {
 	command: 'loadRepos';
 	repos: GitRepoSet;
 	lastActiveRepo: string | null;
+	loadRepo: string | null;
 }
 
 export interface RequestMergeBranch {

@@ -102,6 +102,18 @@ export class RepoManager {
 		}
 	}
 
+	public async registerRepo(path: string) {
+		return new Promise<boolean>(async resolve => {
+			if (await this.dataSource.isGitRepository(path)) {
+				this.removeReposWithinFolder(path);
+				this.addRepo(path);
+				resolve(true);
+			} else {
+				resolve(false);
+			}
+		});
+	}
+
 	/* Repo Management */
 	public getRepos() {
 		let repoPaths = Object.keys(this.repos).sort(), repos: GitRepoSet = {};
@@ -109,6 +121,9 @@ export class RepoManager {
 			repos[repoPaths[i]] = this.repos[repoPaths[i]];
 		}
 		return repos;
+	}
+	public isKnownRepo(repo: string) {
+		return typeof this.repos[repo] !== 'undefined';
 	}
 	private addRepo(repo: string) {
 		this.repos[repo] = { columnWidths: null };

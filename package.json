@@ -155,6 +155,11 @@
 					"default": 0,
 					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
 				},
+				"git-graph.retainContextWhenHidden": {
+					"type": "boolean",
+					"default": false,
+					"description": "Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead."
+				},
 				"git-graph.showCurrentBranchByDefault": {
 					"type": "boolean",
 					"default": false,
@@ -182,11 +187,6 @@
 					],
 					"default": "colour",
 					"description": "Specifies the colour theme of the icon displayed on the Git Graph tab."
-				},
-				"git-graph.retainContextWhenHidden": {
-					"type": "boolean",
-					"default": false,
-					"description": "Controls if the Git Graph View is kept around even when the panel is no longer visible (e.g. moved to background tab)."
 				}
 			}
 		}

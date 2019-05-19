@@ -49,6 +49,10 @@ class Config {
 		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
 	}
 
+	public retainContextWhenHidden(): boolean {
+		return this.workspaceConfiguration.get('retainContextWhenHidden', false);
+	}
+
 	public showCurrentBranchByDefault() {
 		return this.workspaceConfiguration.get('showCurrentBranchByDefault', false);
 	}
@@ -63,10 +67,6 @@ class Config {
 
 	public tabIconColourTheme(): TabIconColourTheme {
 		return this.workspaceConfiguration.get('tabIconColourTheme', 'colour');
-	}
-
-	public retainContextWhenHidden(): boolean {
-		return this.workspaceConfiguration.get('retainContextWhenHidden', false);
 	}
 
 	public gitPath(): string {

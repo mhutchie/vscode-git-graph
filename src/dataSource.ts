@@ -358,7 +358,7 @@ export class DataSource {
 	}
 
 	private execGit(command: string, repo: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
-		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo, maxBuffer: getConfig().maxStdoutBufferSize() }, callback);
+		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo }, callback);
 	}
 
 	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }, errorValue: T) {

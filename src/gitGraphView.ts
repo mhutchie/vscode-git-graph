@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {readFileSync} from 'fs';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
@@ -316,7 +317,7 @@ export class GitGraphView {
 			<div id="dialog"></div>
 			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
-			<script src="${this.getMediaUri('out.min.js')}"></script>
+			<script nonce="${nonce}">${this.getFsContent('out.min.js')}</script>
 			</body>`;
 		} else {
 			body = `<body class="unableToLoad" style="${colorVars}">
@@ -334,18 +335,22 @@ export class GitGraphView {
 				<meta charset="UTF-8">
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}'; img-src data:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
-				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
+				<style>${this.getFsContent('main.css')}</style>
+				<style>${this.getFsContent('dropdown.css')}</style>
 				<title>Git Graph</title>
-				<style>${colorParams}"</style>
+				<style>${colorParams}</style>
 			</head>
 			${body}
 		</html>`;
 	}
 
-	private getMediaUri(file: string) {
-		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
+	private getFsContent(file: string) {
+		return readFileSync(this.getUri('media', file).fsPath);
 	}
+
+	// private getMediaUri(file: string) {
+	// 	return this.getUri('media', file).with({ scheme: 'vscode-resource' });
+	// }
 
 	private getUri(...pathComps: string[]) {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));

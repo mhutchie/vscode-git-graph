@@ -275,6 +275,7 @@ export class GitGraphView {
 		const config = getConfig(), nonce = getNonce();
 		const viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
+			combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
 			commitDetailsViewLocation: config.commitDetailsViewLocation(),
 			dateFormat: config.dateFormat(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),

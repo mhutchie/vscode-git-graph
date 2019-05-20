@@ -7,7 +7,9 @@ export interface GitCommitNode {
 	email: string;
 	date: number;
 	message: string;
-	refs: GitRef[];
+	heads: string[];
+	tags: string[];
+	remotes: string[];
 }
 
 export interface GitCommit {
@@ -33,12 +35,13 @@ export interface GitCommitDetails {
 export interface GitRef {
 	hash: string;
 	name: string;
-	type: 'head' | 'tag' | 'remote';
 }
 
 export interface GitRefData {
 	head: string | null;
-	refs: GitRef[];
+	heads: GitRef[];
+	tags: GitRef[];
+	remotes: GitRef[];
 }
 
 export type GitRepoSet = { [repo: string]: GitRepoState };
@@ -53,6 +56,7 @@ export interface GitUnsavedChanges {
 
 export interface GitGraphViewState {
 	autoCenterCommitDetailsView: boolean;
+	combineLocalAndRemoteBranchLabels: boolean;
 	commitDetailsViewLocation: CommitDetailsViewLocation;
 	dateFormat: DateFormat;
 	fetchAvatars: boolean;

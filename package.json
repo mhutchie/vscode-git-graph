@@ -62,6 +62,11 @@
 					"default": true,
 					"description": "Automatically center the commit details view when it is opened."
 				},
+				"git-graph.combineLocalAndRemoteBranchLabels": {
+					"type": "boolean",
+					"default": true,
+					"description": "Combine local and remote branch labels if they refer to the same branch, and are on the same commit."
+				},
 				"git-graph.commitDetailsViewLocation": {
 					"type": "string",
 					"enum": [

@@ -36,6 +36,13 @@ function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) 
 	}
 	return true;
 }
+function arraysStrictlyEqual<T>(a: T[], b: T[]) {
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] !== b[i]) return false;
+	}
+	return true;
+}
 function pad2(i: number) {
 	return i > 9 ? i : '0' + i;
 }

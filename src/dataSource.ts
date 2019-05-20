@@ -86,12 +86,16 @@ export class DataSource {
 
 				for (i = 0; i < commits.length; i++) {
 					commitLookup[commits[i].hash] = i;
-					commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, refs: [] });
+					commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [] });
 				}
-				for (i = 0; i < refData.refs.length; i++) {
-					if (typeof commitLookup[refData.refs[i].hash] === 'number') {
-						commitNodes[commitLookup[refData.refs[i].hash]].refs.push(refData.refs[i]);
-					}
+				for (i = 0; i < refData.heads.length; i++) {
+					if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
+				}
+				for (i = 0; i < refData.tags.length; i++) {
+					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push(refData.tags[i].name);
+				}
+				for (i = 0; i < refData.remotes.length; i++) {
+					if (typeof commitLookup[refData.remotes[i].hash] === 'number') commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push(refData.remotes[i].name);
 				}
 
 				resolve({ commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable });
@@ -239,31 +243,31 @@ export class DataSource {
 		let args = ['show-ref'];
 		if (!showRemoteBranches) args.push('--heads', '--tags');
 		args.push('-d', '--head');
-	
+
+		let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
 		return this.spawnGit<GitRefData>(args, repo, stdout => {
-			let refData: GitRefData = { head: null, refs: [] };
 			let lines = stdout.split(eolRegex);
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(' ');
 				if (line.length < 2) continue;
-	
+
 				let hash = line.shift()!;
 				let ref = line.join(' ');
-	
+
 				if (ref.startsWith('refs/heads/')) {
-					refData.refs.push({ hash: hash, name: ref.substring(11), type: 'head' });
+					refData.heads.push({ hash: hash, name: ref.substring(11) });
 				} else if (ref.startsWith('refs/tags/')) {
-					refData.refs.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)), type: 'tag' });
+					refData.tags.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)) });
 				} else if (ref.startsWith('refs/remotes/')) {
-					refData.refs.push({ hash: hash, name: ref.substring(13), type: 'remote' });
+					refData.remotes.push({ hash: hash, name: ref.substring(13) });
 				} else if (ref === 'HEAD') {
 					refData.head = hash;
 				}
 			}
 			return refData;
-		}, { head: null, refs: [] });
+		}, refData);
 	}
-	
+
 	private getGitLog(repo: string, branch: string, num: number, showRemoteBranches: boolean) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--date-order'];
 		if (branch !== '') {

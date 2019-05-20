@@ -12,6 +12,10 @@ class Config {
 		return this.workspaceConfiguration.get('autoCenterCommitDetailsView', true);
 	}
 
+	public combineLocalAndRemoteBranchLabels() {
+		return this.workspaceConfiguration.get('combineLocalAndRemoteBranchLabels', true);
+	}
+
 	public commitDetailsViewLocation(): CommitDetailsViewLocation {
 		return this.workspaceConfiguration.get('commitDetailsViewLocation', 'Inline');
 	}

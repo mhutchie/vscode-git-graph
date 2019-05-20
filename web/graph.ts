@@ -313,8 +313,20 @@ class Graph {
 		return this.vertices.length * this.config.grid.y + this.config.grid.offsetY - this.config.grid.y / 2 + (expandedCommit !== null ? this.config.grid.expandY : 0);
 	}
 
-	public getVertexColour(v: number) {
-		return this.vertices[v].getColour() % this.config.graphColours.length;
+	public getVertexColours() {
+		let colours = [], i;
+		for (i = 0; i < this.vertices.length; i++) {
+			colours[i] = this.vertices[i].getColour() % this.config.graphColours.length;
+		}
+		return colours;
+	}
+
+	public getWidthsAtVertices() {
+		let widths = [], i;
+		for (i = 0; i < this.vertices.length; i++) {
+			widths[i] = (this.vertices[i].getNextPoint().x + 1) * this.config.grid.x - 2;
+		}
+		return widths;
 	}
 
 	public limitMaxWidth(maxWidth: number) {

@@ -21,11 +21,13 @@ const ELLIPSIS = '&#8230;';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 const CLASS_ACTIVE = 'active';
+const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_COMPARE_COMMIT_OPEN = 'compareCommitOpen';
 const CLASS_CONTEXT_MENU_ACTIVE = 'contextMenuActive';
 const CLASS_DIALOG_ACTIVE = 'dialogActive';
 const CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN = 'dockedCommitDetailsViewOpen';
+const CLASS_TAG_LABELS_RIGHT_ALIGNED = 'tagLabelsRightAligned';
 
 
 /* General Helpers */
@@ -66,6 +68,15 @@ function addListenerToClass(className: string, event: string, eventListener: Eve
 }
 function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
 	referenceNode.parentNode!.insertBefore(newNode, referenceNode.nextSibling);
+}
+function alterClass(elem: HTMLElement, className: string, state: boolean) {
+	if (elem.classList.contains(className) !== state) {
+		if (state) {
+			elem.classList.add(className);
+		} else {
+			elem.classList.remove(className);
+		}
+	}
 }
 
 

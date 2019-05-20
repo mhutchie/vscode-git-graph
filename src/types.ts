@@ -66,6 +66,7 @@ export interface GitGraphViewState {
 	lastActiveRepo: string | null;
 	loadMoreCommits: number;
 	loadRepo: string | null;
+	refLabelAlignment: RefLabelAlignment;
 	repos: GitRepoSet;
 	showCurrentBranchByDefault: boolean;
 }
@@ -89,6 +90,7 @@ export type CommitDetailsViewLocation = 'Inline' | 'Docked to Bottom';
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
 export type DateType = 'Author Date' | 'Commit Date';
 export type GraphStyle = 'rounded' | 'angular';
+export type RefLabelAlignment = 'Normal' | 'Branches (on the left) & Tags (on the right)' | 'Branches (aligned to the graph) & Tags (on the right)';
 export type TabIconColourTheme = 'colour' | 'grey';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';

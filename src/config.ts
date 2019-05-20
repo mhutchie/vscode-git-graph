@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, DateFormat, DateType, GraphStyle, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, DateFormat, DateType, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -51,6 +51,10 @@ class Config {
 
 	public maxDepthOfRepoSearch() {
 		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
+	}
+
+	public refLabelAlignment(): RefLabelAlignment {
+		return this.workspaceConfiguration.get('referenceLabelAlignment', 'Normal');
 	}
 
 	public retainContextWhenHidden(): boolean {

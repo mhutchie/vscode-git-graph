@@ -65,6 +65,10 @@ class GitGraphView {
 		document.getElementById('refreshBtn')!.addEventListener('click', () => {
 			this.refresh(true);
 		});
+
+		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, config.branchLabelsAlignedToGraph);
+		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, config.tagLabelsOnRight);
+
 		this.observeWindowSizeChanges();
 		this.observeWebviewStyleChanges();
 		this.observeWebviewScroll();
@@ -294,9 +298,9 @@ class GitGraphView {
 		this.graph.render(expandedCommit);
 	}
 	private renderTable() {
-		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead;
+		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === '*' ? '*' : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		for (i = 0; i < this.commits.length; i++) {
-			let refs = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml, heads: { [name: string]: string[] } = {}, remotes;
+			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml, heads: { [name: string]: string[] } = {}, remotes;
 			if (this.config.combineLocalAndRemoteBranchLabels) {
 				remotes = [];
 				for (j = 0; j < this.commits[i].heads.length; j++) {
@@ -327,18 +331,19 @@ class GitGraphView {
 					}
 				}
 				refHtml += '</span>';
-				refs = refActive ? refHtml + refs : refs + refHtml;
+				refBranches = refActive ? refHtml + refBranches : refBranches + refHtml;
 			}
 			for (j = 0; j < remotes.length; j++) {
 				refName = escapeHtml(remotes[j]);
-				refs += '<span class="gitRef remote" data-name="' + refName + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
+				refBranches += '<span class="gitRef remote" data-name="' + refName + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			for (j = 0; j < this.commits[i].tags.length; j++) {
 				refName = escapeHtml(this.commits[i].tags[j]);
-				refs += '<span class="gitRef tag" data-name="' + refName + '">' + svgIcons.tag + '<span class="gitRefName">' + refName + '</span></span>';
+				refTags += '<span class="gitRef tag" data-name="' + refName + '">' + svgIcons.tag + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 
-			html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '" data-color="' + this.graph.getVertexColour(i) + '"><td></td><td>' + (this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '') + refs + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
+			let commitDot = this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
+			html += '<tr ' + (this.commits[i].hash !== '*' ? 'class="commit" data-hash="' + this.commits[i].hash + '"' : 'class="unsavedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span>' + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
@@ -960,6 +965,7 @@ let dialog = document.getElementById('dialog')!, dialogBacking = document.getEle
 
 let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
 	autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
+	branchLabelsAlignedToGraph: viewState.refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
 	combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
 	commitDetailsViewLocation: viewState.commitDetailsViewLocation,
 	fetchAvatars: viewState.fetchAvatars,
@@ -968,7 +974,8 @@ let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveR
 	grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
 	initialLoadCommits: viewState.initialLoadCommits,
 	loadMoreCommits: viewState.loadMoreCommits,
-	showCurrentBranchByDefault: viewState.showCurrentBranchByDefault
+	showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
+	tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
 }, vscode.getState());
 
 

@@ -11,6 +11,7 @@ declare global {
 
 	interface Config {
 		autoCenterCommitDetailsView: boolean;
+		branchLabelsAlignedToGraph: boolean;
 		combineLocalAndRemoteBranchLabels: boolean;
 		commitDetailsViewLocation: GG.CommitDetailsViewLocation;
 		fetchAvatars: boolean;
@@ -20,6 +21,7 @@ declare global {
 		initialLoadCommits: number;
 		loadMoreCommits: number;
 		showCurrentBranchByDefault: boolean;
+		tagLabelsOnRight: boolean;
 	}
 
 	interface ContextMenuItem {

@@ -285,6 +285,7 @@ export class GitGraphView {
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadMoreCommits: config.loadMoreCommits(),
 			loadRepo: this.loadRepo,
+			refLabelAlignment: config.refLabelAlignment(),
 			repos: this.repoManager.getRepos(),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};

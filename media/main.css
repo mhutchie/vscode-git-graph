@@ -367,6 +367,16 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	line-height:18px;
 	font-style:italic;
 }
+body.branchLabelsAlignedToGraph tr.commit td:first-child .gitRef:last-child{
+	margin-right:0;
+}
+body.tagLabelsRightAligned .gitRefTags{
+	float:right;
+}
+body.tagLabelsRightAligned .gitRef.tag{
+	margin-left:5px;
+	margin-right:0;
+}
 
 /* Loader */
 #loadingHeader{

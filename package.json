@@ -164,6 +164,21 @@
 					"default": 0,
 					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
 				},
+				"git-graph.referenceLabelAlignment": {
+					"type": "string",
+					"enum": [
+						"Normal",
+						"Branches (on the left) & Tags (on the right)",
+						"Branches (aligned to the graph) & Tags (on the right)"
+					],
+					"enumDescriptions": [
+						"Show branch & tag labels on the left of the commit message in the 'Description' column.",
+						"Show branch labels on the left of the commit message in the 'Description' column, and tag labels on the right.",
+						"Show branch labels aligned to the graph in the 'Graph' column, and tag labels on the right in the 'Description' column."
+					],
+					"default": "Normal",
+					"description": "Specifies how branch and tag reference labels are aligned for each commit."
+				},
 				"git-graph.retainContextWhenHidden": {
 					"type": "boolean",
 					"default": false,

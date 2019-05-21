@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {readFileSync} from 'fs';
+import { promises as fs } from 'fs';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
@@ -272,7 +272,7 @@ export class GitGraphView {
 		this.panel.webview.html = await this.getHtmlForWebview();
 	}
 
-	private getHtmlForWebview() {
+	private async getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
 		const viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
@@ -290,6 +290,12 @@ export class GitGraphView {
 			repos: this.repoManager.getRepos(),
 			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
 		};
+
+		const [out, main, dropdown] = await Promise.all([
+			this.getFsContent('out.min.js'),
+			this.getFsContent('main.css'),
+			this.getFsContent('dropdown.css')
+		]);
 
 		let body, numRepos = Object.keys(viewState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < viewState.graphColours.length; i++) {
@@ -317,7 +323,7 @@ export class GitGraphView {
 			<div id="dialog"></div>
 			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
-			<script nonce="${nonce}">${this.getFsContent('out.min.js')}</script>
+			<script nonce="${nonce}">${out}</script>
 			</body>`;
 		} else {
 			body = `<body class="unableToLoad" style="${colorVars}">
@@ -335,8 +341,8 @@ export class GitGraphView {
 				<meta charset="UTF-8">
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}'; img-src data:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<style>${this.getFsContent('main.css')}</style>
-				<style>${this.getFsContent('dropdown.css')}</style>
+				<style>${main}</style>
+				<style>${dropdown}</style>
 				<title>Git Graph</title>
 				<style>${colorParams}</style>
 			</head>
@@ -345,7 +351,7 @@ export class GitGraphView {
 	}
 
 	private getFsContent(file: string) {
-		return readFileSync(this.getUri('media', file).fsPath);
+		return fs.readFile(this.getUri('media', file).fsPath, 'utf8');
 	}
 
 	// private getMediaUri(file: string) {
@@ -373,8 +379,10 @@ export class GitGraphView {
 		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 		return new Promise<boolean>((resolve) => {
 			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash), encodeDiffDocUri(repo, newFilePath, toHash), title, { preview: true })
-				.then(() => resolve(true))
-				.then(() => resolve(false));
+				.then(
+					() => resolve(true),
+					() => resolve(false)
+				);
 		});
 	}
 }

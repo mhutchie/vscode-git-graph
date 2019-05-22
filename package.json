@@ -185,6 +185,19 @@
 					"default": 0,
 					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
 				},
+				"git-graph.openDiffTabLocation":{
+					"type": "string",
+					"enum": [
+						"Active",
+						"Beside"
+					],
+					"enumDescriptions": [
+						"Open Visual Studio Code Diff in the Active Pane",
+						"Open Visual Studio Code Diff beside the Active Pane"
+					],
+					"default": "Active",
+					"description": "Specifies which pane the Visual Studio Code Diff is opened in."
+				},
 				"git-graph.referenceLabelAlignment": {
 					"type": "string",
 					"enum": [

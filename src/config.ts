@@ -64,6 +64,10 @@ class Config {
 		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
 	}
 
+	public openDiffTabLocation() {
+		return this.workspaceConfiguration.get('openDiffTabLocation', 'Active') === 'Active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
+	}
+
 	public refLabelAlignment(): RefLabelAlignment {
 		return this.workspaceConfiguration.get('referenceLabelAlignment', 'Normal');
 	}

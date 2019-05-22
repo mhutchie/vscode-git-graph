@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
 import { GitFileChangeType } from './types';
 
@@ -29,6 +30,7 @@ export function copyToClipboard(text: string) {
 
 export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
 	return new Promise<boolean>(resolve => {
+		let options = { preview: true, viewColumn: getConfig().openDiffTabLocation() };
 		if (type !== 'U') {
 			let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = toHash !== UNCOMMITTED ? abbrevCommit(toHash) : 'Present', pathComponents = newFilePath.split('/');
 			let desc = fromHash === toHash
@@ -39,17 +41,16 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 			let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 			if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type), encodeDiffDocUri(repo, newFilePath, toHash, type), title, { preview: true })
-				.then(() => resolve(true))
-				.then(() => resolve(false));
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type), encodeDiffDocUri(repo, newFilePath, toHash, type), title, options)
+				.then(() => resolve(true), () => resolve(false));
 		} else {
-			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repo + '/' + newFilePath));
-			resolve(true);
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repo + '/' + newFilePath), options)
+				.then(() => resolve(true), () => resolve(false));
 		}
 	});
 }
 
-export function viewScm(){
+export function viewScm() {
 	return new Promise<boolean>(resolve => {
 		vscode.commands.executeCommand('workbench.view.scm').then(() => resolve(true), () => resolve(false));
 	});

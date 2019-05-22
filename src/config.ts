@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, DateFormat, DateType, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CustomBranchGlobPattern, DateFormat, DateType, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -18,6 +18,17 @@ class Config {
 
 	public commitDetailsViewLocation(): CommitDetailsViewLocation {
 		return this.workspaceConfiguration.get('commitDetailsViewLocation', 'Inline');
+	}
+
+	public customBranchGlobPatterns(): CustomBranchGlobPattern[] {
+		let inPatterns = this.workspaceConfiguration.get('customBranchGlobPatterns', <any[]>[]);
+		let outPatterns: CustomBranchGlobPattern[] = [];
+		for (let i = 0; i < inPatterns.length; i++) {
+			if (typeof inPatterns[i].name === 'string' && typeof inPatterns[i].glob === 'string') {
+				outPatterns.push({ name: inPatterns[i].name, glob: '--glob=' + inPatterns[i].glob });
+			}
+		}
+		return outPatterns;
 	}
 
 	public dateFormat(): DateFormat {

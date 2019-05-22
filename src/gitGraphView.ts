@@ -288,6 +288,7 @@ export class GitGraphView {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
 			combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
 			commitDetailsViewLocation: config.commitDetailsViewLocation(),
+			customBranchGlobPatterns: config.customBranchGlobPatterns(),
 			dateFormat: config.dateFormat(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 			graphColours: config.graphColours(),

@@ -58,6 +58,7 @@ export interface GitGraphViewState {
 	autoCenterCommitDetailsView: boolean;
 	combineLocalAndRemoteBranchLabels: boolean;
 	commitDetailsViewLocation: CommitDetailsViewLocation;
+	customBranchGlobPatterns: CustomBranchGlobPattern[];
 	dateFormat: DateFormat;
 	fetchAvatars: boolean;
 	graphColours: string[];
@@ -95,6 +96,11 @@ export type TabIconColourTheme = 'colour' | 'grey';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
+
+export interface CustomBranchGlobPattern {
+	name: string;
+	glob: string;
+}
 
 
 /* Request / Response Messages */

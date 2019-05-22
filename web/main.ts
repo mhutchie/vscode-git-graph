@@ -149,6 +149,9 @@ class GitGraphView {
 		this.saveState();
 
 		let options: DropdownOption[] = [{ name: 'Show All', value: SHOW_ALL_BRANCHES }];
+		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
+			options.push({ name: 'Glob: ' + escapeHtml(this.config.customBranchGlobPatterns[i].name), value: this.config.customBranchGlobPatterns[i].glob });
+		}
 		for (let i = 0; i < this.gitBranches.length; i++) {
 			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 		}
@@ -1045,6 +1048,7 @@ let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveR
 	branchLabelsAlignedToGraph: viewState.refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
 	combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
 	commitDetailsViewLocation: viewState.commitDetailsViewLocation,
+	customBranchGlobPatterns: viewState.customBranchGlobPatterns,
 	fetchAvatars: viewState.fetchAvatars,
 	graphColours: viewState.graphColours,
 	graphStyle: viewState.graphStyle,

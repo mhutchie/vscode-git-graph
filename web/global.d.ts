@@ -14,6 +14,7 @@ declare global {
 		branchLabelsAlignedToGraph: boolean;
 		combineLocalAndRemoteBranchLabels: boolean;
 		commitDetailsViewLocation: GG.CommitDetailsViewLocation;
+		customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
 		fetchAvatars: boolean;
 		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';

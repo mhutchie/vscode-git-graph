@@ -80,6 +80,27 @@
 					"default": "Inline",
 					"description": "Specifies where the Commit Details View is rendered in the Git Graph view."
 				},
+				"git-graph.customBranchGlobPatterns": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"title": "Branch Glob Pattern",
+						"properties": {
+							"name": {
+								"type": "string",
+								"title": "Name of pattern",
+								"description": "Name used to reference the pattern in the 'Branches' dropdown"
+							},
+							"glob": {
+								"type": "string",
+								"title": "Glob pattern",
+								"description": "The Glob Pattern <glob-pattern>, as used in 'git log --glob=<glob-pattern>'. For example: heads/feature/*"
+							}
+						}
+					},
+					"default": [],
+					"description": "An array of Custom Branch Glob Patterns to be shown in the 'Branches' dropdown. Example: [{\"name\": \"Feature Requests\", \"glob\": \"heads/feature/*\"}]"
+				},
 				"git-graph.dateFormat": {
 					"type": "string",
 					"enum": [

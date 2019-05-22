@@ -3,12 +3,11 @@ import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { GitFileChangeType, GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
-import { abbrevCommit, copyToClipboard } from './utils';
+import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
+import { copyToClipboard, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -125,10 +124,16 @@ export class GitGraphView {
 						status: await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					break;
+				case 'cleanUntrackedFiles':
+					this.sendMessage({
+						command: 'cleanUntrackedFiles',
+						status: await this.dataSource.cleanUntrackedFiles(msg.repo, msg.directories)
+					});
+					break;
 				case 'commitDetails':
 					this.sendMessage({
 						command: 'commitDetails',
-						commitDetails: await this.dataSource.commitDetails(msg.repo, msg.commitHash)
+						commitDetails: await (msg.commitHash !== UNCOMMITTED ? this.dataSource.commitDetails(msg.repo, msg.commitHash) : this.dataSource.uncommittedDetails(msg.repo))
 					});
 					break;
 				case 'compareCommits':
@@ -243,7 +248,13 @@ export class GitGraphView {
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
-						success: await this.viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+						success: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+					});
+					break;
+				case 'viewScm':
+					this.sendMessage({
+						command: 'viewScm',
+						success: await viewScm()
 					});
 					break;
 			}
@@ -357,19 +368,6 @@ export class GitGraphView {
 			repos: repos,
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadRepo: loadRepo
-		});
-	}
-
-	private viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
-		let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = abbrevCommit(toHash), pathComponents = newFilePath.split('/');
-		let desc = fromHash === toHash
-			? (type === 'A' ? 'Added in ' + abbrevToHash : type === 'D' ? 'Deleted in ' + abbrevToHash : abbrevFromHash + '^ ↔ ' + abbrevToHash)
-			: (type === 'A' ? 'Added between ' + abbrevFromHash + ' & ' + abbrevToHash : type === 'D' ? 'Deleted between ' + abbrevFromHash + ' & ' + abbrevToHash : abbrevFromHash + ' ↔ ' + abbrevToHash);
-		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
-		return new Promise<boolean>((resolve) => {
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash), encodeDiffDocUri(repo, newFilePath, toHash), title, { preview: true })
-				.then(() => resolve(true))
-				.then(() => resolve(false));
 		});
 	}
 }

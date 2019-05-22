@@ -1,15 +1,13 @@
 import * as vscode from 'vscode';
+import { encodeDiffDocUri } from './diffDocProvider';
+import { GitFileChangeType } from './types';
 
 const FS_REGEX = /\\/g;
 
+export const UNCOMMITTED = '*';
+
 export function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
-}
-
-export function copyToClipboard(text: string) {
-	return new Promise<boolean>((resolve) => {
-		vscode.env.clipboard.writeText(text).then(() => resolve(true), () => resolve(false));
-	});
 }
 
 export function getPathFromUri(uri: vscode.Uri) {
@@ -19,6 +17,44 @@ export function getPathFromUri(uri: vscode.Uri) {
 export function getPathFromStr(str: string) {
 	return str.replace(FS_REGEX, '/');
 }
+
+
+// Visual Studio Code Command Wrappers
+
+export function copyToClipboard(text: string) {
+	return new Promise<boolean>(resolve => {
+		vscode.env.clipboard.writeText(text).then(() => resolve(true), () => resolve(false));
+	});
+}
+
+export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
+	return new Promise<boolean>(resolve => {
+		if (type !== 'U') {
+			let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = toHash !== UNCOMMITTED ? abbrevCommit(toHash) : 'Present', pathComponents = newFilePath.split('/');
+			let desc = fromHash === toHash
+				? fromHash === UNCOMMITTED
+					? 'Uncommitted'
+					: (type === 'A' ? 'Added in ' + abbrevToHash : type === 'D' ? 'Deleted in ' + abbrevToHash : abbrevFromHash + '^ ↔ ' + abbrevToHash)
+				: (type === 'A' ? 'Added between ' + abbrevFromHash + ' & ' + abbrevToHash : type === 'D' ? 'Deleted between ' + abbrevFromHash + ' & ' + abbrevToHash : abbrevFromHash + ' ↔ ' + abbrevToHash);
+			let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
+			if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
+
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type), encodeDiffDocUri(repo, newFilePath, toHash, type), title, { preview: true })
+				.then(() => resolve(true))
+				.then(() => resolve(false));
+		} else {
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repo + '/' + newFilePath));
+			resolve(true);
+		}
+	});
+}
+
+export function viewScm(){
+	return new Promise<boolean>(resolve => {
+		vscode.commands.executeCommand('workbench.view.scm').then(() => resolve(true), () => resolve(false));
+	});
+}
+
 
 // Evaluate promises in parallel, with at most maxParallel running at any time
 export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise: (val: X) => Promise<Y>) {

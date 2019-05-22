@@ -281,7 +281,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .gitFile{
 	color:var(--vscode-gitDecoration-modifiedResourceForeground);
 }
-.gitFile.A{
+.gitFile.A, .gitFile.U{
 	color:var(--vscode-gitDecoration-addedResourceForeground);
 }
 .gitFile.D{

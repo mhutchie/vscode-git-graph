@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
-import { getPathFromStr } from './utils';
+import { GitFileChangeType } from './types';
+import { getPathFromStr, UNCOMMITTED } from './utils';
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 	public static scheme = 'git-graph';
@@ -29,7 +30,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 		if (document) return document.value;
 
 		let request = decodeDiffDocUri(uri);
-		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath).then((data) => {
+		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath, request.type).then((data) => {
 			let document = new DiffDocument(data);
 			this.docs.set(uri.toString(), document);
 			return document.value;
@@ -49,13 +50,15 @@ class DiffDocument {
 	}
 }
 
-export function encodeDiffDocUri(repo: string, path: string, commit: string): vscode.Uri {
-	return vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(path) + '?commit=' + encodeURIComponent(commit) + '&repo=' + encodeURIComponent(repo));
+export function encodeDiffDocUri(repo: string, path: string, commit: string, type: GitFileChangeType): vscode.Uri {
+	return commit === UNCOMMITTED && type !== 'D'
+		? vscode.Uri.file(repo + '/' + path)
+		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(path) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&repo=' + encodeURIComponent(repo));
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri) {
 	let queryArgs = decodeUriQueryArgs(uri.query);
-	return { filePath: uri.path, commit: queryArgs.commit, repo: queryArgs.repo };
+	return { filePath: uri.path, commit: queryArgs.commit, type: <GitFileChangeType>queryArgs.type, repo: queryArgs.repo };
 }
 
 function decodeUriQueryArgs(query: string) {

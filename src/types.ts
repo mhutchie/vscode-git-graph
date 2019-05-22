@@ -94,7 +94,7 @@ export type RefLabelAlignment = 'Normal' | 'Branches (on the left) & Tags (on th
 export type TabIconColourTheme = 'colour' | 'grey';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
-export type GitFileChangeType = 'A' | 'M' | 'D' | 'R';
+export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
 
 
 /* Request / Response Messages */
@@ -188,6 +188,16 @@ export interface RequestCreateBranch {
 }
 export interface ResponseCreateBranch {
 	command: 'createBranch';
+	status: GitCommandStatus;
+}
+
+export interface RequestCleanUntrackedFiles {
+	command: 'cleanUntrackedFiles';
+	repo: string;
+	directories: boolean;
+}
+export interface ResponseCleanUntrackedFiles {
+	command: 'cleanUntrackedFiles';
 	status: GitCommandStatus;
 }
 
@@ -367,11 +377,20 @@ export interface ResponseViewDiff {
 	success: boolean;
 }
 
+export interface RequestViewScm {
+	command: 'viewScm';
+}
+export interface ResponseViewScm {
+	command: 'viewScm';
+	success: boolean;
+}
+
 export type RequestMessage =
 	RequestAddTag
 	| RequestCheckoutBranch
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
+	| RequestCleanUntrackedFiles
 	| RequestCommitDetails
 	| RequestCompareCommits
 	| RequestCopyToClipboard
@@ -390,13 +409,15 @@ export type RequestMessage =
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSaveRepoState
-	| RequestViewDiff;
+	| RequestViewDiff
+	| RequestViewScm;
 
 export type ResponseMessage =
 	ResponseAddTag
 	| ResponseCheckoutBranch
 	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit
+	| ResponseCleanUntrackedFiles
 	| ResponseCompareCommits
 	| ResponseCommitDetails
 	| ResponseCopyToClipboard
@@ -415,4 +436,5 @@ export type ResponseMessage =
 	| ResponseRenameBranch
 	| ResponseResetToCommit
 	| ResponseRevertCommit
-	| ResponseViewDiff;
+	| ResponseViewDiff
+	| ResponseViewScm;

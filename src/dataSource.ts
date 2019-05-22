@@ -1,7 +1,7 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
 import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
-import { getPathFromStr } from './utils';
+import { getPathFromStr, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
 const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
@@ -74,7 +74,7 @@ export class DataSource {
 						if (refData.head === commits[i].hash) {
 							unsavedChanges = getConfig().showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
 							if (unsavedChanges !== null) {
-								commits.unshift({ hash: '*', parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+								commits.unshift({ hash: UNCOMMITTED, parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 							}
 							break;
 						}
@@ -126,26 +126,48 @@ export class DataSource {
 						});
 					}
 				})),
-				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
-				this.getDiffTreeNumStat(repo, commitHash, commitHash)
+				this.getDiffTreeNameStatus(repo, commitHash + '~', commitHash),
+				this.getDiffTreeNumStat(repo, commitHash + '~', commitHash)
 			]).then(results => {
-				results[0].fileChanges = generateFileChanges(results[1], results[2], 1);
+				results[0].fileChanges = generateFileChanges(results[1], results[2], []);
 				resolve(results[0]);
+			}).catch(() => resolve(null));
+		});
+	}
+
+	public uncommittedDetails(repo: string) {
+		return new Promise<GitCommitDetails | null>(resolve => {
+			Promise.all([
+				this.getDiffTreeNameStatus(repo, 'HEAD', ''),
+				this.getDiffTreeNumStat(repo, 'HEAD', ''),
+				this.getUntrackedFiles(repo)
+			]).then(results => {
+				resolve({
+					hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '',
+					fileChanges: generateFileChanges(results[0], results[1], results[2])
+				});
 			}).catch(() => resolve(null));
 		});
 	}
 
 	public compareCommits(repo: string, fromHash: string, toHash: string) {
 		return new Promise<GitFileChange[] | null>(resolve => {
-			Promise.all([
-				this.getDiffTreeNameStatus(repo, fromHash, toHash),
-				this.getDiffTreeNumStat(repo, fromHash, toHash)
-			]).then(results => resolve(generateFileChanges(results[0], results[1], 0))).catch(() => resolve(null));
+			let promises = [
+				this.getDiffTreeNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
+				this.getDiffTreeNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash)
+			];
+			if (toHash === UNCOMMITTED) promises.push(this.getUntrackedFiles(repo));
+
+			Promise.all(promises)
+				.then(results => resolve(generateFileChanges(results[0], results[1], toHash === UNCOMMITTED ? results[2] : [])))
+				.catch(() => resolve(null));
 		});
 	}
 
-	public getCommitFile(repo: string, commitHash: string, filePath: string) {
-		return this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout, '');
+	public getCommitFile(repo: string, commitHash: string, filePath: string, type: GitFileChangeType) {
+		return commitHash === UNCOMMITTED && type === 'D'
+			? new Promise<string>(resolve => resolve(''))
+			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout, '');
 	}
 
 	public async getRemoteUrl(repo: string) {
@@ -231,6 +253,10 @@ export class DataSource {
 		return this.runGitCommand('cherry-pick ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
 	}
 
+	public cleanUntrackedFiles(repo: string, directories: boolean) {
+		return this.runGitCommand('clean -f' + (directories ? 'd' : ''), repo);
+	}
+
 	public revertCommit(repo: string, commitHash: string, parentIndex: number) {
 		return this.runGitCommand('revert --no-edit ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
 	}
@@ -302,14 +328,29 @@ export class DataSource {
 		});
 	}
 
+	private getUntrackedFiles(repo: string) {
+		return new Promise<string[]>(resolve => {
+			this.execGit('-c core.quotepath=false status -s --untracked-files --porcelain', repo, (err, stdout) => {
+				let files = [];
+				if (!err) {
+					let lines = stdout.split(eolRegex);
+					for (let i = 0; i < lines.length; i++) {
+						if (lines[i].startsWith('??')) files.push(lines[i].substr(3));
+					}
+				}
+				resolve(files);
+			});
+		});
+	}
+
 	private getDiffTreeNameStatus(repo: string, fromHash: string, toHash: string) {
-		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (fromHash !== toHash ? ' ' + toHash : ''), repo, (err, stdout) => {
+		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff --name-status -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : ''), repo, (err, stdout) => {
 			if (err) reject(); else resolve(stdout.split(eolRegex));
 		}));
 	}
 
 	private getDiffTreeNumStat(repo: string, fromHash: string, toHash: string) {
-		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (fromHash !== toHash ? ' ' + toHash : ''), repo, (err, stdout) => {
+		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff --numstat -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : ''), repo, (err, stdout) => {
 			if (err) reject(); else resolve(stdout.split(eolRegex));
 		}));
 	}
@@ -387,20 +428,24 @@ function escapeRefName(str: string) {
 }
 
 // Generates a list of file changes from each diff-tree output
-function generateFileChanges(nameStatusResults: string[], numStatResults: string[], startAt: number) {
-	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {};
+function generateFileChanges(nameStatusResults: string[], numStatResults: string[], unstagedFiles: string[]) {
+	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {}, i = 0;
 
-	for (let i = startAt; i < nameStatusResults.length - 1; i++) {
+	for (i = 0; i < nameStatusResults.length - 1; i++) {
 		let line = nameStatusResults[i].split('\t');
-		if (line.length < 2) break;
+		if (line.length < 2) continue;
 		let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
 		fileLookup[newFilePath] = fileChanges.length;
 		fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
 	}
 
-	for (let i = startAt; i < numStatResults.length - 1; i++) {
+	for (i = 0; i < unstagedFiles.length; i++) {
+		fileChanges.push({ oldFilePath: unstagedFiles[i], newFilePath: unstagedFiles[i], type: 'U', additions: null, deletions: null });
+	}
+
+	for (i = 0; i < numStatResults.length - 1; i++) {
 		let line = numStatResults[i].split('\t');
-		if (line.length !== 3) break;
+		if (line.length !== 3) continue;
 		let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
 		if (typeof fileLookup[fileName] === 'number') {
 			fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);

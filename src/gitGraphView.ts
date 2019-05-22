@@ -196,7 +196,7 @@ export class GitGraphView {
 				case 'loadCommits':
 					this.sendMessage({
 						command: 'loadCommits',
-						... await this.dataSource.getCommits(msg.repo, msg.branchName, msg.maxCommits, msg.showRemoteBranches),
+						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches),
 						hard: msg.hard
 					});
 					break;
@@ -311,7 +311,7 @@ export class GitGraphView {
 			<div id="view">
 				<div id="controls">
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
-					<span id="branchControl"><span class="unselectable">Branch: </span><div id="branchSelect" class="dropdown"></div></span>
+					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchSelect" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
 					<div id="refreshBtn" class="roundedBtn">Refresh</div>
 				</div>

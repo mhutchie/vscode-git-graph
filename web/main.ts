@@ -6,7 +6,7 @@ class GitGraphView {
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
 	private avatars: AvatarImageCollection = {};
-	private currentBranch: string | null = null;
+	private currentBranches: string[] | null = null;
 	private currentRepo!: string;
 
 	private graph: Graph;
@@ -38,16 +38,16 @@ class GitGraphView {
 		this.controlsElem = document.getElementById('controls')!;
 		this.tableElem = document.getElementById('commitTable')!;
 		this.footerElem = document.getElementById('footer')!;
-		this.repoDropdown = new Dropdown('repoSelect', true, 'Repos', value => {
-			this.currentRepo = value;
+		this.repoDropdown = new Dropdown('repoSelect', true, false, 'Repos', values => {
+			this.currentRepo = values[0];
 			this.maxCommits = this.config.initialLoadCommits;
 			this.closeCommitDetails(false);
-			this.currentBranch = null;
+			this.currentBranches = null;
 			this.saveState();
 			this.refresh(true);
 		});
-		this.branchDropdown = new Dropdown('branchSelect', false, 'Branches', value => {
-			this.currentBranch = value;
+		this.branchDropdown = new Dropdown('branchSelect', false, true, 'Branches', values => {
+			this.currentBranches = values.length === 1 && values[0] === SHOW_ALL_BRANCHES ? null : values;
 			this.maxCommits = this.config.initialLoadCommits;
 			this.closeCommitDetails(false);
 			this.saveState();
@@ -76,7 +76,7 @@ class GitGraphView {
 
 		this.renderShowLoading();
 		if (prevState) {
-			this.currentBranch = prevState.currentBranch;
+			this.currentBranches = prevState.currentBranches;
 			this.showRemoteBranches = prevState.showRemoteBranches;
 			this.showRemoteBranchesElem.checked = this.showRemoteBranches;
 			if (typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
@@ -114,7 +114,7 @@ class GitGraphView {
 			options.push({ name: repoComps[repoComps.length - 1], value: repoPaths[i] });
 		}
 		document.getElementById('repoControl')!.style.display = repoPaths.length > 1 ? 'inline' : 'none';
-		this.repoDropdown.setOptions(options, this.currentRepo);
+		this.repoDropdown.setOptions(options, [this.currentRepo]);
 
 		if (changedRepo) {
 			this.refresh(true);
@@ -129,16 +129,30 @@ class GitGraphView {
 
 		this.gitBranches = branchOptions;
 		this.gitBranchHead = branchHead;
-		if (this.currentBranch === null || (this.currentBranch !== '' && this.gitBranches.indexOf(this.currentBranch) === -1)) {
-			this.currentBranch = this.config.showCurrentBranchByDefault && this.gitBranchHead !== null ? this.gitBranchHead : '';
+
+		if (this.currentBranches !== null) {
+			let i = 0;
+			while (i < this.currentBranches.length) {
+				if (branchOptions.indexOf(this.currentBranches[i]) === -1) {
+					this.currentBranches.splice(i, 1);
+				} else {
+					i++;
+				}
+			}
+			if (this.currentBranches.length === 0) this.currentBranches = null;
 		}
+
+		if (this.currentBranches === null && this.config.showCurrentBranchByDefault && this.gitBranchHead !== null) {
+			this.currentBranches = [this.gitBranchHead];
+		}
+
 		this.saveState();
 
-		let options: DropdownOption[] = [{ name: 'Show All', value: '' }];
+		let options: DropdownOption[] = [{ name: 'Show All', value: SHOW_ALL_BRANCHES }];
 		for (let i = 0; i < this.gitBranches.length; i++) {
 			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 		}
-		this.branchDropdown.setOptions(options, this.currentBranch);
+		this.branchDropdown.setOptions(options, this.currentBranches);
 
 		this.triggerLoadBranchesCallback(true, isRepo);
 	}
@@ -251,7 +265,7 @@ class GitGraphView {
 		sendMessage({
 			command: 'loadCommits',
 			repo: this.currentRepo,
-			branchName: (this.currentBranch !== null ? this.currentBranch : ''),
+			branches: this.currentBranches,
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.showRemoteBranches,
 			hard: hard
@@ -298,7 +312,7 @@ class GitGraphView {
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,
-			currentBranch: this.currentBranch,
+			currentBranches: this.currentBranches,
 			currentRepo: this.currentRepo,
 			moreCommitsAvailable: this.moreCommitsAvailable,
 			maxCommits: this.maxCommits,
@@ -795,11 +809,12 @@ class GitGraphView {
 		});
 	}
 	private observeWebviewStyleChanges() {
-		let fontFamily = getVSCodeStyle('--vscode-editor-font-family');
+		let fontFamily = getVSCodeStyle('--vscode-font-family'), editorFontFamily = getVSCodeStyle('--vscode-editor-font-family');
 		(new MutationObserver(() => {
-			let ff = getVSCodeStyle('--vscode-editor-font-family');
-			if (ff !== fontFamily) {
+			let ff = getVSCodeStyle('--vscode-font-family'), eff = getVSCodeStyle('--vscode-editor-font-family');
+			if (ff !== fontFamily || eff !== editorFontFamily) {
 				fontFamily = ff;
+				editorFontFamily = eff;
 				this.repoDropdown.refresh();
 				this.branchDropdown.refresh();
 			}

@@ -18,9 +18,12 @@
 	height:26px;
 	line-height:24px;
 	padding-left:10px;
+	padding-right:20px;
 	cursor:pointer;
 	user-select:none;
 	white-space:nowrap;
+	overflow-x:hidden;
+	text-overflow:ellipsis;
 }
 .dropdownCurrentValue:hover{
 	background-color:rgba(128,128,128,0.2);
@@ -62,6 +65,9 @@
 	padding:4px 10px;
 	user-select:none;
 }
+.dropdown.multi .dropdownOption{
+	padding-left:30px;
+}
 .dropdownOptions.showInfo .dropdownOption{
 	padding-right:30px;
 }
@@ -83,8 +89,22 @@
 	fill:var(--vscode-menu-foreground);
 	opacity:0.35;
 }
-.dropdownOptionInfo:hover svg{
+
+.dropdownOptionMultiSelected{
+	position:absolute;
+	width:12px;
+	height:16px;
+	top:7px;
+	left:10px;
+}
+.dropdownOptionMultiSelected svg{
+	fill:var(--vscode-menu-foreground);
+	opacity:0.5;
+}
+
+.dropdownOption:hover svg{
 	fill:var(--vscode-menu-selectionForeground);
+	opacity:0.75;
 }
 
 .dropdown.dropdownOpen .dropdownCurrentValue{
@@ -109,8 +129,6 @@
 	padding:3px 6px;
 	font-size:13px;
 	line-height:17px;
-	font-weight:normal;
-	font-family:var(--vscode-editor-font-family);
 	color:var(--vscode-menu-foreground);
 }
 

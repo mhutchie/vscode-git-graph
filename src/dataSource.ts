@@ -59,10 +59,10 @@ export class DataSource {
 		});
 	}
 
-	public getCommits(repo: string, branch: string, maxCommits: number, showRemoteBranches: boolean) {
+	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean) {
 		return new Promise<{ commits: GitCommitNode[], head: string | null, moreCommitsAvailable: boolean }>(resolve => {
 			Promise.all([
-				this.getGitLog(repo, branch, maxCommits + 1, showRemoteBranches),
+				this.getGitLog(repo, branches, maxCommits + 1, showRemoteBranches),
 				this.getRefs(repo, showRemoteBranches)
 			]).then(async results => {
 				let commits = results[0], refData = results[1], i, unsavedChanges = null;
@@ -294,10 +294,12 @@ export class DataSource {
 		}, refData);
 	}
 
-	private getGitLog(repo: string, branch: string, num: number, showRemoteBranches: boolean) {
+	private getGitLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--date-order'];
-		if (branch !== '') {
-			args.push(escapeRefName(branch));
+		if (branches !== null) {
+			for (let i = 0; i < branches.length; i++) {
+				args.push(escapeRefName(branches[i]));
+			}
 		} else {
 			args.push('--branches', '--tags');
 			if (showRemoteBranches) args.push('--remotes');

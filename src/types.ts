@@ -262,7 +262,7 @@ export interface ResponseLoadBranches {
 export interface RequestLoadCommits {
 	command: 'loadCommits';
 	repo: string;
-	branchName: string;
+	branches: string[] | null;
 	maxCommits: number;
 	showRemoteBranches: boolean;
 	hard: boolean;

@@ -98,7 +98,9 @@ class Dropdown {
 							}
 						}
 						if (change) {
+							let menuScroll = this.menuElem.scrollTop;
 							this.render();
+							if (this.dropdownVisible && this.multipleAllowed) this.menuElem.scroll(0, menuScroll);
 							this.changeCallback(this.getSelectedOptions(false));
 						}
 					}

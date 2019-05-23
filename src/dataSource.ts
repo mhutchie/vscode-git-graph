@@ -126,8 +126,8 @@ export class DataSource {
 						});
 					}
 				})),
-				this.getDiffTreeNameStatus(repo, commitHash + '~', commitHash),
-				this.getDiffTreeNumStat(repo, commitHash + '~', commitHash)
+				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
+				this.getDiffTreeNumStat(repo, commitHash, commitHash)
 			]).then(results => {
 				results[0].fileChanges = generateFileChanges(results[1], results[2], []);
 				resolve(results[0]);
@@ -346,14 +346,26 @@ export class DataSource {
 	}
 
 	private getDiffTreeNameStatus(repo: string, fromHash: string, toHash: string) {
-		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff --name-status -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : ''), repo, (err, stdout) => {
-			if (err) reject(); else resolve(stdout.split(eolRegex));
-		}));
+		let cmd = fromHash === toHash
+			? 'diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + fromHash
+			: 'diff --name-status -m --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : '');
+		return this.execDiffTree(repo, cmd, fromHash, toHash);
 	}
-
 	private getDiffTreeNumStat(repo: string, fromHash: string, toHash: string) {
-		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false diff --numstat -r -m --root --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : ''), repo, (err, stdout) => {
-			if (err) reject(); else resolve(stdout.split(eolRegex));
+		let cmd = fromHash === toHash
+			? 'diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + fromHash
+			: 'diff --numstat -m --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : '');
+		return this.execDiffTree(repo, cmd, fromHash, toHash);
+	}
+	private execDiffTree(repo: string, cmd: string, fromHash: string, toHash: string) {
+		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false ' + cmd, repo, (err, stdout) => {
+			if (err) {
+				reject();
+			} else {
+				let lines = stdout.split(eolRegex);
+				if (fromHash === toHash) lines.shift();
+				resolve(lines);
+			}
 		}));
 	}
 

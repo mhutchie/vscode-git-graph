@@ -32,6 +32,7 @@
 	"engines": {
 		"vscode": "^1.31.0"
 	},
+	"extensionKind": "workspace",
 	"activationEvents": [
 		"*"
 	],

@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
-import { copyToClipboard, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyToClipboard, getFileContents, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -282,7 +282,9 @@ export class GitGraphView {
 		this.panel.webview.html = await this.getHtmlForWebview();
 	}
 
-	private getHtmlForWebview() {
+	private async getHtmlForWebview() {
+		const cssContent = getFileContents(this.getUri('media', 'out.min.css').fsPath);
+		const jsContent = getFileContents(this.getUri('media', 'out.min.js').fsPath);
 		const config = getConfig(), nonce = getNonce();
 		const viewState: GitGraphViewState = {
 			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
@@ -327,8 +329,7 @@ export class GitGraphView {
 			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
 			<div id="scrollShadow"></div>
-			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
-			<script src="${this.getMediaUri('out.min.js')}"></script>
+			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};\r\n${await jsContent}\r\n//# sourceURL=out.min.js</script>
 			</body>`;
 		} else {
 			body = `<body class="unableToLoad" style="${colorVars}">
@@ -346,17 +347,12 @@ export class GitGraphView {
 				<meta charset="UTF-8">
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}'; img-src data:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('main.css')}">
-				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('dropdown.css')}">
+				<style>${await cssContent}\r\n/*# sourceURL=out.min.css*/</style>
 				<title>Git Graph</title>
-				<style>${colorParams}"</style>
+				<style>${colorParams}</style>
 			</head>
 			${body}
 		</html>`;
-	}
-
-	private getMediaUri(file: string) {
-		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
 	}
 
 	private getUri(...pathComps: string[]) {

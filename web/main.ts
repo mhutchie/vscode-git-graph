@@ -15,6 +15,7 @@ class GitGraphView {
 	private showRemoteBranches: boolean = true;
 	private expandedCommit: ExpandedCommit | null = null;
 	private maxCommits: number;
+	private scrollTop = 0;
 
 	private viewElem: HTMLElement;
 	private controlsElem: HTMLElement;
@@ -86,6 +87,8 @@ class GitGraphView {
 				this.avatars = prevState.avatars;
 				this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
 				this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
+				this.scrollTop = prevState.scrollTop;
+				this.viewElem.scroll(0, this.scrollTop);
 			}
 		}
 		this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo);
@@ -320,7 +323,8 @@ class GitGraphView {
 			moreCommitsAvailable: this.moreCommitsAvailable,
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.showRemoteBranches,
-			expandedCommit: this.expandedCommit
+			expandedCommit: this.expandedCommit,
+			scrollTop: this.scrollTop
 		});
 	}
 
@@ -824,13 +828,20 @@ class GitGraphView {
 		})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 	}
 	private observeWebviewScroll() {
-		let active = this.viewElem.scrollTop > 0;
+		let active = this.viewElem.scrollTop > 0, timeout: NodeJS.Timer | null = null;
 		this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
 		this.viewElem.addEventListener('scroll', () => {
-			if (active !== this.viewElem.scrollTop > 0) {
-				active = this.viewElem.scrollTop > 0;
+			let scrollTop = this.viewElem.scrollTop;
+			if (active !== scrollTop > 0) {
+				active = scrollTop > 0;
 				this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
 			}
+			if (timeout !== null) clearTimeout(timeout);
+			timeout = setTimeout(() => {
+				this.scrollTop = scrollTop;
+				this.saveState();
+				timeout = null;
+			}, 500);
 		});
 	}
 	private observeKeyboardEvents() {
@@ -1039,125 +1050,129 @@ class GitGraphView {
 	}
 }
 
-let viewElem = document.getElementById('view')!, graphFocus = true;
+let viewElem = document.getElementById('view')!, graphFocus = true, loaded = false;
 let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
 let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null;
 
-let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
-	autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
-	branchLabelsAlignedToGraph: viewState.refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
-	combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
-	commitDetailsViewLocation: viewState.commitDetailsViewLocation,
-	customBranchGlobPatterns: viewState.customBranchGlobPatterns,
-	fetchAvatars: viewState.fetchAvatars,
-	graphColours: viewState.graphColours,
-	graphStyle: viewState.graphStyle,
-	grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
-	initialLoadCommits: viewState.initialLoadCommits,
-	loadMoreCommits: viewState.loadMoreCommits,
-	showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
-	tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
-}, vscode.getState());
+window.addEventListener('load', () => {
+	if (loaded) return;
+	loaded = true;
 
+	let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
+		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
+		branchLabelsAlignedToGraph: viewState.refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
+		combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
+		commitDetailsViewLocation: viewState.commitDetailsViewLocation,
+		customBranchGlobPatterns: viewState.customBranchGlobPatterns,
+		fetchAvatars: viewState.fetchAvatars,
+		graphColours: viewState.graphColours,
+		graphStyle: viewState.graphStyle,
+		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
+		initialLoadCommits: viewState.initialLoadCommits,
+		loadMoreCommits: viewState.loadMoreCommits,
+		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
+		tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
+	}, vscode.getState());
 
-/* Command Processing */
-window.addEventListener('message', event => {
-	const msg: GG.ResponseMessage = event.data;
-	switch (msg.command) {
-		case 'addTag':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Add Tag');
-			break;
-		case 'checkoutBranch':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Branch');
-			break;
-		case 'checkoutCommit':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Commit');
-			break;
-		case 'cherrypickCommit':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Cherry Pick Commit');
-			break;
-		case 'cleanUntrackedFiles':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Clean Untracked Files');
-			break;
-		case 'commitDetails':
-			if (msg.commitDetails === null) {
-				gitGraph.closeCommitDetails(true);
-				showErrorDialog('Unable to load commit details', null, null);
-			} else {
-				gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
-			}
-			break;
-		case 'compareCommits':
-			if (msg.fileChanges === null) {
-				gitGraph.closeCommitComparison(true);
-				showErrorDialog('Unable to compare commits', null, null);
-			} else {
-				gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges));
-			}
-			break;
-		case 'copyToClipboard':
-			if (msg.success === false) showErrorDialog('Unable to Copy ' + msg.type + ' to Clipboard', null, null);
-			break;
-		case 'createBranch':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Create Branch');
-			break;
-		case 'deleteBranch':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Delete Branch');
-			break;
-		case 'deleteRemoteBranch':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Delete Remote Branch');
-			break;
-		case 'deleteTag':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
-			break;
-		case 'fetchAvatar':
-			gitGraph.loadAvatar(msg.email, msg.image);
-			break;
-		case 'loadBranches':
-			gitGraph.loadBranches(msg.branches, msg.head, msg.hard, msg.isRepo);
-			break;
-		case 'loadCommits':
-			gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
-			break;
-		case 'loadRepos':
-			gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
-			break;
-		case 'mergeBranch':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');
-			break;
-		case 'mergeCommit':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Merge Commit');
-			break;
-		case 'pushTag':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Push Tag');
-			break;
-		case 'renameBranch':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
-			break;
-		case 'refresh':
-			gitGraph.refresh(false);
-			break;
-		case 'resetToCommit':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Reset to Commit');
-			break;
-		case 'revertCommit':
-			refreshGraphOrDisplayError(msg.status, 'Unable to Revert Commit');
-			break;
-		case 'viewDiff':
-			if (!msg.success) showErrorDialog('Unable to view Diff of File', null, null);
-			break;
-		case 'viewScm':
-			if (!msg.success) showErrorDialog('Unable to open the Source Control View', null, null);
-			break;
+	/* Command Processing */
+	window.addEventListener('message', event => {
+		const msg: GG.ResponseMessage = event.data;
+		switch (msg.command) {
+			case 'addTag':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Add Tag');
+				break;
+			case 'checkoutBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Branch');
+				break;
+			case 'checkoutCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Checkout Commit');
+				break;
+			case 'cherrypickCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Cherry Pick Commit');
+				break;
+			case 'cleanUntrackedFiles':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Clean Untracked Files');
+				break;
+			case 'commitDetails':
+				if (msg.commitDetails === null) {
+					gitGraph.closeCommitDetails(true);
+					showErrorDialog('Unable to load commit details', null, null);
+				} else {
+					gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
+				}
+				break;
+			case 'compareCommits':
+				if (msg.fileChanges === null) {
+					gitGraph.closeCommitComparison(true);
+					showErrorDialog('Unable to compare commits', null, null);
+				} else {
+					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges));
+				}
+				break;
+			case 'copyToClipboard':
+				if (msg.success === false) showErrorDialog('Unable to Copy ' + msg.type + ' to Clipboard', null, null);
+				break;
+			case 'createBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Create Branch');
+				break;
+			case 'deleteBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Branch');
+				break;
+			case 'deleteRemoteBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Remote Branch');
+				break;
+			case 'deleteTag':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
+				break;
+			case 'fetchAvatar':
+				gitGraph.loadAvatar(msg.email, msg.image);
+				break;
+			case 'loadBranches':
+				gitGraph.loadBranches(msg.branches, msg.head, msg.hard, msg.isRepo);
+				break;
+			case 'loadCommits':
+				gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
+				break;
+			case 'loadRepos':
+				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
+				break;
+			case 'mergeBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Branch');
+				break;
+			case 'mergeCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Merge Commit');
+				break;
+			case 'pushTag':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Push Tag');
+				break;
+			case 'renameBranch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
+				break;
+			case 'refresh':
+				gitGraph.refresh(false);
+				break;
+			case 'resetToCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Reset to Commit');
+				break;
+			case 'revertCommit':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Revert Commit');
+				break;
+			case 'viewDiff':
+				if (!msg.success) showErrorDialog('Unable to view Diff of File', null, null);
+				break;
+			case 'viewScm':
+				if (!msg.success) showErrorDialog('Unable to open the Source Control View', null, null);
+				break;
+		}
+	});
+	function refreshGraphOrDisplayError(status: GG.GitCommandStatus, errorMessage: string) {
+		if (status === null) {
+			gitGraph.refresh(true);
+		} else {
+			showErrorDialog(errorMessage, status, null);
+		}
 	}
 });
-function refreshGraphOrDisplayError(status: GG.GitCommandStatus, errorMessage: string) {
-	if (status === null) {
-		gitGraph.refresh(true);
-	} else {
-		showErrorDialog(errorMessage, status, null);
-	}
-}
 
 
 /* Dates */

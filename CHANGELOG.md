@@ -1,5 +1,27 @@
 # Change Log
 
+## 1.6.0 - 2019-05-24
+* #36 New functionality for uncommitted changes:
+    * View uncommitted changes by clicking on it, like you would with any commit. 
+    * Compare any commit with the uncommitted changes.
+    * Three new actions are now available from the new Uncommitted Changes context menu, they are:
+        * Reset uncommitted changes to HEAD
+        * Clean untracked files
+        * Open the Visual Studio Code Source Control View
+* New ways to filter branches on the Git Graph view:
+    * #77 Allow multiple branches to be selected in the 'Branches' dropdown.
+    * #49 Predefine an array of custom glob patterns with the new setting `git-graph.customBranchGlobPatterns`, allowing you to use them anytime from the 'Branches' dropdown. For example: `[{"name": "Feature Requests", "glob": "heads/feature/*"}]`
+* #71 Choose from a variety of branch and tag label alignment options to better suit the projects you work on. The alignment options of the new setting `git-graph.referenceLabelAlignment` are:
+    * Normal: Show branch & tag labels on the left of the commit message in the 'Description' column.
+    * Branches (on the left) & Tags (on the right): Show branch labels on the left of the commit message in the 'Description' column, and tag labels on the right.
+    * Branches (aligned to the graph) & Tags (on the right): Show branch labels aligned to the graph in the 'Graph' column, and tag labels on the right in the 'Description' column.
+* #30 New setting `git-graph.retainContextWhenHidden` enables faster Git Graph tab restoration at the cost of additional memory usage when Git Graph is opened, but not visible (running in the background). Default: false (not enabled). Thanks @yzhang-gh!
+* #76 Open and view a specific repo in Git Graph directly from the title of a Source Code Provider in the Visual Studio Code SCP View. The new setting `git-graph.sourceCodeProviderIntegrationLocation` specifies if the Git Graph menu item is inline on the title of the Source Code Provider, or on the 'More actions...' menu. Default: Inline
+* #78 Combine local and remote branch labels if they refer to the same branch, and are on the same commit. When combined, the local and remote branch context menus are available from the corresponding section of the label. The new setting `git-graph.combineLocalAndRemoteBranchLabels` allows you to disable this behaviour.
+* #81 Support for repositories with a very large number of tags. Thanks @egi!
+* #83 Support for the upcoming "Remote Development" functionality of Visual Studio Code. Thanks @Dontar for helping with this!
+* #85 New setting `git-graph.openDiffTabLocation` allows you to choose where you'd like the Visual Studio Code Diff to open, either in the Active pane, or Beside to active pane. Default: Active
+
 ## 1.5.0 - 2019-05-15
 * #29 Compare commits: When the Commit Details View is open for a commit, CTRL/CMD click on another commit to see all of the changes between the two commits.
 * #60 Added a tooltip on repo dropdown items, indicating the full path of the repository.

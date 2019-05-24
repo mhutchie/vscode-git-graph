@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -237,14 +237,14 @@
 				"git-graph.sourceCodeProviderIntegrationLocation": {
 					"type": "string",
 					"enum": [
-						"inline",
-						"more-actions"
+						"Inline",
+						"More Actions"
 					],
 					"enumDescriptions": [
 						"Show the 'View Git Graph' action on the title of SCM Providers",
-						"Show the 'View Git Graph' action in the 'More actions...' menu on the title of SCM Providers"
+						"Show the 'View Git Graph' action in the 'More Actions...' menu on the title of SCM Providers"
 					],
-					"default": "inline",
+					"default": "Inline",
 					"description": "Specifies where the 'View Git Graph' action appears on the title of SCM Providers."
 				},
 				"git-graph.tabIconColourTheme": {
@@ -265,12 +265,12 @@
 		"menus": {
 			"scm/title": [
 				{
-					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'inline'",
+					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'Inline'",
 					"command": "git-graph.view",
 					"group": "navigation"
 				},
 				{
-					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'more-actions'",
+					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'More Actions'",
 					"command": "git-graph.view",
 					"group": "inline"
 				}

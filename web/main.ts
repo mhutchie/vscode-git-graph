@@ -48,7 +48,7 @@ class GitGraphView {
 			this.refresh(true);
 		});
 		this.branchDropdown = new Dropdown('branchSelect', false, true, 'Branches', values => {
-			this.currentBranches = values.length === 1 && values[0] === SHOW_ALL_BRANCHES ? null : values;
+			this.currentBranches = values;
 			this.maxCommits = this.config.initialLoadCommits;
 			this.closeCommitDetails(false);
 			this.saveState();
@@ -77,11 +77,11 @@ class GitGraphView {
 
 		this.renderShowLoading();
 		if (prevState) {
-			this.currentBranches = prevState.currentBranches;
 			this.showRemoteBranches = prevState.showRemoteBranches;
 			this.showRemoteBranchesElem.checked = this.showRemoteBranches;
 			if (typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
 				this.currentRepo = prevState.currentRepo;
+				this.currentBranches = prevState.currentBranches;
 				this.maxCommits = prevState.maxCommits;
 				this.expandedCommit = prevState.expandedCommit;
 				this.avatars = prevState.avatars;
@@ -133,10 +133,15 @@ class GitGraphView {
 		this.gitBranches = branchOptions;
 		this.gitBranchHead = branchHead;
 
-		if (this.currentBranches !== null) {
+		let globPatterns = [];
+		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
+			globPatterns.push(this.config.customBranchGlobPatterns[i].glob);
+		}
+
+		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
 			let i = 0;
 			while (i < this.currentBranches.length) {
-				if (branchOptions.indexOf(this.currentBranches[i]) === -1) {
+				if (branchOptions.indexOf(this.currentBranches[i]) === -1 && globPatterns.indexOf(this.currentBranches[i]) === -1) {
 					this.currentBranches.splice(i, 1);
 				} else {
 					i++;
@@ -145,8 +150,8 @@ class GitGraphView {
 			if (this.currentBranches.length === 0) this.currentBranches = null;
 		}
 
-		if (this.currentBranches === null && this.config.showCurrentBranchByDefault && this.gitBranchHead !== null) {
-			this.currentBranches = [this.gitBranchHead];
+		if (this.currentBranches === null) {
+			this.currentBranches = [this.config.showCurrentBranchByDefault && this.gitBranchHead !== null ? this.gitBranchHead : SHOW_ALL_BRANCHES];
 		}
 
 		this.saveState();
@@ -271,7 +276,7 @@ class GitGraphView {
 		sendMessage({
 			command: 'loadCommits',
 			repo: this.currentRepo,
-			branches: this.currentBranches,
+			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.showRemoteBranches,
 			hard: hard
@@ -841,7 +846,7 @@ class GitGraphView {
 				this.scrollTop = scrollTop;
 				this.saveState();
 				timeout = null;
-			}, 500);
+			}, 250);
 		});
 	}
 	private observeKeyboardEvents() {

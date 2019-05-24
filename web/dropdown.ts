@@ -114,13 +114,13 @@ class Dropdown {
 		this.filterInput.addEventListener('keyup', () => this.filter());
 	}
 
-	public setOptions(options: DropdownOption[], optionsSelected: string[] | null) {
+	public setOptions(options: DropdownOption[], optionsSelected: string[]) {
 		this.options = options;
 		this.optionsSelected = [];
 		this.numSelected = 0;
 		let selectedOption = -1, isSelected;
 		for (let i = 0; i < options.length; i++) {
-			isSelected = optionsSelected !== null && optionsSelected.indexOf(options[i].value) > -1;
+			isSelected = optionsSelected.indexOf(options[i].value) > -1;
 			this.optionsSelected[i] = isSelected;
 			if (isSelected) {
 				selectedOption = i;

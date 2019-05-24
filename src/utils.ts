@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
@@ -18,12 +17,6 @@ export function getPathFromUri(uri: vscode.Uri) {
 
 export function getPathFromStr(str: string) {
 	return str.replace(FS_REGEX, '/');
-}
-
-export function getFileContents(path: string) {
-	return new Promise<string>(resolve => {
-		fs.readFile(path, (err, data) => resolve(err ? '' : data.toString()));
-	});
 }
 
 

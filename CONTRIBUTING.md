@@ -74,10 +74,9 @@ Step 4: To quickly test your changes:
 Step 5: To do a complete test of your changes:
 1. Install Visual Studio Code Extensions `npm install -g vsce` if it is not already installed.
 2. Change the version of the extension defined in `package.json` on line 4 to an alpha release, for example `1.4.6-alpha.0`. You should increment the alpha version each time you package a modified version of the extension. _Make sure you don't commit the version number with your changes._
-3. Run the npm script `npm run package` in the Visual Studio Code terminal. This will compile and package the extension into a `vsix` file.
-4. Install the `vsix` file by running `code --install-extension <VSIX_FILENAME_HERE>` in the Visual Studio Code terminal.
-5. Restart Visual Studio Code, and verify that you have the correct alpha version installed.
-6. Test out the extension, it will behave exactly the same as a published release.
+3. Run the npm script `npm run package-and-install` in the Visual Studio Code terminal. This will compile and package the extension into a `vsix` file, and then install it.
+4. Restart Visual Studio Code, and verify that you have the correct alpha version installed.
+5. Test out the extension, it will behave exactly the same as a published release.
 
 Step 6: Raise a pull request once you've completed development, we'll have a look at it.
 

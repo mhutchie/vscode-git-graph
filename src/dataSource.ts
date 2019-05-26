@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
-import { GitCommandStatus, GitCommit, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
+import { GitCommandStatus, GitCommit, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
 import { getPathFromStr, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
@@ -60,10 +60,11 @@ export class DataSource {
 	}
 
 	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean) {
-		return new Promise<{ commits: GitCommitNode[], head: string | null, moreCommitsAvailable: boolean }>(resolve => {
+		return new Promise<GitCommitData>(resolve => {
 			Promise.all([
 				this.getGitLog(repo, branches, maxCommits + 1, showRemoteBranches),
-				this.getRefs(repo, showRemoteBranches)
+				this.getRefs(repo, showRemoteBranches),
+				this.getRemotes(repo)
 			]).then(async results => {
 				let commits = results[0], refData = results[1], i, unsavedChanges = null;
 				let moreCommitsAvailable = commits.length === maxCommits + 1;
@@ -95,7 +96,11 @@ export class DataSource {
 					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push(refData.tags[i].name);
 				}
 				for (i = 0; i < refData.remotes.length; i++) {
-					if (typeof commitLookup[refData.remotes[i].hash] === 'number') commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push(refData.remotes[i].name);
+					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
+						let name = refData.remotes[i].name;
+						let remote = results[2].find(remote => name.startsWith(remote + '/'));
+						if (typeof remote === 'string') commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote });
+					}
 				}
 
 				resolve({ commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable });
@@ -292,6 +297,16 @@ export class DataSource {
 			}
 			return refData;
 		}, refData);
+	}
+
+	private getRemotes(repo: string) {
+		return new Promise<string[]>(resolve => {
+			this.execGit('remote', repo, (err, stdout) => {
+				let lines = stdout.split(eolRegex);
+				lines.pop();
+				resolve(err ? [] : lines);
+			});
+		});
 	}
 
 	private getGitLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean) {

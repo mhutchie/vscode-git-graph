@@ -345,6 +345,9 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .gitRef.active{
 	border-color:var(--git-graph-color);
 }
+.gitRef.active .gitRefName{
+	font-weight:bold;
+}
 .gitRef > svg{
 	background-color:var(--git-graph-color);
 	fill:var(--vscode-editor-background);

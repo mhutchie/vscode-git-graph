@@ -9,7 +9,7 @@ export interface GitCommitNode {
 	message: string;
 	heads: string[];
 	tags: string[];
-	remotes: string[];
+	remotes: GitRemoteRef[];
 }
 
 export interface GitCommit {
@@ -32,9 +32,20 @@ export interface GitCommitDetails {
 	fileChanges: GitFileChange[];
 }
 
+export interface GitCommitData {
+	commits: GitCommitNode[];
+	head: string | null;
+	moreCommitsAvailable: boolean;
+}
+
 export interface GitRef {
 	hash: string;
 	name: string;
+}
+
+export interface GitRemoteRef {
+	name: string;
+	remote: string;
 }
 
 export interface GitRefData {
@@ -268,7 +279,7 @@ export interface ResponseLoadBranches {
 export interface RequestLoadCommits {
 	command: 'loadCommits';
 	repo: string;
-	branches: string[] | null;
+	branches: string[] | null; // NULL => Show All
 	maxCommits: number;
 	showRemoteBranches: boolean;
 	hard: boolean;

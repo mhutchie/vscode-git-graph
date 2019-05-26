@@ -125,7 +125,7 @@ class GitGraphView {
 	}
 
 	public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean, isRepo: boolean) {
-		if (!isRepo || (!hard && arraysEqual(this.gitBranches, branchOptions, (a, b) => a === b) && this.gitBranchHead === branchHead)) {
+		if (!isRepo || (!hard && arraysStrictlyEqual(this.gitBranches, branchOptions) && this.gitBranchHead === branchHead)) {
 			this.triggerLoadBranchesCallback(false, isRepo);
 			return;
 		}
@@ -175,7 +175,7 @@ class GitGraphView {
 	}
 
 	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
-		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysStrictlyEqual(a.tags, b.tags) && arraysStrictlyEqual(a.remotes, b.remotes) && arraysStrictlyEqual(a.parentHashes, b.parentHashes))) {
+		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysStrictlyEqual(a.tags, b.tags) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parentHashes, b.parentHashes))) {
 			if (this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED) {
 				this.commits[0] = commits[0];
 				this.saveState();
@@ -351,17 +351,16 @@ class GitGraphView {
 	private renderTable() {
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		for (i = 0; i < this.commits.length; i++) {
-			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml, heads: { [name: string]: string[] } = {}, remotes;
+			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml, heads: { [name: string]: string[] } = {}, remotes: GG.GitRemoteRef[];
 			if (this.config.combineLocalAndRemoteBranchLabels) {
 				remotes = [];
 				for (j = 0; j < this.commits[i].heads.length; j++) {
 					heads[this.commits[i].heads[j]] = [];
 				}
 				for (j = 0; j < this.commits[i].remotes.length; j++) {
-					let sep = this.commits[i].remotes[j].indexOf('/');
-					let branchName = this.commits[i].remotes[j].substr(sep + 1);
+					let branchName = this.commits[i].remotes[j].name.substr(this.commits[i].remotes[j].remote.length + 1);
 					if (typeof heads[branchName] !== 'undefined') {
-						heads[branchName].push(this.commits[i].remotes[j].substr(0, sep));
+						heads[branchName].push(this.commits[i].remotes[j].remote);
 					} else {
 						remotes.push(this.commits[i].remotes[j]);
 					}
@@ -385,8 +384,8 @@ class GitGraphView {
 				refBranches = refActive ? refHtml + refBranches : refBranches + refHtml;
 			}
 			for (j = 0; j < remotes.length; j++) {
-				refName = escapeHtml(remotes[j]);
-				refBranches += '<span class="gitRef remote" data-name="' + refName + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
+				refName = escapeHtml(remotes[j].name);
+				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + escapeHtml(remotes[j].remote) + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			for (j = 0; j < this.commits[i].tags.length; j++) {
 				refName = escapeHtml(this.commits[i].tags[j]);
@@ -628,8 +627,8 @@ class GitGraphView {
 				}];
 				copyType = 'Tag Name';
 			} else {
-				let isHead = sourceElem.classList.contains('head');
-				if (isHead && (<HTMLElement>e.target).className === 'gitRefHeadRemote') {
+				let isHead = sourceElem.classList.contains('head'), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';
+				if (isHead && isRemoteCombinedWithHead) {
 					refName = unescapeHtml((<HTMLElement>e.target).dataset.remote!) + '/' + refName;
 					isHead = false;
 				}
@@ -638,7 +637,7 @@ class GitGraphView {
 					if (this.gitBranchHead !== refName) {
 						menu.push({
 							title: 'Checkout Branch',
-							onClick: () => this.checkoutBranchAction(refName, false)
+							onClick: () => this.checkoutBranchAction(refName, null)
 						});
 					}
 					menu.push({
@@ -673,18 +672,18 @@ class GitGraphView {
 						);
 					}
 				} else {
+					let remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!);
 					menu = [{
 						title: 'Delete Remote Branch' + ELLIPSIS,
 						onClick: () => {
 							showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
 								showActionRunningDialog('Deleting Remote Branch');
-								let sep = refName.indexOf('/');
-								sendMessage({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: sep > -1 ? refName.substr(sep + 1) : refName, remote: sep > -1 ? refName.substr(0, sep) : 'origin' });
+								sendMessage({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote });
 							}, null);
 						}
 					}, {
 						title: 'Checkout Branch' + ELLIPSIS,
-						onClick: () => this.checkoutBranchAction(refName, true)
+						onClick: () => this.checkoutBranchAction(refName, remote)
 					}];
 				}
 				copyType = 'Branch Name';
@@ -703,12 +702,12 @@ class GitGraphView {
 			hideDialogAndContextMenu();
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
 			if (!sourceElem.classList.contains('tag')) {
-				let refName = unescapeHtml(sourceElem.dataset.name!), isHead = sourceElem.classList.contains('head');
-				if (isHead && (<HTMLElement>e.target).className === 'gitRefHeadRemote') {
+				let refName = unescapeHtml(sourceElem.dataset.name!), isHead = sourceElem.classList.contains('head'), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';
+				if (isHead && isRemoteCombinedWithHead) {
 					refName = unescapeHtml((<HTMLElement>e.target).dataset.remote!) + '/' + refName;
 					isHead = false;
 				}
-				this.checkoutBranchAction(refName, !isHead);
+				this.checkoutBranchAction(refName, isHead ? null : unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!));
 			}
 		});
 	}
@@ -722,9 +721,9 @@ class GitGraphView {
 		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 		this.footerElem.innerHTML = '';
 	}
-	private checkoutBranchAction(refName: string, isRemote: boolean) {
-		if (isRemote) {
-			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', refName.substr(refName.indexOf('/') + 1), 'Checkout Branch', newBranch => {
+	private checkoutBranchAction(refName: string, remote: string | null) {
+		if (remote !== null) {
+			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', refName.substr(remote.length + 1), 'Checkout Branch', newBranch => {
 				sendMessage({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName });
 			}, null);
 		} else {

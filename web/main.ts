@@ -560,7 +560,20 @@ class GitGraphView {
 							], 'Yes, merge', values => {
 								showActionRunningDialog('Merging Commit');
 								sendMessage({ command: 'mergeCommit', repo: this.currentRepo, commitHash: hash, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' });
-							}, null);
+							}, sourceElem);
+						}
+					},
+					{
+						title: 'Rebase current branch on this Commit' + ELLIPSIS,
+						onClick: () => {
+							showFormDialog('Are you sure you want to rebase the current branch on commit <b><i>' + abbrevCommit(hash) + '</i></b>?', [
+								{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: false },
+								{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: true }
+							], 'Yes, rebase', values => {
+								let interactive = values[0] === 'checked';
+								showActionRunningDialog(interactive ? 'Launching Interactive Rebase' : 'Rebasing on Commit');
+								sendMessage({ command: 'rebaseOn', repo: this.currentRepo, base: hash, type: 'Commit', ignoreDate: values[1] === 'checked', interactive: interactive });
+							}, sourceElem);
 						}
 					},
 					{
@@ -666,6 +679,18 @@ class GitGraphView {
 									], 'Yes, merge', values => {
 										showActionRunningDialog('Merging Branch');
 										sendMessage({ command: 'mergeBranch', repo: this.currentRepo, branchName: refName, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' });
+									}, null);
+								}
+							}, {
+								title: 'Rebase current branch on Branch' + ELLIPSIS,
+								onClick: () => {
+									showFormDialog('Are you sure you want to rebase the current branch on branch <b><i>' + escapeHtml(refName) + '</i></b>?', [
+										{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: false },
+										{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: true }
+									], 'Yes, rebase', values => {
+										let interactive = values[0] === 'checked';
+										showActionRunningDialog(interactive ? 'Launching Interactive Rebase' : 'Rebasing on Branch');
+										sendMessage({ command: 'rebaseOn', repo: this.currentRepo, base: refName, type: 'Branch', ignoreDate: values[1] === 'checked', interactive: interactive });
 									}, null);
 								}
 							}
@@ -1151,6 +1176,17 @@ window.addEventListener('load', () => {
 				break;
 			case 'renameBranch':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Rename Branch');
+				break;
+			case 'rebaseOn':
+				if (msg.status === null) {
+					if (msg.interactive) {
+						hideDialog();
+					} else {
+						gitGraph.refresh(true);
+					}
+				} else {
+					showErrorDialog('Unable to Rebase current branch on ' + msg.type, msg.status, null);
+				}
 				break;
 			case 'refresh':
 				gitGraph.refresh(false);

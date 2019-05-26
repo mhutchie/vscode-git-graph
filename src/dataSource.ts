@@ -1,7 +1,7 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
-import { GitCommandStatus, GitCommit, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges } from './types';
-import { getPathFromStr, UNCOMMITTED } from './utils';
+import { GitCommandStatus, GitCommit, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
+import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
 const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
@@ -252,6 +252,16 @@ export class DataSource {
 			}
 		}
 		return mergeStatus;
+	}
+
+	public rebaseOn(repo: string, base: string, type: RebaseOnType, ignoreDate: boolean, interactive: boolean) {
+		let escapedBase = type === 'Branch' ? escapeRefName(base) : base;
+		if (interactive) {
+			runCommandInNewTerminal(repo, this.gitExecPath + ' rebase --interactive ' + escapedBase, 'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
+			return new Promise<GitCommandStatus>(resolve => setTimeout(() => resolve(null), 1000));
+		} else {
+			return this.runGitCommand('rebase ' + escapedBase + (ignoreDate ? ' --ignore-date' : ''), repo);
+		}
 	}
 
 	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number) {

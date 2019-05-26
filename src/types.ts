@@ -107,6 +107,7 @@ export type TabIconColourTheme = 'colour' | 'grey';
 export type GitCommandStatus = string | null;
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
+export type RebaseOnType = 'Branch' | 'Commit';
 
 export interface CustomBranchGlobPattern {
 	name: string;
@@ -337,6 +338,21 @@ export interface ResponsePushTag {
 	status: GitCommandStatus;
 }
 
+export interface RequestRebaseOn {
+	command: 'rebaseOn';
+	repo: string;
+	type: RebaseOnType;
+	base: string;
+	ignoreDate: boolean;
+	interactive: boolean;
+}
+export interface ResponseRebaseOn {
+	command: 'rebaseOn';
+	type: RebaseOnType;
+	interactive: boolean;
+	status: GitCommandStatus;
+}
+
 export interface ResponseRefresh {
 	command: 'refresh';
 }
@@ -422,6 +438,7 @@ export type RequestMessage =
 	| RequestMergeBranch
 	| RequestMergeCommit
 	| RequestPushTag
+	| RequestRebaseOn
 	| RequestRenameBranch
 	| RequestResetToCommit
 	| RequestRevertCommit
@@ -449,6 +466,7 @@ export type ResponseMessage =
 	| ResponseMergeBranch
 	| ResponseMergeCommit
 	| ResponsePushTag
+	| ResponseRebaseOn
 	| ResponseRefresh
 	| ResponseRenameBranch
 	| ResponseResetToCommit

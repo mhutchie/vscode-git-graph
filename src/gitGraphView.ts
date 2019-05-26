@@ -224,6 +224,12 @@ export class GitGraphView {
 						status: await this.dataSource.pushTag(msg.repo, msg.tagName)
 					});
 					break;
+				case 'rebaseOn':
+					this.sendMessage({
+						command: 'rebaseOn', type: msg.type, interactive: msg.interactive,
+						status: await this.dataSource.rebaseOn(msg.repo, msg.base, msg.type, msg.ignoreDate, msg.interactive)
+					});
+					break;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',

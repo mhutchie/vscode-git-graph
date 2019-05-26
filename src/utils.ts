@@ -56,6 +56,12 @@ export function viewScm() {
 	});
 }
 
+export function runCommandInNewTerminal(cwd: string, command: string, name: string) {
+	let terminal = vscode.window.createTerminal({ cwd: cwd, name: name });
+	terminal.sendText(command);
+	terminal.show();
+}
+
 
 // Evaluate promises in parallel, with at most maxParallel running at any time
 export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise: (val: X) => Promise<Y>) {

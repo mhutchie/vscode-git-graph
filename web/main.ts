@@ -349,8 +349,14 @@ class GitGraphView {
 		this.graph.render(expandedCommit);
 	}
 	private renderTable() {
-		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader">Graph</th><th class="tableColHeader">Description</th><th class="tableColHeader">Date</th><th class="tableColHeader">Author</th><th class="tableColHeader">Commit</th></tr>', i, currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
-		for (i = 0; i < this.commits.length; i++) {
+		let colVisibility = this.getColumnVisibility(), currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
+		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
+			(colVisibility.date ? '<th class="tableColHeader" data-col="2">Date</th>' : '') +
+			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
+			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
+			'</tr>';
+
+		for (let i = 0; i < this.commits.length; i++) {
 			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml, heads: { [name: string]: string[] } = {}, remotes: GG.GitRemoteRef[];
 			if (this.config.combineLocalAndRemoteBranchLabels) {
 				remotes = [];
@@ -393,7 +399,11 @@ class GitGraphView {
 			}
 
 			let commitDot = this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
-			html += '<tr class="commit"' + (this.commits[i].hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + this.commits[i].hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span>' + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td><td title="' + date.title + '">' + date.value + '</td><td title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td><td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td></tr>';
+			html += '<tr class="commit"' + (this.commits[i].hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + this.commits[i].hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span>' + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td>' +
+				(colVisibility.date ? '<td title="' + date.title + '">' + date.value + '</td>' : '') +
+				(colVisibility.author ? '<td class="authorCol" title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td>' : '') +
+				(colVisibility.commit ? '<td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td>' : '') +
+				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
@@ -411,7 +421,7 @@ class GitGraphView {
 
 		if (this.expandedCommit !== null) {
 			let elem = null, compareWithElem = null, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
-			for (i = 0; i < elems.length; i++) {
+			for (let i = 0; i < elems.length; i++) {
 				if (this.expandedCommit.hash === elems[i].dataset.hash || this.expandedCommit.compareWithHash === elems[i].dataset.hash) {
 					if (this.expandedCommit.hash === elems[i].dataset.hash) {
 						elem = elems[i];
@@ -737,8 +747,11 @@ class GitGraphView {
 		});
 	}
 	private renderUncommittedChanges() {
-		let date = getCommitDate(this.commits[0].date);
-		document.getElementById('uncommittedChanges')!.innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td><td title="' + date.title + '">' + date.value + '</td><td title="* <>">*</td><td title="*">*</td>';
+		let colVisibility = this.getColumnVisibility(), date = getCommitDate(this.commits[0].date);
+		document.getElementById('uncommittedChanges')!.innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td>' +
+			(colVisibility.date ? '<td title="' + date.title + '">' + date.value + '</td>' : '') +
+			(colVisibility.author ? '<td title="* <>">*</td>' : '') +
+			(colVisibility.commit ? '<td title="*">*</td>' : '');
 	}
 	private renderShowLoading() {
 		hideDialogAndContextMenu();
@@ -757,79 +770,138 @@ class GitGraphView {
 	}
 	private makeTableResizable() {
 		let colHeadersElem = document.getElementById('tableColHeaders')!, cols = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tableColHeader');
-		let columnWidths = this.gitRepos[this.currentRepo].columnWidths, mouseX = -1, col = -1, that = this;
+		let columnWidths: GG.ColumnWidth[], mouseX = -1, col = -1, colIndex = -1;
+
+		const makeTableFixedLayout = () => {
+			cols[0].style.width = columnWidths[0] + 'px';
+			cols[0].style.padding = '';
+			for (let i = 2; i < cols.length; i++) {
+				cols[i].style.width = columnWidths[parseInt(cols[i].dataset.col!)] + 'px';
+			}
+			this.tableElem.className = 'fixedLayout';
+			this.graph.limitMaxWidth(columnWidths[0] + 16);
+		};
 
 		for (let i = 0; i < cols.length; i++) {
-			cols[i].innerHTML += (i > 0 ? '<span class="resizeCol left" data-col="' + (i - 1) + '"></span>' : '') + (i < cols.length - 1 ? '<span class="resizeCol right" data-col="' + i + '"></span>' : '');
+			let col = parseInt(cols[i].dataset.col!);
+			cols[i].innerHTML += (i > 0 ? '<span class="resizeCol left" data-col="' + (col - 1) + '"></span>' : '') + (i < cols.length - 1 ? '<span class="resizeCol right" data-col="' + col + '"></span>' : '');
 		}
-		if (columnWidths !== null) {
+
+		let cWidths = this.gitRepos[this.currentRepo].columnWidths;
+		if (cWidths === null) { // Initialise auto column layout if it is the first time viewing the repo.
+			let defaults = this.config.defaultColumnVisibility;
+			columnWidths = [COLUMN_AUTO, COLUMN_AUTO, defaults.date ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.author ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.commit ? COLUMN_AUTO : COLUMN_HIDDEN];
+			this.saveColumnWidths(columnWidths);
+		} else {
+			columnWidths = [cWidths[0], COLUMN_AUTO, cWidths[1], cWidths[2], cWidths[3]];
+		}
+
+		if (columnWidths[0] !== COLUMN_AUTO) {
+			// Table should have fixed layout 
 			makeTableFixedLayout();
 		} else {
+			// Table should have automatic layout
 			this.tableElem.className = 'autoLayout';
 			this.graph.limitMaxWidth(-1);
-			cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getWidth() + 16, 64) - (cols[0].offsetWidth - 24)) / 2) + 'px';
+			cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getWidth() + 16, 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
 		}
 
 		addListenerToClass('resizeCol', 'mousedown', (e) => {
 			col = parseInt((<HTMLElement>e.target).dataset.col!);
+			while (columnWidths[col] === COLUMN_HIDDEN) col--;
 			mouseX = (<MouseEvent>e).clientX;
-			if (columnWidths === null) {
-				columnWidths = [cols[0].clientWidth - 24, cols[2].clientWidth - 24, cols[3].clientWidth - 24, cols[4].clientWidth - 24];
-				makeTableFixedLayout();
+
+			let isAuto = columnWidths[0] === COLUMN_AUTO;
+			for (let i = 0; i < cols.length; i++) {
+				let curCol = parseInt(cols[i].dataset.col!);
+				if (isAuto && curCol !== 1) columnWidths[curCol] = cols[i].clientWidth - COLUMN_LEFT_RIGHT_PADDING;
+				if (curCol === col) colIndex = i;
 			}
+			if (isAuto) makeTableFixedLayout();
 			colHeadersElem.classList.add('resizing');
 		});
 		colHeadersElem.addEventListener('mousemove', (e) => {
-			if (col > -1 && columnWidths !== null) {
+			if (col > -1) {
 				let mouseEvent = <MouseEvent>e;
 				let mouseDeltaX = mouseEvent.clientX - mouseX;
-				switch (col) {
-					case 0:
-						if (columnWidths[0] + mouseDeltaX < 40) mouseDeltaX = -columnWidths[0] + 40;
-						if (cols[1].clientWidth - mouseDeltaX < 64) mouseDeltaX = cols[1].clientWidth - 64;
-						columnWidths[0] += mouseDeltaX;
-						cols[0].style.width = columnWidths[0] + 'px';
-						this.graph.limitMaxWidth(columnWidths[0] + 16);
-						break;
-					case 1:
-						if (cols[1].clientWidth + mouseDeltaX < 64) mouseDeltaX = -cols[1].clientWidth + 64;
-						if (columnWidths[1] - mouseDeltaX < 40) mouseDeltaX = columnWidths[1] - 40;
-						columnWidths[1] -= mouseDeltaX;
-						cols[2].style.width = columnWidths[1] + 'px';
-						break;
-					default:
-						if (columnWidths[col - 1] + mouseDeltaX < 40) mouseDeltaX = -columnWidths[col - 1] + 40;
-						if (columnWidths[col] - mouseDeltaX < 40) mouseDeltaX = columnWidths[col] - 40;
-						columnWidths[col - 1] += mouseDeltaX;
-						columnWidths[col] -= mouseDeltaX;
-						cols[col].style.width = columnWidths[col - 1] + 'px';
-						cols[col + 1].style.width = columnWidths[col] + 'px';
+
+				if (col === 0) {
+					if (columnWidths[0] + mouseDeltaX < COLUMN_MIN_WIDTH) mouseDeltaX = -columnWidths[0] + COLUMN_MIN_WIDTH;
+					if (cols[1].clientWidth - COLUMN_LEFT_RIGHT_PADDING - mouseDeltaX < COLUMN_MIN_WIDTH) mouseDeltaX = cols[1].clientWidth - COLUMN_LEFT_RIGHT_PADDING - COLUMN_MIN_WIDTH;
+					columnWidths[0] += mouseDeltaX;
+					cols[0].style.width = columnWidths[0] + 'px';
+					this.graph.limitMaxWidth(columnWidths[0] + 16);
+				} else {
+					let colWidth = col !== 1 ? columnWidths[col] : cols[1].clientWidth - COLUMN_LEFT_RIGHT_PADDING;
+					let nextCol = col + 1;
+					while (columnWidths[nextCol] === COLUMN_HIDDEN) nextCol++;
+
+					if (colWidth + mouseDeltaX < COLUMN_MIN_WIDTH) mouseDeltaX = -colWidth + COLUMN_MIN_WIDTH;
+					if (columnWidths[nextCol] - mouseDeltaX < COLUMN_MIN_WIDTH) mouseDeltaX = columnWidths[nextCol] - COLUMN_MIN_WIDTH;
+					if (col !== 1) {
+						columnWidths[col] += mouseDeltaX;
+						cols[colIndex].style.width = columnWidths[col] + 'px';
+					}
+					columnWidths[nextCol] -= mouseDeltaX;
+					cols[colIndex + 1].style.width = columnWidths[nextCol] + 'px';
 				}
 				mouseX = mouseEvent.clientX;
 			}
 		});
-		colHeadersElem.addEventListener('mouseup', stopResizing);
-		colHeadersElem.addEventListener('mouseleave', stopResizing);
-		function stopResizing() {
-			if (col > -1 && columnWidths !== null) {
+		const stopResizing = () => {
+			if (col > -1) {
 				col = -1;
+				colIndex = -1;
 				mouseX = -1;
 				colHeadersElem.classList.remove('resizing');
-				that.gitRepos[that.currentRepo].columnWidths = columnWidths;
-				sendMessage({ command: 'saveRepoState', repo: that.currentRepo, state: that.gitRepos[that.currentRepo] });
+				this.saveColumnWidths(columnWidths);
 			}
+		};
+		colHeadersElem.addEventListener('mouseup', stopResizing);
+		colHeadersElem.addEventListener('mouseleave', stopResizing);
+		colHeadersElem.addEventListener('contextmenu', (e: MouseEvent) => {
+			e.stopPropagation();
+			const toggleColumnState = (col: number, defaultWidth: number) => {
+				columnWidths[col] = columnWidths[col] !== COLUMN_HIDDEN ? COLUMN_HIDDEN : columnWidths[0] === COLUMN_AUTO ? COLUMN_AUTO : defaultWidth - COLUMN_LEFT_RIGHT_PADDING;
+				this.saveColumnWidths(columnWidths);
+				hideContextMenu();
+				this.render();
+			};
+			showCheckedContextMenu(e, [
+				{
+					title: 'Date',
+					checked: columnWidths[2] !== COLUMN_HIDDEN,
+					onClick: () => toggleColumnState(2, 128)
+				},
+				{
+					title: 'Author',
+					checked: columnWidths[3] !== COLUMN_HIDDEN,
+					onClick: () => toggleColumnState(3, 128)
+				},
+				{
+					title: 'Commit',
+					checked: columnWidths[4] !== COLUMN_HIDDEN,
+					onClick: () => toggleColumnState(4, 80)
+				}
+			], null);
+		});
+	}
+	private saveColumnWidths(columnWidths: GG.ColumnWidth[]) {
+		this.gitRepos[this.currentRepo].columnWidths = [columnWidths[0], columnWidths[2], columnWidths[3], columnWidths[4]];
+		sendMessage({ command: 'saveRepoState', repo: this.currentRepo, state: this.gitRepos[this.currentRepo] });
+	}
+	private getColumnVisibility() {
+		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
+		if (colWidths !== null) {
+			return { date: colWidths[1] !== COLUMN_HIDDEN, author: colWidths[2] !== COLUMN_HIDDEN, commit: colWidths[3] !== COLUMN_HIDDEN };
+		} else {
+			let defaults = this.config.defaultColumnVisibility;
+			return { date: defaults.date, author: defaults.author, commit: defaults.commit };
 		}
-		function makeTableFixedLayout() {
-			if (columnWidths !== null) {
-				cols[0].style.width = columnWidths[0] + 'px';
-				cols[0].style.padding = '';
-				cols[2].style.width = columnWidths[1] + 'px';
-				cols[3].style.width = columnWidths[2] + 'px';
-				cols[4].style.width = columnWidths[3] + 'px';
-				that.tableElem.className = 'fixedLayout';
-				that.graph.limitMaxWidth(columnWidths[0] + 16);
-			}
-		}
+	}
+	private getNumColumns() {
+		let colVisibility = this.getColumnVisibility();
+		return 2 + (colVisibility.date ? 1 : 0) + (colVisibility.author ? 1 : 0) + (colVisibility.commit ? 1 : 0);
 	}
 
 	/* Observers */
@@ -1020,7 +1092,7 @@ class GitGraphView {
 		}
 		html = '<div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose">' + svgIcons.close + '</div>';
 
-		elem.innerHTML = isDocked ? html : '<td></td><td colspan="4">' + html + '</td>';
+		elem.innerHTML = isDocked ? html : '<td></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
 
 		if (isDocked) {
 			document.body.classList.add(CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN);
@@ -1093,6 +1165,7 @@ window.addEventListener('load', () => {
 		combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
 		commitDetailsViewLocation: viewState.commitDetailsViewLocation,
 		customBranchGlobPatterns: viewState.customBranchGlobPatterns,
+		defaultColumnVisibility: viewState.defaultColumnVisibility,
 		fetchAvatars: viewState.fetchAvatars,
 		graphColours: viewState.graphColours,
 		graphStyle: viewState.graphStyle,
@@ -1323,7 +1396,7 @@ function abbrevCommit(commitHash: string) {
 
 
 /* Context Menu */
-function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem: HTMLElement) {
+function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem: HTMLElement | null) {
 	let html = '', i: number, event = <MouseEvent>e;
 	for (i = 0; i < items.length; i++) {
 		html += items[i] !== null ? '<li class="contextMenuItem" data-index="' + i + '">' + items[i]!.title + '</li>' : '<li class="contextMenuDivider"></li>';
@@ -1341,12 +1414,19 @@ function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem:
 	addListenerToClass('contextMenuItem', 'click', (e) => {
 		e.stopPropagation();
 		hideContextMenu();
-		items[parseInt((<HTMLElement>(e.target)).dataset.index!)]!.onClick();
+		items[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]!.onClick();
 	});
 
 	contextMenuSource = sourceElem;
-	contextMenuSource.classList.add(CLASS_CONTEXT_MENU_ACTIVE);
+	if (contextMenuSource !== null) contextMenuSource.classList.add(CLASS_CONTEXT_MENU_ACTIVE);
 	graphFocus = false;
+}
+function showCheckedContextMenu(e: MouseEvent, items: ContextMenuItem[], sourceElem: HTMLElement | null) {
+	for (let i = 0; i < items.length; i++) {
+		items[i].title = '<span class="contextMenuItemCheck">' + (items[i].checked ? svgIcons.check : '') + '</span>' + items[i].title;
+	}
+	showContextMenu(e, items, sourceElem);
+	contextMenu.classList.add('checked');
 }
 function hideContextMenu() {
 	contextMenu.className = '';

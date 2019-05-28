@@ -21,10 +21,17 @@ const htmlUnescapes: { [key: string]: string } = { '&amp;': '&', '&lt;': '<', '&
 const htmlEscaper = /[&<>"'\/]/g;
 const htmlUnescaper = /&lt;|&gt;|&amp;|&quot;|&#x27;|&#x2F;/g;
 const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$/g;
+
 const ELLIPSIS = '&#8230;';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const UNCOMMITTED = '*';
 const SHOW_ALL_BRANCHES = '';
+
+const COLUMN_HIDDEN = -100;
+const COLUMN_AUTO = -101;
+
+const COLUMN_MIN_WIDTH = 40;
+const COLUMN_LEFT_RIGHT_PADDING = 24;
 
 const CLASS_ACTIVE = 'active';
 const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';

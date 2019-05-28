@@ -15,6 +15,7 @@ declare global {
 		combineLocalAndRemoteBranchLabels: boolean;
 		commitDetailsViewLocation: GG.CommitDetailsViewLocation;
 		customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
+		defaultColumnVisibility: GG.DefaultColumnVisibility;
 		fetchAvatars: boolean;
 		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';
@@ -28,6 +29,7 @@ declare global {
 	interface ContextMenuItem {
 		title: string;
 		onClick: () => void;
+		checked?: boolean; // Required in checked context menus
 	}
 
 	type ContextMenuElement = ContextMenuItem | null;

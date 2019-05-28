@@ -57,8 +57,9 @@ export interface GitRefData {
 
 export type GitRepoSet = { [repo: string]: GitRepoState };
 export interface GitRepoState {
-	columnWidths: number[] | null;
+	columnWidths: ColumnWidth[] | null;
 }
+export type ColumnWidth = number;
 
 export interface GitUnsavedChanges {
 	branch: string;
@@ -71,6 +72,7 @@ export interface GitGraphViewState {
 	commitDetailsViewLocation: CommitDetailsViewLocation;
 	customBranchGlobPatterns: CustomBranchGlobPattern[];
 	dateFormat: DateFormat;
+	defaultColumnVisibility: DefaultColumnVisibility;
 	fetchAvatars: boolean;
 	graphColours: string[];
 	graphStyle: GraphStyle;
@@ -112,6 +114,11 @@ export type RebaseOnType = 'Branch' | 'Commit';
 export interface CustomBranchGlobPattern {
 	name: string;
 	glob: string;
+}
+export interface DefaultColumnVisibility {
+	date: boolean;
+	author: boolean;
+	commit: boolean;
 }
 
 

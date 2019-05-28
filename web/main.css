@@ -118,7 +118,7 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	width:100%;
 	max-width:0;
 }
-#commitTable.autoLayout td:nth-child(4), #commitTable.autoLayout th:nth-child(4){
+#commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
 	max-width:124px;
 }
 #tableColHeaders.resizing th{
@@ -476,6 +476,27 @@ body.tagLabelsRightAligned .gitRef.tag{
 	margin:4px 10px;
 	border-top:1px solid var(--vscode-menu-separatorBackground);
 	opacity:0.5;
+}
+
+#contextMenu.checked li.contextMenuItem{
+	position:relative;
+	padding-left:35px;
+}
+#contextMenu.checked li.contextMenuItem .contextMenuItemCheck{
+	position:absolute;
+	width:12px;
+	height:16px;
+	top:50%;
+	margin-top:-8px;
+	left:15px;
+}
+#contextMenu.checked li.contextMenuItem .contextMenuItemCheck svg{
+	fill:var(--vscode-menu-foreground);
+	opacity:0.5;
+}
+#contextMenu.checked li.contextMenuItem:hover .contextMenuItemCheck svg{
+	fill:var(--vscode-menu-selectionForeground);
+	opacity:0.75;
 }
 
 /* Dialogs */

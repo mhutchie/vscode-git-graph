@@ -130,6 +130,29 @@
 					"default": "Author Date",
 					"description": "Specifies the date type to be displayed throughout Git Graph."
 				},
+				"git-graph.defaultColumnVisibility": {
+					"type": "object",
+					"properties": {
+						"Date": {
+							"type": "boolean",
+							"title": "Visibility of the Date column"
+						},
+						"Author": {
+							"type": "boolean",
+							"title": "Visibility of the Author column"
+						},
+						"Commit": {
+							"type": "boolean",
+							"title": "Visibility of the Commit column"
+						}
+					},
+					"default": {
+						"Date": true,
+						"Author": true,
+						"Commit": true
+					},
+					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
+				},
 				"git-graph.fetchAvatars": {
 					"type": "boolean",
 					"default": false,

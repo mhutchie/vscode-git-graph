@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CustomBranchGlobPattern, DateFormat, DateType, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CustomBranchGlobPattern, DateFormat, DateType, DefaultColumnVisibility, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -37,6 +37,15 @@ class Config {
 
 	public dateType(): DateType {
 		return this.workspaceConfiguration.get('dateType', 'Author Date');
+	}
+
+	public defaultColumnVisibility(): DefaultColumnVisibility {
+		let obj: any = this.workspaceConfiguration.get('defaultColumnVisibility', {});
+		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean') {
+			return { author: obj['Author'], commit: obj['Commit'], date: obj['Date'] };
+		} else {
+			return { author: true, commit: true, date: true };
+		}
 	}
 
 	public fetchAvatars() {

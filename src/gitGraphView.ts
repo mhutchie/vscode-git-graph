@@ -296,6 +296,7 @@ export class GitGraphView {
 			commitDetailsViewLocation: config.commitDetailsViewLocation(),
 			customBranchGlobPatterns: config.customBranchGlobPatterns(),
 			dateFormat: config.dateFormat(),
+			defaultColumnVisibility: config.defaultColumnVisibility(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),

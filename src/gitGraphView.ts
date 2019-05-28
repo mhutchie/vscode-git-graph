@@ -103,9 +103,6 @@ export class GitGraphView {
 						status: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
 					});
 					break;
-				case 'fetchAvatar':
-					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.commits);
-					break;
 				case 'checkoutBranch':
 					this.sendMessage({
 						command: 'checkoutBranch',
@@ -173,6 +170,15 @@ export class GitGraphView {
 						command: 'deleteTag',
 						status: await this.dataSource.deleteTag(msg.repo, msg.tagName)
 					});
+					break;
+				case 'fetch':
+					this.sendMessage({
+						command: 'fetch',
+						status: await this.dataSource.fetch(msg.repo)
+					});
+					break;
+				case 'fetchAvatar':
+					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.commits);
 					break;
 				case 'loadBranches':
 					let branchData = await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches), isRepo = true;
@@ -321,7 +327,8 @@ export class GitGraphView {
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchSelect" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
-					<div id="refreshBtn" class="roundedBtn">Refresh</div>
+					<div id="fetchBtn" title="Fetch from Remote(s)"></div>
+					<div id="refreshBtn" title="Refresh"></div>
 				</div>
 				<div id="content">
 					<div id="commitGraph"></div>

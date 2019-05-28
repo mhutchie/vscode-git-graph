@@ -103,7 +103,7 @@ export class DataSource {
 					}
 				}
 
-				resolve({ commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable });
+				resolve({ commits: commitNodes, head: refData.head, remotes: results[2], moreCommitsAvailable: moreCommitsAvailable });
 			});
 		});
 	}
@@ -204,6 +204,10 @@ export class DataSource {
 
 	public deleteTag(repo: string, tagName: string) {
 		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
+	}
+
+	public fetch(repo: string) {
+		return this.runGitCommand('fetch --all', repo);
 	}
 
 	public pushTag(repo: string, tagName: string) {
@@ -408,7 +412,7 @@ export class DataSource {
 				} else {
 					let lines;
 					if (stdout !== '' || stderr !== '') {
-						lines = (stdout !== '' ? stdout : stderr !== '' ? stderr : '').split(eolRegex);
+						lines = (stderr !== '' ? stderr : stdout !== '' ? stdout : '').split(eolRegex);
 					} else {
 						lines = err.message.split(eolRegex);
 						lines.shift();
@@ -434,7 +438,7 @@ export class DataSource {
 				if (code === 0) {
 					resolve(null);
 				} else {
-					let lines = (stdout !== '' ? stdout : stderr !== '' ? stderr : '').split(eolRegex);
+					let lines = (stderr !== '' ? stderr : stdout !== '' ? stdout : '').split(eolRegex);
 					resolve(lines.slice(0, lines.length - 1).join('\n'));
 				}
 			});

@@ -35,6 +35,7 @@ export interface GitCommitDetails {
 export interface GitCommitData {
 	commits: GitCommitNode[];
 	head: string | null;
+	remotes: string[];
 	moreCommitsAvailable: boolean;
 }
 
@@ -258,6 +259,15 @@ export interface ResponseDeleteTag {
 	status: GitCommandStatus;
 }
 
+export interface RequestFetch {
+	command: 'fetch';
+	repo: string;
+}
+export interface ResponseFetch {
+	command: 'fetch';
+	status: GitCommandStatus;
+}
+
 export interface RequestFetchAvatar {
 	command: 'fetchAvatar';
 	repo: string;
@@ -296,6 +306,7 @@ export interface ResponseLoadCommits {
 	command: 'loadCommits';
 	commits: GitCommitNode[];
 	head: string | null;
+	remotes: string[];
 	moreCommitsAvailable: boolean;
 	hard: boolean;
 }
@@ -438,6 +449,7 @@ export type RequestMessage =
 	| RequestDeleteBranch
 	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
+	| RequestFetch
 	| RequestFetchAvatar
 	| RequestLoadBranches
 	| RequestLoadCommits
@@ -466,6 +478,7 @@ export type ResponseMessage =
 	| ResponseDeleteBranch
 	| ResponseDeleteRemoteBranch
 	| ResponseDeleteTag
+	| ResponseFetch
 	| ResponseFetchAvatar
 	| ResponseLoadBranches
 	| ResponseLoadCommits

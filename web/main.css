@@ -259,9 +259,7 @@ tr#commitDetails #commitDetailsSummary{
 	fill-opacity:0.6;
 }
 #commitDetailsClose:hover svg{
-	stroke:var(--vscode-editor-foreground);
-	stroke-width:1;
-	stroke-opacity:0.2;
+	fill-opacity:0.8;
 }
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	width:13px;
@@ -388,7 +386,8 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 #loadingHeader svg{
 	display:inline;
-	fill:rgb(128,128,128);
+	fill:var(--vscode-editor-foreground);
+	opacity:0.7;
 	margin-right:10px;
 	vertical-align:top;
 	animation:loadingIconAnimation 2s linear infinite;
@@ -401,11 +400,11 @@ body.tagLabelsRightAligned .gitRef.tag{
 /* Controls */
 #controls{
 	display:block;
-	position: relative;
+	position:relative;
 	left:0;
 	right:0;
 	top:0;
-	padding:4px 96px 4px 0;
+	padding:4px 42px 4px 0;
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	line-height:32px;
 	text-align:center;
@@ -423,15 +422,44 @@ body.tagLabelsRightAligned .gitRef.tag{
 	width:14px;
 	vertical-align:text-top;
 }
-#refreshBtn{
+#fetchBtn, #refreshBtn{
 	position:absolute;
-	right:8px;
 	top:50%;
-	width:80px;
-	height:22px;
-	line-height:22px;
-	border-radius:11px;
-	margin-top:-12px;
+	width:20px;
+	height:20px;
+	margin-top:-10px;
+	cursor:pointer;
+	user-select:none;
+}
+#fetchBtn{
+	display:none;
+	right:40px;
+}
+#refreshBtn{
+	right:10px;
+}
+#fetchBtn svg, #refreshBtn svg{
+	position:absolute;
+	fill:var(--vscode-editor-foreground);
+	opacity:0.8;
+}
+#fetchBtn:hover svg, #refreshBtn:hover svg{
+	opacity:1;
+	stroke:var(--vscode-editor-foreground);
+	stroke-opacity:0.4;
+	stroke-width:0.5px;
+}
+#fetchBtn svg{
+	left:1px;
+	top:1px;
+	width:18px !important;
+	height:18px !important;
+}
+#refreshBtn svg{
+	left:2px;
+	top:2px;
+	width:16px !important;
+	height:16px !important;
 }
 #loadMoreCommitsBtn{
 	width:180px;
@@ -439,6 +467,13 @@ body.tagLabelsRightAligned .gitRef.tag{
 	margin:10px auto;
 	border-radius:14px;
 	line-height:28px;
+}
+
+#controls.fetchSupported{
+	padding-right:72px;
+}
+#controls.fetchSupported #fetchBtn{
+	display:block;
 }
 
 #controls select:focus, #controls input:focus{
@@ -492,11 +527,11 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 #contextMenu.checked li.contextMenuItem .contextMenuItemCheck svg{
 	fill:var(--vscode-menu-foreground);
-	opacity:0.5;
+	opacity:0.6;
 }
 #contextMenu.checked li.contextMenuItem:hover .contextMenuItemCheck svg{
 	fill:var(--vscode-menu-selectionForeground);
-	opacity:0.75;
+	opacity:0.8;
 }
 
 /* Dialogs */
@@ -577,6 +612,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	font-style:italic;
 	margin-top:10px;
 	text-align:left;
+	width:100%;
 }
 #dialogBacking.active{
 	display:block;
@@ -607,7 +643,8 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 #dialog svg{
 	display:inline;
-	fill:rgb(128,128,128);
+	fill:var(--vscode-menu-foreground);
+	opacity:0.75;
 	margin-right:3px;
 	line-height:20px;
 	vertical-align:sub;
@@ -618,7 +655,6 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 #actionRunning svg{
 	display:inline-block;
-	fill:rgb(128,128,128);
 	margin-right:10px;
 	vertical-align:top;
 	animation:loadingIconAnimation 2s linear infinite;

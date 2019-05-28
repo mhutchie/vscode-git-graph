@@ -2,6 +2,7 @@ class GitGraphView {
 	private gitRepos: GG.GitRepoSet;
 	private gitBranches: string[] = [];
 	private gitBranchHead: string | null = null;
+	private gitRemotes: string[] = [];
 	private commits: GG.GitCommitNode[] = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
@@ -42,6 +43,8 @@ class GitGraphView {
 		this.repoDropdown = new Dropdown('repoSelect', true, false, 'Repos', values => {
 			this.currentRepo = values[0];
 			this.maxCommits = this.config.initialLoadCommits;
+			this.gitRemotes = [];
+			alterClass(this.controlsElem, 'fetchSupported', false);
 			this.closeCommitDetails(false);
 			this.currentBranches = null;
 			this.saveState();
@@ -63,9 +66,6 @@ class GitGraphView {
 		});
 		this.dockedCommitDetailsView = document.getElementById('dockedCommitDetailsView')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
-		document.getElementById('refreshBtn')!.addEventListener('click', () => {
-			this.refresh(true);
-		});
 
 		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, config.branchLabelsAlignedToGraph);
 		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, config.tagLabelsOnRight);
@@ -86,13 +86,24 @@ class GitGraphView {
 				this.expandedCommit = prevState.expandedCommit;
 				this.avatars = prevState.avatars;
 				this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
-				this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
+				this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitRemotes, prevState.moreCommitsAvailable, true);
 				this.scrollTop = prevState.scrollTop;
 				this.viewElem.scroll(0, this.scrollTop);
 			}
 		}
 		this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo);
 		this.requestLoadBranchesAndCommits(false);
+
+		const refreshBtn = document.getElementById('refreshBtn')!, fetchBtn = document.getElementById('fetchBtn')!;
+		refreshBtn.innerHTML = svgIcons.refresh;
+		refreshBtn.addEventListener('click', () => {
+			this.refresh(true);
+		});
+		fetchBtn.innerHTML = svgIcons.download;
+		fetchBtn.addEventListener('click', () => {
+			showActionRunningDialog('Fetching from Remote(s)');
+			sendMessage({ command: 'fetch', repo: this.currentRepo });
+		});
 	}
 
 	/* Loading Data */
@@ -174,8 +185,8 @@ class GitGraphView {
 		}
 	}
 
-	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
-		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysStrictlyEqual(a.tags, b.tags) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parentHashes, b.parentHashes))) {
+	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, remotes: string[], moreAvailable: boolean, hard: boolean) {
+		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysStrictlyEqual(a.tags, b.tags) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parentHashes, b.parentHashes)) && arraysStrictlyEqual(this.gitRemotes, remotes)) {
 			if (this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED) {
 				this.commits[0] = commits[0];
 				this.saveState();
@@ -201,6 +212,7 @@ class GitGraphView {
 		this.moreCommitsAvailable = moreAvailable;
 		this.commits = commits;
 		this.commitHead = commitHead;
+		this.gitRemotes = remotes;
 		this.commitLookup = {};
 		this.saveState();
 
@@ -320,6 +332,7 @@ class GitGraphView {
 			gitRepos: this.gitRepos,
 			gitBranches: this.gitBranches,
 			gitBranchHead: this.gitBranchHead,
+			gitRemotes: this.gitRemotes,
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,
@@ -335,6 +348,7 @@ class GitGraphView {
 
 	/* Renderers */
 	private render() {
+		alterClass(this.controlsElem, 'fetchSupported', this.gitRemotes.length > 0);
 		this.renderTable();
 		this.renderGraph();
 	}
@@ -1090,7 +1104,7 @@ class GitGraphView {
 			html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.</div>';
 			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
 		}
-		html = '<div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose">' + svgIcons.close + '</div>';
+		html = '<div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose" title="Close">' + svgIcons.close + '</div>';
 
 		elem.innerHTML = isDocked ? html : '<td></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
 
@@ -1226,6 +1240,9 @@ window.addEventListener('load', () => {
 			case 'deleteTag':
 				refreshGraphOrDisplayError(msg.status, 'Unable to Delete Tag');
 				break;
+			case 'fetch':
+				refreshGraphOrDisplayError(msg.status, 'Unable to Fetch from Remote(s)');
+				break;
 			case 'fetchAvatar':
 				gitGraph.loadAvatar(msg.email, msg.image);
 				break;
@@ -1233,7 +1250,7 @@ window.addEventListener('load', () => {
 				gitGraph.loadBranches(msg.branches, msg.head, msg.hard, msg.isRepo);
 				break;
 			case 'loadCommits':
-				gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
+				gitGraph.loadCommits(msg.commits, msg.head, msg.remotes, msg.moreCommitsAvailable, msg.hard);
 				break;
 			case 'loadRepos':
 				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
@@ -1362,7 +1379,7 @@ function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GG.GitFileChange[]
 		} else {
 			gitFile = gitFiles[(<GitFile>(folder.contents[keys[i]])).index];
 			diffPossible = gitFile.type === 'U' || (gitFile.additions !== null && gitFile.deletions !== null);
-			html += '<li class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '"' + (!diffPossible ? ' title="This is a binary file, unable to view diff."' : '') + '><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + (gitFile.type === 'R' ? ' <span class="gitFileRename" title="' + escapeHtml(gitFile.oldFilePath + ' was renamed to ' + gitFile.newFilePath) + '">R</span>' : '') + (gitFile.type !== 'A' && gitFile.type !== 'U' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') + '</li>';
+			html += '<li class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '" title="' + (diffPossible ? 'Click to view diff' : 'This is a binary file, unable to view diff.') + '"><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + (gitFile.type === 'R' ? ' <span class="gitFileRename" title="' + escapeHtml(gitFile.oldFilePath + ' was renamed to ' + gitFile.newFilePath) + '">R</span>' : '') + (gitFile.type !== 'A' && gitFile.type !== 'U' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') + '</li>';
 		}
 	}
 	return html + '</ul>';

@@ -120,6 +120,7 @@ declare global {
 		gitRepos: GG.GitRepoSet;
 		gitBranches: string[];
 		gitBranchHead: string | null;
+		gitRemotes: string[];
 		commits: GG.GitCommitNode[];
 		commitHead: string | null;
 		avatars: AvatarImageCollection;

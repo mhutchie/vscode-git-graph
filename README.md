@@ -17,7 +17,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * View the Visual Studio Code Diff of any file change between the selected commits by clicking on the desired file in the Commit Details View.
     * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
-        * Create, Checkout, Rename, Delete & Merge branches
+        * Create, Checkout, Rename, Delete, Merge & Rebase branches
         * Add, Delete & Push tags
         * Checkout, Cherry Pick, Merge & Revert commits
         * Reset current branch to commit
@@ -27,11 +27,13 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Show All branches
         * Select one or more branches to be viewed
         * Select from a user predefined array of custom glob patterns (by setting `git-graph.customBranchGlobPatterns`)
+    * Fetch from Remote(s) _(available on the top control bar)_
     * Keyboard Shortcuts:
         * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
         * CTRL/CMD + r: Refresh the Git Graph View.
         * Enter: If a dialog is open, pressing enter submits the dialog, taking the primary (left) action.
         * Escape: Closes the active dialog, context menu or the Commit Details View.
+    * Resize the width of each column, and show/hide the Date, Author & Commit columns.
 * A broad range of configurable settings (e.g. graph style, branch colours, and more...). See the 'Extension Settings' section below for more information.
 * "Git Graph" launch button in the Status Bar
 * "Git Graph: View Git Graph" launch command in the Command Palette
@@ -48,6 +50,7 @@ A summary of the Git Graph extension settings are:
 * **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the 'Branches' dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
 * **Date Format**: Specifies the date format to be used in the date column of the graph.
 * **Date Type**: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
+* **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
 * **Graph Colours**: Specifies the colours used on the graph.
 * **Graph Style**: Specifies the style of the graph.

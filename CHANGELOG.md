@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.7.0 - 2019-05-29
+* #34 Support for rebasing the current branch on any branch or commit, from the corresponding branch/commit context menu.
+* #57 New "Fetch from Remote(s)" button available on the top control bar (only visible when remotes exist). Redesigned refresh button.
+* #79 Show/hide the Date, Author & Commit columns by right clicking on the column header row, and then clicking the desired column to toggle its visibility. The new setting `git-graph.defaultColumnVisibility` can be used to configure the default visibility of each column. For example: `{"Date": true, "Author": true, "Commit": true}`
+* #87 More emphasis on the current head branch label.
+* Robustness improvements when handling remotes.
+
 ## 1.6.0 - 2019-05-24
 * #36 New functionality for uncommitted changes:
     * View uncommitted changes by clicking on it, like you would with any commit. 

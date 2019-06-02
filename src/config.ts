@@ -77,6 +77,10 @@ class Config {
 		return this.workspaceConfiguration.get('openDiffTabLocation', 'Active') === 'Active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
 	}
 
+	public openToTheRepoOfTheActiveTextEditorDocument() {
+		return this.workspaceConfiguration.get('openToTheRepoOfTheActiveTextEditorDocument', false);
+	}
+
 	public refLabelAlignment(): RefLabelAlignment {
 		return this.workspaceConfiguration.get('referenceLabelAlignment', 'Normal');
 	}

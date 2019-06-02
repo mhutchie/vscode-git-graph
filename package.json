@@ -214,7 +214,7 @@
 					"default": 0,
 					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
 				},
-				"git-graph.openDiffTabLocation":{
+				"git-graph.openDiffTabLocation": {
 					"type": "string",
 					"enum": [
 						"Active",
@@ -226,6 +226,11 @@
 					],
 					"default": "Active",
 					"description": "Specifies which pane the Visual Studio Code Diff is opened in."
+				},
+				"git-graph.openToTheRepoOfTheActiveTextEditorDocument": {
+					"type": "boolean",
+					"default": false,
+					"description": "Open Git Graph to the repository containing the active Text Editor document."
 				},
 				"git-graph.referenceLabelAlignment": {
 					"type": "string",

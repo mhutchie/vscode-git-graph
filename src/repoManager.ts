@@ -121,6 +121,13 @@ export class RepoManager {
 		}
 		return repos;
 	}
+	public getRepoContainingFile(path: string) {
+		let repoPaths = Object.keys(this.repos), repo = null;
+		for (let i = 0; i < repoPaths.length; i++) {
+			if (path.startsWith(repoPaths[i] + '/') && (repo === null || repo.length < repoPaths[i].length)) repo = repoPaths[i];
+		}
+		return repo;
+	}
 	public isKnownRepo(repo: string) {
 		return typeof this.repos[repo] !== 'undefined';
 	}

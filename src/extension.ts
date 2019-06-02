@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
+import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
@@ -17,15 +18,24 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('git-graph.view', args => {
-			let loadRepo = typeof args === 'object' && args.rootUri ? getPathFromUri(args.rootUri) : null;
-			if (loadRepo !== null && !repoManager.isKnownRepo(loadRepo)) {
-				repoManager.registerRepo(loadRepo, true).then(valid => {
-					if (!valid) loadRepo = null;
-					GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
-				});
-			} else {
-				GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
+			let loadRepo: string | null = null;
+
+			if (typeof args === 'object' && args.rootUri) {
+				// If command is run from the SCP menu, load the specific repo
+				loadRepo = getPathFromUri(args.rootUri);
+				if (!repoManager.isKnownRepo(loadRepo)) {
+					repoManager.registerRepo(loadRepo, true).then(valid => {
+						if (!valid) loadRepo = null;
+						GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
+					});
+					return;
+				}
+			} else if (getConfig().openToTheRepoOfTheActiveTextEditorDocument() && vscode.window.activeTextEditor) {
+				// If the config setting is enabled, load the repo containing the active text editor document
+				loadRepo = repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 			}
+
+			GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
 		}),
 		vscode.commands.registerCommand('git-graph.addGitRepository', () => {
 			vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {

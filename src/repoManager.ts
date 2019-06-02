@@ -14,7 +14,7 @@ export class RepoManager {
 	private repos: GitRepoSet;
 	private maxDepthOfRepoSearch: number;
 	private folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
-	private viewCallback: ((repos: GitRepoSet, numRepos: number) => void) | null = null;
+	private viewCallback: ((repos: GitRepoSet, numRepos: number, loadRepo: string | null) => void) | null = null;
 	private folderChangeHandler: vscode.Disposable | null;
 
 	private createEventPaths: string[] = [];
@@ -31,24 +31,22 @@ export class RepoManager {
 		this.startupTasks();
 
 		this.folderChangeHandler = vscode.workspace.onDidChangeWorkspaceFolders(async e => {
+			let changes = false, path;
 			if (e.added.length > 0) {
-				let path, changes = false;
 				for (let i = 0; i < e.added.length; i++) {
 					path = getPathFromUri(e.added[i].uri);
 					if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
 					this.startWatchingFolder(path);
 				}
-				if (changes) this.sendRepos();
 			}
 			if (e.removed.length > 0) {
-				let changes = false, path;
 				for (let i = 0; i < e.removed.length; i++) {
 					path = getPathFromUri(e.removed[i].uri);
 					if (this.removeReposWithinFolder(path)) changes = true;
 					this.stopWatchingFolder(path);
 				}
-				if (changes) this.sendRepos();
 			}
+			if (changes) this.sendRepos();
 		});
 	}
 
@@ -63,7 +61,7 @@ export class RepoManager {
 		}
 	}
 
-	public registerViewCallback(viewCallback: (repos: GitRepoSet, numRepos: number) => void) {
+	public registerViewCallback(viewCallback: (repos: GitRepoSet, numRepos: number, loadRepo: string | null) => void) {
 		this.viewCallback = viewCallback;
 	}
 
@@ -102,11 +100,12 @@ export class RepoManager {
 		}
 	}
 
-	public async registerRepo(path: string) {
+	public registerRepo(path: string, loadRepo: boolean) {
 		return new Promise<boolean>(async resolve => {
 			if (await this.dataSource.isGitRepository(path)) {
 				this.removeReposWithinFolder(path);
 				this.addRepo(path);
+				this.sendRepos(loadRepo ? path : null);
 				resolve(true);
 			} else {
 				resolve(false);
@@ -150,11 +149,11 @@ export class RepoManager {
 		}
 		return false;
 	}
-	private sendRepos() {
+	private sendRepos(loadRepo?: string | null) {
 		let repos = this.getRepos();
 		let numRepos = Object.keys(repos).length;
 		this.statusBarItem.setNumRepos(numRepos);
-		if (this.viewCallback !== null) this.viewCallback(repos, numRepos);
+		if (this.viewCallback !== null) this.viewCallback(repos, numRepos, loadRepo ? loadRepo : null);
 	}
 	public checkReposExist() {
 		return new Promise<boolean>(resolve => {

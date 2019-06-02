@@ -19,6 +19,18 @@ export function getPathFromStr(str: string) {
 	return str.replace(FS_REGEX, '/');
 }
 
+export function isPathInWorkspace(path: string) {
+	let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders;
+	if (typeof workspaceFolders !== 'undefined') {
+		for (let i = 0; i < workspaceFolders.length; i++) {
+			let tmpPath = getPathFromUri(workspaceFolders[i].uri);
+			rootsExact.push(tmpPath);
+			rootsFolder.push(tmpPath + '/');
+		}
+	}
+	return rootsExact.indexOf(path) > -1 || rootsFolder.findIndex(x => path.startsWith(x)) > -1;
+}
+
 
 // Visual Studio Code Command Wrappers
 

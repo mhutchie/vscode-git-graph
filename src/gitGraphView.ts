@@ -23,7 +23,7 @@ export class GitGraphView {
 	private isGraphViewLoaded: boolean = false;
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
-	private loadRepo: string | null = null;
+	private loadRepo: string | null = null; // Is used by the next call to getHtmlForWebview, and is then reset to null
 
 	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, loadRepo: string | null) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
@@ -33,7 +33,6 @@ export class GitGraphView {
 			if (GitGraphView.currentPanel.isPanelVisible) {
 				// If the Git Graph panel is visible
 				if (loadRepo !== null && loadRepo !== GitGraphView.currentPanel.currentRepo) {
-					GitGraphView.currentPanel.loadRepo = loadRepo;
 					GitGraphView.currentPanel.respondLoadRepos(repoManager.getRepos(), loadRepo);
 				}
 			} else {
@@ -84,12 +83,13 @@ export class GitGraphView {
 				this.sendMessage({ command: 'refresh' });
 			}
 		});
-		this.repoManager.registerViewCallback((repos: GitRepoSet, numRepos: number) => {
+		this.repoManager.registerViewCallback((repos: GitRepoSet, numRepos: number, loadRepo: string | null) => {
 			if (!this.panel.visible) return;
 			if ((numRepos === 0 && this.isGraphViewLoaded) || (numRepos > 0 && !this.isGraphViewLoaded)) {
+				this.loadRepo = loadRepo;
 				this.update();
 			} else {
-				this.respondLoadRepos(repos, null);
+				this.respondLoadRepos(repos, loadRepo);
 			}
 		});
 

@@ -50,6 +50,11 @@
 			},
 			{
 				"category": "Git Graph",
+				"command": "git-graph.addGitRepository",
+				"title": "Add Git Repository"
+			},
+			{
+				"category": "Git Graph",
 				"command": "git-graph.clearAvatarCache",
 				"title": "Clear Avatar Cache"
 			}

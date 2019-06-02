@@ -6,7 +6,7 @@ import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { getPathFromUri } from './utils';
+import { getPathFromUri, isPathInWorkspace } from './utils';
 
 export function activate(context: vscode.ExtensionContext) {
 	const extensionState = new ExtensionState(context);
@@ -19,13 +19,32 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('git-graph.view', args => {
 			let loadRepo = typeof args === 'object' && args.rootUri ? getPathFromUri(args.rootUri) : null;
 			if (loadRepo !== null && !repoManager.isKnownRepo(loadRepo)) {
-				repoManager.registerRepo(loadRepo).then(valid => {
+				repoManager.registerRepo(loadRepo, true).then(valid => {
 					if (!valid) loadRepo = null;
 					GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
 				});
 			} else {
 				GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
 			}
+		}),
+		vscode.commands.registerCommand('git-graph.addGitRepository', () => {
+			vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {
+				if (uris && uris.length > 0) {
+					let path = getPathFromUri(uris[0]);
+					let folderName = path.substr(path.lastIndexOf('/') + 1);
+					if (isPathInWorkspace(path)) {
+						repoManager.registerRepo(path, false).then(valid => {
+							if (valid) {
+								vscode.window.showInformationMessage('The repository "' + folderName + '" was added to Git Graph.');
+							} else {
+								vscode.window.showErrorMessage('The folder "' + folderName + '" is not a Git repository, and therefore could not be added to Git Graph.');
+							}
+						});
+					} else {
+						vscode.window.showErrorMessage('The folder "' + folderName + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
+					}
+				}
+			});
 		}),
 		vscode.commands.registerCommand('git-graph.clearAvatarCache', () => {
 			avatarManager.clearCache();

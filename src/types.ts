@@ -355,6 +355,18 @@ export interface ResponseMergeCommit {
 	status: GitCommandStatus;
 }
 
+export interface RequestPushBranch {
+	command: 'pushBranch';
+	repo: string;
+	branchName: string;
+	remote: string;
+	setUpstream: boolean;
+}
+export interface ResponsePushBranch {
+	command: 'pushBranch';
+	status: GitCommandStatus;
+}
+
 export interface RequestPushTag {
 	command: 'pushTag';
 	repo: string;
@@ -466,6 +478,7 @@ export type RequestMessage =
 	| RequestLoadRepos
 	| RequestMergeBranch
 	| RequestMergeCommit
+	| RequestPushBranch
 	| RequestPushTag
 	| RequestRebaseOn
 	| RequestRenameBranch
@@ -495,6 +508,7 @@ export type ResponseMessage =
 	| ResponseLoadRepos
 	| ResponseMergeBranch
 	| ResponseMergeCommit
+	| ResponsePushBranch
 	| ResponsePushTag
 	| ResponseRebaseOn
 	| ResponseRefresh

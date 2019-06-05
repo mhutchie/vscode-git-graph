@@ -229,7 +229,7 @@ export class GitGraphView {
 				case 'pushTag':
 					this.sendMessage({
 						command: 'pushTag',
-						status: await this.dataSource.pushTag(msg.repo, msg.tagName)
+						status: await this.dataSource.pushTag(msg.repo, msg.tagName, msg.remote)
 					});
 					break;
 				case 'rebaseOn':

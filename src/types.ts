@@ -359,6 +359,7 @@ export interface RequestPushTag {
 	command: 'pushTag';
 	repo: string;
 	tagName: string;
+	remote: string;
 }
 export interface ResponsePushTag {
 	command: 'pushTag';

@@ -573,7 +573,7 @@ class GitGraphView {
 								}, sourceElem);
 							} else {
 								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
-									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
+									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + escapeHtml(this.commits[this.commitLookup[hash]].message) : ''),
 									value: (index + 1).toString()
 								}));
 								showSelectDialog('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick', (parentIndex) => {
@@ -591,7 +591,7 @@ class GitGraphView {
 								}, sourceElem);
 							} else {
 								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
-									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
+									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + escapeHtml(this.commits[this.commitLookup[hash]].message) : ''),
 									value: (index + 1).toString()
 								}));
 								showSelectDialog('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert', (parentIndex) => {
@@ -677,14 +677,24 @@ class GitGraphView {
 							runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName }, 'Deleting Tag');
 						}, null);
 					}
-				}, {
-					title: 'Push Tag' + ELLIPSIS,
-					onClick: () => {
-						showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName }, 'Pushing Tag');
-						}, null);
-					}
 				}];
+				if (this.gitRemotes.length > 0) {
+					menu.push({
+						title: 'Push Tag' + ELLIPSIS,
+						onClick: () => {
+							if (this.gitRemotes.length === 1) {
+								showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', () => {
+									runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[0] }, 'Pushing Tag');
+								}, null);
+							} else if (this.gitRemotes.length > 1) {
+								let options = this.gitRemotes.map((remote, index) => ({ name: escapeHtml(remote), value: index.toString() }));
+								showSelectDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
+									runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
+								}, null);
+							}
+						}
+					});
+				}
 				copyType = 'Tag Name';
 			} else {
 				let isHead = sourceElem.classList.contains('head'), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';

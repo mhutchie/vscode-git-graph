@@ -221,8 +221,8 @@ export class DataSource {
 		return this.runGitCommand('fetch --all', repo);
 	}
 
-	public pushTag(repo: string, tagName: string) {
-		return this.runGitCommand('push origin ' + escapeRefName(tagName), repo);
+	public pushTag(repo: string, tagName: string, remote: string) {
+		return this.runGitCommand('push ' + escapeRefName(remote) + ' ' + escapeRefName(tagName), repo);
 	}
 
 	public createBranch(repo: string, branchName: string, commitHash: string) {

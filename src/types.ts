@@ -1,5 +1,19 @@
 /* Git Interfaces / Types */
 
+export interface GitBranchData {
+	branches: string[];
+	head: string | null;
+	error: string | null; // null => no error, otherwise => error message
+}
+
+export interface GitCommitData {
+	commits: GitCommitNode[];
+	head: string | null;
+	remotes: string[];
+	moreCommitsAvailable: boolean;
+	error: string | null; // null => no error, otherwise => error message
+}
+
 export interface GitCommitNode {
 	hash: string;
 	parentHashes: string[];
@@ -30,13 +44,6 @@ export interface GitCommitDetails {
 	committer: string;
 	body: string;
 	fileChanges: GitFileChange[];
-}
-
-export interface GitCommitData {
-	commits: GitCommitNode[];
-	head: string | null;
-	remotes: string[];
-	moreCommitsAvailable: boolean;
 }
 
 export interface GitRef {
@@ -292,12 +299,13 @@ export interface ResponseLoadBranches {
 	head: string | null;
 	hard: boolean;
 	isRepo: boolean;
+	error: string | null; // null => no error, otherwise => error message
 }
 
 export interface RequestLoadCommits {
 	command: 'loadCommits';
 	repo: string;
-	branches: string[] | null; // NULL => Show All
+	branches: string[] | null; // null => Show All
 	maxCommits: number;
 	showRemoteBranches: boolean;
 	hard: boolean;
@@ -309,6 +317,7 @@ export interface ResponseLoadCommits {
 	remotes: string[];
 	moreCommitsAvailable: boolean;
 	hard: boolean;
+	error: string | null; // null => no error, otherwise => error message
 }
 
 export interface RequestLoadRepos {

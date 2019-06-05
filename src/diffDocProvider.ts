@@ -12,7 +12,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 
 	constructor(dataSource: DataSource) {
 		this.dataSource = dataSource;
-		this.subscriptions = vscode.workspace.onDidCloseTextDocument(doc => this.docs.delete(doc.uri.toString()));
+		this.subscriptions = vscode.workspace.onDidCloseTextDocument((doc) => this.docs.delete(doc.uri.toString()));
 	}
 
 	public dispose() {
@@ -30,11 +30,17 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 		if (document) return document.value;
 
 		let request = decodeDiffDocUri(uri);
-		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath, request.type).then((data) => {
-			let document = new DiffDocument(data);
-			this.docs.set(uri.toString(), document);
-			return document.value;
-		});
+		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath, request.type).then(
+			(contents) => {
+				let document = new DiffDocument(contents);
+				this.docs.set(uri.toString(), document);
+				return document.value;
+			},
+			(errorMessage) => {
+				vscode.window.showErrorMessage('Unable to retrieve file: ' + errorMessage);
+				return '';
+			}
+		);
 	}
 }
 

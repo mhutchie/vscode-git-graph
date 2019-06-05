@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
-import { GitCommandStatus, GitCommit, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
+import { GitBranchData, GitCommandStatus, GitCommit, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
@@ -30,16 +30,12 @@ export class DataSource {
 	}
 
 	public getBranches(repo: string, showRemoteBranches: boolean) {
-		return new Promise<{ branches: string[], head: string | null, error: boolean }>((resolve) => {
-			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), repo, (err, stdout) => {
-				let branchData = {
-					branches: <string[]>[],
-					head: <string | null>null,
-					error: false
-				};
+		return new Promise<GitBranchData>((resolve) => {
+			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), repo, (err, stdout, stderr) => {
+				let branchData: GitBranchData = { branches: [], head: null, error: null };
 
 				if (err) {
-					branchData.error = true;
+					branchData.error = getErrorMessage(err, stdout, stderr);
 				} else {
 					let lines = stdout.split(eolRegex);
 					for (let i = 0; i < lines.length - 1; i++) {
@@ -54,6 +50,7 @@ export class DataSource {
 						}
 					}
 				}
+
 				resolve(branchData);
 			});
 		});
@@ -63,12 +60,24 @@ export class DataSource {
 		return new Promise<GitCommitData>(resolve => {
 			Promise.all([
 				this.getGitLog(repo, branches, maxCommits + 1, showRemoteBranches),
-				this.getRefs(repo, showRemoteBranches),
+				this.getRefs(repo, showRemoteBranches).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 				this.getRemotes(repo)
-			]).then(async results => {
+			]).then(async (results) => {
 				let commits = results[0], refData = results[1], i, unsavedChanges = null;
 				let moreCommitsAvailable = commits.length === maxCommits + 1;
 				if (moreCommitsAvailable) commits.pop();
+
+				// It doesn't matter if getRefs() was rejected if no commits exist
+				if (typeof refData === 'string') {
+					// getRefs() returned an error message (string)
+					if (commits.length > 0) {
+						// Commits exist, throw the error
+						throw refData;
+					} else {
+						// No commits exist, so getRefs() will always return an error. Set refData to the default value
+						refData = { head: null, heads: [], tags: [], remotes: [] };
+					}
+				}
 
 				if (refData.head !== null) {
 					for (i = 0; i < commits.length; i++) {
@@ -103,7 +112,9 @@ export class DataSource {
 					}
 				}
 
-				resolve({ commits: commitNodes, head: refData.head, remotes: results[2], moreCommitsAvailable: moreCommitsAvailable });
+				resolve({ commits: commitNodes, head: refData.head, remotes: results[2], moreCommitsAvailable: moreCommitsAvailable, error: null });
+			}).catch((errorMessage) => {
+				resolve({ commits: [], head: null, remotes: [], moreCommitsAvailable: false, error: errorMessage });
 			});
 		});
 	}
@@ -172,7 +183,7 @@ export class DataSource {
 	public getCommitFile(repo: string, commitHash: string, filePath: string, type: GitFileChangeType) {
 		return commitHash === UNCOMMITTED && type === 'D'
 			? new Promise<string>(resolve => resolve(''))
-			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout, '');
+			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout);
 	}
 
 	public async getRemoteUrl(repo: string) {
@@ -289,8 +300,8 @@ export class DataSource {
 		if (!showRemoteBranches) args.push('--heads', '--tags');
 		args.push('-d', '--head');
 
-		let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
-		return this.spawnGit<GitRefData>(args, repo, stdout => {
+		return this.spawnGit(args, repo, (stdout) => {
+			let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
 			let lines = stdout.split(eolRegex);
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(' ');
@@ -310,15 +321,19 @@ export class DataSource {
 				}
 			}
 			return refData;
-		}, refData);
+		});
 	}
 
 	private getRemotes(repo: string) {
-		return new Promise<string[]>(resolve => {
-			this.execGit('remote', repo, (err, stdout) => {
-				let lines = stdout.split(eolRegex);
-				lines.pop();
-				resolve(err ? [] : lines);
+		return new Promise<string[]>((resolve, reject) => {
+			this.execGit('remote', repo, (err, stdout, stderr) => {
+				if (err) {
+					reject(getErrorMessage(err, stdout, stderr));
+				} else {
+					let lines = stdout.split(eolRegex);
+					lines.pop();
+					resolve(lines);
+				}
 			});
 		});
 	}
@@ -343,17 +358,17 @@ export class DataSource {
 				gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
 			}
 			return gitCommits;
-		}, []);
+		});
 	}
 
 	private getGitUnsavedChanges(repo: string) {
-		return new Promise<GitUnsavedChanges | null>((resolve) => {
-			this.execGit('status -s --branch --untracked-files --porcelain', repo, (err, stdout) => {
-				if (!err) {
+		return new Promise<GitUnsavedChanges | null>((resolve, reject) => {
+			this.execGit('status -s --branch --untracked-files --porcelain', repo, (err, stdout, stderr) => {
+				if (err) {
+					reject(getErrorMessage(err, stdout, stderr));
+				} else {
 					let lines = stdout.split(eolRegex);
 					resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
-				} else {
-					resolve(null);
 				}
 			});
 		});
@@ -407,18 +422,7 @@ export class DataSource {
 	private runGitCommand(command: string, repo: string) {
 		return new Promise<GitCommandStatus>((resolve) => {
 			this.execGit(command, repo, (err, stdout, stderr) => {
-				if (!err) {
-					resolve(null);
-				} else {
-					let lines;
-					if (stdout !== '' || stderr !== '') {
-						lines = (stderr !== '' ? stderr : stdout !== '' ? stdout : '').split(eolRegex);
-					} else {
-						lines = err.message.split(eolRegex);
-						lines.shift();
-					}
-					resolve(lines.slice(0, lines.length - 1).join('\n'));
-				}
+				resolve(err ? getErrorMessage(err, stdout, stderr) : null);
 			});
 		});
 	}
@@ -427,20 +431,15 @@ export class DataSource {
 		return new Promise<GitCommandStatus>((resolve) => {
 			let stdout = '', stderr = '', err = false;
 			const cmd = cp.spawn(this.gitPath, args, { cwd: repo });
-			cmd.stdout.on('data', d => { stdout += d; });
-			cmd.stderr.on('data', d => { stderr += d; });
-			cmd.on('error', e => {
-				resolve(e.message.split(eolRegex).join('\n'));
+			cmd.stdout.on('data', (d) => { stdout += d; });
+			cmd.stderr.on('data', (d) => { stderr += d; });
+			cmd.on('error', (e) => {
+				resolve(getErrorMessage(e, stdout, stderr));
 				err = true;
 			});
 			cmd.on('exit', (code) => {
 				if (err) return;
-				if (code === 0) {
-					resolve(null);
-				} else {
-					let lines = (stderr !== '' ? stderr : stdout !== '' ? stdout : '').split(eolRegex);
-					resolve(lines.slice(0, lines.length - 1).join('\n'));
-				}
+				resolve(code === 0 ? null : getErrorMessage(null, stdout, stderr));
 			});
 		});
 	}
@@ -449,18 +448,23 @@ export class DataSource {
 		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo }, callback);
 	}
 
-	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }, errorValue: T) {
-		return new Promise<T>((resolve) => {
-			let stdout = '', err = false;
+	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }) {
+		return new Promise<T>((resolve, reject) => {
+			let stdout = '', stderr = '', err = false;
 			const cmd = cp.spawn(this.gitPath, args, { cwd: repo });
 			cmd.stdout.on('data', (d) => { stdout += d; });
-			cmd.on('error', () => {
-				resolve(errorValue);
+			cmd.stderr.on('data', (d) => { stderr += d; });
+			cmd.on('error', (e) => {
+				reject(getErrorMessage(e, stdout, stderr));
 				err = true;
 			});
 			cmd.on('exit', (code) => {
 				if (err) return;
-				resolve(code === 0 ? successValue(stdout) : errorValue);
+				if (code === 0) {
+					resolve(successValue(stdout));
+				} else {
+					reject(getErrorMessage(null, stdout, stderr));
+				}
 			});
 		});
 	}
@@ -497,4 +501,17 @@ function generateFileChanges(nameStatusResults: string[], numStatResults: string
 	}
 
 	return fileChanges;
+}
+
+function getErrorMessage(error: Error | null, stdout: string, stderr: string) {
+	let lines: string[];
+	if (stdout !== '' || stderr !== '') {
+		lines = (stderr !== '' ? stderr : stdout !== '' ? stdout : '').split(eolRegex);
+		lines.pop();
+	} else if (error) {
+		lines = error.message.split(eolRegex);
+	} else {
+		lines = [];
+	}
+	return lines.join('\n');
 }

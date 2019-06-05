@@ -185,13 +185,15 @@ export class GitGraphView {
 					if (branchData.error) {
 						// If an error occurred, check to make sure the repo still exists
 						isRepo = await this.dataSource.isGitRepository(msg.repo);
+						if (!isRepo) branchData.error = null; // If the error is caused by the repo no longer existing, clear the error message
 					}
 					this.sendMessage({
 						command: 'loadBranches',
 						branches: branchData.branches,
 						head: branchData.head,
 						hard: msg.hard,
-						isRepo: isRepo
+						isRepo: isRepo,
+						error: branchData.error
 					});
 					if (msg.repo !== this.currentRepo) {
 						this.currentRepo = msg.repo;
@@ -328,7 +330,7 @@ export class GitGraphView {
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchSelect" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" value="1" checked>Show Remote Branches</label>
 					<div id="fetchBtn" title="Fetch from Remote(s)"></div>
-					<div id="refreshBtn" title="Refresh"></div>
+					<div id="refreshBtn"></div>
 				</div>
 				<div id="content">
 					<div id="commitGraph"></div>

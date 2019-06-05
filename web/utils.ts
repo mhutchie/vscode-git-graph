@@ -42,6 +42,7 @@ const CLASS_COMPARE_COMMIT_OPEN = 'compareCommitOpen';
 const CLASS_CONTEXT_MENU_ACTIVE = 'contextMenuActive';
 const CLASS_DIALOG_ACTIVE = 'dialogActive';
 const CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN = 'dockedCommitDetailsViewOpen';
+const CLASS_REFRESHING = 'refreshing';
 const CLASS_TAG_LABELS_RIGHT_ALIGNED = 'tagLabelsRightAligned';
 
 

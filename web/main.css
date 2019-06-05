@@ -387,14 +387,16 @@ body.tagLabelsRightAligned .gitRef.tag{
 #loadingHeader svg{
 	display:inline;
 	fill:var(--vscode-editor-foreground);
-	opacity:0.7;
 	margin-right:10px;
 	vertical-align:top;
 	animation:loadingIconAnimation 2s linear infinite;
 }
 @keyframes loadingIconAnimation{
-	0%{transform:rotate(0deg);}
-	100%{transform:rotate(360deg);}
+	0%{ transform:rotate(0deg); opacity:0.7; }
+	25%{ opacity:1; }
+	50%{ opacity:0.7; }
+	75%{ opacity:1; }
+	100%{ transform:rotate(360deg); opacity:0.7; }
 }
 
 /* Controls */
@@ -438,6 +440,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 #refreshBtn{
 	right:10px;
 }
+#refreshBtn.refreshing{
+	cursor:default;
+}
 #fetchBtn svg, #refreshBtn svg{
 	position:absolute;
 	fill:var(--vscode-editor-foreground);
@@ -460,6 +465,13 @@ body.tagLabelsRightAligned .gitRef.tag{
 	top:2px;
 	width:16px !important;
 	height:16px !important;
+}
+#refreshBtn.refreshing svg{
+	left:3.25px;
+	top:2px;
+	width:13.5px !important;
+	height:18px !important;
+	animation:loadingIconAnimation 2s linear infinite;
 }
 #loadMoreCommitsBtn{
 	width:180px;
@@ -655,11 +667,12 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 #actionRunning svg{
 	display:inline-block;
-	margin-right:10px;
+	width:15px !important;
+	height:20px !important;
+	margin-top:2px;
+	margin-right:8px;
 	vertical-align:top;
 	animation:loadingIconAnimation 2s linear infinite;
-	width:18px !important;
-	height:24px !important;
 }
 
 /* Buttons */

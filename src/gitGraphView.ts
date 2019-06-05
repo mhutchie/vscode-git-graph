@@ -100,31 +100,31 @@ export class GitGraphView {
 				case 'addTag':
 					this.sendMessage({
 						command: 'addTag',
-						status: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
+						error: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
 					});
 					break;
 				case 'checkoutBranch':
 					this.sendMessage({
 						command: 'checkoutBranch',
-						status: await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)
+						error: await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)
 					});
 					break;
 				case 'checkoutCommit':
 					this.sendMessage({
 						command: 'checkoutCommit',
-						status: await this.dataSource.checkoutCommit(msg.repo, msg.commitHash)
+						error: await this.dataSource.checkoutCommit(msg.repo, msg.commitHash)
 					});
 					break;
 				case 'cherrypickCommit':
 					this.sendMessage({
 						command: 'cherrypickCommit',
-						status: await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex)
+						error: await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					break;
 				case 'cleanUntrackedFiles':
 					this.sendMessage({
 						command: 'cleanUntrackedFiles',
-						status: await this.dataSource.cleanUntrackedFiles(msg.repo, msg.directories)
+						error: await this.dataSource.cleanUntrackedFiles(msg.repo, msg.directories)
 					});
 					break;
 				case 'commitDetails':
@@ -137,7 +137,7 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'compareCommits',
 						commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
-						fileChanges: await this.dataSource.compareCommits(msg.repo, msg.fromHash, msg.toHash)
+						... await this.dataSource.compareCommits(msg.repo, msg.fromHash, msg.toHash)
 					});
 					break;
 				case 'copyToClipboard':
@@ -150,31 +150,31 @@ export class GitGraphView {
 				case 'createBranch':
 					this.sendMessage({
 						command: 'createBranch',
-						status: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash)
+						error: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash)
 					});
 					break;
 				case 'deleteBranch':
 					this.sendMessage({
 						command: 'deleteBranch',
-						status: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
+						error: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
 					});
 					break;
 				case 'deleteRemoteBranch':
 					this.sendMessage({
 						command: 'deleteRemoteBranch',
-						status: await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.remote)
+						error: await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.remote)
 					});
 					break;
 				case 'deleteTag':
 					this.sendMessage({
 						command: 'deleteTag',
-						status: await this.dataSource.deleteTag(msg.repo, msg.tagName)
+						error: await this.dataSource.deleteTag(msg.repo, msg.tagName)
 					});
 					break;
 				case 'fetch':
 					this.sendMessage({
 						command: 'fetch',
-						status: await this.dataSource.fetch(msg.repo)
+						error: await this.dataSource.fetch(msg.repo)
 					});
 					break;
 				case 'fetchAvatar':
@@ -217,49 +217,49 @@ export class GitGraphView {
 				case 'mergeBranch':
 					this.sendMessage({
 						command: 'mergeBranch',
-						status: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit, msg.squash)
+						error: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit, msg.squash)
 					});
 					break;
 				case 'mergeCommit':
 					this.sendMessage({
 						command: 'mergeCommit',
-						status: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit, msg.squash)
+						error: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit, msg.squash)
 					});
 					break;
 				case 'pushBranch':
 					this.sendMessage({
 						command: 'pushBranch',
-						status: await this.dataSource.pushBranch(msg.repo, msg.branchName, msg.remote, msg.setUpstream)
+						error: await this.dataSource.pushBranch(msg.repo, msg.branchName, msg.remote, msg.setUpstream)
 					});
 					break;
 				case 'pushTag':
 					this.sendMessage({
 						command: 'pushTag',
-						status: await this.dataSource.pushTag(msg.repo, msg.tagName, msg.remote)
+						error: await this.dataSource.pushTag(msg.repo, msg.tagName, msg.remote)
 					});
 					break;
 				case 'rebaseOn':
 					this.sendMessage({
 						command: 'rebaseOn', type: msg.type, interactive: msg.interactive,
-						status: await this.dataSource.rebaseOn(msg.repo, msg.base, msg.type, msg.ignoreDate, msg.interactive)
+						error: await this.dataSource.rebaseOn(msg.repo, msg.base, msg.type, msg.ignoreDate, msg.interactive)
 					});
 					break;
 				case 'renameBranch':
 					this.sendMessage({
 						command: 'renameBranch',
-						status: await this.dataSource.renameBranch(msg.repo, msg.oldName, msg.newName)
+						error: await this.dataSource.renameBranch(msg.repo, msg.oldName, msg.newName)
 					});
 					break;
 				case 'resetToCommit':
 					this.sendMessage({
 						command: 'resetToCommit',
-						status: await this.dataSource.resetToCommit(msg.repo, msg.commitHash, msg.resetMode)
+						error: await this.dataSource.resetToCommit(msg.repo, msg.commitHash, msg.resetMode)
 					});
 					break;
 				case 'revertCommit':
 					this.sendMessage({
 						command: 'revertCommit',
-						status: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
+						error: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					break;
 				case 'saveRepoState':

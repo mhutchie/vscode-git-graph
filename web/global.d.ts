@@ -68,6 +68,7 @@ declare global {
 		fileTree: GitFolder | null;
 		compareWithHash: string | null;
 		compareWithSrcElem: HTMLElement | null;
+		loading: boolean;
 	}
 
 	interface GitFile {

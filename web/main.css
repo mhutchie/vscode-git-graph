@@ -185,9 +185,6 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	border-right:1px solid rgba(128,128,128,0.2);
 	user-select:text;
 }
-tr#commitDetails #commitDetailsSummary{
-	border-left:1px solid rgba(128,128,128,0.2);
-}
 .commitDetailsSummaryTop{
 	display:inline-table;
 	width:100%;
@@ -260,6 +257,32 @@ tr#commitDetails #commitDetailsSummary{
 }
 #commitDetailsClose:hover svg{
 	fill-opacity:0.8;
+}
+#commitDetailsLoading{
+	position:absolute;
+	left:0;
+	top:0;
+	right:32px;
+	bottom:2px;
+	padding:10px;
+	box-sizing:border-box;
+	border-right:1px solid rgba(128,128,128,0.2);
+	user-select:text;
+	text-align:center;
+	line-height:24px;
+}
+#commitDetailsLoading svg{
+	display:inline-block;
+	width:15px !important;
+	height:20px !important;
+	margin-top:2px;
+	margin-right:8px;
+	vertical-align:top;
+	fill:var(--vscode-editor-foreground);
+	animation:loadingIconAnimation 2s linear infinite;
+}
+tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
+	border-left:1px solid rgba(128,128,128,0.2);
 }
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	width:13px;

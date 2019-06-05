@@ -3,7 +3,7 @@
 export interface GitBranchData {
 	branches: string[];
 	head: string | null;
-	error: string | null; // null => no error, otherwise => error message
+	error: GitCommandError;
 }
 
 export interface GitCommitData {
@@ -11,7 +11,12 @@ export interface GitCommitData {
 	head: string | null;
 	remotes: string[];
 	moreCommitsAvailable: boolean;
-	error: string | null; // null => no error, otherwise => error message
+	error: GitCommandError;
+}
+
+export interface GitCommitComparisonData {
+	fileChanges: GitFileChange[];
+	error: GitCommandError;
 }
 
 export interface GitCommitNode {
@@ -44,6 +49,7 @@ export interface GitCommitDetails {
 	committer: string;
 	body: string;
 	fileChanges: GitFileChange[];
+	error: GitCommandError;
 }
 
 export interface GitRef {
@@ -114,7 +120,7 @@ export type DateType = 'Author Date' | 'Commit Date';
 export type GraphStyle = 'rounded' | 'angular';
 export type RefLabelAlignment = 'Normal' | 'Branches (on the left) & Tags (on the right)' | 'Branches (aligned to the graph) & Tags (on the right)';
 export type TabIconColourTheme = 'colour' | 'grey';
-export type GitCommandStatus = string | null;
+export type GitCommandError = string | null; // null => no error, otherwise => error message
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
 export type RebaseOnType = 'Branch' | 'Commit';
@@ -142,7 +148,7 @@ export interface RequestAddTag {
 }
 export interface ResponseAddTag {
 	command: 'addTag';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestCheckoutBranch {
@@ -153,7 +159,7 @@ export interface RequestCheckoutBranch {
 }
 export interface ResponseCheckoutBranch {
 	command: 'checkoutBranch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestCheckoutCommit {
@@ -163,7 +169,7 @@ export interface RequestCheckoutCommit {
 }
 export interface ResponseCheckoutCommit {
 	command: 'checkoutCommit';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestCherrypickCommit {
@@ -174,7 +180,17 @@ export interface RequestCherrypickCommit {
 }
 export interface ResponseCherrypickCommit {
 	command: 'cherrypickCommit';
-	status: GitCommandStatus;
+	error: GitCommandError;
+}
+
+export interface RequestCleanUntrackedFiles {
+	command: 'cleanUntrackedFiles';
+	repo: string;
+	directories: boolean;
+}
+export interface ResponseCleanUntrackedFiles {
+	command: 'cleanUntrackedFiles';
+	error: GitCommandError;
 }
 
 export interface RequestCommitDetails {
@@ -184,7 +200,7 @@ export interface RequestCommitDetails {
 }
 export interface ResponseCommitDetails {
 	command: 'commitDetails';
-	commitDetails: GitCommitDetails | null;
+	commitDetails: GitCommitDetails;
 }
 
 export interface RequestCompareCommits {
@@ -199,7 +215,8 @@ export interface ResponseCompareCommits {
 	command: 'compareCommits';
 	commitHash: string;
 	compareWithHash: string;
-	fileChanges: GitFileChange[] | null;
+	fileChanges: GitFileChange[];
+	error: GitCommandError;
 }
 
 export interface RequestCopyToClipboard {
@@ -221,17 +238,7 @@ export interface RequestCreateBranch {
 }
 export interface ResponseCreateBranch {
 	command: 'createBranch';
-	status: GitCommandStatus;
-}
-
-export interface RequestCleanUntrackedFiles {
-	command: 'cleanUntrackedFiles';
-	repo: string;
-	directories: boolean;
-}
-export interface ResponseCleanUntrackedFiles {
-	command: 'cleanUntrackedFiles';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestDeleteBranch {
@@ -242,7 +249,7 @@ export interface RequestDeleteBranch {
 }
 export interface ResponseDeleteBranch {
 	command: 'deleteBranch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestDeleteRemoteBranch {
@@ -253,7 +260,7 @@ export interface RequestDeleteRemoteBranch {
 }
 export interface ResponseDeleteRemoteBranch {
 	command: 'deleteRemoteBranch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestDeleteTag {
@@ -263,7 +270,7 @@ export interface RequestDeleteTag {
 }
 export interface ResponseDeleteTag {
 	command: 'deleteTag';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestFetch {
@@ -272,7 +279,7 @@ export interface RequestFetch {
 }
 export interface ResponseFetch {
 	command: 'fetch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestFetchAvatar {
@@ -299,7 +306,7 @@ export interface ResponseLoadBranches {
 	head: string | null;
 	hard: boolean;
 	isRepo: boolean;
-	error: string | null; // null => no error, otherwise => error message
+	error: GitCommandError;
 }
 
 export interface RequestLoadCommits {
@@ -317,7 +324,7 @@ export interface ResponseLoadCommits {
 	remotes: string[];
 	moreCommitsAvailable: boolean;
 	hard: boolean;
-	error: string | null; // null => no error, otherwise => error message
+	error: GitCommandError;
 }
 
 export interface RequestLoadRepos {
@@ -340,7 +347,7 @@ export interface RequestMergeBranch {
 }
 export interface ResponseMergeBranch {
 	command: 'mergeBranch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestMergeCommit {
@@ -352,7 +359,7 @@ export interface RequestMergeCommit {
 }
 export interface ResponseMergeCommit {
 	command: 'mergeCommit';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestPushBranch {
@@ -364,7 +371,7 @@ export interface RequestPushBranch {
 }
 export interface ResponsePushBranch {
 	command: 'pushBranch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestPushTag {
@@ -375,7 +382,7 @@ export interface RequestPushTag {
 }
 export interface ResponsePushTag {
 	command: 'pushTag';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestRebaseOn {
@@ -390,7 +397,7 @@ export interface ResponseRebaseOn {
 	command: 'rebaseOn';
 	type: RebaseOnType;
 	interactive: boolean;
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface ResponseRefresh {
@@ -405,7 +412,7 @@ export interface RequestRenameBranch {
 }
 export interface ResponseRenameBranch {
 	command: 'renameBranch';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestResetToCommit {
@@ -416,7 +423,7 @@ export interface RequestResetToCommit {
 }
 export interface ResponseResetToCommit {
 	command: 'resetToCommit';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestRevertCommit {
@@ -427,7 +434,7 @@ export interface RequestRevertCommit {
 }
 export interface ResponseRevertCommit {
 	command: 'revertCommit';
-	status: GitCommandStatus;
+	error: GitCommandError;
 }
 
 export interface RequestSaveRepoState {

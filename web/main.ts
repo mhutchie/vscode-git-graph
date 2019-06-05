@@ -481,7 +481,7 @@ class GitGraphView {
 				this.saveState();
 				if (this.expandedCommit.compareWithHash === null) {
 					// Commit Details View is open
-					if (this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
+					if (!this.expandedCommit.loading && this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
 						this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree);
 						if (this.expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(this.expandedCommit.hash);
 					} else {
@@ -489,7 +489,7 @@ class GitGraphView {
 					}
 				} else {
 					// Commit Comparison is open
-					if (this.expandedCommit.fileChanges !== null && this.expandedCommit.fileTree !== null) {
+					if (!this.expandedCommit.loading && this.expandedCommit.fileChanges !== null && this.expandedCommit.fileTree !== null) {
 						this.showCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, this.expandedCommit.fileChanges, this.expandedCommit.fileTree);
 						if (this.expandedCommit.hash === UNCOMMITTED || this.expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
 					} else {
@@ -1054,8 +1054,10 @@ class GitGraphView {
 	/* Commit Details */
 	private loadCommitDetails(sourceElem: HTMLElement) {
 		this.closeCommitDetails(true);
-		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileChanges: null, fileTree: null, compareWithHash: null, compareWithSrcElem: null };
+		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileChanges: null, fileTree: null, compareWithHash: null, compareWithSrcElem: null, loading: true };
 		this.saveState();
+		sourceElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
+		this.renderCommitDetailsView();
 		this.requestCommitDetails(this.expandedCommit.hash);
 	}
 	public closeCommitDetails(saveAndRender: boolean) {
@@ -1087,29 +1089,38 @@ class GitGraphView {
 			this.expandedCommit.fileTree = fileTree;
 		}
 		this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
+		this.expandedCommit.loading = false;
 		this.saveState();
 
 		this.renderCommitDetailsView();
 	}
 
 	private loadCommitComparison(compareWithSrcElem: HTMLElement) {
-		if (this.expandedCommit !== null) {
+		if (this.expandedCommit !== null && this.expandedCommit.srcElem !== null) {
 			this.closeCommitComparison(false);
 			this.expandedCommit.compareWithHash = compareWithSrcElem.dataset.hash!;
 			this.expandedCommit.compareWithSrcElem = compareWithSrcElem;
+			this.expandedCommit.loading = true;
 			this.saveState();
+			this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
+			this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMPARE_COMMIT_OPEN);
+			this.renderCommitDetailsView();
 			this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
 		}
 	}
-	public closeCommitComparison(fallbackToDetails: boolean) {
+	public closeCommitComparison(requestCommitDetails: boolean) {
 		if (this.expandedCommit !== null && this.expandedCommit.compareWithHash) {
 			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
 			this.expandedCommit.compareWithHash = null;
 			this.expandedCommit.compareWithSrcElem = null;
 			this.expandedCommit.fileChanges = null;
 			this.expandedCommit.fileTree = null;
+			if (requestCommitDetails) {
+				this.expandedCommit.loading = true;
+				this.renderCommitDetailsView();
+				sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
+			}
 			this.saveState();
-			if (fallbackToDetails) sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
 		}
 	}
 	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder) {
@@ -1121,6 +1132,7 @@ class GitGraphView {
 		}
 		this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 		this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMPARE_COMMIT_OPEN);
+		this.expandedCommit.loading = false;
 		this.saveState();
 
 		this.renderCommitDetailsView();
@@ -1135,31 +1147,37 @@ class GitGraphView {
 			elem.id = 'commitDetails';
 			insertAfter(elem, this.expandedCommit.srcElem);
 		}
-		if (this.expandedCommit.compareWithHash === null) {
-			// Commit details should be shown
-			if (this.expandedCommit.hash !== UNCOMMITTED) {
-				let commitDetails = this.expandedCommit.commitDetails!;
-				html += '<span class="commitDetailsSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="commitDetailsSummaryTopRow"><span class="commitDetailsSummaryKeyValues">';
-				html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
-				html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
-				html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
-				html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
-				html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
-				if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="commitDetailsSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
-				html += '</span></span><br><br>';
-				html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>');
-			} else {
-				html += 'Displaying all uncommitted changes.';
-			}
-			html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
-			this.renderGraph();
+		if (this.expandedCommit.loading) {
+			html += '<div id="commitDetailsLoading">' + svgIcons.loading + ' Loading ' + (this.expandedCommit.compareWithHash === null ? this.expandedCommit.hash !== UNCOMMITTED ? 'Commit Details' : 'Uncommitted Changes' : 'Commit Comparison') + ' ...</div>';
+			if (this.expandedCommit.compareWithHash === null) this.renderGraph();
 		} else {
-			// Commit comparision should be shown
-			let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
-			html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.</div>';
-			html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
+			if (this.expandedCommit.compareWithHash === null) {
+				// Commit details should be shown
+				if (this.expandedCommit.hash !== UNCOMMITTED) {
+					let commitDetails = this.expandedCommit.commitDetails!;
+					html += '<span class="commitDetailsSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="commitDetailsSummaryTopRow"><span class="commitDetailsSummaryKeyValues">';
+					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
+					html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
+					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
+					html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
+					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
+					if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="commitDetailsSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
+					html += '</span></span><br><br>';
+					html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>');
+				} else {
+					html += 'Displaying all uncommitted changes.';
+				}
+				html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
+				this.renderGraph();
+			} else {
+				// Commit comparision should be shown
+				let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.</div>';
+				html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
+			}
+			html = '<div id="commitDetailsSummary">' + html + '</div>';
 		}
-		html = '<div id="commitDetailsSummary">' + html + '</div><div id="commitDetailsClose" title="Close">' + svgIcons.close + '</div>';
+		html += '<div id="commitDetailsClose" title="Close">' + svgIcons.close + '</div>';
 
 		elem.innerHTML = isDocked ? html : '<td></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
 
@@ -1250,53 +1268,53 @@ window.addEventListener('load', () => {
 		const msg: GG.ResponseMessage = event.data;
 		switch (msg.command) {
 			case 'addTag':
-				refreshOrDisplayError(msg.status, 'Unable to Add Tag');
+				refreshOrDisplayError(msg.error, 'Unable to Add Tag');
 				break;
 			case 'checkoutBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Checkout Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Checkout Branch');
 				break;
 			case 'checkoutCommit':
-				refreshOrDisplayError(msg.status, 'Unable to Checkout Commit');
+				refreshOrDisplayError(msg.error, 'Unable to Checkout Commit');
 				break;
 			case 'cherrypickCommit':
-				refreshOrDisplayError(msg.status, 'Unable to Cherry Pick Commit');
+				refreshOrDisplayError(msg.error, 'Unable to Cherry Pick Commit');
 				break;
 			case 'cleanUntrackedFiles':
-				refreshOrDisplayError(msg.status, 'Unable to Clean Untracked Files');
+				refreshOrDisplayError(msg.error, 'Unable to Clean Untracked Files');
 				break;
 			case 'commitDetails':
-				if (msg.commitDetails === null) {
-					gitGraph.closeCommitDetails(true);
-					showErrorDialog('Unable to load commit details', null, null, null, null);
-				} else {
+				if (msg.commitDetails.error === null) {
 					gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
+				} else {
+					gitGraph.closeCommitDetails(true);
+					showErrorDialog('Unable to load Commit Details', msg.commitDetails.error, null, null, null);
 				}
 				break;
 			case 'compareCommits':
-				if (msg.fileChanges === null) {
-					gitGraph.closeCommitComparison(true);
-					showErrorDialog('Unable to compare commits', null, null, null, null);
-				} else {
+				if (msg.error === null) {
 					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges));
+				} else {
+					gitGraph.closeCommitComparison(true);
+					showErrorDialog('Unable to compare Commits', msg.error, null, null, null);
 				}
 				break;
 			case 'copyToClipboard':
 				showErrorIfNotSuccess(msg.success, 'Unable to Copy ' + msg.type + ' to Clipboard');
 				break;
 			case 'createBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Create Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Create Branch');
 				break;
 			case 'deleteBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Delete Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Delete Branch');
 				break;
 			case 'deleteRemoteBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Delete Remote Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
 				break;
 			case 'deleteTag':
-				refreshOrDisplayError(msg.status, 'Unable to Delete Tag');
+				refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
 				break;
 			case 'fetch':
-				refreshOrDisplayError(msg.status, 'Unable to Fetch from Remote(s)');
+				refreshOrDisplayError(msg.error, 'Unable to Fetch from Remote(s)');
 				break;
 			case 'fetchAvatar':
 				gitGraph.loadAvatar(msg.email, msg.image);
@@ -1319,39 +1337,39 @@ window.addEventListener('load', () => {
 				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
 				break;
 			case 'mergeBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Merge Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Merge Branch');
 				break;
 			case 'mergeCommit':
-				refreshOrDisplayError(msg.status, 'Unable to Merge Commit');
+				refreshOrDisplayError(msg.error, 'Unable to Merge Commit');
 				break;
 			case 'pushBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Push Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Push Branch');
 				break;
 			case 'pushTag':
-				refreshOrDisplayError(msg.status, 'Unable to Push Tag');
-				break;
-			case 'renameBranch':
-				refreshOrDisplayError(msg.status, 'Unable to Rename Branch');
+				refreshOrDisplayError(msg.error, 'Unable to Push Tag');
 				break;
 			case 'rebaseOn':
-				if (msg.status === null) {
+				if (msg.error === null) {
 					if (msg.interactive) {
 						if (dialogActionRunning) hideDialog();
 					} else {
 						gitGraph.refresh(false);
 					}
 				} else {
-					showErrorDialog('Unable to Rebase current branch on ' + msg.type, msg.status, null, null, null);
+					showErrorDialog('Unable to Rebase current branch on ' + msg.type, msg.error, null, null, null);
 				}
 				break;
 			case 'refresh':
 				gitGraph.refresh(false);
 				break;
+			case 'renameBranch':
+				refreshOrDisplayError(msg.error, 'Unable to Rename Branch');
+				break;
 			case 'resetToCommit':
-				refreshOrDisplayError(msg.status, 'Unable to Reset to Commit');
+				refreshOrDisplayError(msg.error, 'Unable to Reset to Commit');
 				break;
 			case 'revertCommit':
-				refreshOrDisplayError(msg.status, 'Unable to Revert Commit');
+				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
 				break;
 			case 'viewDiff':
 				showErrorIfNotSuccess(msg.success, 'Unable to view Diff of File');
@@ -1361,11 +1379,11 @@ window.addEventListener('load', () => {
 				break;
 		}
 	});
-	function refreshOrDisplayError(status: GG.GitCommandStatus, errorMessage: string) {
-		if (status === null) {
+	function refreshOrDisplayError(error: GG.GitCommandError, errorMessage: string) {
+		if (error === null) {
 			gitGraph.refresh(false);
 		} else {
-			showErrorDialog(errorMessage, status, null, null, null);
+			showErrorDialog(errorMessage, error, null, null, null);
 		}
 	}
 	function showErrorIfNotSuccess(success: boolean, errorMessage: string) {

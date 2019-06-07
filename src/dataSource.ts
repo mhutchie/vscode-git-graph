@@ -217,7 +217,11 @@ export class DataSource {
 
 	public deleteTag(repo: string, tagName: string) {
 		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
-	}
+  }
+
+  public changeRemoteUrl(repo: string, remoteUrl: string, remoteName = 'origin') {
+    return this.runGitCommand(`remote set-url ${remoteName} ${remoteUrl}`, repo)
+  }
 
 	public fetch(repo: string) {
 		return this.runGitCommand('fetch --all', repo);

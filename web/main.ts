@@ -101,11 +101,13 @@ class GitGraphView {
 				this.avatars = prevState.avatars;
 				this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
 				this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitRemotes, prevState.moreCommitsAvailable, true);
-				this.scrollTop = prevState.scrollTop;
-				this.viewElem.scroll(0, this.scrollTop);
 			}
 		}
 		this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo);
+		if (prevState) {
+			this.scrollTop = prevState.scrollTop;
+			this.viewElem.scroll(0, this.scrollTop);
+		}
 		this.requestLoadBranchesAndCommits(false);
 
 		const fetchBtn = document.getElementById('fetchBtn')!;
@@ -204,12 +206,12 @@ class GitGraphView {
 					if (this.expandedCommit.compareWithHash === null) {
 						// Commit Details View is open
 						if (this.expandedCommit.hash === UNCOMMITTED) {
-							this.requestCommitDetails(this.expandedCommit.hash);
+							this.requestCommitDetails(this.expandedCommit.hash, true);
 						}
 					} else {
 						// Commit Comparison is open
 						if (this.expandedCommit.compareWithSrcElem !== null && (this.expandedCommit.hash === UNCOMMITTED || this.expandedCommit.compareWithHash === UNCOMMITTED)) {
-							this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+							this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, true);
 						}
 					}
 				}
@@ -332,16 +334,17 @@ class GitGraphView {
 			}
 		});
 	}
-	public requestCommitDetails(hash: string) {
-		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: hash });
+	public requestCommitDetails(hash: string, refresh: boolean) {
+		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: hash, refresh: refresh });
 	}
-	public requestCommitComparison(hash: string, compareWithHash: string) {
+	public requestCommitComparison(hash: string, compareWithHash: string, refresh: boolean) {
 		let commitOrder = this.getCommitOrder(hash, compareWithHash);
 		sendMessage({
 			command: 'compareCommits',
 			repo: this.currentRepo,
 			commitHash: hash, compareWithHash: compareWithHash,
-			fromHash: commitOrder.from, toHash: commitOrder.to
+			fromHash: commitOrder.from, toHash: commitOrder.to,
+			refresh: refresh
 		});
 	}
 	private requestAvatars(avatars: { [email: string]: string[] }) {
@@ -482,16 +485,16 @@ class GitGraphView {
 				if (this.expandedCommit.compareWithHash === null) {
 					// Commit Details View is open
 					if (!this.expandedCommit.loading && this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
-						this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree);
-						if (this.expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(this.expandedCommit.hash);
+						this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree, false);
+						if (this.expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(this.expandedCommit.hash, true);
 					} else {
 						this.loadCommitDetails(elem);
 					}
 				} else {
 					// Commit Comparison is open
 					if (!this.expandedCommit.loading && this.expandedCommit.fileChanges !== null && this.expandedCommit.fileTree !== null) {
-						this.showCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, this.expandedCommit.fileChanges, this.expandedCommit.fileTree);
-						if (this.expandedCommit.hash === UNCOMMITTED || this.expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+						this.showCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, this.expandedCommit.fileChanges, this.expandedCommit.fileTree, false);
+						if (this.expandedCommit.hash === UNCOMMITTED || this.expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, true);
 					} else {
 						this.loadCommitComparison(compareWithElem!);
 					}
@@ -1054,11 +1057,11 @@ class GitGraphView {
 	/* Commit Details */
 	private loadCommitDetails(sourceElem: HTMLElement) {
 		this.closeCommitDetails(true);
-		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileChanges: null, fileTree: null, compareWithHash: null, compareWithSrcElem: null, loading: true };
+		this.expandedCommit = { id: parseInt(sourceElem.dataset.id!), hash: sourceElem.dataset.hash!, srcElem: sourceElem, commitDetails: null, fileChanges: null, fileTree: null, compareWithHash: null, compareWithSrcElem: null, loading: true, fileChangesScrollTop: 0 };
 		this.saveState();
 		sourceElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
-		this.renderCommitDetailsView();
-		this.requestCommitDetails(this.expandedCommit.hash);
+		this.renderCommitDetailsView(false);
+		this.requestCommitDetails(this.expandedCommit.hash, false);
 	}
 	public closeCommitDetails(saveAndRender: boolean) {
 		if (this.expandedCommit !== null) {
@@ -1078,7 +1081,7 @@ class GitGraphView {
 			}
 		}
 	}
-	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: GitFolder) {
+	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: GitFolder, refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.hash !== commitDetails.hash) return;
 		let elem = document.getElementById('commitDetails');
 		if (typeof elem === 'object' && elem !== null) elem.remove();
@@ -1092,7 +1095,7 @@ class GitGraphView {
 		this.expandedCommit.loading = false;
 		this.saveState();
 
-		this.renderCommitDetailsView();
+		this.renderCommitDetailsView(refresh);
 	}
 
 	private loadCommitComparison(compareWithSrcElem: HTMLElement) {
@@ -1101,11 +1104,12 @@ class GitGraphView {
 			this.expandedCommit.compareWithHash = compareWithSrcElem.dataset.hash!;
 			this.expandedCommit.compareWithSrcElem = compareWithSrcElem;
 			this.expandedCommit.loading = true;
+			this.expandedCommit.fileChangesScrollTop = 0;
 			this.saveState();
 			this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 			this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMPARE_COMMIT_OPEN);
-			this.renderCommitDetailsView();
-			this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+			this.renderCommitDetailsView(false);
+			this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, false);
 		}
 	}
 	public closeCommitComparison(requestCommitDetails: boolean) {
@@ -1117,13 +1121,14 @@ class GitGraphView {
 			this.expandedCommit.fileTree = null;
 			if (requestCommitDetails) {
 				this.expandedCommit.loading = true;
-				this.renderCommitDetailsView();
-				sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: this.expandedCommit.hash });
+				this.expandedCommit.fileChangesScrollTop = 0;
+				this.renderCommitDetailsView(false);
+				this.requestCommitDetails(this.expandedCommit.hash, false);
 			}
 			this.saveState();
 		}
 	}
-	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder) {
+	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder, refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.compareWithSrcElem === null || this.expandedCommit.hash !== commitHash || this.expandedCommit.compareWithHash !== compareWithHash) return;
 		this.expandedCommit.commitDetails = null;
 		if (haveFilesChanged(this.expandedCommit.fileChanges, fileChanges)) {
@@ -1135,10 +1140,10 @@ class GitGraphView {
 		this.expandedCommit.loading = false;
 		this.saveState();
 
-		this.renderCommitDetailsView();
+		this.renderCommitDetailsView(refresh);
 	}
 
-	private renderCommitDetailsView() {
+	private renderCommitDetailsView(refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null) return;
 		let isDocked = this.config.commitDetailsViewLocation !== 'Inline';
 		let elem = isDocked ? this.dockedCommitDetailsView : document.getElementById('commitDetails'), html = '';
@@ -1151,6 +1156,7 @@ class GitGraphView {
 			html += '<div id="commitDetailsLoading">' + svgIcons.loading + ' Loading ' + (this.expandedCommit.compareWithHash === null ? this.expandedCommit.hash !== UNCOMMITTED ? 'Commit Details' : 'Uncommitted Changes' : 'Commit Comparison') + ' ...</div>';
 			if (this.expandedCommit.compareWithHash === null) this.renderGraph();
 		} else {
+			html += '<div id="commitDetailsSummary">';
 			if (this.expandedCommit.compareWithHash === null) {
 				// Commit details should be shown
 				if (this.expandedCommit.hash !== UNCOMMITTED) {
@@ -1167,44 +1173,44 @@ class GitGraphView {
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}
-				html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
 				this.renderGraph();
 			} else {
 				// Commit comparision should be shown
 				let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
-				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.</div>';
-				html += '<div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</table>';
+				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.';
 			}
-			html = '<div id="commitDetailsSummary">' + html + '</div>';
+			html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</div>';
 		}
 		html += '<div id="commitDetailsClose" title="Close">' + svgIcons.close + '</div>';
 
 		elem.innerHTML = isDocked ? html : '<td></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
+		if (isDocked) document.body.classList.add(CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN);
 
-		if (isDocked) {
-			document.body.classList.add(CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN);
-			let elemTop = this.controlsElem.clientHeight + this.expandedCommit.srcElem.offsetTop;
-			if (elemTop - 8 < this.viewElem.scrollTop) {
-				// Commit is above what is visible on screen
-				this.viewElem.scroll(0, elemTop - 8);
-			} else if (elemTop - this.viewElem.clientHeight + 32 > this.viewElem.scrollTop) {
-				// Commit is below what is visible on screen
-				this.viewElem.scroll(0, elemTop - this.viewElem.clientHeight + 32);
-			}
-		} else {
-			let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
-			if (this.config.autoCenterCommitDetailsView) {
-				// Center Commit Detail View setting is enabled
-				// elemTop - commit height [24px] + (commit details view height + commit height [24px]) / 2 - (view height) / 2
-				this.viewElem.scroll(0, elemTop - 12 + (this.config.grid.expandY - this.viewElem.clientHeight) / 2);
-			} else if (elemTop - 32 < this.viewElem.scrollTop) {
-				// Commit Detail View is opening above what is visible on screen
-				// elemTop - commit height [24px] - desired gap from top [8px] < view scroll offset
-				this.viewElem.scroll(0, elemTop - 32);
-			} else if (elemTop + this.config.grid.expandY - this.viewElem.clientHeight + 8 > this.viewElem.scrollTop) {
-				// Commit Detail View is opening below what is visible on screen
-				// elemTop + commit details view height + desired gap from bottom [8px] - view height > view scroll offset
-				this.viewElem.scroll(0, elemTop + this.config.grid.expandY - this.viewElem.clientHeight + 8);
+		if (!refresh) {
+			if (isDocked) {
+				let elemTop = this.controlsElem.clientHeight + this.expandedCommit.srcElem.offsetTop;
+				if (elemTop - 8 < this.viewElem.scrollTop) {
+					// Commit is above what is visible on screen
+					this.viewElem.scroll(0, elemTop - 8);
+				} else if (elemTop - this.viewElem.clientHeight + 32 > this.viewElem.scrollTop) {
+					// Commit is below what is visible on screen
+					this.viewElem.scroll(0, elemTop - this.viewElem.clientHeight + 32);
+				}
+			} else {
+				let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
+				if (this.config.autoCenterCommitDetailsView) {
+					// Center Commit Detail View setting is enabled
+					// elemTop - commit height [24px] + (commit details view height + commit height [24px]) / 2 - (view height) / 2
+					this.viewElem.scroll(0, elemTop - 12 + (this.config.grid.expandY - this.viewElem.clientHeight) / 2);
+				} else if (elemTop - 32 < this.viewElem.scrollTop) {
+					// Commit Detail View is opening above what is visible on screen
+					// elemTop - commit height [24px] - desired gap from top [8px] < view scroll offset
+					this.viewElem.scroll(0, elemTop - 32);
+				} else if (elemTop + this.config.grid.expandY - this.viewElem.clientHeight + 8 > this.viewElem.scrollTop) {
+					// Commit Detail View is opening below what is visible on screen
+					// elemTop + commit details view height + desired gap from bottom [8px] - view height > view scroll offset
+					this.viewElem.scroll(0, elemTop + this.config.grid.expandY - this.viewElem.clientHeight + 8);
+				}
 			}
 		}
 
@@ -1227,6 +1233,19 @@ class GitGraphView {
 			let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash === null ? this.expandedCommit.hash : this.expandedCommit.compareWithHash);
 			sendMessage({ command: 'viewDiff', repo: this.currentRepo, fromHash: commitOrder.from, toHash: commitOrder.to, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 		});
+
+		if (!this.expandedCommit.loading) {
+			let commitDetailsFiles = document.getElementById('commitDetailsFiles')!, timeout: NodeJS.Timer | null = null;
+			commitDetailsFiles.scroll(0, this.expandedCommit.fileChangesScrollTop);
+			commitDetailsFiles.addEventListener('scroll', () => {
+				if (this.expandedCommit !== null) this.expandedCommit.fileChangesScrollTop = commitDetailsFiles.scrollTop;
+				if (timeout !== null) clearTimeout(timeout);
+				timeout = setTimeout(() => {
+					this.saveState();
+					timeout = null;
+				}, 250);
+			});
+		}
 	}
 
 	private getCommitOrder(hash1: string, hash2: string) {
@@ -1284,7 +1303,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'commitDetails':
 				if (msg.commitDetails.error === null) {
-					gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges));
+					gitGraph.showCommitDetails(msg.commitDetails, generateGitFileTree(msg.commitDetails.fileChanges), msg.refresh);
 				} else {
 					gitGraph.closeCommitDetails(true);
 					showErrorDialog('Unable to load Commit Details', msg.commitDetails.error, null, null, null);
@@ -1292,7 +1311,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'compareCommits':
 				if (msg.error === null) {
-					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges));
+					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges), msg.refresh);
 				} else {
 					gitGraph.closeCommitComparison(true);
 					showErrorDialog('Unable to compare Commits', msg.error, null, null, null);

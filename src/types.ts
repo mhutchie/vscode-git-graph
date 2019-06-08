@@ -123,6 +123,7 @@ export type TabIconColourTheme = 'colour' | 'grey';
 export type GitCommandError = string | null; // null => no error, otherwise => error message
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
+export type DiffSide = 'old' | 'new';
 export type RebaseOnType = 'Branch' | 'Commit';
 
 export interface CustomBranchGlobPattern {
@@ -197,10 +198,12 @@ export interface RequestCommitDetails {
 	command: 'commitDetails';
 	repo: string;
 	commitHash: string;
+	refresh: boolean;
 }
 export interface ResponseCommitDetails {
 	command: 'commitDetails';
 	commitDetails: GitCommitDetails;
+	refresh: boolean;
 }
 
 export interface RequestCompareCommits {
@@ -210,12 +213,14 @@ export interface RequestCompareCommits {
 	compareWithHash: string;
 	fromHash: string;
 	toHash: string;
+	refresh: boolean;
 }
 export interface ResponseCompareCommits {
 	command: 'compareCommits';
 	commitHash: string;
 	compareWithHash: string;
 	fileChanges: GitFileChange[];
+	refresh: boolean;
 	error: GitCommandError;
 }
 

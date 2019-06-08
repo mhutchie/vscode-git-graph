@@ -53,7 +53,7 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 			let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 			if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type), encodeDiffDocUri(repo, newFilePath, toHash, type), title, options)
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, newFilePath, toHash, type, 'new'), title, options)
 				.then(() => resolve(true), () => resolve(false));
 		} else {
 			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repo + '/' + newFilePath), options)

@@ -1,6 +1,6 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
-import { GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
+import { DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
@@ -182,8 +182,8 @@ export class DataSource {
 		});
 	}
 
-	public getCommitFile(repo: string, commitHash: string, filePath: string, type: GitFileChangeType) {
-		return commitHash === UNCOMMITTED && type === 'D'
+	public getCommitFile(repo: string, commitHash: string, filePath: string, type: GitFileChangeType, diffSide: DiffSide) {
+		return (commitHash === UNCOMMITTED && type === 'D') || (diffSide === 'old' && type === 'A') || (diffSide === 'new' && type === 'D')
 			? new Promise<string>(resolve => resolve(''))
 			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout);
 	}

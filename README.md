@@ -17,7 +17,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * View the Visual Studio Code Diff of any file change between the selected commits by clicking on the desired file in the Commit Details View.
     * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
-        * Create, Checkout, Rename, Delete, Merge & Rebase branches
+        * Create, Checkout, Rename, Delete, Merge, Push & Rebase branches
         * Add, Delete & Push tags
         * Checkout, Cherry Pick, Merge & Revert commits
         * Reset current branch to commit
@@ -58,8 +58,9 @@ A summary of the Git Graph extension settings are:
 * **Load More Commits**: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
 * **Open Diff Tab Location**: Specifies which pane the Visual Studio Code Diff is opened in. Default: Active
+* **Open To The Repo Of The Active Text Editor Document**: Open Git Graph to the repository containing the active Text Editor document. Default: false (disabled)
 * **Reference Label Alignment**: Specifies how branch and tag reference labels are aligned for each commit.
-* **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead.
+* **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead. Default: true (enabled)
 * **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * **Show Status Bar Item**: Show a Status Bar item which opens Git Graph when clicked.
 * **Show Uncommitted Changes**: Show uncommitted changes (set to false to decrease load time on large repositories).
@@ -75,6 +76,7 @@ This extension consumes the following settings:
 This extension contributes the following commands:
 
 * `git-graph.view`: Git Graph: View Git Graph
+* `git-graph.addGitRepository`: Git Graph: Add Git Repository _(can be used to add sub-repos to Git Graph)_
 * `git-graph.clearAvatarCache`: Git Graph: Clear Avatar Cache
 
 ## Release Notes

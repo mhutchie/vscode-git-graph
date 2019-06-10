@@ -3,6 +3,7 @@ class GitGraphView {
   private gitBranches: string[] = []
   private gitBranchHead: string | null = null
   private gitRemotes: string[] = []
+  private gitRemotesObject: GG.GitRemoteObject[] = []
   private commits: GG.GitCommitNode[] = []
   private commitHead: string | null = null
   private commitLookup: { [hash: string]: number } = {}
@@ -140,6 +141,12 @@ class GitGraphView {
       showFormDialog(
         'New remote url',
         [
+          {
+            type: 'select' as 'select',
+            name: 'Remote: ',
+            default: 'origin',
+            options: this.gitRemotesObject,
+          },
           {
             type: 'url' as 'url',
             name: 'Url: ',
@@ -342,6 +349,15 @@ class GitGraphView {
     this.commits = commits
     this.commitHead = commitHead
     this.gitRemotes = remotes
+
+    // User for
+    remotes.forEach((remote) => {
+      this.gitRemotesObject.push({
+        name: remote,
+        value: remote,
+      })
+    })
+
     this.commitLookup = {}
     this.saveState()
 
@@ -2808,7 +2824,7 @@ function showFormDialog(
         '" type="text" value="' +
         input.default +
         '"' +
-        (input.type === 'text' && input.placeholder !== null
+        ((input.type === 'text' || input.type === 'url') && input.placeholder !== null
           ? ' placeholder="' + input.placeholder + '"'
           : '') +
         '/>'

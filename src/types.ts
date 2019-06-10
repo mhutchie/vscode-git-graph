@@ -52,6 +52,11 @@ export interface GitCommitDetails {
   error: GitCommandError
 }
 
+export interface GitRemoteObject {
+  name: string
+  value: string
+}
+
 export interface GitRef {
   hash: string
   name: string

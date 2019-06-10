@@ -34,12 +34,6 @@ declare global {
 
   type ContextMenuElement = ContextMenuItem | null
 
-  interface DialogUrlInput {
-    type: 'url'
-    name: string
-    default: string
-    placeholder: string | null
-  }
   interface DialogTextInput {
     type: 'text'
     name: string
@@ -51,8 +45,21 @@ declare global {
     name: string
     default: string
   }
+  interface DialogUrlInput {
+    type: 'url'
+    name: string
+    default: string
+    placeholder: string | null
+  }
   interface DialogSelectInput {
     type: 'select'
+    name: string
+    options: { name: string; value: string }[]
+    default: string
+  }
+  // On select, change another input field content
+  interface DialogSelectAndChangeInput {
+    type: 'selectAndChange'
     name: string
     options: { name: string; value: string }[]
     default: string
@@ -68,6 +75,7 @@ declare global {
     | DialogTextRefInput
     | DialogSelectInput
     | DialogCheckboxInput
+    | DialogSelectAndChangeInput
   type DialogInputValue = string | boolean
 
   interface ExpandedCommit {

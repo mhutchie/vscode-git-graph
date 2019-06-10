@@ -52,6 +52,11 @@ export interface GitCommitDetails {
   error: GitCommandError
 }
 
+export interface GitRemoteObject {
+  name: string
+  value: string
+}
+
 export interface GitRef {
   hash: string
   name: string
@@ -156,6 +161,7 @@ export interface ResponseAddTag {
 export interface RequestRemoteUrl {
   command: 'changeRemoteUrl'
   repo: string
+  remote: string
   remoteUrl: string
 }
 export interface ResponseRemoteUrl {

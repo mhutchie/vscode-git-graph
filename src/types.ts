@@ -161,6 +161,7 @@ export interface ResponseAddTag {
 export interface RequestRemoteUrl {
   command: 'changeRemoteUrl'
   repo: string
+  remote: string
   remoteUrl: string
 }
 export interface ResponseRemoteUrl {

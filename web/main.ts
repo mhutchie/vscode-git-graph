@@ -142,7 +142,7 @@ class GitGraphView {
         'New remote url',
         [
           {
-            type: 'select' as 'select',
+            type: 'selectAndChange' as 'selectAndChange',
             name: 'Remote: ',
             default: 'origin',
             options: this.gitRemotesObject,
@@ -151,7 +151,7 @@ class GitGraphView {
             type: 'url' as 'url',
             name: 'Url: ',
             default: '',
-            placeholder: 'https://github.com/user/repository.git',
+            placeholder: '',
           },
         ],
         'Change',
@@ -160,7 +160,8 @@ class GitGraphView {
             {
               command: 'changeRemoteUrl',
               repo: this.currentRepo,
-              remoteUrl: values[0],
+              remote: values[0],
+              remoteUrl: values[1],
             },
             'Changing remote url',
           )
@@ -351,6 +352,7 @@ class GitGraphView {
     this.gitRemotes = remotes
 
     // User for
+    this.gitRemotesObject = []
     remotes.forEach((remote) => {
       this.gitRemotesObject.push({
         name: remote,
@@ -2795,8 +2797,10 @@ function showFormDialog(
   for (let i = 0; i < inputs.length; i++) {
     let input = inputs[i]
     html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + '</td>' : '') + '<td>'
-    if (input.type === 'select') {
-      html += '<select id="dialogInput' + i + '">'
+    if (input.type === 'select' || input.type == 'selectAndChange') {
+      html += `<select id="dialogInput${i}" class="${
+        input.type === 'selectAndChange' ? 'selectAndChange' : ''
+      }">`
       for (let j = 0; j < input.options.length; j++) {
         html +=
           '<option value="' +
@@ -2848,7 +2852,7 @@ function showFormDialog(
       for (let i = 0; i < inputs.length; i++) {
         let input = inputs[i],
           elem = document.getElementById('dialogInput' + i)
-        if (input.type === 'select') {
+        if (input.type === 'select' || input.type === 'selectAndChange') {
           values.push((<HTMLSelectElement>elem).value)
         } else if (input.type === 'checkbox') {
           values.push((<HTMLInputElement>elem).checked ? 'checked' : 'unchecked')
@@ -2934,6 +2938,7 @@ function showDialog(
   if (dialogMenuSource !== null) dialogMenuSource.classList.add(CLASS_DIALOG_ACTIVE)
   graphFocus = false
 }
+
 function hideDialog() {
   dialogBacking.className = ''
   dialog.className = ''

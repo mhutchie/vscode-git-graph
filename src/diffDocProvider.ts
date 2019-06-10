@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
-import { GitFileChangeType } from './types';
+import { DiffSide, GitFileChangeType } from './types';
 import { getPathFromStr, UNCOMMITTED } from './utils';
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
@@ -30,7 +30,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 		if (document) return document.value;
 
 		let request = decodeDiffDocUri(uri);
-		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath, request.type).then(
+		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath, request.type, request.diffSide).then(
 			(contents) => {
 				let document = new DiffDocument(contents);
 				this.docs.set(uri.toString(), document);
@@ -56,15 +56,15 @@ class DiffDocument {
 	}
 }
 
-export function encodeDiffDocUri(repo: string, path: string, commit: string, type: GitFileChangeType): vscode.Uri {
+export function encodeDiffDocUri(repo: string, path: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
 	return commit === UNCOMMITTED && type !== 'D'
 		? vscode.Uri.file(repo + '/' + path)
-		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(path) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&repo=' + encodeURIComponent(repo));
+		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(path) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&diffSide=' + diffSide + '&repo=' + encodeURIComponent(repo));
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri) {
 	let queryArgs = decodeUriQueryArgs(uri.query);
-	return { filePath: uri.path, commit: queryArgs.commit, type: <GitFileChangeType>queryArgs.type, repo: queryArgs.repo };
+	return { filePath: uri.path, commit: queryArgs.commit, type: <GitFileChangeType>queryArgs.type, diffSide: <DiffSide>queryArgs.diffSide, repo: queryArgs.repo };
 }
 
 function decodeUriQueryArgs(query: string) {

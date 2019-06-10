@@ -96,14 +96,25 @@ export class RepoManager {
 			}
 		}
 		for (let i = 0; i < repoPaths.length; i++) {
-			if (rootsExact.indexOf(repoPaths[i]) === -1 && !rootsFolder.find(x => repoPaths[i].startsWith(x))) this.removeRepo(repoPaths[i]);
+			if (rootsExact.indexOf(repoPaths[i]) === -1 && !rootsFolder.find(root => repoPaths[i].startsWith(root)) && !rootsExact.find(root => root.startsWith(repoPaths[i] + '/'))) {
+				this.removeRepo(repoPaths[i]);
+			}
 		}
 	}
 
-	public registerRepo(path: string, loadRepo: boolean) {
+	// path: the path of the repo being registered
+	// expandExistingRepos: if true, in the event that a known repo is within the repo being registered, remove it (excluding subrepos)
+	// loadRepo: if true and the Git Graph view is visible, force it to be loaded with the repo that is being registered
+	public registerRepo(path: string, expandExistingRepos: boolean, loadRepo: boolean) {
 		return new Promise<boolean>(async resolve => {
 			if (await this.dataSource.isGitRepository(path)) {
-				this.removeReposWithinFolder(path);
+				if (expandExistingRepos) {
+					let reposInFolder = this.getReposInFolder(path);
+					for (let i = 0; i < reposInFolder.length; i++) {
+						// Remove repos within the repo being registered, unless they are a subrepo of a currently known repo
+						if (reposInFolder.findIndex(knownRepo => reposInFolder[i].startsWith(knownRepo + '/')) === -1) this.removeRepo(reposInFolder[i]);
+					}
+				}
 				this.addRepo(path);
 				this.sendRepos(loadRepo ? path : null);
 				resolve(true);
@@ -128,6 +139,13 @@ export class RepoManager {
 		}
 		return repo;
 	}
+	public getReposInFolder(path: string) {
+		let pathFolder = path + '/', repoPaths = Object.keys(this.repos), reposInFolder: string[] = [];
+		for (let i = 0; i < repoPaths.length; i++) {
+			if (repoPaths[i] === path || repoPaths[i].startsWith(pathFolder)) reposInFolder.push(repoPaths[i]);
+		}
+		return reposInFolder;
+	}
 	public isKnownRepo(repo: string) {
 		return typeof this.repos[repo] !== 'undefined';
 	}
@@ -140,14 +158,11 @@ export class RepoManager {
 		this.extensionState.saveRepos(this.repos);
 	}
 	private removeReposWithinFolder(path: string) {
-		let pathFolder = path + '/', repoPaths = Object.keys(this.repos), changes = false;
-		for (let i = 0; i < repoPaths.length; i++) {
-			if (repoPaths[i] === path || repoPaths[i].startsWith(pathFolder)) {
-				this.removeRepo(repoPaths[i]);
-				changes = true;
-			}
+		let reposInFolder = this.getReposInFolder(path);
+		for (let i = 0; i < reposInFolder.length; i++) {
+			this.removeRepo(reposInFolder[i]);
 		}
-		return changes;
+		return reposInFolder.length > 0;
 	}
 	private isDirectoryWithinRepos(path: string) {
 		let repoPaths = Object.keys(this.repos);

@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 				// If command is run from the SCP menu, load the specific repo
 				loadRepo = getPathFromUri(args.rootUri);
 				if (!repoManager.isKnownRepo(loadRepo)) {
-					repoManager.registerRepo(loadRepo, true).then(valid => {
+					repoManager.registerRepo(loadRepo, true, true).then(valid => {
 						if (!valid) loadRepo = null;
 						GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
 					});
@@ -43,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 					let path = getPathFromUri(uris[0]);
 					let folderName = path.substr(path.lastIndexOf('/') + 1);
 					if (isPathInWorkspace(path)) {
-						repoManager.registerRepo(path, false).then(valid => {
+						repoManager.registerRepo(path, false, false).then(valid => {
 							if (valid) {
 								vscode.window.showInformationMessage('The repository "' + folderName + '" was added to Git Graph.');
 							} else {

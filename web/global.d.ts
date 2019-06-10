@@ -80,6 +80,7 @@ declare global {
     compareWithHash: string | null
     compareWithSrcElem: HTMLElement | null
     loading: boolean
+    fileChangesScrollTop: number
   }
 
   interface GitFile {

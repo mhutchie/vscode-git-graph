@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.7.0",
+	"version": "1.8.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -212,7 +212,7 @@
 				"git-graph.maxDepthOfRepoSearch": {
 					"type": "number",
 					"default": 0,
-					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace."
+					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Note: Sub-repos are not automatically detected when searching subfolders, however they can be manually added by running the command \"Git Graph: Add Git Repository\" in the Command Palette."
 				},
 				"git-graph.openDiffTabLocation": {
 					"type": "string",
@@ -249,7 +249,7 @@
 				},
 				"git-graph.retainContextWhenHidden": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"description": "Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead."
 				},
 				"git-graph.showCurrentBranchByDefault": {

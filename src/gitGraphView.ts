@@ -191,6 +191,7 @@ export class GitGraphView {
               commitDetails: await (msg.commitHash !== UNCOMMITTED
                 ? this.dataSource.commitDetails(msg.repo, msg.commitHash)
                 : this.dataSource.uncommittedDetails(msg.repo)),
+              refresh: msg.refresh,
             })
             break
           case 'compareCommits':
@@ -199,6 +200,7 @@ export class GitGraphView {
               commitHash: msg.commitHash,
               compareWithHash: msg.compareWithHash,
               ...(await this.dataSource.compareCommits(msg.repo, msg.fromHash, msg.toHash)),
+              refresh: msg.refresh,
             })
             break
           case 'copyToClipboard':

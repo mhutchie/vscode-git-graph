@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.8.0 - 2019-06-08
+* #90 New command "Git Graph: Add Git Repository" in the Command Palette allows additional Git repositories to be added to Git Graph (e.g. sub-repos).
+* #91 New setting to enable Git Graph to open to the repository containing the active Text Editor document `git-graph.openToTheRepoOfTheActiveTextEditorDocument`. Default: false (disabled)
+* #92 Various improvements for a better user experience:
+    * Display the name of the running Git Action while it is occuring.
+    * Maintain the users scroll position when running a Git Action from context menus.
+    * The refresh button now indicates if a refresh is occuring.
+    * Enabled by default the recently added setting `git-graph.retainContextWhenHidden` to provide near-instant tab restoration when switching back to Git Graph.
+    * Many more small tweaks.
+* #93 Updates to the push tag action so that it:
+    * Only appears if remotes exist
+    * Defaults to the remote if only one exists
+    * Allows the user to select the remote to push to if multiple exist.
+* #94 Support for pushing branches via the local branch context menu. It respects the same new remote conditions as #93.
+
 ## 1.7.0 - 2019-05-29
 * #34 Support for rebasing the current branch on any branch or commit, from the corresponding branch/commit context menu.
 * #57 New "Fetch from Remote(s)" button available on the top control bar (only visible when remotes exist). Redesigned refresh button.

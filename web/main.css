@@ -1,707 +1,807 @@
 /* Body */
-body{
-	margin:0;
-	padding:0;
+body {
+  padding: 0;
+  margin: 0;
 }
-body.unableToLoad{
-	margin:0 20px;
+body.unableToLoad {
+  margin: 0 20px;
 }
-body.unableToLoad h2, body.unableToLoad p{
-	text-align:center;
+body.unableToLoad h2,
+body.unableToLoad p {
+  text-align: center;
 }
-#scrollShadow.active{
-	position:fixed;
-	top:0px;
-	left:0px;
-	width:100%;
-	height:0px;
-	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
-	z-index:200;
+#scrollShadow.active {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 0px;
+  box-shadow: 0 -6px 6px 6px var(--vscode-scrollbar-shadow);
+  z-index: 200;
 }
 
-body #view{
-	display:block;
-	position:fixed;
-	top:0;
-	left:0;
-	right:0;
-	bottom:0;
-	overflow-x:hidden;
-	overflow-y:auto;
+body #view {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
-body.dockedCommitDetailsViewOpen #view{
-	bottom:252px;
+body.dockedCommitDetailsViewOpen #view {
+  bottom: 252px;
 }
-body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
-	display:block;
-	position:fixed;
-	left:0;
-	right:0;
-	bottom:0;
-	height:250px;
-	background-color:rgba(128,128,128,0.1);
-	font-size:13px;
-	line-height:18px;
-	white-space:normal;
-	border-top:2px solid rgba(128,128,128,0.2);
+body.dockedCommitDetailsViewOpen #dockedCommitDetailsView {
+  display: block;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 250px;
+  background-color: rgba(128, 128, 128, 0.1);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: normal;
+  border-top: 2px solid rgba(128, 128, 128, 0.2);
 }
 
 /* Content */
-#content{
-	position:relative;
+#content {
+  position: relative;
 }
 
 /* Commit Graph */
-#commitGraph{
-	display:block;
-	position:absolute;
-	left:8px;
-	top:0px;
-	z-index:-1;
+#commitGraph {
+  display: block;
+  position: absolute;
+  top: 0px;
+  left: 8px;
+  z-index: -1;
 }
-#commitGraph circle.current{
-	fill:var(--vscode-editor-background);
-	stroke-width:2;
+#commitGraph circle.current {
+  fill: var(--vscode-editor-background);
+  stroke-width: 2;
 }
-#commitGraph circle:not(.current){
-	stroke:var(--vscode-editor-background);
-	stroke-width:1;
-	stroke-opacity:0.75;
+#commitGraph circle:not(.current) {
+  stroke: var(--vscode-editor-background);
+  stroke-width: 1;
+  stroke-opacity: 0.75;
 }
-#commitGraph path.shadow{
-	fill:none;
-	stroke:var(--vscode-editor-background);
-	stroke-opacity:0.75;
-	stroke-width:4;
+#commitGraph path.shadow {
+  fill: none;
+  stroke: var(--vscode-editor-background);
+  stroke-opacity: 0.75;
+  stroke-width: 4;
 }
-#commitGraph path.line{
-	fill:none;
-	stroke-width:2;
+#commitGraph path.line {
+  fill: none;
+  stroke-width: 2;
 }
 
 /* Commit Table */
-#commitTable table{
-	width:100%;
-	border-collapse:collapse;
+#commitTable table {
+  width: 100%;
+  border-collapse: collapse;
 }
-#commitTable table, #commitTable tbody, #commitTable tr, #commitTable th, #commitTable td{
-	padding:0;
-	margin:0;
+#commitTable table,
+#commitTable tbody,
+#commitTable tr,
+#commitTable th,
+#commitTable td {
+  padding: 0;
+  margin: 0;
 }
-#commitTable th, #commitTable td{
-	white-space:nowrap;
-	font-size:13px;
-	cursor:default;
-	text-overflow:ellipsis;
-	overflow:hidden;
+#commitTable th,
+#commitTable td {
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: default;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
-#commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td{
-	background-color:rgba(128,128,128,0.15);
+#commitTable tr.commit:hover td,
+#commitTable tr.commit.contextMenuActive td,
+#commitTable tr.commit.dialogActive td {
+  background-color: rgba(128, 128, 128, 0.15);
 }
-#commitTable tr.commit:hover td{
-	cursor:pointer;
+#commitTable tr.commit:hover td {
+  cursor: pointer;
 }
-#commitTable td{
-	line-height:24px;
-	padding:0 4px;
+#commitTable td {
+  padding: 0 4px;
+  line-height: 24px;
 }
-#commitTable th{
-	border-bottom:1px solid rgba(128,128,128,0.5);
-	line-height:18px;
-	padding:6px 12px;
+#commitTable th {
+  padding: 6px 12px;
+  line-height: 18px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.5);
 }
 
-#commitTable.fixedLayout table{
-	table-layout:fixed;
+#commitTable.fixedLayout table {
+  table-layout: fixed;
 }
-#commitTable.autoLayout td:nth-child(2), #commitTable.autoLayout th:nth-child(2){
-	width:100%;
-	max-width:0;
+#commitTable.autoLayout td:nth-child(2),
+#commitTable.autoLayout th:nth-child(2) {
+  width: 100%;
+  max-width: 0;
 }
-#commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
-	max-width:124px;
+#commitTable.autoLayout td.authorCol,
+#commitTable.autoLayout th.authorCol {
+  max-width: 124px;
 }
-#tableColHeaders.resizing th{
-	cursor:col-resize;
+#tableColHeaders.resizing th {
+  cursor: col-resize;
 }
-.tableColHeader{
-	position:relative;
+.tableColHeader {
+  position: relative;
 }
-.resizeCol{
-	position:absolute;
-	top:0px;
-	height:100%;
-	display:block;
-	width:6px;
-	cursor:col-resize;
+.resizeCol {
+  display: block;
+  position: absolute;
+  top: 0px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
 }
-.resizeCol.left{
-	left:0px;
-	border-left:1px solid rgba(128,128,128,0.25);
+.resizeCol.left {
+  left: 0px;
+  border-left: 1px solid rgba(128, 128, 128, 0.25);
 }
-.resizeCol.right{
-	right:0px;
+.resizeCol.right {
+  right: 0px;
 }
 
 /* Commit Details View */
-#commitDetails{
-	height:250px;
-	vertical-align:top;
+#commitDetails {
+  height: 250px;
+  vertical-align: top;
 }
-#commitDetails td{
-	background-color:rgba(128,128,128,0.1);
-	position:relative;
-	font-size:13px;
-	line-height:18px;
-	white-space:normal;
+#commitDetails td {
+  position: relative;
+  background-color: rgba(128, 128, 128, 0.1);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: normal;
 }
-#commitDetails td:after{
-	content:'';
-	display:block;
-	position:absolute;
-	left:0;
-	right:0;
-	bottom:0;
-	height:2px;
-	background-color:rgba(128,128,128,0.2);
+#commitDetails td:after {
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background-color: rgba(128, 128, 128, 0.2);
+  content: '';
 }
-#commitTable tr.commit.commitDetailsOpen td, #commitTable tr.commit.compareCommitOpen td{
-	background-color:rgba(128,128,128,0.25);
+#commitTable tr.commit.commitDetailsOpen td,
+#commitTable tr.commit.compareCommitOpen td {
+  background-color: rgba(128, 128, 128, 0.25);
 }
-#commitTable tr.commit.commitDetailsOpen:hover td, #commitTable tr.commit.compareCommitOpen:hover td{
-	background-color:rgba(128,128,128,0.35);
+#commitTable tr.commit.commitDetailsOpen:hover td,
+#commitTable tr.commit.compareCommitOpen:hover td {
+  background-color: rgba(128, 128, 128, 0.35);
 }
-#commitDetailsSummary, #commitDetailsFiles, #commitDetailsLoading{
-	position:absolute;
-	top:0;
-	bottom:2px;
-	box-sizing:border-box;
-	border-right:1px solid rgba(128,128,128,0.2);
-	overflow-x:hidden;
-	overflow-y:auto;
+#commitDetailsSummary,
+#commitDetailsFiles,
+#commitDetailsLoading {
+  position: absolute;
+  top: 0;
+  bottom: 2px;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(128, 128, 128, 0.2);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
-#commitDetailsSummary{
-	left:0;
-	width:45%;
-	padding:10px;
-	text-overflow:ellipsis;
-	user-select:text;
+#commitDetailsSummary {
+  left: 0;
+  width: 45%;
+  padding: 10px;
+  text-overflow: ellipsis;
+  user-select: text;
 }
-.commitDetailsSummaryTop{
-	display:inline-table;
-	width:100%;
+.commitDetailsSummaryTop {
+  display: inline-table;
+  width: 100%;
 }
-.commitDetailsSummaryTopRow{
-	display:table-row;
+.commitDetailsSummaryTopRow {
+  display: table-row;
 }
-.commitDetailsSummaryKeyValues, .commitDetailsSummaryAvatar{
-	display:table-cell;
-	vertical-align:top;
+.commitDetailsSummaryKeyValues,
+.commitDetailsSummaryAvatar {
+  display: table-cell;
+  vertical-align: top;
 }
-.commitDetailsSummaryKeyValues{
-	max-width:0px;
-	overflow-x:hidden;
-	text-overflow:ellipsis;
+.commitDetailsSummaryKeyValues {
+  max-width: 0px;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
 }
-.commitDetailsSummaryTop.withAvatar .commitDetailsSummaryKeyValues{
-	padding-right:10px;
+.commitDetailsSummaryTop.withAvatar .commitDetailsSummaryKeyValues {
+  padding-right: 10px;
 }
-.commitDetailsSummaryAvatar{
-	width:54px;
+.commitDetailsSummaryAvatar {
+  width: 54px;
 }
-.commitDetailsSummaryAvatar > img{
-	width:54px;
-	border-radius:4px;
+.commitDetailsSummaryAvatar > img {
+  width: 54px;
+  border-radius: 4px;
 }
-#commitDetailsFiles{
-	left:45%;
-	right:32px;
-	padding:4px 8px 8px 0;
+#commitDetailsFiles {
+  left: 45%;
+  right: 32px;
+  padding: 4px 8px 8px 0;
 }
-#commitDetailsFiles ul{
-	list-style-type:none;
-	-webkit-margin-before:0;
-	-webkit-margin-after:0;
-	-webkit-margin-start:0px;
-	-webkit-margin-end:0px;
-	-webkit-padding-start:30px;
+#commitDetailsFiles ul {
+  list-style-type: none;
+  -webkit-margin-before: 0;
+  -webkit-margin-after: 0;
+  -webkit-margin-start: 0px;
+  -webkit-margin-end: 0px;
+  -webkit-padding-start: 30px;
 }
-#commitDetailsFiles > ul{
-	-webkit-padding-start:10px;
+#commitDetailsFiles > ul {
+  -webkit-padding-start: 10px;
 }
-#commitDetailsFiles li{
-	margin-top:4px;
-	white-space:nowrap;
-	text-overflow:ellipsis;
-	overflow-x:hidden;
+#commitDetailsFiles li {
+  margin-top: 4px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-x: hidden;
 }
-#commitDetailsClose{
-	position:absolute;
-	right:4px;
-	top:4px;
-	width:24px;
-	height:24px;
-	cursor:pointer;
+#commitDetailsClose {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
 }
-#commitDetailsClose svg{
-	width:24px;
-	height:24px;
-	fill:var(--vscode-editor-foreground);
-	fill-opacity:0.6;
+#commitDetailsClose svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--vscode-editor-foreground);
+  fill-opacity: 0.6;
 }
-#commitDetailsClose:hover svg{
-	fill-opacity:0.8;
+#commitDetailsClose:hover svg {
+  fill-opacity: 0.8;
 }
-#commitDetailsLoading{
-	left:0;
-	right:32px;
-	padding:10px;
-	user-select:none;
-	text-align:center;
-	line-height:24px;
-	text-overflow:ellipsis;
+#commitDetailsLoading {
+  left: 0;
+  right: 32px;
+  padding: 10px;
+  user-select: none;
+  text-align: center;
+  line-height: 24px;
+  text-overflow: ellipsis;
 }
-#commitDetailsLoading svg{
-	display:inline-block;
-	width:15px !important;
-	height:20px !important;
-	margin-top:2px;
-	margin-right:8px;
-	vertical-align:top;
-	fill:var(--vscode-editor-foreground);
-	animation:loadingIconAnimation 2s linear infinite;
+#commitDetailsLoading svg {
+  display: inline-block;
+  width: 15px !important;
+  height: 20px !important;
+  margin-top: 2px;
+  margin-right: 8px;
+  vertical-align: top;
+  fill: var(--vscode-editor-foreground);
+  animation: loadingIconAnimation 2s linear infinite;
 }
-tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
-	border-left:1px solid rgba(128,128,128,0.2);
+tr#commitDetails #commitDetailsSummary,
+tr#commitDetails #commitDetailsLoading {
+  border-left: 1px solid rgba(128, 128, 128, 0.2);
 }
-svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
-	width:13px;
-	height:13px;
-	margin-top:2.5px;
-	fill:var(--vscode-editor-foreground);
-	fill-opacity:0.6;
-	margin-right:8px;
-	vertical-align:top;
+svg.openFolderIcon,
+svg.closedFolderIcon,
+svg.fileIcon {
+  width: 13px;
+  height: 13px;
+  margin-top: 2.5px;
+  margin-right: 8px;
+  fill: var(--vscode-editor-foreground);
+  fill-opacity: 0.6;
+  vertical-align: top;
 }
-.gitFolderContents.hidden{
-	display:none;
+.gitFolderContents.hidden {
+  display: none;
 }
-.gitFolder{
-	cursor:pointer;
+.gitFolder {
+  cursor: pointer;
 }
-.gitFile{
-	color:var(--vscode-gitDecoration-modifiedResourceForeground);
+.gitFile {
+  color: var(--vscode-gitDecoration-modifiedResourceForeground);
 }
-.gitFile.A, .gitFile.U{
-	color:var(--vscode-gitDecoration-addedResourceForeground);
+.gitFile.A,
+.gitFile.U {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
 }
-.gitFile.D{
-	color:var(--vscode-gitDecoration-deletedResourceForeground);
+.gitFile.D {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
 }
-.gitFile.gitDiffPossible{
-	cursor:pointer;
+.gitFile.gitDiffPossible {
+  cursor: pointer;
 }
-.gitFileAddDel, .gitFileRename{
-	color:var(--vscode-editor-foreground);
-	margin-left:8px;
+.gitFileAddDel,
+.gitFileRename {
+  margin-left: 8px;
+  color: var(--vscode-editor-foreground);
 }
-.gitFileAdditions, .gitFileDeletions{
-	padding:0 3px;
-	cursor:help;
+.gitFileAdditions,
+.gitFileDeletions {
+  padding: 0 3px;
+  cursor: help;
 }
-.gitFileAdditions{
-	color:var(--vscode-gitDecoration-addedResourceForeground);
+.gitFileAdditions {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
 }
-.gitFileDeletions{
-	color:var(--vscode-gitDecoration-deletedResourceForeground);
+.gitFileDeletions {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
 }
-.gitFileRename{
-	cursor:help;
+.gitFileRename {
+  cursor: help;
 }
 
-.commit .avatar > img{
-	display:inline-block;
-	width:18px;
-	border-radius:4px;
-	vertical-align:top;
-	margin-top:3px;
-	margin-right:4px;
+.commit .avatar > img {
+  display: inline-block;
+  width: 18px;
+  margin-top: 3px;
+  margin-right: 4px;
+  border-radius: 4px;
+  vertical-align: top;
 }
 
-.commitHeadDot{
-	width:6px;
-	height:6px;
-	border:2px solid var(--git-graph-color);
-	display:inline-block;
-	border-radius:6px;
-	margin-right:5px;
-	vertical-align:top;
-	margin-top:7px;
+.commitHeadDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-top: 7px;
+  margin-right: 5px;
+  border: 2px solid var(--git-graph-color);
+  border-radius: 6px;
+  vertical-align: top;
 }
 
 /* Ref labels */
 .gitRef {
-	display:inline-block;
-	height:18px;
-	line-height:18px;
-	margin-top:2px;
-	margin-right:5px;
-	background-color:rgba(128,128,128,0.15);
-	border-radius:5px;
-	border:1px solid rgba(128,128,128,0.75);
-	vertical-align:top;
-	font-size:12px;
-	cursor:default;
+  display: inline-block;
+  height: 18px;
+  margin-top: 2px;
+  margin-right: 5px;
+  border: 1px solid rgba(128, 128, 128, 0.75);
+  border-radius: 5px;
+  background-color: rgba(128, 128, 128, 0.15);
+  font-size: 12px;
+  line-height: 18px;
+  vertical-align: top;
+  cursor: default;
 }
-.gitRef.active{
-	border-color:var(--git-graph-color);
+.gitRef.active {
+  border-color: var(--git-graph-color);
 }
-.gitRef.active .gitRefName{
-	font-weight:bold;
+.gitRef.active .gitRefName {
+  font-weight: bold;
 }
-.gitRef > svg{
-	background-color:var(--git-graph-color);
-	fill:var(--vscode-editor-background);
-	width:14px;
-	height:14px;
-	padding:2px;
-	margin-right:5px;
-	border-radius:4px 0 0 4px;
-	vertical-align:top;
+.gitRef > svg {
+  width: 14px;
+  height: 14px;
+  padding: 2px;
+  margin-right: 5px;
+  border-radius: 4px 0 0 4px;
+  background-color: var(--git-graph-color);
+  fill: var(--vscode-editor-background);
+  vertical-align: top;
 }
-.gitRefName{
-	padding-right:5px;
+.gitRefName {
+  padding-right: 5px;
 }
-.gitRefHeadRemote{
-	display:inline-block;
-	height:18px;
-	padding-left:5px;
-	padding-right:5px;
-	border-left:1px solid rgba(128,128,128,0.45);
-	line-height:18px;
-	font-style:italic;
+.gitRefHeadRemote {
+  display: inline-block;
+  height: 18px;
+  padding-right: 5px;
+  padding-left: 5px;
+  line-height: 18px;
+  font-style: italic;
+  border-left: 1px solid rgba(128, 128, 128, 0.45);
 }
-body.branchLabelsAlignedToGraph tr.commit td:first-child .gitRef:last-child{
-	margin-right:0;
+body.branchLabelsAlignedToGraph tr.commit td:first-child .gitRef:last-child {
+  margin-right: 0;
 }
-body.tagLabelsRightAligned .gitRefTags{
-	float:right;
+body.tagLabelsRightAligned .gitRefTags {
+  float: right;
 }
-body.tagLabelsRightAligned .gitRef.tag{
-	margin-left:5px;
-	margin-right:0;
+body.tagLabelsRightAligned .gitRef.tag {
+  margin-right: 0;
+  margin-left: 5px;
 }
 
 /* Loader */
-#loadingHeader{
-	text-align:center;
-	line-height:32px;
+#loadingHeader {
+  line-height: 32px;
+  text-align: center;
 }
-#loadingHeader svg{
-	display:inline;
-	fill:var(--vscode-editor-foreground);
-	margin-right:10px;
-	vertical-align:top;
-	animation:loadingIconAnimation 2s linear infinite;
+#loadingHeader svg {
+  display: inline;
+  margin-right: 10px;
+  fill: var(--vscode-editor-foreground);
+  vertical-align: top;
+  animation: loadingIconAnimation 2s linear infinite;
 }
-@keyframes loadingIconAnimation{
-	0%{ transform:rotate(0deg); opacity:0.7; }
-	25%{ opacity:1; }
-	50%{ opacity:0.7; }
-	75%{ opacity:1; }
-	100%{ transform:rotate(360deg); opacity:0.7; }
+@keyframes loadingIconAnimation {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.7;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.7;
+  }
 }
 
 /* Controls */
-#controls{
-	display:block;
-	position:relative;
-	left:0;
-	right:0;
-	top:0;
-	padding:4px 42px 4px 0;
-	border-bottom:1px solid rgba(128,128,128,0.5);
-	line-height:32px;
-	text-align:center;
-	font-weight:700;
-	font-size:13px;
+#controls {
+  display: block;
+  position: relative;
+  top: 0;
+  right: 0;
+  left: 0;
+  padding: 4px 42px 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 32px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+  text-align: center;
 }
-#repoControl, #branchControl, #showRemoteBranchesControl{
-	white-space:nowrap;
-	margin:0 10px;
+#repoControl,
+#branchControl,
+#showRemoteBranchesControl {
+  margin: 0 10px;
+  white-space: nowrap;
 }
-#repoSelect, #branchSelect{
-	margin-left:3px;
+#repoSelect,
+#branchSelect {
+  margin-left: 3px;
 }
-#showRemoteBranchesCheckbox{
-	width:14px;
-	vertical-align:text-top;
+#showRemoteBranchesCheckbox {
+  width: 14px;
+  vertical-align: text-top;
 }
-#fetchBtn, #refreshBtn{
-	position:absolute;
-	top:50%;
-	width:20px;
-	height:20px;
-	margin-top:-10px;
-	cursor:pointer;
-	user-select:none;
-}
-#fetchBtn{
-	display:none;
-	right:40px;
-}
-#refreshBtn{
-	right:10px;
-}
-#refreshBtn.refreshing{
-	cursor:default;
-}
-#fetchBtn svg, #refreshBtn svg{
-	position:absolute;
-	fill:var(--vscode-editor-foreground);
-	opacity:0.8;
-}
-#fetchBtn:hover svg, #refreshBtn:hover svg{
-	opacity:1;
-	stroke:var(--vscode-editor-foreground);
-	stroke-opacity:0.4;
-	stroke-width:0.5px;
-}
-#fetchBtn svg{
-	left:1px;
-	top:1px;
-	width:18px !important;
-	height:18px !important;
-}
-#refreshBtn svg{
-	left:2px;
-	top:2px;
-	width:16px !important;
-	height:16px !important;
-}
-#refreshBtn.refreshing svg{
-	left:3.25px;
-	top:2px;
-	width:13.5px !important;
-	height:18px !important;
-	animation:loadingIconAnimation 2s linear infinite;
-}
-#loadMoreCommitsBtn{
-	width:180px;
-	height:28px;
-	margin:10px auto;
-	border-radius:14px;
-	line-height:28px;
+#fetchBtn,
+#refreshBtn,
+#settingsContainer {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  cursor: pointer;
+  user-select: none;
 }
 
-#controls.fetchSupported{
-	padding-right:72px;
-}
-#controls.fetchSupported #fetchBtn{
-	display:block;
+#settingsContainer {
+  display: flex;
+  z-index: 1;
 }
 
-#controls select:focus, #controls input:focus{
-	outline:none;
+#settingsContainer .dropdown-menu {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 6px;
+  right: 0;
+  width: auto;
+  height: auto;
+  opacity: 1;
 }
-#controls label{
-	cursor:pointer;
+.dropdown-menu li {
+  width: 120px;
+  padding: 0 10px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  color: var(--vscode-menu-foreground);
+  background-color: var(--vscode-menu-background);
+  list-style-type: none;
+}
+
+.dropdown-menu li:hover {
+  color: var(--vscode-menu-selectionForeground);
+  background-color: var(--vscode-menu-selectionBackground);
+}
+
+#settingsContainer:hover .dropdown-menu,
+.dropdown-menu:hover {
+  display: flex;
+}
+
+#fetchBtn,
+#settingsContainer {
+  display: none;
+}
+#fetchBtn {
+  right: 40px;
+}
+#settingsContainer {
+  right: 70px;
+}
+#refreshBtn {
+  right: 10px;
+}
+#refreshBtn.refreshing {
+  cursor: default;
+}
+#fetchBtn svg,
+#refreshBtn svg,
+#settingsBtn svg {
+  position: absolute;
+  fill: var(--vscode-editor-foreground);
+  opacity: 0.8;
+}
+#fetchBtn:hover svg,
+#refreshBtn:hover svg {
+  opacity: 1;
+  stroke: var(--vscode-editor-foreground);
+  stroke-opacity: 0.4;
+  stroke-width: 0.5px;
+}
+#settingsBtn:hover svg {
+  opacity: 1;
+  stroke-opacity: 0.4;
+}
+#fetchBtn svg,
+#settingsContainer svg {
+  top: 1px;
+  left: 1px;
+  width: 18px !important;
+  height: 18px !important;
+}
+#refreshBtn svg {
+  top: 2px;
+  left: 2px;
+  width: 16px !important;
+  height: 16px !important;
+}
+#refreshBtn.refreshing svg {
+  top: 2px;
+  left: 3.25px;
+  width: 13.5px !important;
+  height: 18px !important;
+  animation: loadingIconAnimation 2s linear infinite;
+}
+#loadMoreCommitsBtn {
+  width: 180px;
+  height: 28px;
+  margin: 10px auto;
+  border-radius: 14px;
+  line-height: 28px;
+}
+
+#controls.fetchSupported {
+  padding-right: 72px;
+}
+#controls.fetchSupported #fetchBtn,
+#controls.fetchSupported #settingsContainer {
+  display: block;
+}
+
+#controls select:focus,
+#controls input:focus {
+  outline: none;
+}
+#controls label {
+  cursor: pointer;
 }
 
 /* Context Menu */
-#contextMenu{
-	display:none;
-	position:absolute;
-	background-color:var(--vscode-menu-background);
-	box-shadow:0 1px 4px 1px var(--vscode-widget-shadow);
-	color:var(--vscode-menu-foreground);
-	list-style-type:none;
-	margin:0;
-	padding:4px 0;
+#contextMenu {
+  display: none;
+  position: absolute;
+  padding: 4px 0;
+  margin: 0;
+  box-shadow: 0 1px 4px 1px var(--vscode-widget-shadow);
+  color: var(--vscode-menu-foreground);
+  background-color: var(--vscode-menu-background);
+  list-style-type: none;
 }
-#contextMenu.active{
-	display:block;
+#contextMenu.active {
+  display: block;
 }
-#contextMenu li{
-	cursor:default;
+#contextMenu li {
+  cursor: default;
 }
-#contextMenu li.contextMenuItem{
-	padding:6px 20px;
+#contextMenu li.contextMenuItem {
+  padding: 6px 20px;
 }
-#contextMenu li.contextMenuItem:hover{
-	background-color:var(--vscode-menu-selectionBackground);
-	color:var(--vscode-menu-selectionForeground);
+#contextMenu li.contextMenuItem:hover {
+  color: var(--vscode-menu-selectionForeground);
+  background-color: var(--vscode-menu-selectionBackground);
 }
-#contextMenu li.contextMenuDivider{
-	margin:4px 10px;
-	border-top:1px solid var(--vscode-menu-separatorBackground);
-	opacity:0.5;
+#contextMenu li.contextMenuDivider {
+  margin: 4px 10px;
+  border-top: 1px solid var(--vscode-menu-separatorBackground);
+  opacity: 0.5;
 }
 
-#contextMenu.checked li.contextMenuItem{
-	position:relative;
-	padding-left:35px;
+#contextMenu.checked li.contextMenuItem {
+  position: relative;
+  padding-left: 35px;
 }
-#contextMenu.checked li.contextMenuItem .contextMenuItemCheck{
-	position:absolute;
-	width:12px;
-	height:16px;
-	top:50%;
-	margin-top:-8px;
-	left:15px;
+#contextMenu.checked li.contextMenuItem .contextMenuItemCheck {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  width: 12px;
+  height: 16px;
+  margin-top: -8px;
 }
-#contextMenu.checked li.contextMenuItem .contextMenuItemCheck svg{
-	fill:var(--vscode-menu-foreground);
-	opacity:0.6;
+#contextMenu.checked li.contextMenuItem .contextMenuItemCheck svg {
+  fill: var(--vscode-menu-foreground);
+  opacity: 0.6;
 }
-#contextMenu.checked li.contextMenuItem:hover .contextMenuItemCheck svg{
-	fill:var(--vscode-menu-selectionForeground);
-	opacity:0.8;
+#contextMenu.checked li.contextMenuItem:hover .contextMenuItemCheck svg {
+  fill: var(--vscode-menu-selectionForeground);
+  opacity: 0.8;
 }
 
 /* Dialogs */
-#dialog, #dialogBacking{
-	display:none;
+#dialog,
+#dialogBacking {
+  display: none;
 }
-#dialog.active{
-	display:block;
-	position:fixed;
-	background-color:var(--vscode-menu-background);
-	color:var(--vscode-menu-foreground);
-	padding:10px;
-	left:50%;
-	top:50%;
-	transform:translateX(-50%) translateY(-50%);
-	border:1px solid rgba(128,128,128,0.5);
-	border-radius:5px;
-	text-align:center;
-	max-width:360px;
-	max-height:80%;
-	z-index:10;
-	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
-	overflow-y:auto;
+#dialog.active {
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  max-width: 360px;
+  max-height: 80%;
+  padding: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  border-radius: 5px;
+  box-shadow: 0 0 30px 5px var(--vscode-widget-shadow);
+  color: var(--vscode-menu-foreground);
+  background-color: var(--vscode-menu-background);
+  z-index: 10;
+  transform: translateX(-50%) translateY(-50%);
+  text-align: center;
+  overflow-y: auto;
 }
 
-#dialog > table.dialogForm{
-	display:inline-table;
-	width:360px;
+#dialog > table.dialogForm {
+  display: inline-table;
+  width: 360px;
 }
-#dialog > table.dialogForm td{
-	padding-top:10px;
-	text-align:left;
-	white-space:nowrap;	
+#dialog > table.dialogForm td {
+  padding-top: 10px;
+  text-align: left;
+  white-space: nowrap;
 }
-#dialog > table.dialogForm td:last-child{
-	width:100%;
+#dialog > table.dialogForm td:last-child {
+  width: 100%;
 }
-#dialog > table.dialogForm.multi td:nth-child(1){
-	padding-right:5px;
+#dialog > table.dialogForm.multi td:nth-child(1) {
+  padding-right: 5px;
 }
-#dialog > table.dialogForm.single select{
-	width:100%;
+#dialog > table.dialogForm.single select {
+  width: 100%;
 }
-#dialog > table.dialogForm.single .dialogFormCheckbox{
-	display:inline-block;
-	text-align:center;
-	width:100%;
+#dialog > table.dialogForm.single .dialogFormCheckbox {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
 }
-#dialog > table.dialogForm input[type=text]{
-	width:100%;
+#dialog > table.dialogForm input[type='text'] {
+  width: 100%;
 }
-#dialog > table.dialogForm input[type=checkbox]{
-	vertical-align:text-top;
-	outline-style:none;
+#dialog > table.dialogForm input[type='checkbox'] {
+  vertical-align: text-top;
+  outline-style: none;
 }
-#dialog > table.dialogForm.multi input[type=checkbox]{
-	margin-left:0;
+#dialog > table.dialogForm.multi input[type='checkbox'] {
+  margin-left: 0;
 }
-#dialog > table.dialogForm.single input[type=checkbox], #dialog > table.dialogForm.multiCheckbox input[type=checkbox]{
-	margin-right:5px;
+#dialog > table.dialogForm.single input[type='checkbox'],
+#dialog > table.dialogForm.multiCheckbox input[type='checkbox'] {
+  margin-right: 5px;
 }
-#dialog > table.dialogForm input[type=text], #dialog > table.dialogForm select{
-	padding:4px;
-	box-sizing:border-box;
-	border:1px solid rgba(128,128,128,0.3);
-	outline-style:none;
+#dialog > table.dialogForm input[type='text'],
+#dialog > table.dialogForm select {
+  padding: 4px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  box-sizing: border-box;
+  outline-style: none;
 }
-#dialog .roundedBtn{
-	display:inline-block;
-	line-height:20px;
-	padding:0 15px;
-	margin:10px 6px 0 6px;
-	height:22px;
-	border-radius:11px;
+#dialog .roundedBtn {
+  display: inline-block;
+  height: 22px;
+  padding: 0 15px;
+  margin: 10px 6px 0 6px;
+  border-radius: 11px;
+  line-height: 20px;
 }
-#dialog .errorReason{
-	display:inline-block;
-	font-style:italic;
-	margin-top:10px;
-	text-align:left;
-	width:100%;
+#dialog .errorReason {
+  display: inline-block;
+  width: 100%;
+  margin-top: 10px;
+  font-style: italic;
+  text-align: left;
 }
-#dialogBacking.active{
-	display:block;
-	position:fixed;
-	left:0;
-	right:0;
-	top:0;
-	bottom:0;
-	z-index:9;
+#dialogBacking.active {
+  display: block;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9;
 }
-#dialog #dialogAction{
-	background-color:rgba(128,128,128,0.15);
-	border-color:rgba(128,128,128,0.8);
-	box-shadow:0 0 1px 1px rgba(128,128,128,0.2);
+#dialog #dialogAction {
+  box-shadow: 0 0 1px 1px rgba(128, 128, 128, 0.2);
+  background-color: rgba(128, 128, 128, 0.15);
+  border-color: rgba(128, 128, 128, 0.8);
 }
-#dialog #dialogAction:hover{
-	background-color:rgba(128,128,128,0.25);
+#dialog #dialogAction:hover {
+  background-color: rgba(128, 128, 128, 0.25);
 }
-#dialog.noInput #dialogAction, #dialog.inputInvalid #dialogAction{
-	background-color:rgba(128,128,128,0.2);
-	opacity:0.5;
+#dialog.noInput #dialogAction,
+#dialog.inputInvalid #dialogAction {
+  background-color: rgba(128, 128, 128, 0.2);
+  opacity: 0.5;
 }
-#dialog.noInput #dialogAction{
-	cursor:default;
+#dialog.noInput #dialogAction {
+  cursor: default;
 }
-#dialog.inputInvalid #dialogAction{
-	cursor:help;
+#dialog.inputInvalid #dialogAction {
+  cursor: help;
 }
-#dialog svg{
-	display:inline;
-	fill:var(--vscode-menu-foreground);
-	opacity:0.75;
-	margin-right:3px;
-	line-height:20px;
-	vertical-align:sub;
+#dialog svg {
+  display: inline;
+  margin-right: 3px;
+  line-height: 20px;
+  fill: var(--vscode-menu-foreground);
+  opacity: 0.75;
+  vertical-align: sub;
 }
-#actionRunning{
-	margin:0 16px;
-	line-height:24px;
+#actionRunning {
+  margin: 0 16px;
+  line-height: 24px;
 }
-#actionRunning svg{
-	display:inline-block;
-	width:15px !important;
-	height:20px !important;
-	margin-top:2px;
-	margin-right:8px;
-	vertical-align:top;
-	animation:loadingIconAnimation 2s linear infinite;
+#actionRunning svg {
+  display: inline-block;
+  width: 15px !important;
+  height: 20px !important;
+  margin-top: 2px;
+  margin-right: 8px;
+  vertical-align: top;
+  animation: loadingIconAnimation 2s linear infinite;
 }
 
 /* Buttons */
-.roundedBtn{
-	display:block;
-	background-color:rgba(128,128,128,0.1);
-	border:1px solid rgba(128,128,128,0.5);
-	font-size:13px;
-	text-align:center;
-	cursor:pointer;
+.roundedBtn {
+  display: block;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  background-color: rgba(128, 128, 128, 0.1);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
 }
-.roundedBtn:hover{
-	background-color:rgba(128,128,128,0.2);
+.roundedBtn:hover {
+  background-color: rgba(128, 128, 128, 0.2);
 }
 
 /* General */
-#commitGraph, #commitTable th, #commitTable td, .gitRef, #loadingHeader, .unselectable, .roundedBtn, #controls label{
-	user-select:none;
+#commitGraph,
+#commitTable th,
+#commitTable td,
+.gitRef,
+#loadingHeader,
+.unselectable,
+.roundedBtn,
+#controls label {
+  user-select: none;
 }

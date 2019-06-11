@@ -94,6 +94,7 @@ export interface GitGraphViewState {
 	lastActiveRepo: string | null;
 	loadMoreCommits: number;
 	loadRepo: string | null;
+	muteMergeCommits: boolean;
 	refLabelAlignment: RefLabelAlignment;
 	repos: GitRepoSet;
 	showCurrentBranchByDefault: boolean;

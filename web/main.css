@@ -95,11 +95,17 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	text-overflow:ellipsis;
 	overflow:hidden;
 }
-#commitTable tr.commit:hover td, #commitTable tr.commit.contextMenuActive td, #commitTable tr.commit.dialogActive td{
+#commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.dialogActive{
 	background-color:rgba(128,128,128,0.15);
 }
 #commitTable tr.commit:hover td{
 	cursor:pointer;
+}
+#commitTable tr.commit.current td span.text{
+	font-weight:bold;
+}
+#commitTable tr.commit.merge td.text, #commitTable tr.commit.merge td span.text{
+	opacity:0.5;
 }
 #commitTable td{
 	line-height:24px;
@@ -165,10 +171,10 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	height:2px;
 	background-color:rgba(128,128,128,0.2);
 }
-#commitTable tr.commit.commitDetailsOpen td, #commitTable tr.commit.compareCommitOpen td{
+#commitTable tr.commit.commitDetailsOpen, #commitTable tr.commit.compareCommitOpen{
 	background-color:rgba(128,128,128,0.25);
 }
-#commitTable tr.commit.commitDetailsOpen:hover td, #commitTable tr.commit.compareCommitOpen:hover td{
+#commitTable tr.commit.commitDetailsOpen:hover, #commitTable tr.commit.compareCommitOpen:hover{
 	background-color:rgba(128,128,128,0.35);
 }
 #commitDetailsSummary, #commitDetailsFiles, #commitDetailsLoading{

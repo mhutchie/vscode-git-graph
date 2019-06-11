@@ -441,10 +441,10 @@ class GitGraphView {
 			}
 
 			let commitDot = this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
-			html += '<tr class="commit"' + (this.commits[i].hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + this.commits[i].hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span>' + (this.commits[i].hash === currentHash ? '<b>' + message + '</b>' : message) + '</td>' +
-				(colVisibility.date ? '<td title="' + date.title + '">' + date.value + '</td>' : '') +
-				(colVisibility.author ? '<td class="authorCol" title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td>' : '') +
-				(colVisibility.commit ? '<td title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td>' : '') +
+			html += '<tr class="commit' + (this.commits[i].hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && this.commits[i].parentHashes.length > 1 ? ' merge' : '') + '"' + (this.commits[i].hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + this.commits[i].hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
+				(colVisibility.date ? '<td class="text" title="' + date.title + '">' + date.value + '</td>' : '') +
+				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td>' : '') +
+				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td>' : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -1278,6 +1278,7 @@ window.addEventListener('load', () => {
 		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
 		initialLoadCommits: viewState.initialLoadCommits,
 		loadMoreCommits: viewState.loadMoreCommits,
+		muteMergeCommits: viewState.muteMergeCommits,
 		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
 		tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
 	}, vscode.getState());

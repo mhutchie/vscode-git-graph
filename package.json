@@ -214,6 +214,11 @@
 					"default": 0,
 					"description": "Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Note: Sub-repos are not automatically detected when searching subfolders, however they can be manually added by running the command \"Git Graph: Add Git Repository\" in the Command Palette."
 				},
+				"git-graph.muteMergeCommits": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show merge commits with a muted text color."
+				},
 				"git-graph.openDiffTabLocation": {
 					"type": "string",
 					"enum": [

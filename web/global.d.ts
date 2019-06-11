@@ -22,6 +22,7 @@ declare global {
 		grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
 		initialLoadCommits: number;
 		loadMoreCommits: number;
+		muteMergeCommits: boolean;
 		showCurrentBranchByDefault: boolean;
 		tagLabelsOnRight: boolean;
 	}

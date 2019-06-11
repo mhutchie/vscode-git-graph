@@ -73,6 +73,10 @@ class Config {
 		return this.workspaceConfiguration.get('maxDepthOfRepoSearch', 0);
 	}
 
+	public muteMergeCommits() {
+		return this.workspaceConfiguration.get('muteMergeCommits', true);
+	}
+
 	public openDiffTabLocation() {
 		return this.workspaceConfiguration.get('openDiffTabLocation', 'Active') === 'Active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
 	}

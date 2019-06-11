@@ -1,0 +1,78 @@
+.findWidget{
+	display:block;
+	position:fixed;
+	top:-42px;
+	right:28px;
+	height:34px;
+	padding:0 10px;
+	z-index:21;
+	background-color:var(--vscode-editorWidget-background);
+	box-shadow:0 2px 8px var(--vscode-widget-shadow);
+	line-height:34px;
+	font-size:13px;
+	fill:var(--vscode-editorSuggestWidget-foreground);
+	fill-opacity:0.7;
+}
+.findWidget.active{
+	top:0;
+}
+.findWidget.transition{
+	transition:top .2s linear;
+}
+
+#findInput{
+	display:inline-block;
+	vertical-align:top;
+	margin-top:4px;
+	padding:5px;
+	border:0;
+	background-color:var(--vscode-editor-background);
+	color:var(--vscode-editor-foreground);
+	line-height:15px;
+	font-size:13px;
+}
+#findInput:focus{
+	outline:1px solid var(--vscode-focusBorder);
+}
+
+#findPosition, #findPrev, #findNext, #findClose{
+	display:inline-block;
+	user-select:none;
+}
+#findPosition{
+	min-width:80px;
+	margin-left:10px;
+}
+#findPrev, #findNext, #findClose{
+	position:relative;
+	width:24px;
+	height:24px;
+	vertical-align:top;
+	margin:5px 0 0 10px;
+	cursor:pointer;
+}
+#findPrev svg, #findNext svg{
+	position:absolute;
+	left:5px;
+	top:5px;
+	width:14px !important;
+	height:14px !important;
+}
+#findClose svg{
+	position:absolute;
+	left:4px;
+	top:4px;
+	width:16px !important;
+	height:16px !important;
+}
+#findPrev:hover, #findNext:hover, #findClose:hover{
+	fill-opacity:1;
+}
+#findPrev.disabled, #findNext.disabled{
+	fill-opacity:0.3;
+	cursor:default;
+}
+
+.findMatch{
+	background-color:var(--git-graph-findMatch);
+}

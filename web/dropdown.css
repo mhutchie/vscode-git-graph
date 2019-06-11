@@ -50,7 +50,7 @@
 	color:var(--vscode-menu-foreground);
 	top:100%;
 	left:0;
-	z-index:100;
+	z-index:19;
 	line-height:20px;
 	border:1px solid rgba(128,128,128,0.5);
 	border-radius:0 0 6px 6px;

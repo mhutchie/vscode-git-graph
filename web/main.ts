@@ -18,6 +18,7 @@ class GitGraphView {
 	private maxCommits: number;
 	private scrollTop = 0;
 	private renderedGitBranchHead: string | null = null;
+	private findWidget: FindWidget;
 
 	private viewElem: HTMLElement;
 	private controlsElem: HTMLElement;
@@ -81,6 +82,8 @@ class GitGraphView {
 		});
 		this.renderRefreshButton(true);
 
+		this.findWidget = new FindWidget(this);
+
 		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, config.branchLabelsAlignedToGraph);
 		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, config.tagLabelsOnRight);
 
@@ -101,6 +104,7 @@ class GitGraphView {
 				this.avatars = prevState.avatars;
 				this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
 				this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitRemotes, prevState.moreCommitsAvailable, true);
+				this.findWidget.restoreState(prevState.findWidget);
 			}
 		}
 		this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo);
@@ -110,11 +114,13 @@ class GitGraphView {
 		}
 		this.requestLoadBranchesAndCommits(false);
 
-		const fetchBtn = document.getElementById('fetchBtn')!;
+		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!;
 		fetchBtn.innerHTML = svgIcons.download;
 		fetchBtn.addEventListener('click', () => {
 			runAction({ command: 'fetch', repo: this.currentRepo }, 'Fetching from Remote(s)');
 		});
+		findBtn.innerHTML = svgIcons.search;
+		findBtn.addEventListener('click', () => this.findWidget.show(true));
 	}
 
 	/* Loading Data */
@@ -271,6 +277,7 @@ class GitGraphView {
 		this.loadBranchesCallback = null;
 		this.loadCommitsCallback = null;
 		this.renderRefreshButton(true);
+		this.findWidget.update([]);
 		showErrorDialog(message, reason, 'Retry', () => {
 			this.refresh(true);
 		}, null);
@@ -355,7 +362,7 @@ class GitGraphView {
 	}
 
 	/* State */
-	private saveState() {
+	public saveState() {
 		vscode.setState({
 			gitRepos: this.gitRepos,
 			gitBranches: this.gitBranches,
@@ -370,7 +377,8 @@ class GitGraphView {
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.showRemoteBranches,
 			expandedCommit: this.expandedCommit,
-			scrollTop: this.scrollTop
+			scrollTop: this.scrollTop,
+			findWidget: this.findWidget.getState()
 		});
 	}
 
@@ -399,41 +407,22 @@ class GitGraphView {
 			'</tr>';
 
 		for (let i = 0; i < this.commits.length; i++) {
-			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, refName, refActive, refHtml, heads: { [name: string]: string[] } = {}, remotes: GG.GitRemoteRef[];
-			if (this.config.combineLocalAndRemoteBranchLabels) {
-				remotes = [];
-				for (j = 0; j < this.commits[i].heads.length; j++) {
-					heads[this.commits[i].heads[j]] = [];
-				}
-				for (j = 0; j < this.commits[i].remotes.length; j++) {
-					let branchName = this.commits[i].remotes[j].name.substr(this.commits[i].remotes[j].remote.length + 1);
-					if (typeof heads[branchName] !== 'undefined') {
-						heads[branchName].push(this.commits[i].remotes[j].remote);
-					} else {
-						remotes.push(this.commits[i].remotes[j]);
-					}
-				}
-			} else {
-				remotes = this.commits[i].remotes;
-			}
+			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(this.commits[i].heads, this.commits[i].remotes);
 
-			for (j = 0; j < this.commits[i].heads.length; j++) {
-				refName = escapeHtml(this.commits[i].heads[j]);
-				refActive = this.commits[i].heads[j] === this.gitBranchHead;
+			for (j = 0; j < branchLabels.heads.length; j++) {
+				refName = escapeHtml(branchLabels.heads[j].name);
+				refActive = branchLabels.heads[j].name === this.gitBranchHead;
 				refHtml = '<span class="gitRef head' + (refActive ? ' active' : '') + '" data-name="' + refName + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span>';
-				if (this.config.combineLocalAndRemoteBranchLabels) {
-					let k, remoteName;
-					for (k = 0; k < heads[this.commits[i].heads[j]].length; k++) {
-						remoteName = escapeHtml(heads[this.commits[i].heads[j]][k]);
-						refHtml += '<span class="gitRefHeadRemote" data-remote="' + remoteName + '">' + remoteName + '</span>';
-					}
+				for (k = 0; k < branchLabels.heads[j].remotes.length; k++) {
+					remoteName = escapeHtml(branchLabels.heads[j].remotes[k]);
+					refHtml += '<span class="gitRefHeadRemote" data-remote="' + remoteName + '">' + remoteName + '</span>';
 				}
 				refHtml += '</span>';
 				refBranches = refActive ? refHtml + refBranches : refBranches + refHtml;
 			}
-			for (j = 0; j < remotes.length; j++) {
-				refName = escapeHtml(remotes[j].name);
-				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + escapeHtml(remotes[j].remote) + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
+			for (j = 0; j < branchLabels.remotes.length; j++) {
+				refName = escapeHtml(branchLabels.remotes[j].name);
+				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + escapeHtml(branchLabels.remotes[j].remote) + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			for (j = 0; j < this.commits[i].tags.length; j++) {
 				refName = escapeHtml(this.commits[i].tags[j]);
@@ -450,6 +439,7 @@ class GitGraphView {
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
 		this.makeTableResizable();
+		this.findWidget.update(this.commits);
 		this.renderedGitBranchHead = this.gitBranchHead;
 
 		if (this.moreCommitsAvailable) {
@@ -825,12 +815,14 @@ class GitGraphView {
 		this.graph.clear();
 		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
 		this.footerElem.innerHTML = '';
+		this.findWidget.update([]);
 	}
 	public renderRefreshButton(enabled: boolean) {
 		this.refreshBtnElem.title = enabled ? 'Refresh' : 'Refreshing';
 		this.refreshBtnElem.innerHTML = enabled ? svgIcons.refresh : svgIcons.loading;
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
 	}
+
 	private checkoutBranchAction(refName: string, remote: string | null) {
 		if (remote !== null) {
 			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', refName.substr(remote.length + 1), 'Checkout Branch', newBranch => {
@@ -962,7 +954,7 @@ class GitGraphView {
 		this.gitRepos[this.currentRepo].columnWidths = [columnWidths[0], columnWidths[2], columnWidths[3], columnWidths[4]];
 		sendMessage({ command: 'saveRepoState', repo: this.currentRepo, state: this.gitRepos[this.currentRepo] });
 	}
-	private getColumnVisibility() {
+	public getColumnVisibility() {
 		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (colWidths !== null) {
 			return { date: colWidths[1] !== COLUMN_HIDDEN, author: colWidths[2] !== COLUMN_HIDDEN, commit: colWidths[3] !== COLUMN_HIDDEN };
@@ -974,6 +966,18 @@ class GitGraphView {
 	private getNumColumns() {
 		let colVisibility = this.getColumnVisibility();
 		return 2 + (colVisibility.date ? 1 : 0) + (colVisibility.author ? 1 : 0) + (colVisibility.commit ? 1 : 0);
+	}
+	public scrollToCommit(hash: string, alwaysCenterCommit: boolean) {
+		let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+		for (let i = 0; i < commits.length; i++) {
+			if (commits[i].dataset.hash! === hash) {
+				let elemTop = this.controlsElem.clientHeight + commits[i].offsetTop;
+				if (alwaysCenterCommit || elemTop - 8 < this.viewElem.scrollTop || elemTop + 32 - this.viewElem.clientHeight > this.viewElem.scrollTop) {
+					this.viewElem.scroll(0, this.controlsElem.clientHeight + commits[i].offsetTop + 12 - this.viewElem.clientHeight / 2);
+				}
+				break;
+			}
+		}
 	}
 
 	/* Observers */
@@ -989,14 +993,19 @@ class GitGraphView {
 		});
 	}
 	private observeWebviewStyleChanges() {
-		let fontFamily = getVSCodeStyle('--vscode-font-family'), editorFontFamily = getVSCodeStyle('--vscode-editor-font-family');
+		let fontFamily = getVSCodeStyle(CSS_PROP_FONT_FAMILY), editorFontFamily = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), findMatchColour = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
+		this.findWidget.setColour(findMatchColour);
 		(new MutationObserver(() => {
-			let ff = getVSCodeStyle('--vscode-font-family'), eff = getVSCodeStyle('--vscode-editor-font-family');
+			let ff = getVSCodeStyle(CSS_PROP_FONT_FAMILY), eff = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), fmc = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
 			if (ff !== fontFamily || eff !== editorFontFamily) {
 				fontFamily = ff;
 				editorFontFamily = eff;
 				this.repoDropdown.refresh();
 				this.branchDropdown.refresh();
+			}
+			if (fmc !== findMatchColour) {
+				findMatchColour = fmc;
+				this.findWidget.setColour(findMatchColour);
 			}
 		})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 	}
@@ -1022,6 +1031,10 @@ class GitGraphView {
 			if (graphFocus) {
 				if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
 					this.refresh(true);
+				} else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+					this.findWidget.show(true);
+				} else if (e.key === 'Escape' && this.findWidget.isVisible()) {
+					this.findWidget.close();
 				} else if (this.expandedCommit !== null) { // Commit Details View is open
 					if (e.key === 'Escape') {
 						this.closeCommitDetails(true);
@@ -1073,7 +1086,7 @@ class GitGraphView {
 				this.dockedCommitDetailsView.innerHTML = '';
 			}
 			if (typeof this.expandedCommit.srcElem === 'object' && this.expandedCommit.srcElem !== null) this.expandedCommit.srcElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
-			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
+			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 			this.expandedCommit = null;
 			if (saveAndRender) {
 				this.saveState();
@@ -1107,14 +1120,14 @@ class GitGraphView {
 			this.expandedCommit.fileChangesScrollTop = 0;
 			this.saveState();
 			this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
-			this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMPARE_COMMIT_OPEN);
+			this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 			this.renderCommitDetailsView(false);
 			this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, false);
 		}
 	}
 	public closeCommitComparison(requestCommitDetails: boolean) {
 		if (this.expandedCommit !== null && this.expandedCommit.compareWithHash) {
-			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMPARE_COMMIT_OPEN);
+			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 			this.expandedCommit.compareWithHash = null;
 			this.expandedCommit.compareWithSrcElem = null;
 			this.expandedCommit.fileChanges = null;
@@ -1136,7 +1149,7 @@ class GitGraphView {
 			this.expandedCommit.fileTree = fileTree;
 		}
 		this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
-		this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMPARE_COMMIT_OPEN);
+		this.expandedCommit.compareWithSrcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 		this.expandedCommit.loading = false;
 		this.saveState();
 
@@ -1528,6 +1541,28 @@ function runAction(msg: GG.RequestMessage, action: string) {
 	showDialog('<span id="actionRunning">' + svgIcons.loading + action + ' ...</span>', null, 'Dismiss', null, null);
 	dialogActionRunning = true;
 	sendMessage(msg);
+}
+
+function getBranchLabels(heads: string[], remotes: GG.GitRemoteRef[]) {
+	let headLabels: { name: string; remotes: string[] }[] = [], headLookup: { [name: string]: number } = {}, remoteLabels: GG.GitRemoteRef[];
+	for (let i = 0; i < heads.length; i++) {
+		headLabels.push({ name: heads[i], remotes: [] });
+		headLookup[heads[i]] = i;
+	}
+	if (viewState.combineLocalAndRemoteBranchLabels) {
+		remoteLabels = [];
+		for (let i = 0; i < remotes.length; i++) {
+			let branchName = remotes[i].name.substr(remotes[i].remote.length + 1);
+			if (typeof headLookup[branchName] === 'number') {
+				headLabels[headLookup[branchName]].remotes.push(remotes[i].remote);
+			} else {
+				remoteLabels.push(remotes[i]);
+			}
+		}
+	} else {
+		remoteLabels = remotes;
+	}
+	return { heads: headLabels, remotes: remoteLabels };
 }
 
 

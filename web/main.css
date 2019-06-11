@@ -16,7 +16,7 @@ body.unableToLoad h2, body.unableToLoad p{
 	width:100%;
 	height:0px;
 	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
-	z-index:200;
+	z-index:20;
 }
 
 body #view{
@@ -95,8 +95,14 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	text-overflow:ellipsis;
 	overflow:hidden;
 }
-#commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.dialogActive{
-	background-color:rgba(128,128,128,0.15);
+#commitTable td{
+	line-height:24px;
+	padding:0 4px;
+}
+#commitTable th{
+	border-bottom:1px solid rgba(128,128,128,0.5);
+	line-height:18px;
+	padding:6px 12px;
 }
 #commitTable tr.commit:hover td{
 	cursor:pointer;
@@ -106,15 +112,6 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 }
 #commitTable tr.commit.merge td.text, #commitTable tr.commit.merge td span.text{
 	opacity:0.5;
-}
-#commitTable td{
-	line-height:24px;
-	padding:0 4px;
-}
-#commitTable th{
-	border-bottom:1px solid rgba(128,128,128,0.5);
-	line-height:18px;
-	padding:6px 12px;
 }
 
 #commitTable.fixedLayout table{
@@ -170,12 +167,6 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	bottom:0;
 	height:2px;
 	background-color:rgba(128,128,128,0.2);
-}
-#commitTable tr.commit.commitDetailsOpen, #commitTable tr.commit.compareCommitOpen{
-	background-color:rgba(128,128,128,0.25);
-}
-#commitTable tr.commit.commitDetailsOpen:hover, #commitTable tr.commit.compareCommitOpen:hover{
-	background-color:rgba(128,128,128,0.35);
 }
 #commitDetailsSummary, #commitDetailsFiles, #commitDetailsLoading{
 	position:absolute;
@@ -280,6 +271,8 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
 	border-left:1px solid rgba(128,128,128,0.2);
 }
+
+/* Diff Tree */
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	width:13px;
 	height:13px;
@@ -334,6 +327,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	margin-right:4px;
 }
 
+/* Commit Emphasis */
 .commitHeadDot{
 	width:6px;
 	height:6px;
@@ -343,6 +337,21 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	margin-right:5px;
 	vertical-align:top;
 	margin-top:7px;
+}
+#commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.findCurrentCommit:hover, #commitTable tr.commit.dialogActive{
+	background-color:rgba(128,128,128,0.15);
+}
+#commitTable tr.commit.commitDetailsOpen{
+	background-color:rgba(128,128,128,0.25);
+}
+#commitTable tr.commit.commitDetailsOpen:hover, #commitTable tr.commit.commitDetailsOpen.contextMenuActive, #commitTable tr.commit.commitDetailsOpen.dialogActive{
+	background-color:rgba(128,128,128,0.35);
+}
+#commitTable tr.commit.findCurrentCommit {
+	background-image:linear-gradient(var(--git-graph-findMatchCommit), var(--git-graph-findMatchCommit));
+}
+#commitTable tr.commit.merge.commitDetailsOpen td.text, #commitTable tr.commit.merge.commitDetailsOpen td span.text, #commitTable tr.commit.merge.findCurrentCommit td.text, #commitTable tr.commit.merge.findCurrentCommit td span.text{
+	opacity:1;
 }
 
 /* Ref labels */
@@ -425,7 +434,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	left:0;
 	right:0;
 	top:0;
-	padding:4px 42px 4px 0;
+	padding:4px 72px 4px 0;
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	line-height:32px;
 	text-align:center;
@@ -443,7 +452,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	width:14px;
 	vertical-align:text-top;
 }
-#fetchBtn, #refreshBtn{
+#findBtn, #fetchBtn, #refreshBtn{
 	position:absolute;
 	top:50%;
 	width:20px;
@@ -451,6 +460,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	margin-top:-10px;
 	cursor:pointer;
 	user-select:none;
+}
+#findBtn{
+	right:40px;
 }
 #fetchBtn{
 	display:none;
@@ -462,28 +474,35 @@ body.tagLabelsRightAligned .gitRef.tag{
 #refreshBtn.refreshing{
 	cursor:default;
 }
-#fetchBtn svg, #refreshBtn svg{
+#findBtn svg, #fetchBtn svg, #refreshBtn svg{
 	position:absolute;
 	fill:var(--vscode-editor-foreground);
 	opacity:0.8;
-}
-#fetchBtn:hover svg, #refreshBtn:hover svg{
-	opacity:1;
 	stroke:var(--vscode-editor-foreground);
 	stroke-opacity:0.4;
+	stroke-width:0;
+}
+#findBtn:hover svg, #fetchBtn:hover svg, #refreshBtn:hover svg{
+	opacity:1;
 	stroke-width:0.5px;
+}
+#findBtn svg{
+	stroke-width:1px;
+}
+#findBtn svg:hover{
+	stroke-width:1.5px;
+}
+#findBtn svg, #refreshBtn svg{
+	left:2px;
+	top:2px;
+	width:16px !important;
+	height:16px !important;
 }
 #fetchBtn svg{
 	left:1px;
 	top:1px;
 	width:18px !important;
 	height:18px !important;
-}
-#refreshBtn svg{
-	left:2px;
-	top:2px;
-	width:16px !important;
-	height:16px !important;
 }
 #refreshBtn.refreshing svg{
 	left:3.25px;
@@ -501,7 +520,10 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 
 #controls.fetchSupported{
-	padding-right:72px;
+	padding-right:102px;
+}
+#controls.fetchSupported #findBtn{
+	right:70px;
 }
 #controls.fetchSupported #fetchBtn{
 	display:block;
@@ -583,7 +605,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	text-align:center;
 	max-width:360px;
 	max-height:80%;
-	z-index:10;
+	z-index:31;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 	overflow-y:auto;
 }
@@ -652,7 +674,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	right:0;
 	top:0;
 	bottom:0;
-	z-index:9;
+	z-index:30;
 }
 #dialog #dialogAction{
 	background-color:rgba(128,128,128,0.15);

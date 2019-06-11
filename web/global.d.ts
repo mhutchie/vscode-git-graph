@@ -134,6 +134,7 @@ declare global {
 		showRemoteBranches: boolean;
 		expandedCommit: ExpandedCommit | null;
 		scrollTop: number;
+		findWidget: FindWidgetState;
 	}
 }
 

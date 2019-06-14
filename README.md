@@ -86,3 +86,11 @@ Detailed Release Notes are available [here](CHANGELOG.md).
 ## Visual Studio Marketplace
 
 This extension is available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph) for Visual Studio Code.
+
+## Acknowledgements
+
+Thank you to all of the contributors that help with the development of Git Graph!
+
+Some of the icons used in Git Graph are from the following sources, please support them for their excellent work!
+- [GitHub Octicons](https://octicons.github.com/) ([License](https://github.com/primer/octicons/blob/master/LICENSE))
+- [Icons8](https://icons8.com/icon/pack/free-icons/ios11) ([License](https://icons8.com/license))

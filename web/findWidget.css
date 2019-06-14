@@ -24,15 +24,34 @@
 	display:inline-block;
 	vertical-align:top;
 	margin-top:4px;
-	padding:5px;
+	padding:5px 25px 5px 5px;
 	border:0;
+	width:155px;
 	background-color:var(--vscode-editor-background);
 	color:var(--vscode-editor-foreground);
 	line-height:15px;
 	font-size:13px;
 }
-#findInput:focus{
+#findInput:focus, #findCase.active{
 	outline:1px solid var(--vscode-focusBorder);
+}
+
+#findCase{
+	display:block;
+	position:absolute;
+	top:8px;
+	left:173px;
+	height:17px;
+	width:18px;
+	line-height:17px;
+	font-size:11px;
+	cursor:pointer;
+	user-select:none;
+	text-align:center;
+	opacity:0.6;
+}
+#findCase:hover, #findCase.active{
+	opacity:1;
 }
 
 #findPosition, #findPrev, #findNext, #findClose{

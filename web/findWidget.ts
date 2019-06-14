@@ -4,6 +4,7 @@ const CLASS_FIND_MATCH = 'findMatch';
 
 interface FindWidgetState {
 	text: string;
+	caseSensitive: boolean;
 	currentHash: string | null;
 	visible: boolean;
 }
@@ -12,12 +13,14 @@ class FindWidget {
 	private view: GitGraphView;
 	private commits: GG.GitCommitNode[] = [];
 	private text: string = '';
+	private caseSensitive: boolean = false;
 	private matches: { hash: string, elem: HTMLElement }[] = [];
 	private position: number = -1;
 	private visible: boolean = false;
 
 	private widgetElem: HTMLElement;
 	private inputElem: HTMLInputElement;
+	private caseElem: HTMLElement;
 	private positionElem: HTMLElement;
 	private prevElem: HTMLElement;
 	private nextElem: HTMLElement;
@@ -26,7 +29,7 @@ class FindWidget {
 		this.view = view;
 		this.widgetElem = document.createElement('div');
 		this.widgetElem.className = 'findWidget';
-		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findPosition"></span><span id="findPrev"></span><span id="findNext"></span><span id="findClose"></span>';
+		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCase" title="Match Case">Aa</span><span id="findPosition"></span><span id="findPrev"></span><span id="findNext"></span><span id="findClose"></span>';
 		document.body.appendChild(this.widgetElem);
 
 		this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
@@ -45,6 +48,14 @@ class FindWidget {
 					}
 				}, 200);
 			}
+		});
+
+		this.caseElem = document.getElementById('findCase')!;
+		this.caseElem.addEventListener('click', () => {
+			this.caseSensitive = !this.caseSensitive;
+			alterClass(this.caseElem, CLASS_ACTIVE, this.caseSensitive);
+			this.clearMatches();
+			this.findMatches(this.getCurrentHash(), true);
 		});
 
 		this.positionElem = document.getElementById('findPosition')!;
@@ -104,6 +115,7 @@ class FindWidget {
 	public getState(): FindWidgetState {
 		return {
 			text: this.text,
+			caseSensitive: this.caseSensitive,
 			currentHash: this.getCurrentHash(),
 			visible: this.visible
 		};
@@ -114,6 +126,8 @@ class FindWidget {
 	public restoreState(state: FindWidgetState) {
 		if (!state.visible) return;
 		this.text = state.text;
+		this.caseSensitive = state.caseSensitive;
+		alterClass(this.caseElem, CLASS_ACTIVE, this.caseSensitive);
 		this.show(false);
 		if (this.text !== '') this.findMatches(state.currentHash, false);
 	}
@@ -127,17 +141,19 @@ class FindWidget {
 
 		if (this.text !== '') {
 			let colVisibility = this.view.getColumnVisibility();
-			let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, findText = this.text.toLowerCase(), textLen = this.text.length;
+			let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, findText = this.convertCase(this.text), textLen = this.text.length;
 
+			// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
 			for (let i = 0; i < this.commits.length; i++) {
 				commit = this.commits[i];
-				let branchLabels = getBranchLabels(commit.heads, commit.remotes), hash = commit.hash.toLowerCase();
-				if (commit.hash !== UNCOMMITTED && ((colVisibility.author && commit.author.toLowerCase().includes(findText))
+				let branchLabels = getBranchLabels(commit.heads, commit.remotes), hash = this.convertCase(commit.hash);
+				if (commit.hash !== UNCOMMITTED && ((colVisibility.author && this.convertCase(commit.author).includes(findText))
 					|| (colVisibility.commit && (hash.startsWith(findText) || abbrevCommit(hash).includes(findText)))
-					|| commit.message.toLowerCase().includes(findText)
-					|| branchLabels.heads.some(head => head.name.toLowerCase().includes(findText) || head.remotes.some(remote => remote.toLowerCase().includes(findText)))
-					|| branchLabels.remotes.some(remote => remote.name.toLowerCase().includes(findText))
-					|| commit.tags.some(tag => tag.toLowerCase().includes(findText)))) {
+					|| this.convertCase(commit.message).includes(findText)
+					|| branchLabels.heads.some(head => this.convertCase(head.name).includes(findText) || head.remotes.some(remote => this.convertCase(remote).includes(findText)))
+					|| branchLabels.remotes.some(remote => this.convertCase(remote.name).includes(findText))
+					|| commit.tags.some(tag => this.convertCase(tag).includes(findText))
+					|| (colVisibility.date && (this.convertCase(getCommitDate(commit.date).value).includes(findText))))) {
 
 					while (j < commits.length && commits[j].dataset.hash! !== commit.hash) j++;
 					if (j === commits.length) continue;
@@ -145,22 +161,23 @@ class FindWidget {
 					this.matches.push({ hash: commit.hash, elem: commits[j] });
 
 					// Highlight matches
-					let textElems = getChildNodesWithTextContent(commits[j]);
+					let textElems = getChildNodesWithTextContent(commits[j]), textElem;
 					for (let k = 0; k < textElems.length; k++) {
-						let pos = 0, text = textElems[k].textContent!;
-						let lowerText = text.toLowerCase();
-						let next = lowerText.indexOf(findText, pos);
+						textElem = textElems[k];
+						let pos = 0, rawText = textElem.textContent!;
+						let text = this.convertCase(rawText);
+						let next = text.indexOf(findText, pos);
 						while (next > -1) {
-							if (pos !== next) textElems[k].parentNode!.insertBefore(document.createTextNode(text.substring(pos, next)), textElems[k]);
+							if (pos !== next) textElem.parentNode!.insertBefore(document.createTextNode(rawText.substring(pos, next)), textElem);
 							pos = next + textLen;
-							textElems[k].parentNode!.insertBefore(createFindMatchElem(text.substring(next, pos)), textElems[k]);
-							next = lowerText.indexOf(findText, pos);
+							textElem.parentNode!.insertBefore(createFindMatchElem(rawText.substring(next, pos)), textElem);
+							next = text.indexOf(findText, pos);
 						}
 						if (pos > 0) {
-							if (pos !== text.length) {
-								textElems[k].textContent = text.substring(pos, text.length);
+							if (pos !== rawText.length) {
+								textElem.textContent = rawText.substring(pos, rawText.length);
 							} else {
-								textElems[k].parentNode!.removeChild(textElems[k]);
+								textElem.parentNode!.removeChild(textElem);
 							}
 						}
 					}
@@ -195,30 +212,31 @@ class FindWidget {
 	private clearMatches() {
 		for (let i = 0; i < this.matches.length; i++) {
 			if (i === this.position) this.matches[i].elem.classList.remove(CLASS_FIND_CURRENT_COMMIT);
-			let matchElems = getChildrenWithClassName(this.matches[i].elem, CLASS_FIND_MATCH);
+			let matchElems = getChildrenWithClassName(this.matches[i].elem, CLASS_FIND_MATCH), matchElem;
 			for (let j = 0; j < matchElems.length; j++) {
-				let text = matchElems[j].childNodes[0].textContent!;
+				matchElem = matchElems[j];
+				let text = matchElem.childNodes[0].textContent!;
 
 				// Combine current text with the text from previous sibling text nodes
-				let node = matchElems[j].previousSibling, elem = matchElems[j].previousElementSibling;
+				let node = matchElem.previousSibling, elem = matchElem.previousElementSibling;
 				while (node !== null && node !== elem && node.textContent !== null) {
 					text = node.textContent + text;
-					matchElems[j].parentNode!.removeChild(node);
-					node = matchElems[j].previousSibling;
-					elem = matchElems[j].previousElementSibling;
+					matchElem.parentNode!.removeChild(node);
+					node = matchElem.previousSibling;
+					elem = matchElem.previousElementSibling;
 				}
 
 				// Combine current text with the text from next sibling text nodes
-				node = matchElems[j].nextSibling;
-				elem = matchElems[j].nextElementSibling;
+				node = matchElem.nextSibling;
+				elem = matchElem.nextElementSibling;
 				while (node !== null && node !== elem && node.textContent !== null) {
 					text = text + node.textContent;
-					matchElems[j].parentNode!.removeChild(node);
-					node = matchElems[j].nextSibling;
-					elem = matchElems[j].nextElementSibling;
+					matchElem.parentNode!.removeChild(node);
+					node = matchElem.nextSibling;
+					elem = matchElem.nextElementSibling;
 				}
 
-				matchElems[j].parentNode!.replaceChild(document.createTextNode(text), matchElems[j]);
+				matchElem.parentNode!.replaceChild(document.createTextNode(text), matchElem);
 			}
 		}
 	}
@@ -240,6 +258,10 @@ class FindWidget {
 
 	private next() {
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
+	}
+
+	private convertCase(text: string) {
+		return this.caseSensitive ? text : text.toLowerCase();
 	}
 }
 

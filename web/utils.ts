@@ -78,11 +78,12 @@ function modifyColourOpacity(colour: string, opacity: number) {
 	if ((match = colour.match(/rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/)) !== null) {
 		fadedCol = 'rgba(' + match[1] + ',' + match[2] + ',' + match[3] + ',' + (parseFloat(match[4]) * opacity).toFixed(2) + ')';
 	} else if ((match = colour.match(/#\s*([0-9a-fA-F]+)/)) !== null) {
-		let length = match[1].length;
+		let hex = match[1];
+		let length = hex.length;
 		if (length === 3 || length === 4 || length === 6 || length === 8) {
 			let col = length < 5
-				? { r: match[1][0] + match[1][0], g: match[1][1] + match[1][1], b: match[1][2] + match[1][2], a: length === 4 ? match[1][3] + match[1][3] : 'ff' }
-				: { r: match[1][0] + match[1][1], g: match[1][2] + match[1][3], b: match[1][4] + match[1][5], a: length === 8 ? match[1][6] + match[1][7] : 'ff' };
+				? { r: hex[0] + hex[0], g: hex[1] + hex[1], b: hex[2] + hex[2], a: length === 4 ? hex[3] + hex[3] : 'ff' }
+				: { r: hex[0] + hex[1], g: hex[2] + hex[3], b: hex[4] + hex[5], a: length === 8 ? hex[6] + hex[7] : 'ff' };
 			fadedCol = 'rgba(' + parseInt(col.r, 16) + ',' + parseInt(col.g, 16) + ',' + parseInt(col.b, 16) + ',' + (parseInt(col.a, 16) * opacity / 255).toFixed(2) + ')';
 		}
 	} else if ((match = colour.match(/rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/)) !== null) {

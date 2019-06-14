@@ -233,21 +233,22 @@ class GitGraphView {
 		this.commitLookup = {};
 		this.saveState();
 
-		let i: number, expandedCommitVisible = false, expandedCompareWithCommitVisible = false, avatarsNeeded: { [email: string]: string[] } = {};
+		let i: number, expandedCommitVisible = false, expandedCompareWithCommitVisible = false, avatarsNeeded: { [email: string]: string[] } = {}, commit;
 		for (i = 0; i < this.commits.length; i++) {
-			this.commitLookup[this.commits[i].hash] = i;
+			commit = this.commits[i];
+			this.commitLookup[commit.hash] = i;
 			if (this.expandedCommit !== null) {
-				if (this.expandedCommit.hash === this.commits[i].hash) {
+				if (this.expandedCommit.hash === commit.hash) {
 					expandedCommitVisible = true;
-				} else if (this.expandedCommit.compareWithHash === this.commits[i].hash) {
+				} else if (this.expandedCommit.compareWithHash === commit.hash) {
 					expandedCompareWithCommitVisible = true;
 				}
 			}
-			if (this.config.fetchAvatars && typeof this.avatars[this.commits[i].email] !== 'string' && this.commits[i].email !== '') {
-				if (typeof avatarsNeeded[this.commits[i].email] === 'undefined') {
-					avatarsNeeded[this.commits[i].email] = [this.commits[i].hash];
+			if (this.config.fetchAvatars && typeof this.avatars[commit.email] !== 'string' && commit.email !== '') {
+				if (typeof avatarsNeeded[commit.email] === 'undefined') {
+					avatarsNeeded[commit.email] = [commit.hash];
 				} else {
-					avatarsNeeded[this.commits[i].email].push(this.commits[i].hash);
+					avatarsNeeded[commit.email].push(commit.hash);
 				}
 			}
 		}
@@ -399,7 +400,7 @@ class GitGraphView {
 		this.graph.render(expandedCommit);
 	}
 	private renderTable() {
-		let colVisibility = this.getColumnVisibility(), currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
+		let commit, colVisibility = this.getColumnVisibility(), currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
@@ -407,7 +408,8 @@ class GitGraphView {
 			'</tr>';
 
 		for (let i = 0; i < this.commits.length; i++) {
-			let refBranches = '', refTags = '', message = escapeHtml(this.commits[i].message), date = getCommitDate(this.commits[i].date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(this.commits[i].heads, this.commits[i].remotes);
+			commit = this.commits[i];
+			let refBranches = '', refTags = '', message = escapeHtml(commit.message), date = getCommitDate(commit.date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(commit.heads, commit.remotes);
 
 			for (j = 0; j < branchLabels.heads.length; j++) {
 				refName = escapeHtml(branchLabels.heads[j].name);
@@ -424,16 +426,16 @@ class GitGraphView {
 				refName = escapeHtml(branchLabels.remotes[j].name);
 				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + escapeHtml(branchLabels.remotes[j].remote) + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
-			for (j = 0; j < this.commits[i].tags.length; j++) {
-				refName = escapeHtml(this.commits[i].tags[j]);
+			for (j = 0; j < commit.tags.length; j++) {
+				refName = escapeHtml(commit.tags[j]);
 				refTags += '<span class="gitRef tag" data-name="' + refName + '">' + svgIcons.tag + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 
-			let commitDot = this.commits[i].hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
-			html += '<tr class="commit' + (this.commits[i].hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && this.commits[i].parentHashes.length > 1 ? ' merge' : '') + '"' + (this.commits[i].hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + this.commits[i].hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
+			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
+			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parentHashes.length > 1 ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + commit.hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
 				(colVisibility.date ? '<td class="text" title="' + date.title + '">' + date.value + '</td>' : '') +
-				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(this.commits[i].author + ' <' + this.commits[i].email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(this.commits[i].email) + '">' + (typeof this.avatars[this.commits[i].email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[this.commits[i].email] + '">' : '') + '</span>' : '') + escapeHtml(this.commits[i].author) + '</td>' : '') +
-				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(this.commits[i].hash) + '">' + abbrevCommit(this.commits[i].hash) + '</td>' : '') +
+				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
+				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -453,43 +455,42 @@ class GitGraphView {
 		}
 
 		if (this.expandedCommit !== null) {
-			let elem = null, compareWithElem = null, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+			let expandedCommit = this.expandedCommit, elem = null, compareWithElem = null, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
 			for (let i = 0; i < elems.length; i++) {
-				if (this.expandedCommit.hash === elems[i].dataset.hash || this.expandedCommit.compareWithHash === elems[i].dataset.hash) {
-					if (this.expandedCommit.hash === elems[i].dataset.hash) {
+				if (expandedCommit.hash === elems[i].dataset.hash || expandedCommit.compareWithHash === elems[i].dataset.hash) {
+					if (expandedCommit.hash === elems[i].dataset.hash) {
 						elem = elems[i];
 					} else {
 						compareWithElem = elems[i];
 					}
-					if (elem !== null && (this.expandedCommit.compareWithHash === null || compareWithElem !== null)) break;
+					if (elem !== null && (expandedCommit.compareWithHash === null || compareWithElem !== null)) break;
 				}
 			}
-			if (elem === null || (this.expandedCommit.compareWithHash !== null && compareWithElem === null)) {
+			if (elem === null || (expandedCommit.compareWithHash !== null && compareWithElem === null)) {
 				this.closeCommitDetails(false);
 				this.saveState();
 			} else {
-				this.expandedCommit.id = parseInt(elem.dataset.id!);
-				this.expandedCommit.srcElem = elem;
-				this.expandedCommit.compareWithSrcElem = compareWithElem;
+				expandedCommit.id = parseInt(elem.dataset.id!);
+				expandedCommit.srcElem = elem;
+				expandedCommit.compareWithSrcElem = compareWithElem;
 				this.saveState();
-				if (this.expandedCommit.compareWithHash === null) {
+				if (expandedCommit.compareWithHash === null) {
 					// Commit Details View is open
-					if (!this.expandedCommit.loading && this.expandedCommit.commitDetails !== null && this.expandedCommit.fileTree !== null) {
-						this.showCommitDetails(this.expandedCommit.commitDetails, this.expandedCommit.fileTree, false);
-						if (this.expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(this.expandedCommit.hash, true);
+					if (!expandedCommit.loading && expandedCommit.commitDetails !== null && expandedCommit.fileTree !== null) {
+						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.fileTree, false);
+						if (expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(expandedCommit.hash, true);
 					} else {
 						this.loadCommitDetails(elem);
 					}
 				} else {
 					// Commit Comparison is open
-					if (!this.expandedCommit.loading && this.expandedCommit.fileChanges !== null && this.expandedCommit.fileTree !== null) {
-						this.showCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, this.expandedCommit.fileChanges, this.expandedCommit.fileTree, false);
-						if (this.expandedCommit.hash === UNCOMMITTED || this.expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, true);
+					if (!expandedCommit.loading && expandedCommit.fileChanges !== null && expandedCommit.fileTree !== null) {
+						this.showCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, expandedCommit.fileChanges, expandedCommit.fileTree, false);
+						if (expandedCommit.hash === UNCOMMITTED || expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, true);
 					} else {
 						this.loadCommitComparison(compareWithElem!);
 					}
 				}
-
 			}
 		}
 
@@ -1157,23 +1158,25 @@ class GitGraphView {
 	}
 
 	private renderCommitDetailsView(refresh: boolean) {
-		if (this.expandedCommit === null || this.expandedCommit.srcElem === null) return;
+		if (this.expandedCommit === null) return;
+		let expandedCommit = this.expandedCommit;
+		if (expandedCommit.srcElem === null) return;
 		let isDocked = this.config.commitDetailsViewLocation !== 'Inline';
 		let elem = isDocked ? this.dockedCommitDetailsView : document.getElementById('commitDetails'), html = '';
 		if (elem === null) {
 			elem = document.createElement('tr');
 			elem.id = 'commitDetails';
-			insertAfter(elem, this.expandedCommit.srcElem);
+			insertAfter(elem, expandedCommit.srcElem);
 		}
-		if (this.expandedCommit.loading) {
-			html += '<div id="commitDetailsLoading">' + svgIcons.loading + ' Loading ' + (this.expandedCommit.compareWithHash === null ? this.expandedCommit.hash !== UNCOMMITTED ? 'Commit Details' : 'Uncommitted Changes' : 'Commit Comparison') + ' ...</div>';
-			if (this.expandedCommit.compareWithHash === null) this.renderGraph();
+		if (expandedCommit.loading) {
+			html += '<div id="commitDetailsLoading">' + svgIcons.loading + ' Loading ' + (expandedCommit.compareWithHash === null ? expandedCommit.hash !== UNCOMMITTED ? 'Commit Details' : 'Uncommitted Changes' : 'Commit Comparison') + ' ...</div>';
+			if (expandedCommit.compareWithHash === null) this.renderGraph();
 		} else {
 			html += '<div id="commitDetailsSummary">';
-			if (this.expandedCommit.compareWithHash === null) {
+			if (expandedCommit.compareWithHash === null) {
 				// Commit details should be shown
-				if (this.expandedCommit.hash !== UNCOMMITTED) {
-					let commitDetails = this.expandedCommit.commitDetails!;
+				if (expandedCommit.hash !== UNCOMMITTED) {
+					let commitDetails = expandedCommit.commitDetails!;
 					html += '<span class="commitDetailsSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="commitDetailsSummaryTopRow"><span class="commitDetailsSummaryKeyValues">';
 					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
 					html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
@@ -1189,10 +1192,10 @@ class GitGraphView {
 				this.renderGraph();
 			} else {
 				// Commit comparision should be shown
-				let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash);
+				let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash);
 				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.';
 			}
-			html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(this.expandedCommit.fileTree!, this.expandedCommit.fileChanges!) + '</div>';
+			html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!) + '</div>';
 		}
 		html += '<div id="commitDetailsClose" title="Close">' + svgIcons.close + '</div>';
 
@@ -1201,7 +1204,7 @@ class GitGraphView {
 
 		if (!refresh) {
 			if (isDocked) {
-				let elemTop = this.controlsElem.clientHeight + this.expandedCommit.srcElem.offsetTop;
+				let elemTop = this.controlsElem.clientHeight + expandedCommit.srcElem.offsetTop;
 				if (elemTop - 8 < this.viewElem.scrollTop) {
 					// Commit is above what is visible on screen
 					this.viewElem.scroll(0, elemTop - 8);
@@ -1237,21 +1240,21 @@ class GitGraphView {
 			let isOpen = !parent.classList.contains('closed');
 			parent.children[0].children[0].innerHTML = isOpen ? svgIcons.openFolder : svgIcons.closedFolder;
 			parent.children[1].classList.toggle('hidden');
-			alterGitFileTree(this.expandedCommit!.fileTree!, decodeURIComponent(sourceElem.dataset.folderpath!), isOpen);
+			alterGitFileTree(expandedCommit.fileTree!, decodeURIComponent(sourceElem.dataset.folderpath!), isOpen);
 			this.saveState();
 		});
 		addListenerToClass('gitFile', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitFile')!;
-			if (this.expandedCommit === null || !sourceElem.classList.contains('gitDiffPossible')) return;
-			let commitOrder = this.getCommitOrder(this.expandedCommit.hash, this.expandedCommit.compareWithHash === null ? this.expandedCommit.hash : this.expandedCommit.compareWithHash);
+			if (!sourceElem.classList.contains('gitDiffPossible')) return;
+			let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash === null ? expandedCommit.hash : expandedCommit.compareWithHash);
 			sendMessage({ command: 'viewDiff', repo: this.currentRepo, fromHash: commitOrder.from, toHash: commitOrder.to, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 		});
 
-		if (!this.expandedCommit.loading) {
+		if (!expandedCommit.loading) {
 			let commitDetailsFiles = document.getElementById('commitDetailsFiles')!, timeout: NodeJS.Timer | null = null;
-			commitDetailsFiles.scroll(0, this.expandedCommit.fileChangesScrollTop);
+			commitDetailsFiles.scroll(0, expandedCommit.fileChangesScrollTop);
 			commitDetailsFiles.addEventListener('scroll', () => {
-				if (this.expandedCommit !== null) this.expandedCommit.fileChangesScrollTop = commitDetailsFiles.scrollTop;
+				expandedCommit.fileChangesScrollTop = commitDetailsFiles.scrollTop;
 				if (timeout !== null) clearTimeout(timeout);
 				timeout = setTimeout(() => {
 					this.saveState();

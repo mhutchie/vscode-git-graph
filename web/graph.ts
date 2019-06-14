@@ -26,39 +26,42 @@ class Branch {
 		this.end = end;
 	}
 	public draw(svg: SVGElement, config: Config, expandAt: number) {
-		let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.graphStyle === 'angular' ? 0.38 : 0.8);
+		let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.graphStyle === 'angular' ? 0.38 : 0.8), line, nextLine;
 
 		// Convert branch lines into pixel coordinates, respecting expanded commit extensions
 		for (i = 0; i < this.lines.length; i++) {
-			x1 = this.lines[i].p1.x * config.grid.x + config.grid.offsetX; y1 = this.lines[i].p1.y * config.grid.y + config.grid.offsetY;
-			x2 = this.lines[i].p2.x * config.grid.x + config.grid.offsetX; y2 = this.lines[i].p2.y * config.grid.y + config.grid.offsetY;
+			line = this.lines[i];
+			x1 = line.p1.x * config.grid.x + config.grid.offsetX; y1 = line.p1.y * config.grid.y + config.grid.offsetY;
+			x2 = line.p2.x * config.grid.x + config.grid.offsetX; y2 = line.p2.y * config.grid.y + config.grid.offsetY;
 
 			// If a commit is expanded, we needd to stretch the graph for the height of the commit details view
 			if (expandAt > -1) {
-				if (this.lines[i].p1.y > expandAt) { // If the line starts after the expansion, move the whole line lower
+				if (line.p1.y > expandAt) { // If the line starts after the expansion, move the whole line lower
 					y1 += config.grid.expandY;
 					y2 += config.grid.expandY;
-				} else if (this.lines[i].p2.y > expandAt) { // If the line crosses the expansion
+				} else if (line.p2.y > expandAt) { // If the line crosses the expansion
 					if (x1 === x2) { // The line is vertical, extend the endpoint past the expansion
 						y2 += config.grid.expandY;
-					} else if (this.lines[i].lockedFirst) { // If the line is locked to the first point, the transition stays in its normal position
-						lines.push({ p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 }, isCommitted: i >= this.numUncommitted, lockedFirst: this.lines[i].lockedFirst }); // Display the normal transition
-						lines.push({ p1: { x: x2, y: y1 + config.grid.y }, p2: { x: x2, y: y2 + config.grid.expandY }, isCommitted: i >= this.numUncommitted, lockedFirst: this.lines[i].lockedFirst }); // Extend the line over the expansion from the transition end point
+					} else if (line.lockedFirst) { // If the line is locked to the first point, the transition stays in its normal position
+						lines.push({ p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 }, isCommitted: i >= this.numUncommitted, lockedFirst: line.lockedFirst }); // Display the normal transition
+						lines.push({ p1: { x: x2, y: y1 + config.grid.y }, p2: { x: x2, y: y2 + config.grid.expandY }, isCommitted: i >= this.numUncommitted, lockedFirst: line.lockedFirst }); // Extend the line over the expansion from the transition end point
 						continue;
 					} else { // If the line is locked to the second point, the transition moves to after the expansion
-						lines.push({ p1: { x: x1, y: y1 }, p2: { x: x1, y: y2 - config.grid.y + config.grid.expandY }, isCommitted: i >= this.numUncommitted, lockedFirst: this.lines[i].lockedFirst }); // Extend the line over the expansion to the new transition start point
+						lines.push({ p1: { x: x1, y: y1 }, p2: { x: x1, y: y2 - config.grid.y + config.grid.expandY }, isCommitted: i >= this.numUncommitted, lockedFirst: line.lockedFirst }); // Extend the line over the expansion to the new transition start point
 						y1 += config.grid.expandY; y2 += config.grid.expandY;
 					}
 				}
 			}
-			lines.push({ p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 }, isCommitted: i >= this.numUncommitted, lockedFirst: this.lines[i].lockedFirst });
+			lines.push({ p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 }, isCommitted: i >= this.numUncommitted, lockedFirst: line.lockedFirst });
 		}
 
 		// Simplify consecutive lines that are straight by removing the 'middle' point 
 		i = 0;
 		while (i < lines.length - 1) {
-			if (lines[i].p1.x === lines[i].p2.x && lines[i].p2.x === lines[i + 1].p1.x && lines[i + 1].p1.x === lines[i + 1].p2.x && lines[i].p2.y === lines[i + 1].p1.y && lines[i].isCommitted === lines[i + 1].isCommitted) {
-				lines[i].p2.y = lines[i + 1].p2.y;
+			line = lines[i];
+			nextLine = lines[i + 1];
+			if (line.p1.x === line.p2.x && line.p2.x === nextLine.p1.x && nextLine.p1.x === nextLine.p2.x && line.p2.y === nextLine.p1.y && line.isCommitted === nextLine.isCommitted) {
+				line.p2.y = nextLine.p2.y;
 				lines.splice(i + 1, 1);
 			} else {
 				i++;
@@ -67,11 +70,12 @@ class Branch {
 
 		// Iterate through all lines, producing and adding the svg paths to the DOM
 		for (i = 0; i < lines.length; i++) {
-			x1 = lines[i].p1.x; y1 = lines[i].p1.y;
-			x2 = lines[i].p2.x; y2 = lines[i].p2.y;
+			line = lines[i];
+			x1 = line.p1.x; y1 = line.p1.y;
+			x2 = line.p2.x; y2 = line.p2.y;
 
 			// If the new point belongs to a different path, render the current path and reset it for the new path
-			if (curPath !== '' && i > 0 && lines[i].isCommitted !== lines[i - 1].isCommitted) {
+			if (curPath !== '' && i > 0 && line.isCommitted !== lines[i - 1].isCommitted) {
 				this.drawPath(svg, curPath, curColour);
 				curPath = '';
 				curColour = '';
@@ -81,13 +85,13 @@ class Branch {
 			if (curPath === '' || (i > 0 && (x1 !== lines[i - 1].p2.x || y1 !== lines[i - 1].p2.y))) curPath += 'M' + x1.toFixed(0) + ',' + y1.toFixed(1);
 
 			// If the path hasn't been assigned a colour, assign it
-			if (curColour === '') curColour = lines[i].isCommitted ? colour : '#808080';
+			if (curColour === '') curColour = line.isCommitted ? colour : '#808080';
 
 			if (x1 === x2) { // If the path is vertical, draw a straight line
 				curPath += 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
 			} else { // If the path moves horizontal, draw the appropriate transition
 				if (config.graphStyle === 'angular') {
-					curPath += 'L' + (lines[i].lockedFirst ? (x2.toFixed(0) + ',' + (y2 - d).toFixed(1)) : (x1.toFixed(0) + ',' + (y1 + d).toFixed(1))) + 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
+					curPath += 'L' + (line.lockedFirst ? (x2.toFixed(0) + ',' + (y2 - d).toFixed(1)) : (x1.toFixed(0) + ',' + (y1 + d).toFixed(1))) + 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
 				} else {
 					curPath += 'C' + x1.toFixed(0) + ',' + (y1 + d).toFixed(1) + ' ' + x2.toFixed(0) + ',' + (y2 - d).toFixed(1) + ' ' + x2.toFixed(0) + ',' + y2.toFixed(1);
 				}
@@ -350,21 +354,22 @@ class Graph {
 
 	private determinePath(startAt: number) {
 		let i = startAt;
-		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent();
+		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent(), curVertex;
 		let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint(), curPoint;
 
 		if (parentVertex !== null && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
 			// Branch is a merge between two vertices already on branches
 			let foundPointToParent = false, parentBranch = parentVertex.getBranch()!;
 			for (i = startAt + 1; i < this.vertices.length; i++) {
-				curPoint = this.vertices[i].getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
+				curVertex = this.vertices[i];
+				curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
 				if (curPoint !== null) {
 					foundPointToParent = true; // Parent was found
 				} else {
-					curPoint = this.vertices[i].getNextPoint(); // Parent couldn't be found, choose the next avaialble point for the vertex
+					curPoint = curVertex.getNextPoint(); // Parent couldn't be found, choose the next avaialble point for the vertex
 				}
-				parentBranch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), !foundPointToParent && this.vertices[i] !== parentVertex ? lastPoint.x < curPoint.x : true);
-				this.vertices[i].registerUnavailablePoint(curPoint.x, parentVertex, parentBranch);
+				parentBranch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true);
+				curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch);
 				lastPoint = curPoint;
 
 				if (foundPointToParent) {
@@ -378,12 +383,13 @@ class Graph {
 			vertex.addToBranch(branch, lastPoint.x);
 			vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
 			for (i = startAt + 1; i < this.vertices.length; i++) {
-				curPoint = parentVertex === this.vertices[i] && !parentVertex.isNotOnBranch() ? this.vertices[i].getPoint() : this.vertices[i].getNextPoint();
+				curVertex = this.vertices[i];
+				curPoint = parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint();
 				branch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), lastPoint.x < curPoint.x);
-				this.vertices[i].registerUnavailablePoint(curPoint.x, parentVertex, branch);
+				curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch);
 				lastPoint = curPoint;
 
-				if (parentVertex === this.vertices[i]) {
+				if (parentVertex === curVertex) {
 					vertex.registerParentProcessed();
 					let parentVertexOnBranch = !parentVertex.isNotOnBranch();
 					parentVertex.addToBranch(branch, curPoint.x);

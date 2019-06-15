@@ -55,6 +55,8 @@ const CSS_PROP_FONT_FAMILY = '--vscode-font-family';
 const CSS_PROP_EDITOR_FONT_FAMILY = '--vscode-editor-font-family';
 const CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND = '--vscode-editor-findMatchHighlightBackground';
 
+const ATTR_ERROR = 'data-error';
+
 
 /* General Helpers */
 function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) {

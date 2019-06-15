@@ -19,28 +19,44 @@
 .findWidget.transition{
 	transition:top .2s linear;
 }
+.findWidget[data-error] #findInput, .findWidget[data-error]:after{
+	outline:1px solid var(--vscode-inputValidation-errorBorder) !important;
+}
+.findWidget[data-error]:after{
+	content:attr(data-error);
+	position:relative;
+	display:block;
+	top:-6px;
+	left:0;
+	width:197px;
+	padding:5px;
+	font-size:12px;
+	line-height:16px;
+	background-color:var(--vscode-inputValidation-errorBackground);
+	outline-offset:-1px !important;
+}
 
 #findInput{
 	display:inline-block;
 	vertical-align:top;
 	margin-top:4px;
-	padding:5px 25px 5px 5px;
+	padding:5px 47px 5px 5px;
 	border:0;
 	width:155px;
 	background-color:var(--vscode-editor-background);
 	color:var(--vscode-editor-foreground);
 	line-height:15px;
 	font-size:13px;
+	outline-offset:-1px !important;
 }
-#findInput:focus, #findCase.active{
+#findInput:focus, .findModifer.active{
 	outline:1px solid var(--vscode-focusBorder);
 }
 
-#findCase{
+.findModifer{
 	display:block;
 	position:absolute;
 	top:8px;
-	left:173px;
 	height:17px;
 	width:18px;
 	line-height:17px;
@@ -48,10 +64,17 @@
 	cursor:pointer;
 	user-select:none;
 	text-align:center;
-	opacity:0.6;
+	opacity:0.7;
 }
-#findCase:hover, #findCase.active{
+.findModifer:hover, .findModifer.active{
 	opacity:1;
+}
+#findCaseSensitive{
+	left:173px;
+}
+#findRegex{
+	left:195px;
+	font-size:12px;
 }
 
 #findPosition, #findPrev, #findNext, #findClose{

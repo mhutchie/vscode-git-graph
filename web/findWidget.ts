@@ -4,7 +4,8 @@ const CLASS_FIND_MATCH = 'findMatch';
 
 interface FindWidgetState {
 	text: string;
-	caseSensitive: boolean;
+	isCaseSensitive: boolean;
+	isRegex: boolean;
 	currentHash: string | null;
 	visible: boolean;
 }
@@ -13,14 +14,16 @@ class FindWidget {
 	private view: GitGraphView;
 	private commits: GG.GitCommitNode[] = [];
 	private text: string = '';
-	private caseSensitive: boolean = false;
+	private isCaseSensitive: boolean = false;
+	private isRegex: boolean = false;
 	private matches: { hash: string, elem: HTMLElement }[] = [];
 	private position: number = -1;
 	private visible: boolean = false;
 
 	private widgetElem: HTMLElement;
 	private inputElem: HTMLInputElement;
-	private caseElem: HTMLElement;
+	private caseSensitiveElem: HTMLElement;
+	private regexElem: HTMLElement;
 	private positionElem: HTMLElement;
 	private prevElem: HTMLElement;
 	private nextElem: HTMLElement;
@@ -29,7 +32,7 @@ class FindWidget {
 		this.view = view;
 		this.widgetElem = document.createElement('div');
 		this.widgetElem.className = 'findWidget';
-		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCase" title="Match Case">Aa</span><span id="findPosition"></span><span id="findPrev"></span><span id="findNext"></span><span id="findClose"></span>';
+		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifer" title="Match Case">Aa</span><span id="findRegex" class="findModifer" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev"></span><span id="findNext"></span><span id="findClose"></span>';
 		document.body.appendChild(this.widgetElem);
 
 		this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
@@ -44,16 +47,24 @@ class FindWidget {
 					if (this.text !== this.inputElem.value) {
 						this.text = this.inputElem.value;
 						this.clearMatches();
-						this.findMatches(null, true);
+						this.findMatches(this.getCurrentHash(), true);
 					}
 				}, 200);
 			}
 		});
 
-		this.caseElem = document.getElementById('findCase')!;
-		this.caseElem.addEventListener('click', () => {
-			this.caseSensitive = !this.caseSensitive;
-			alterClass(this.caseElem, CLASS_ACTIVE, this.caseSensitive);
+		this.caseSensitiveElem = document.getElementById('findCaseSensitive')!;
+		this.caseSensitiveElem.addEventListener('click', () => {
+			this.isCaseSensitive = !this.isCaseSensitive;
+			alterClass(this.caseSensitiveElem, CLASS_ACTIVE, this.isCaseSensitive);
+			this.clearMatches();
+			this.findMatches(this.getCurrentHash(), true);
+		});
+
+		this.regexElem = document.getElementById('findRegex')!;
+		this.regexElem.addEventListener('click', () => {
+			this.isRegex = !this.isRegex;
+			alterClass(this.regexElem, CLASS_ACTIVE, this.isRegex);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
 		});
@@ -98,6 +109,7 @@ class FindWidget {
 		this.position = -1;
 		this.inputElem.value = this.text;
 		this.inputElem.disabled = true;
+		this.widgetElem.removeAttribute(ATTR_ERROR);
 		this.view.saveState();
 	}
 
@@ -115,7 +127,8 @@ class FindWidget {
 	public getState(): FindWidgetState {
 		return {
 			text: this.text,
-			caseSensitive: this.caseSensitive,
+			isCaseSensitive: this.isCaseSensitive,
+			isRegex: this.isRegex,
 			currentHash: this.getCurrentHash(),
 			visible: this.visible
 		};
@@ -126,8 +139,10 @@ class FindWidget {
 	public restoreState(state: FindWidgetState) {
 		if (!state.visible) return;
 		this.text = state.text;
-		this.caseSensitive = state.caseSensitive;
-		alterClass(this.caseElem, CLASS_ACTIVE, this.caseSensitive);
+		this.isCaseSensitive = state.isCaseSensitive;
+		this.isRegex = state.isRegex;
+		alterClass(this.caseSensitiveElem, CLASS_ACTIVE, this.isCaseSensitive);
+		alterClass(this.regexElem, CLASS_ACTIVE, this.isRegex);
 		this.show(false);
 		if (this.text !== '') this.findMatches(state.currentHash, false);
 	}
@@ -140,51 +155,60 @@ class FindWidget {
 		this.position = -1;
 
 		if (this.text !== '') {
-			let colVisibility = this.view.getColumnVisibility();
-			let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, findText = this.convertCase(this.text), textLen = this.text.length;
+			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null, regexText = this.isRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = this.isCaseSensitive ? '' : 'i';
+			try {
+				findPattern = new RegExp(regexText, flags);
+				findGlobalPattern = new RegExp(regexText, 'g' + flags);
+				this.widgetElem.removeAttribute(ATTR_ERROR);
+			} catch (e) {
+				findPattern = null;
+				findGlobalPattern = null;
+				this.widgetElem.setAttribute(ATTR_ERROR, e.message);
+			}
+			if (findPattern !== null && findGlobalPattern !== null) {
+				let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit;
 
-			// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
-			for (let i = 0; i < this.commits.length; i++) {
-				commit = this.commits[i];
-				let branchLabels = getBranchLabels(commit.heads, commit.remotes), hash = this.convertCase(commit.hash);
-				if (commit.hash !== UNCOMMITTED && ((colVisibility.author && this.convertCase(commit.author).includes(findText))
-					|| (colVisibility.commit && (hash.startsWith(findText) || abbrevCommit(hash).includes(findText)))
-					|| this.convertCase(commit.message).includes(findText)
-					|| branchLabels.heads.some(head => this.convertCase(head.name).includes(findText) || head.remotes.some(remote => this.convertCase(remote).includes(findText)))
-					|| branchLabels.remotes.some(remote => this.convertCase(remote.name).includes(findText))
-					|| commit.tags.some(tag => this.convertCase(tag).includes(findText))
-					|| (colVisibility.date && (this.convertCase(getCommitDate(commit.date).value).includes(findText))))) {
+				// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
+				for (let i = 0; i < this.commits.length; i++) {
+					commit = this.commits[i];
+					let branchLabels = getBranchLabels(commit.heads, commit.remotes);
+					if (commit.hash !== UNCOMMITTED && ((colVisibility.author && findPattern.test(commit.author))
+						|| (colVisibility.commit && (commit.hash.search(findPattern) === 0 || findPattern.test(abbrevCommit(commit.hash))))
+						|| findPattern.test(commit.message)
+						|| branchLabels.heads.some(head => findPattern!.test(head.name) || head.remotes.some(remote => findPattern!.test(remote)))
+						|| branchLabels.remotes.some(remote => findPattern!.test(remote.name))
+						|| commit.tags.some(tag => findPattern!.test(tag))
+						|| (colVisibility.date && findPattern.test(getCommitDate(commit.date).value)))) {
 
-					while (j < commits.length && commits[j].dataset.hash! !== commit.hash) j++;
-					if (j === commits.length) continue;
+						while (j < commits.length && commits[j].dataset.hash! !== commit.hash) j++;
+						if (j === commits.length) continue;
 
-					this.matches.push({ hash: commit.hash, elem: commits[j] });
+						this.matches.push({ hash: commit.hash, elem: commits[j] });
 
-					// Highlight matches
-					let textElems = getChildNodesWithTextContent(commits[j]), textElem;
-					for (let k = 0; k < textElems.length; k++) {
-						textElem = textElems[k];
-						let pos = 0, rawText = textElem.textContent!;
-						let text = this.convertCase(rawText);
-						let next = text.indexOf(findText, pos);
-						while (next > -1) {
-							if (pos !== next) textElem.parentNode!.insertBefore(document.createTextNode(rawText.substring(pos, next)), textElem);
-							pos = next + textLen;
-							textElem.parentNode!.insertBefore(createFindMatchElem(rawText.substring(next, pos)), textElem);
-							next = text.indexOf(findText, pos);
-						}
-						if (pos > 0) {
-							if (pos !== rawText.length) {
-								textElem.textContent = rawText.substring(pos, rawText.length);
-							} else {
-								textElem.parentNode!.removeChild(textElem);
+						// Highlight matches
+						let textElems = getChildNodesWithTextContent(commits[j]), textElem;
+						for (let k = 0; k < textElems.length; k++) {
+							textElem = textElems[k];
+							let pos = 0, text = textElem.textContent!, match: RegExpExecArray | null;
+							findGlobalPattern.lastIndex = 0;
+							while (match = findGlobalPattern.exec(text)) {
+								if (pos !== match.index) textElem.parentNode!.insertBefore(document.createTextNode(text.substring(pos, match.index)), textElem);
+								pos = findGlobalPattern.lastIndex;
+								textElem.parentNode!.insertBefore(createFindMatchElem(match[0]), textElem);
+							}
+							if (pos > 0) {
+								if (pos !== text.length) {
+									textElem.textContent = text.substring(pos);
+								} else {
+									textElem.parentNode!.removeChild(textElem);
+								}
 							}
 						}
-					}
-					if (colVisibility.commit && hash.startsWith(findText) && !abbrevCommit(hash).includes(findText) && textElems.length > 0) {
-						// The commit matches on more than the abbreviated commit, so the commit should be highlighted
-						let commitNode = textElems[textElems.length - 1]; // Commit is always the last column if it is visible
-						commitNode.parentNode!.replaceChild(createFindMatchElem(commitNode.textContent!), commitNode);
+						if (colVisibility.commit && commit.hash.search(findPattern) === 0 && !findPattern.test(abbrevCommit(commit.hash)) && textElems.length > 0) {
+							// The commit matches on more than the abbreviated commit, so the commit should be highlighted
+							let commitNode = textElems[textElems.length - 1]; // Commit is always the last column if it is visible
+							commitNode.parentNode!.replaceChild(createFindMatchElem(commitNode.textContent!), commitNode);
+						}
 					}
 				}
 			}
@@ -258,10 +282,6 @@ class FindWidget {
 
 	private next() {
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
-	}
-
-	private convertCase(text: string) {
-		return this.caseSensitive ? text : text.toLowerCase();
 	}
 }
 

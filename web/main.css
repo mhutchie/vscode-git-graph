@@ -6,7 +6,7 @@ body{
 body.unableToLoad{
 	margin:0 20px;
 }
-body.unableToLoad h2, body.unableToLoad p{
+body.unableToLoad h2, body.unableToLoad h3, body.unableToLoad p{
 	text-align:center;
 }
 #scrollShadow.active{

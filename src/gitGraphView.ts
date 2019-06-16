@@ -359,8 +359,11 @@ export class GitGraphView {
 		} else {
 			body = `<body class="unableToLoad" style="${colorVars}">
 			<h2>Unable to load Git Graph</h2>
-			<p>Either the current workspace does not contain a Git repository, or the Git executable could not be found.</p>
-			<p>If you are using a portable Git installation, make sure you have set the Visual Studio Code Setting "git.path" to the path of your portable installation (e.g. "C:\\Program Files\\Git\\bin\\git.exe" on Windows).</p>
+			<p class="unableToLoadMessage">Either no Git repositories could be found in the current workspace, or the Git executable could not be found.</p>
+			<br>
+			<h3>Troubleshooting</h3>
+			<p>If you're using a portable Git installation, make sure you have set the Visual Studio Code Setting "git.path" to the path of your portable installation (e.g. "C:\\Program Files\\Git\\bin\\git.exe" on Windows).</p>
+			<p>If your repositories are in subfolders of the open workspace folder(s), make sure you have set the Git Graph Setting "git-graph.maxDepthOfRepoSearch" appropriately (read the <a href="https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">documentation</a> for more information).</p>
 			</body>`;
 		}
 		this.isGraphViewLoaded = numRepos > 0;

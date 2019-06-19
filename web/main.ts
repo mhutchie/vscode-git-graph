@@ -409,7 +409,7 @@ class GitGraphView {
 
 		for (let i = 0; i < this.commits.length; i++) {
 			commit = this.commits[i];
-			let refBranches = '', refTags = '', message = escapeHtml(commit.message), date = getCommitDate(commit.date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(commit.heads, commit.remotes);
+			let refBranches = '', refTags = '', message = commit.message, date = getCommitDate(commit.date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(commit.heads, commit.remotes);
 
 			for (j = 0; j < branchLabels.heads.length; j++) {
 				refName = escapeHtml(branchLabels.heads[j].name);
@@ -1185,7 +1185,7 @@ class GitGraphView {
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
 					if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="commitDetailsSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
 					html += '</span></span><br><br>';
-					html += escapeHtml(commitDetails.body).replace(/\n/g, '<br>');
+					html += commitDetails.body.replace(/\n/g, '<br>');
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}

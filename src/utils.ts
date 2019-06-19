@@ -1,12 +1,22 @@
+import { Autolinker } from 'autolinker';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
 import { gitmojis } from './gitmojis.json';
 import { GitFileChangeType } from './types';
 
+const htmlEscapes: { [key: string]: string } = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#x27;' };
+const htmlEscaper = /[&<>"']/g;
+
 const FS_REGEX = /\\/g;
 
+const autolinker = new Autolinker();
+
 export const UNCOMMITTED = '*';
+
+function escapeHtml(str: string) {
+	return str.replace(htmlEscaper, (match) => htmlEscapes[match]);
+}
 
 export function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
@@ -18,6 +28,8 @@ export function prepareCommitMesage(commitMessage: string) : string {
 		commitMessage = commitMessage.replace(new RegExp(gitmoji.code, 'gim'), gitmoji.emoji);
 	});
 	// autolink urls
+	commitMessage = escapeHtml(commitMessage);
+	commitMessage = autolinker.link(commitMessage);
 	return commitMessage;
 }
 

@@ -11,6 +11,7 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"removeComments": true,
+		"resolveJsonModule": true,
 		"sourceMap": true,
 		"strict": true,
 		"target": "es6"

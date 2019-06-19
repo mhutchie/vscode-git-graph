@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
+import { gitmojis } from './gitmojis.json';
 import { GitFileChangeType } from './types';
 
 const FS_REGEX = /\\/g;
@@ -9,6 +10,15 @@ export const UNCOMMITTED = '*';
 
 export function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
+}
+
+export function prepareCommitMesage(commitMessage: string) : string {
+	// replace gitmojis
+	gitmojis.forEach(function(gitmoji) {
+		commitMessage = commitMessage.replace(new RegExp(gitmoji.code, 'gim'), gitmoji.emoji);
+	});
+	// autolink urls
+	return commitMessage;
 }
 
 export function getPathFromUri(uri: vscode.Uri) {

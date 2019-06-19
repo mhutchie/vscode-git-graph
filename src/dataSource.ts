@@ -1,7 +1,7 @@
 import * as cp from 'child_process';
 import { getConfig } from './config';
 import { DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
-import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
+import { abbrevCommit, getPathFromStr, prepareCommitMesage, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
 const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
@@ -96,7 +96,17 @@ export class DataSource {
 
 				for (i = 0; i < commits.length; i++) {
 					commitLookup[commits[i].hash] = i;
-					commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [] });
+					commitNodes.push({
+						hash: commits[i].hash,
+						parentHashes: commits[i].parentHashes,
+						author: commits[i].author,
+						email: commits[i].email,
+						date: commits[i].date,
+						message: prepareCommitMesage(commits[i].message),
+						heads: [],
+						tags: [],
+						remotes: []
+					});
 				}
 				for (i = 0; i < refData.heads.length; i++) {
 					if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
@@ -137,7 +147,7 @@ export class DataSource {
 							email: commitInfo[3],
 							date: parseInt(commitInfo[4]),
 							committer: commitInfo[5],
-							body: lines.slice(1, lastLine + 1).join('\n'),
+							body: prepareCommitMesage(lines.slice(1, lastLine + 1).join('\n')),
 							fileChanges: [], error: null
 						});
 					}

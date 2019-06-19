@@ -12,6 +12,10 @@ class Config {
 		return this.workspaceConfiguration.get('autoCenterCommitDetailsView', true);
 	}
 
+	public autoLinkUrlsInCommitMessages() {
+		return this.workspaceConfiguration.get('autoLinkUrlsInCommitMessages', true);
+	}
+
 	public combineLocalAndRemoteBranchLabels() {
 		return this.workspaceConfiguration.get('combineLocalAndRemoteBranchLabels', true);
 	}

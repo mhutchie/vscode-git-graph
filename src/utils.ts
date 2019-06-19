@@ -29,7 +29,8 @@ export function prepareCommitMesage(commitMessage: string) : string {
 	});
 	// autolink urls
 	commitMessage = escapeHtml(commitMessage);
-	commitMessage = autolinker.link(commitMessage);
+	if(getConfig().autoLinkUrlsInCommitMessages())
+		commitMessage = autolinker.link(commitMessage);
 	return commitMessage;
 }
 

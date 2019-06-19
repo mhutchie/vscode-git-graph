@@ -68,6 +68,11 @@
 					"default": true,
 					"description": "Automatically center the commit details view when it is opened."
 				},
+				"git-graph.autoLinkUrlsInCommitMessages": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically recognize urls in commit messages and turn them into clickable links."
+				},
 				"git-graph.combineLocalAndRemoteBranchLabels": {
 					"type": "boolean",
 					"default": true,

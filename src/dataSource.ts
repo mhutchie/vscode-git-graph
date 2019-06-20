@@ -107,12 +107,8 @@ export class DataSource {
 				for (i = 0; i < refData.remotes.length; i++) {
 					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
 						let name = refData.remotes[i].name;
-            let remote = results[2].find(remote => name.startsWith(remote + '/'));
-            let url =  await this.getRemoteUrl(repo, remote).then(remoteUrl => {
-              return remoteUrl
-            })
-
-            if (typeof remote === 'string') commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote, url: url});
+						let remote = results[2].find(remote => name.startsWith(remote + '/'));
+						if (typeof remote === 'string') commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote });
 					}
 				}
 
@@ -193,13 +189,12 @@ export class DataSource {
 	}
 
 	public async getRemoteUrl(repo: string, remote = 'origin') {
-		return new Promise<string | ''>(resolve => {
+		return new Promise<string | null>(resolve => {
 			this.execGit(`config --get remote.${remote}.url`, repo, (err, stdout) => {
-				resolve(!err ? stdout.split(eolRegex)[0] : 'null');
+				resolve(!err ? stdout.split(eolRegex)[0] : null);
 			});
 		});
-  }
-
+	}
 
 	public isGitRepository(path: string) {
 		return new Promise<boolean>(resolve => {
@@ -339,20 +334,19 @@ export class DataSource {
 		});
 	}
 
-	private async getRemotes(repo: string) {
+	private getRemotes(repo: string) {
 		return new Promise<string[]>((resolve, reject) => {
 			this.execGit('remote', repo, (err, stdout, stderr) => {
 				if (err) {
 					reject(getErrorMessage(err, stdout, stderr));
 				} else {
 					let lines = stdout.split(eolRegex);
-          lines.pop();
-
+					lines.pop();
 					resolve(lines);
 				}
 			});
 		});
-  }
+	}
 
 	private getGitLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--date-order'];

@@ -65,7 +65,6 @@ export interface GitRef {
 export interface GitRemoteRef {
   name: string
   remote: string
-  url: string
 }
 
 export interface GitRefData {

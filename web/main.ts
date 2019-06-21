@@ -330,13 +330,13 @@ class GitGraphView {
 		this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
 			if (isRepo) {
 				this.requestLoadCommits(hard, (commitChanges: boolean) => {
-					if ((!hard && (branchChanges || commitChanges)) || dialogActionRunning) {
+					if ((!hard && (branchChanges || commitChanges) && dialogType !== ERROR_DIALOG) || dialogType === ACTION_RUNNING_DIALOG) {
 						hideDialogAndContextMenu();
 					}
 					this.renderRefreshButton(true);
 				});
 			} else {
-				if (dialogActionRunning) hideDialog();
+				if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();
 				this.renderRefreshButton(true);
 				sendMessage({ command: 'loadRepos', check: true });
 			}
@@ -1291,7 +1291,7 @@ class GitGraphView {
 
 let viewElem = document.getElementById('view')!, graphFocus = true, loaded = false;
 let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
-let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null, dialogActionRunning = false;
+let dialog = document.getElementById('dialog')!, dialogBacking = document.getElementById('dialogBacking')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null, dialogType: DialogType = null;
 
 window.addEventListener('load', () => {
 	if (loaded) return;
@@ -1408,7 +1408,7 @@ window.addEventListener('load', () => {
 			case 'rebaseOn':
 				if (msg.error === null) {
 					if (msg.interactive) {
-						if (dialogActionRunning) hideDialog();
+						if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();
 					} else {
 						gitGraph.refresh(false);
 					}
@@ -1445,7 +1445,7 @@ window.addEventListener('load', () => {
 	}
 	function showErrorIfNotSuccess(success: boolean, errorMessage: string) {
 		if (success) {
-			if (dialogActionRunning) hideDialog();
+			if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();
 		} else {
 			showErrorDialog(errorMessage, null, null, null, null);
 		}
@@ -1562,8 +1562,7 @@ function abbrevCommit(commitHash: string) {
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {
-	showDialog('<span id="actionRunning">' + svgIcons.loading + action + ' ...</span>', null, 'Dismiss', null, null);
-	dialogActionRunning = true;
+	showDialog(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + svgIcons.loading + action + ' ...</span>', null, 'Dismiss', null, null);
 	sendMessage(msg);
 }
 
@@ -1640,7 +1639,7 @@ function hideContextMenu() {
 
 /* Dialogs */
 function showConfirmationDialog(message: string, confirmed: () => void, sourceElem: HTMLElement | null) {
-	showDialog(message, 'Yes', 'No', () => {
+	showDialog(FORM_DIALOG, message, 'Yes', 'No', () => {
 		hideDialog();
 		confirmed();
 	}, sourceElem);
@@ -1687,7 +1686,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	}
 	html += '</table>';
 
-	showDialog(html, actionName, 'Cancel', () => {
+	showDialog(FORM_DIALOG, html, actionName, 'Cancel', () => {
 		if (dialog.className === CLASS_ACTIVE + ' noInput' || dialog.className === CLASS_ACTIVE + ' inputInvalid') return;
 		let values = [];
 		for (let i = 0; i < inputs.length; i++) {
@@ -1719,11 +1718,12 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	}
 }
 function showErrorDialog(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-	showDialog(svgIcons.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, sourceElem);
+	showDialog(ERROR_DIALOG, svgIcons.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, sourceElem);
 }
-function showDialog(html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
+function showDialog(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
 	hideDialogAndContextMenu();
 
+	dialogType = type;
 	dialogBacking.className = CLASS_ACTIVE;
 	dialog.className = CLASS_ACTIVE;
 	dialog.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
@@ -1746,7 +1746,7 @@ function hideDialog() {
 		dialogMenuSource = null;
 	}
 	dialogAction = null;
-	dialogActionRunning = false;
+	dialogType = null;
 	graphFocus = true;
 }
 

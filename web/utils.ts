@@ -60,6 +60,10 @@ const CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND = '--vscode-editor-findMatchHighl
 
 const ATTR_ERROR = 'data-error';
 
+const ACTION_RUNNING_DIALOG = 'action-running';
+const FORM_DIALOG = 'form';
+const ERROR_DIALOG = 'error';
+
 
 /* General Helpers */
 function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) {

@@ -59,7 +59,7 @@ export interface GitRef {
 
 export interface GitRemoteRef {
 	name: string;
-	remote: string;
+	remote: string | null; // null => remote not found, otherwise => remote name
 }
 
 export interface GitRefData {

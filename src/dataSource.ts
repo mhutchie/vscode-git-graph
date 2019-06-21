@@ -108,7 +108,7 @@ export class DataSource {
 					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
 						let name = refData.remotes[i].name;
 						let remote = results[2].find(remote => name.startsWith(remote + '/'));
-						if (typeof remote === 'string') commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote });
+						commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
 					}
 				}
 

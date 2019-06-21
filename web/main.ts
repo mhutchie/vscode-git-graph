@@ -424,7 +424,7 @@ class GitGraphView {
 			}
 			for (j = 0; j < branchLabels.remotes.length; j++) {
 				refName = escapeHtml(branchLabels.remotes[j].name);
-				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + escapeHtml(branchLabels.remotes[j].remote) + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
+				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + (branchLabels.remotes[j].remote !== null ? escapeHtml(branchLabels.remotes[j].remote!) : '') + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			for (j = 0; j < commit.tags.length; j++) {
 				refName = escapeHtml(commit.tags[j]);
@@ -696,8 +696,8 @@ class GitGraphView {
 					refName = unescapeHtml((<HTMLElement>e.target).dataset.remote!) + '/' + refName;
 					isHead = false;
 				}
+				menu = [];
 				if (isHead) {
-					menu = [];
 					if (this.gitBranchHead !== refName) {
 						menu.push({
 							title: 'Checkout Branch',
@@ -767,17 +767,20 @@ class GitGraphView {
 					}
 				} else {
 					let remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!);
-					menu = [{
-						title: 'Delete Remote Branch' + ELLIPSIS,
-						onClick: () => {
-							showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-								runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote }, 'Deleting Remote Branch');
-							}, null);
-						}
-					}, {
+					if (remote !== '') { // If the remote of the remote branch ref is known
+						menu.push({
+							title: 'Delete Remote Branch' + ELLIPSIS,
+							onClick: () => {
+								showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+									runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote }, 'Deleting Remote Branch');
+								}, null);
+							}
+						});
+					}
+					menu.push({
 						title: 'Checkout Branch' + ELLIPSIS,
 						onClick: () => this.checkoutBranchAction(refName, remote)
-					}];
+					});
 				}
 				copyType = 'Branch Name';
 			}
@@ -826,7 +829,7 @@ class GitGraphView {
 
 	private checkoutBranchAction(refName: string, remote: string | null) {
 		if (remote !== null) {
-			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', refName.substr(remote.length + 1), 'Checkout Branch', newBranch => {
+			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (remote !== '' ? refName.substr(remote.length + 1) : refName), 'Checkout Branch', newBranch => {
 				runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName }, 'Checking out Branch');
 			}, null);
 		} else {
@@ -1557,12 +1560,14 @@ function getBranchLabels(heads: string[], remotes: GG.GitRemoteRef[]) {
 	if (viewState.combineLocalAndRemoteBranchLabels) {
 		remoteLabels = [];
 		for (let i = 0; i < remotes.length; i++) {
-			let branchName = remotes[i].name.substr(remotes[i].remote.length + 1);
-			if (typeof headLookup[branchName] === 'number') {
-				headLabels[headLookup[branchName]].remotes.push(remotes[i].remote);
-			} else {
-				remoteLabels.push(remotes[i]);
+			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known
+				let branchName = remotes[i].name.substr(remotes[i].remote!.length + 1);
+				if (typeof headLookup[branchName] === 'number') {
+					headLabels[headLookup[branchName]].remotes.push(remotes[i].remote!);
+					continue;
+				}
 			}
+			remoteLabels.push(remotes[i]);
 		}
 	} else {
 		remoteLabels = remotes;

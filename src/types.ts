@@ -85,6 +85,7 @@ export interface GitGraphViewState {
 	combineLocalAndRemoteBranchLabels: boolean;
 	commitDetailsViewLocation: CommitDetailsViewLocation;
 	customBranchGlobPatterns: CustomBranchGlobPattern[];
+	customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
 	dateFormat: DateFormat;
 	defaultColumnVisibility: DefaultColumnVisibility;
 	fetchAvatars: boolean;
@@ -130,6 +131,10 @@ export type RebaseOnType = 'Branch' | 'Commit';
 export interface CustomBranchGlobPattern {
 	name: string;
 	glob: string;
+}
+export interface CustomEmojiShortcodeMapping {
+	shortcode: string;
+	emoji: string;
 }
 export interface DefaultColumnVisibility {
 	date: boolean;

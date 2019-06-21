@@ -107,6 +107,27 @@
 					"default": [],
 					"description": "An array of Custom Branch Glob Patterns to be shown in the 'Branches' dropdown. Example: [{\"name\": \"Feature Requests\", \"glob\": \"heads/feature/*\"}]"
 				},
+				"git-graph.customEmojiShortcodeMappings": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"title": "Custom Emoji Shortcode Mapping",
+						"properties": {
+							"shortcode": {
+								"type": "string",
+								"title": "Emoji Shortcode",
+								"description": "Emoji Shortcode (e.g. \":sparkles:\")"
+							},
+							"emoji": {
+								"type": "string",
+								"title": "Emoji",
+								"description": "Emoji (e.g. \"✨\")"
+							}
+						}
+					},
+					"default": [],
+					"description": "An array of custom Emoji Shortcode mappings. Example: [{\"shortcode\": \":sparkles:\", \"emoji\":\"✨\"}]"
+				},
 				"git-graph.dateFormat": {
 					"type": "string",
 					"enum": [

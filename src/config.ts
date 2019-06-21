@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CustomBranchGlobPattern, DateFormat, DateType, DefaultColumnVisibility, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateType, DefaultColumnVisibility, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -29,6 +29,17 @@ class Config {
 			}
 		}
 		return outPatterns;
+	}
+
+	public customEmojiShortcodeMappings(): CustomEmojiShortcodeMapping[] {
+		let inMappings = this.workspaceConfiguration.get('customEmojiShortcodeMappings', <any[]>[]);
+		let outMappings: CustomEmojiShortcodeMapping[] = [];
+		for (let i = 0; i < inMappings.length; i++) {
+			if (typeof inMappings[i].shortcode === 'string' && typeof inMappings[i].emoji === 'string') {
+				outMappings.push({ shortcode: inMappings[i].shortcode, emoji: inMappings[i].emoji });
+			}
+		}
+		return outMappings;
 	}
 
 	public dateFormat(): DateFormat {

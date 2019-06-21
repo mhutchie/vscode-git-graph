@@ -311,6 +311,7 @@ export class GitGraphView {
 			combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
 			commitDetailsViewLocation: config.commitDetailsViewLocation(),
 			customBranchGlobPatterns: config.customBranchGlobPatterns(),
+			customEmojiShortcodeMappings: config.customEmojiShortcodeMappings(),
 			dateFormat: config.dateFormat(),
 			defaultColumnVisibility: config.defaultColumnVisibility(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),

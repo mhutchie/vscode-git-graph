@@ -23,6 +23,9 @@ const svgIcons = {
 	file: '<svg xmlns="http://www.w3.org/2000/svg" class="fileIcon" viewBox="0 0 30 30"><path d="M24.707,8.793l-6.5-6.5C18.019,2.105,17.765,2,17.5,2H7C5.895,2,5,2.895,5,4v22c0,1.105,0.895,2,2,2h16c1.105,0,2-0.895,2-2 V9.5C25,9.235,24.895,8.981,24.707,8.793z M18,10c-0.552,0-1-0.448-1-1V3.904L23.096,10H18z"/></svg>'
 };
 
+const EMOJI_MAPPINGS: { [shortcode: string]: string } = { 'alembic':'⚗', 'alien':'👽', 'ambulance':'🚑', 'apple':'🍎', 'arrow_down':'⬇️', 'arrow_up':'⬆️', 'art':'🎨', 'beers':'🍻', 'bento':'🍱', 'bookmark':'🔖', 'books':'📚', 'boom':'💥', 'bug':'🐛', 'building_construction':'🏗', 'bulb':'💡', 'busts_in_silhouette':'👥', 'camera_flash':'📸', 'card_file_box':'🗃', 'card_index':'📇', 'chart_with_upwards_trend':'📈', 'checkered_flag':'🏁', 'children_crossing':'🚸', 'clown_face':'🤡', 'construction':'🚧', 'construction_worker':'👷', 'egg':'🥚', 'exclamation':'❗', 'fire':'🔥', 'globe_with_meridians':'🌐', 'green_apple':'🍏', 'green_heart':'💚', 'hammer':'🔨', 'heavy_check_mark':'✔️', 'heavy_minus_sign':'➖', 'heavy_plus_sign':'➕', 'iphone':'📱', 'label':'🏷️', 'lipstick':'💄', 'lock':'🔒', 'loud_sound':'🔊', 'mag':'🔍', 'mute':'🔇', 'new':'🆕', 'ok_hand':'👌', 'package':'📦', 'page_facing_up':'📄', 'pencil':'📝', 'pencil2':'✏️', 'penguin':'🐧', 'poop':'💩', 'pushpin':'📌', 'racehorse':'🐎', 'recycle':'♻️', 'rewind':'⏪', 'robot':'🤖', 'rocket':'🚀', 'rotating_light':'🚨', 'see_no_evil':'🙈', 'shirt':'👕', 'sparkles':'✨', 'speech_balloon':'💬', 'tada':'🎉', 'triangular_ruler':'📐', 'truck':'🚚', 'twisted_rightwards_arrows':'🔀', 'video_game':'🎮', 'whale':'🐳', 'wheel_of_dharma':'☸️', 'wheelchair':'♿️', 'white_check_mark':'✅', 'wrench':'🔧', 'zap':'⚡️' };
+const EMOJI_SHORTCODE_REGEX = /:([A-Za-z0-9-_]+):/g;
+
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const htmlEscapes: { [key: string]: string } = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#x27;', '/': '&#x2F;' };
 const htmlUnescapes: { [key: string]: string } = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': '\'', '&#x2F;': '/' };
@@ -105,6 +108,19 @@ function unescapeHtml(str: string) {
 	return str.replace(htmlUnescaper, (match) => htmlUnescapes[match]);
 }
 
+/* Formatters */
+function formatText(str: string) {
+	return escapeHtml(str.replace(EMOJI_SHORTCODE_REGEX, (match, shortcode) => typeof EMOJI_MAPPINGS[shortcode] === 'string' ? EMOJI_MAPPINGS[shortcode] : match));
+}
+
+function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[]) {
+	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
+	for (let i = 0; i < mappings.length; i++) {
+		if (validShortcodeRegex.test(mappings[i].shortcode)) {
+			EMOJI_MAPPINGS[mappings[i].shortcode.substr(1, mappings[i].shortcode.length - 2)] = mappings[i].emoji;
+		}
+	}
+}
 
 /* DOM Helpers */
 function addListenerToClass(className: string, event: string, eventListener: EventListener) {

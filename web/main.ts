@@ -767,20 +767,33 @@ class GitGraphView {
 					}
 				} else {
 					let remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!);
-					if (remote !== '') { // If the remote of the remote branch ref is known
-						menu.push({
-							title: 'Delete Remote Branch' + ELLIPSIS,
-							onClick: () => {
-								showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-									runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote }, 'Deleting Remote Branch');
-								}, null);
-							}
-						});
-					}
 					menu.push({
 						title: 'Checkout Branch' + ELLIPSIS,
 						onClick: () => this.checkoutBranchAction(refName, remote)
 					});
+					if (remote !== '') { // If the remote of the remote branch ref is known
+						menu.push(
+							{
+								title: 'Delete Remote Branch' + ELLIPSIS,
+								onClick: () => {
+									showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+										runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote }, 'Deleting Remote Branch');
+									}, null);
+								}
+							},
+							{
+								title: 'Pull into current branch' + ELLIPSIS,
+								onClick: () => {
+									showFormDialog('Are you sure you want to pull branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
+										{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
+										{ type: 'checkbox', name: 'Squash commits', value: false }
+									], 'Yes, pull', values => {
+										runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Pulling Branch');
+									}, null);
+								}
+							}
+						);
+					}
 				}
 				copyType = 'Branch Name';
 			}
@@ -1382,6 +1395,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'mergeCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Merge Commit');
+				break;
+			case 'pullBranch':
+				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');
 				break;
 			case 'pushBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Push Branch');

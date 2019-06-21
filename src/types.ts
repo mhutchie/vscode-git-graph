@@ -373,6 +373,19 @@ export interface ResponseMergeCommit {
 	error: GitCommandError;
 }
 
+export interface RequestPullBranch {
+	command: 'pullBranch';
+	repo: string;
+	branchName: string;
+	remote: string;
+	createNewCommit: boolean;
+	squash: boolean;
+}
+export interface ResponsePullBranch {
+	command: 'pullBranch';
+	error: GitCommandError;
+}
+
 export interface RequestPushBranch {
 	command: 'pushBranch';
 	repo: string;
@@ -496,6 +509,7 @@ export type RequestMessage =
 	| RequestLoadRepos
 	| RequestMergeBranch
 	| RequestMergeCommit
+	| RequestPullBranch
 	| RequestPushBranch
 	| RequestPushTag
 	| RequestRebaseOn
@@ -526,6 +540,7 @@ export type ResponseMessage =
 	| ResponseLoadRepos
 	| ResponseMergeBranch
 	| ResponseMergeCommit
+	| ResponsePullBranch
 	| ResponsePushBranch
 	| ResponsePushTag
 	| ResponseRebaseOn

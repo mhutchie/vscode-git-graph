@@ -228,6 +228,12 @@ export class GitGraphView {
 						error: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit, msg.squash)
 					});
 					break;
+				case 'pullBranch':
+					this.sendMessage({
+						command: 'pullBranch',
+						error: await this.dataSource.pullBranch(msg.repo, msg.branchName, msg.remote, msg.createNewCommit, msg.squash)
+					});
+					break;
 				case 'pushBranch':
 					this.sendMessage({
 						command: 'pushBranch',

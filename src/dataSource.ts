@@ -256,7 +256,7 @@ export class DataSource {
 	}
 
 	public async mergeBranch(repo: string, branchName: string, createNewCommit: boolean, squash: boolean) {
-		let mergeStatus = await this.runGitCommand('merge ' + escapeRefName(branchName) + (createNewCommit && !squash ? ' --no-ff' : '') + (squash ? ' --squash' : ''), repo);
+		let mergeStatus = await this.runGitCommand('merge ' + escapeRefName(branchName) + (squash ? ' --squash' : (createNewCommit ? ' --no-ff' : '')), repo);
 		if (mergeStatus === null && squash) {
 			if (await this.areStagedChanges(repo)) {
 				return this.runGitCommand('commit -m "Merge branch \'' + escapeRefName(branchName) + '\'"', repo);
@@ -266,13 +266,23 @@ export class DataSource {
 	}
 
 	public async mergeCommit(repo: string, commitHash: string, createNewCommit: boolean, squash: boolean) {
-		let mergeStatus = await this.runGitCommand('merge ' + commitHash + (createNewCommit && !squash ? ' --no-ff' : '') + (squash ? ' --squash' : ''), repo);
+		let mergeStatus = await this.runGitCommand('merge ' + commitHash + (squash ? ' --squash' : (createNewCommit ? ' --no-ff' : '')), repo);
 		if (mergeStatus === null && squash) {
 			if (await this.areStagedChanges(repo)) {
 				return this.runGitCommand('commit -m "Merge commit \'' + commitHash + '\'"', repo);
 			}
 		}
 		return mergeStatus;
+	}
+
+	public async pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
+		let pullStatus = await this.runGitCommand('pull ' + escapeRefName(remote) + ' ' + escapeRefName(branchName) + (squash ? ' --squash' : (createNewCommit ? ' --no-ff' : '')), repo);
+		if (pullStatus === null && squash) {
+			if (await this.areStagedChanges(repo)) {
+				return this.runGitCommand('commit -m "Merge branch \'' + escapeRefName(remote + '/' + branchName) + '\'"', repo);
+			}
+		}
+		return pullStatus;
 	}
 
 	public rebaseOn(repo: string, base: string, type: RebaseOnType, ignoreDate: boolean, interactive: boolean) {
@@ -513,7 +523,7 @@ function generateFileChanges(nameStatusResults: string[], numStatResults: string
 function getErrorMessage(error: Error | null, stdout: string, stderr: string) {
 	let lines: string[];
 	if (stdout !== '' || stderr !== '') {
-		lines = (stderr !== '' ? stderr : stdout !== '' ? stdout : '').split(eolRegex);
+		lines = (stderr + stdout).split(eolRegex);
 		lines.pop();
 	} else if (error) {
 		lines = error.message.split(eolRegex);

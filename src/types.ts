@@ -278,6 +278,7 @@ export interface RequestDeleteTag {
 	command: 'deleteTag';
 	repo: string;
 	tagName: string;
+	deleteOnRemote: string | null; // null => don't delete on remote, otherwise => remote to delete on
 }
 export interface ResponseDeleteTag {
 	command: 'deleteTag';

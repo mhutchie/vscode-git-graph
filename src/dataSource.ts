@@ -215,7 +215,11 @@ export class DataSource {
 		return this.runGitCommandSpawn(args, repo);
 	}
 
-	public deleteTag(repo: string, tagName: string) {
+	public async deleteTag(repo: string, tagName: string, deleteOnRemote: string | null) {
+		if (deleteOnRemote !== null) {
+			let status = await this.runGitCommand('push ' + escapeRefName(deleteOnRemote) + ' --delete ' + escapeRefName(tagName), repo);
+			if (status !== null) return status;
+		}
 		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
 	}
 

@@ -667,9 +667,22 @@ class GitGraphView {
 				menu = [{
 					title: 'Delete Tag' + ELLIPSIS,
 					onClick: () => {
-						showConfirmationDialog('Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-							runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName }, 'Deleting Tag');
-						}, null);
+						let message = 'Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?';
+						if (this.gitRemotes.length > 1) {
+							let options = [{ name: 'Don\'t delete on any remote', value: '-1' }];
+							this.gitRemotes.forEach((remote, i) => options.push({ name: escapeHtml(remote), value: i.toString() }));
+							showSelectDialog(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
+								this.deleteTagAction(refName, remoteIndex !== '-1' ? this.gitRemotes[parseInt(remoteIndex)] : null);
+							}, null);
+						} else if (this.gitRemotes.length === 1) {
+							showCheckboxDialog(message, 'Also delete on remote', false, 'Yes, delete', deleteOnRemote => {
+								this.deleteTagAction(refName, deleteOnRemote ? this.gitRemotes[0] : null);
+							}, null);
+						} else {
+							showConfirmationDialog(message, () => {
+								this.deleteTagAction(refName, null);
+							}, null);
+						}
 					}
 				}];
 				if (this.gitRemotes.length > 0) {
@@ -840,6 +853,7 @@ class GitGraphView {
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
 	}
 
+	/* Actions */
 	private checkoutBranchAction(refName: string, remote: string | null) {
 		if (remote !== null) {
 			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (remote !== '' ? refName.substr(remote.length + 1) : refName), 'Checkout Branch', newBranch => {
@@ -849,6 +863,11 @@ class GitGraphView {
 			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null }, 'Checking out Branch');
 		}
 	}
+	private deleteTagAction(refName: string, deleteOnRemote: string | null) {
+		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
+	}
+
+	/* Table Utils */
 	private makeTableResizable() {
 		let colHeadersElem = document.getElementById('tableColHeaders')!, cols = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tableColHeader');
 		let columnWidths: GG.ColumnWidth[], mouseX = -1, col = -1, colIndex = -1;

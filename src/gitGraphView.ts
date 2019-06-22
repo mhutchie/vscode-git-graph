@@ -170,7 +170,7 @@ export class GitGraphView {
 				case 'deleteTag':
 					this.sendMessage({
 						command: 'deleteTag',
-						error: await this.dataSource.deleteTag(msg.repo, msg.tagName)
+						error: await this.dataSource.deleteTag(msg.repo, msg.tagName, msg.deleteOnRemote)
 					});
 					break;
 				case 'fetch':

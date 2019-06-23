@@ -492,17 +492,17 @@ body.tagLabelsRightAligned .gitRef.tag{
 #findBtn svg:hover{
 	stroke-width:1.5px;
 }
-#findBtn svg, #refreshBtn svg{
-	left:2px;
-	top:2px;
-	width:16px !important;
-	height:16px !important;
-}
-#fetchBtn svg{
+#findBtn svg, #fetchBtn svg{
 	left:1px;
 	top:1px;
 	width:18px !important;
 	height:18px !important;
+}
+#refreshBtn svg{
+	left:2px;
+	top:2px;
+	width:16px !important;
+	height:16px !important;
 }
 #refreshBtn.refreshing svg{
 	left:3.25px;

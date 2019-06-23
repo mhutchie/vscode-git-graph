@@ -17,7 +17,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * View the Visual Studio Code Diff of any file change between the selected commits by clicking on the desired file in the Commit Details View.
     * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
-        * Create, Checkout, Rename, Delete, Merge, Push & Rebase branches
+        * Create, Checkout, Rename, Delete, Merge, Push, Pull & Rebase branches
         * Add, Delete & Push tags
         * Checkout, Cherry Pick, Merge & Revert commits
         * Reset current branch to commit
@@ -28,12 +28,15 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Select one or more branches to be viewed
         * Select from a user predefined array of custom glob patterns (by setting `git-graph.customBranchGlobPatterns`)
     * Fetch from Remote(s) _(available on the top control bar)_
+    * Find widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names).
     * Keyboard Shortcuts:
         * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
+        * CTRL/CMD + f: Open the find widget.
         * CTRL/CMD + r: Refresh the Git Graph View.
         * Enter: If a dialog is open, pressing enter submits the dialog, taking the primary (left) action.
         * Escape: Closes the active dialog, context menu or the Commit Details View.
     * Resize the width of each column, and show/hide the Date, Author & Commit columns.
+    * Common Emoji Shortcodes are automatically replaced with the corresponding emoji in commit messages (including all [gitmoji](https://gitmoji.carloscuesta.me/)). Custom Emoji Shortcode mappings can be defined in `git-graph.customEmojiShortcodeMappings`.
 * A broad range of configurable settings (e.g. graph style, branch colours, and more...). See the 'Extension Settings' section below for more information.
 * "Git Graph" launch button in the Status Bar
 * "Git Graph: View Git Graph" launch command in the Command Palette
@@ -48,6 +51,7 @@ A summary of the Git Graph extension settings are:
 * **Combine Local And Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
 * **Commit Details View Location**: Specifies where the Commit Details View is rendered in the Git Graph view. Default: Inline (with graph)
 * **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the 'Branches' dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
+* **Custom Emoji Shortcode Mappings**: An array of custom Emoji Shortcode mappings. Example: `[{"shortcode": ":sparkles:", "emoji":"✨"}]`
 * **Date Format**: Specifies the date format to be used in the date column of the graph.
 * **Date Type**: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
@@ -57,6 +61,7 @@ A summary of the Git Graph extension settings are:
 * **Initial Load Commits**: Specifies the number of commits to initially load.
 * **Load More Commits**: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
+* **Mute Merge Commits**: Show merge commits with a muted text colour. Default: true (enabled)
 * **Open Diff Tab Location**: Specifies which pane the Visual Studio Code Diff is opened in. Default: Active
 * **Open To The Repo Of The Active Text Editor Document**: Open Git Graph to the repository containing the active Text Editor document. Default: false (disabled)
 * **Reference Label Alignment**: Specifies how branch and tag reference labels are aligned for each commit.

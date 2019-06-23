@@ -110,6 +110,8 @@ class FindWidget {
 		this.inputElem.value = this.text;
 		this.inputElem.disabled = true;
 		this.widgetElem.removeAttribute(ATTR_ERROR);
+		this.prevElem.classList.add(CLASS_DISABLED);
+		this.nextElem.classList.add(CLASS_DISABLED);
 		this.view.saveState();
 	}
 
@@ -155,7 +157,7 @@ class FindWidget {
 		this.position = -1;
 
 		if (this.text !== '') {
-			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null, regexText = this.isRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = this.isCaseSensitive ? '' : 'i';
+			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null, regexText = this.isRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = 'u' + (this.isCaseSensitive ? '' : 'i');
 			try {
 				findPattern = new RegExp(regexText, flags);
 				findGlobalPattern = new RegExp(regexText, 'g' + flags);
@@ -166,7 +168,7 @@ class FindWidget {
 				this.widgetElem.setAttribute(ATTR_ERROR, e.message);
 			}
 			if (findPattern !== null && findGlobalPattern !== null) {
-				let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit;
+				let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, zeroLengthMatch = false;
 
 				// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
 				for (let i = 0; i < this.commits.length; i++) {
@@ -189,38 +191,50 @@ class FindWidget {
 						let textElems = getChildNodesWithTextContent(commits[j]), textElem;
 						for (let k = 0; k < textElems.length; k++) {
 							textElem = textElems[k];
-							let pos = 0, text = textElem.textContent!, match: RegExpExecArray | null;
+							let matchStart = 0, matchEnd = 0, text = textElem.textContent!, match: RegExpExecArray | null;
 							findGlobalPattern.lastIndex = 0;
 							while (match = findGlobalPattern.exec(text)) {
-								if (pos !== match.index) textElem.parentNode!.insertBefore(document.createTextNode(text.substring(pos, match.index)), textElem);
-								pos = findGlobalPattern.lastIndex;
-								textElem.parentNode!.insertBefore(createFindMatchElem(match[0]), textElem);
+								if (match[0].length === 0) {
+									zeroLengthMatch = true;
+									break;
+								}
+								if (matchEnd !== match.index) {
+									if (matchStart !== matchEnd) textElem.parentNode!.insertBefore(createFindMatchElem(text.substring(matchStart, matchEnd)), textElem);
+									textElem.parentNode!.insertBefore(document.createTextNode(text.substring(matchEnd, match.index)), textElem);
+									matchStart = match.index;
+								}
+								matchEnd = findGlobalPattern.lastIndex;
 							}
-							if (pos > 0) {
-								if (pos !== text.length) {
-									textElem.textContent = text.substring(pos);
+							if (matchEnd > 0) {
+								if (matchStart !== matchEnd) textElem.parentNode!.insertBefore(createFindMatchElem(text.substring(matchStart, matchEnd)), textElem);
+								if (matchEnd !== text.length) {
+									textElem.textContent = text.substring(matchEnd);
 								} else {
 									textElem.parentNode!.removeChild(textElem);
 								}
 							}
+							if (zeroLengthMatch) break;
 						}
 						if (colVisibility.commit && commit.hash.search(findPattern) === 0 && !findPattern.test(abbrevCommit(commit.hash)) && textElems.length > 0) {
 							// The commit matches on more than the abbreviated commit, so the commit should be highlighted
 							let commitNode = textElems[textElems.length - 1]; // Commit is always the last column if it is visible
 							commitNode.parentNode!.replaceChild(createFindMatchElem(commitNode.textContent!), commitNode);
 						}
+						if (zeroLengthMatch) break;
 					}
 				}
+				if (zeroLengthMatch) {
+					this.widgetElem.setAttribute(ATTR_ERROR, 'Cannot use a regular expression which has zero length matches');
+					this.clearMatches();
+					this.matches = [];
+				}
 			}
+		} else {
+			this.widgetElem.removeAttribute(ATTR_ERROR);
 		}
 
-		if (this.matches.length > 0) {
-			this.prevElem.classList.remove(CLASS_DISABLED);
-			this.nextElem.classList.remove(CLASS_DISABLED);
-		} else {
-			this.prevElem.classList.add(CLASS_DISABLED);
-			this.nextElem.classList.add(CLASS_DISABLED);
-		}
+		alterClass(this.prevElem, CLASS_DISABLED, this.matches.length === 0);
+		alterClass(this.nextElem, CLASS_DISABLED, this.matches.length === 0);
 
 		let newPos = -1;
 		if (this.matches.length > 0) {
@@ -247,7 +261,6 @@ class FindWidget {
 					text = node.textContent + text;
 					matchElem.parentNode!.removeChild(node);
 					node = matchElem.previousSibling;
-					elem = matchElem.previousElementSibling;
 				}
 
 				// Combine current text with the text from next sibling text nodes
@@ -257,7 +270,6 @@ class FindWidget {
 					text = text + node.textContent;
 					matchElem.parentNode!.removeChild(node);
 					node = matchElem.nextSibling;
-					elem = matchElem.nextElementSibling;
 				}
 
 				matchElem.parentNode!.replaceChild(document.createTextNode(text), matchElem);
@@ -277,10 +289,12 @@ class FindWidget {
 	}
 
 	private prev() {
+		if (this.matches.length === 0) return;
 		this.updatePosition(this.position > 0 ? this.position - 1 : this.matches.length - 1, true);
 	}
 
 	private next() {
+		if (this.matches.length === 0) return;
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
 	}
 }

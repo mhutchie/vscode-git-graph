@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.9.0 - 2019-06-23
+* #31 Find widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names). The find widget can be activated by the new find icon on the top right control bar, or from the new `CTRL/CMD + f` keystroke.
+* #98 New "Pull into current branch..." action available from the remote branch context menu.
+* #100 Show merge commits with a muted text colour. This is controlled by the new setting `git-graph.muteMergeCommits`. Default: true (enabled). Thanks [Sebastian Lay (@sebastianlay)](https://github.com/sebastianlay)!
+* #104 Common Emoji Shortcodes are automatically replaced with the corresponding emoji in commit messages (including all [gitmoji](https://gitmoji.carloscuesta.me/)). Custom Emoji Shortcode mappings can be defined in `git-graph.customEmojiShortcodeMappings`.
+* #105 Add information for troubleshooting repositories in subfolders.
+* #107 Support for displaying remote svn branches.
+* #109 New option on the existing 'Delete Tag...' action to also delete the tag on a remote (only shown if remotes exist).
+* Improved handling of error dialogs.
+
 ## 1.8.0 - 2019-06-08
 * #90 New command "Git Graph: Add Git Repository" in the Command Palette allows additional Git repositories to be added to Git Graph (e.g. sub-repos).
 * #91 New setting to enable Git Graph to open to the repository containing the active Text Editor document `git-graph.openToTheRepoOfTheActiveTextEditorDocument`. Default: false (disabled)
@@ -37,11 +47,11 @@
     * Normal: Show branch & tag labels on the left of the commit message in the 'Description' column.
     * Branches (on the left) & Tags (on the right): Show branch labels on the left of the commit message in the 'Description' column, and tag labels on the right.
     * Branches (aligned to the graph) & Tags (on the right): Show branch labels aligned to the graph in the 'Graph' column, and tag labels on the right in the 'Description' column.
-* #30 New setting `git-graph.retainContextWhenHidden` enables faster Git Graph tab restoration at the cost of additional memory usage when Git Graph is opened, but not visible (running in the background). Default: false (not enabled). Thanks @yzhang-gh!
+* #30 New setting `git-graph.retainContextWhenHidden` enables faster Git Graph tab restoration at the cost of additional memory usage when Git Graph is opened, but not visible (running in the background). Default: false (not enabled). Thanks [Yu Zhang (@yzhang-gh)](https://github.com/yzhang-gh)!
 * #76 Open and view a specific repo in Git Graph directly from the title of a Source Code Provider in the Visual Studio Code SCP View. The new setting `git-graph.sourceCodeProviderIntegrationLocation` specifies if the Git Graph menu item is inline on the title of the Source Code Provider, or on the 'More actions...' menu. Default: Inline
 * #78 Combine local and remote branch labels if they refer to the same branch, and are on the same commit. When combined, the local and remote branch context menus are available from the corresponding section of the label. The new setting `git-graph.combineLocalAndRemoteBranchLabels` allows you to disable this behaviour.
-* #81 Support for repositories with a very large number of tags. Thanks @egi!
-* #83 Support for the upcoming "Remote Development" functionality of Visual Studio Code. Thanks @Dontar for helping with this!
+* #81 Support for repositories with a very large number of tags. Thanks [egi (@egi)](https://github.com/egi)!
+* #83 Support for the upcoming "Remote Development" functionality of Visual Studio Code. Thanks [Kaloyan Arsov (@Dontar)](https://github.com/Dontar) for helping with this!
 * #85 New setting `git-graph.openDiffTabLocation` allows you to choose where you'd like the Visual Studio Code Diff to open, either in the Active pane, or Beside to active pane. Default: Active
 
 ## 1.5.0 - 2019-05-15
@@ -67,7 +77,7 @@
 * #59 Various performance improvements for: opening Git Graph, loading commits, and opening the commit details view.
 
 ## 1.4.5 - 2019-04-15
-* #26 Fetch and show commit author / committer avatars from GitHub, GitLab & Gravatar. If you'd like to use this feature, you must enable the setting `git-graph.fetchAvatars`. Thanks @meierw for helping with the development of this!
+* #26 Fetch and show commit author / committer avatars from GitHub, GitLab & Gravatar. If you'd like to use this feature, you must enable the setting `git-graph.fetchAvatars`. Thanks [Walter Meier (@meierw)](https://github.com/meierw) for helping with the development of this!
 * #37 Columns can be resized by dragging the dividers in the table header.
 * #43 Add more emphasis to the head commit.
 * #44 Improved the documentation and descriptions of extension settings.
@@ -93,12 +103,12 @@
 
 ## 1.4.2 - 2019-03-10
 * #22 New setting to show the current branch by default when Git Graph is opened, instead of showing all branches. By default `git-graph.showCurrentBranchByDefault` is false.
-* #24 Display all lines of the commit body in the commit details view. Thanks @ShoshinNikita!
+* #24 Display all lines of the commit body in the commit details view. Thanks [Shoshin Nikita (@ShoshinNikita)](https://github.com/ShoshinNikita)!
 
 ## 1.4.1 - 2019-03-09
 * #13 Support for multiple Git repositories in multi-root workspaces.
 * #8 Improved control bar style, for improved support of different colour themes.
-* #23 Changed "Reverse this Commit" to "Revert this Commit", to match the corresponding Git command. Thanks @Larry850806!
+* #23 Changed "Reverse this Commit" to "Revert this Commit", to match the corresponding Git command. Thanks [Larry Lu (@Larry850806)](https://github.com/Larry850806)!
 * Several minor consistency improvements.
 
 ## 1.4.0 - 2019-02-28

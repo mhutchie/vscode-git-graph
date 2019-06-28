@@ -1,5 +1,7 @@
 .github/
 .vscode/
+out/askpass/*.d.ts
+out/askpass/*.js.map
 out/*.d.ts
 out/*.js.map
 resources/demo.gif

@@ -11,7 +11,7 @@ import { getPathFromUri, isPathInWorkspace } from './utils';
 
 export function activate(context: vscode.ExtensionContext) {
 	const extensionState = new ExtensionState(context);
-	const dataSource = new DataSource();
+	const dataSource = new DataSource(context);
 	const avatarManager = new AvatarManager(dataSource, extensionState);
 	const statusBarItem = new StatusBarItem(context);
 	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem);

@@ -1,4 +1,6 @@
 import * as cp from 'child_process';
+import * as vscode from 'vscode';
+import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
@@ -12,10 +14,15 @@ export class DataSource {
 	private gitExecPath!: string;
 	private gitLogFormat!: string;
 	private gitCommitDetailsFormat!: string;
+	private gitEnv: AskpassEnvironment;
 
-	constructor() {
+	constructor(context: vscode.ExtensionContext) {
 		this.registerGitPath();
 		this.generateGitCommandFormats();
+
+		const askpassManager = new AskpassManager();
+		this.gitEnv = askpassManager.getEnv();
+		context.subscriptions.push(askpassManager);
 	}
 
 	public registerGitPath() {
@@ -451,7 +458,7 @@ export class DataSource {
 	private runGitCommandSpawn(args: string[], repo: string) {
 		return new Promise<GitCommandError>((resolve) => {
 			let stdout = '', stderr = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: repo });
+			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.gitEnv });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {
@@ -466,13 +473,13 @@ export class DataSource {
 	}
 
 	private execGit(command: string, repo: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
-		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo }, callback);
+		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo, env: this.gitEnv }, callback);
 	}
 
 	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }) {
 		return new Promise<T>((resolve, reject) => {
 			let stdout = '', stderr = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: repo });
+			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.gitEnv });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {

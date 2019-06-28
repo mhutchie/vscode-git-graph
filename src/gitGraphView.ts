@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
-import { copyToClipboard, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyToClipboard, getNonce, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -406,13 +406,4 @@ export class GitGraphView {
 			loadRepo: loadRepo
 		});
 	}
-}
-
-function getNonce() {
-	let text = '';
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
 }

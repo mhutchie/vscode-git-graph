@@ -340,7 +340,7 @@
 		"vscode:prepublish": "npm run compile",
 		"clean": "node ./.vscode/clean.js",
 		"compile": "npm run clean && npm run compile-src && npm run compile-web",
-		"compile-src": "tsc -p ./src",
+		"compile-src": "tsc -p ./src && node ./.vscode/package-src.js",
 		"compile-web": "tsc -p ./web && node ./.vscode/package-web.js",
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",
 		"package": "npm run clean && vsce package",

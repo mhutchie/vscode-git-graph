@@ -14,14 +14,14 @@ export class DataSource {
 	private gitExecPath!: string;
 	private gitLogFormat!: string;
 	private gitCommitDetailsFormat!: string;
-	private gitEnv: AskpassEnvironment;
+	private askpassEnv: AskpassEnvironment;
 
 	constructor(context: vscode.ExtensionContext) {
 		this.registerGitPath();
 		this.generateGitCommandFormats();
 
 		const askpassManager = new AskpassManager();
-		this.gitEnv = askpassManager.getEnv();
+		this.askpassEnv = askpassManager.getEnv();
 		context.subscriptions.push(askpassManager);
 	}
 
@@ -458,7 +458,7 @@ export class DataSource {
 	private runGitCommandSpawn(args: string[], repo: string) {
 		return new Promise<GitCommandError>((resolve) => {
 			let stdout = '', stderr = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.gitEnv });
+			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.getEnv() });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {
@@ -473,13 +473,13 @@ export class DataSource {
 	}
 
 	private execGit(command: string, repo: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
-		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo, env: this.gitEnv }, callback);
+		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo, env: this.getEnv() }, callback);
 	}
 
 	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }) {
 		return new Promise<T>((resolve, reject) => {
 			let stdout = '', stderr = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.gitEnv });
+			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.getEnv() });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {
@@ -495,6 +495,10 @@ export class DataSource {
 				}
 			});
 		});
+	}
+
+	private getEnv() {
+		return Object.assign({}, process.env, this.askpassEnv);
 	}
 }
 

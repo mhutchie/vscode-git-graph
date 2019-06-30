@@ -1284,6 +1284,10 @@ class GitGraphView {
 			let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash === null ? expandedCommit.hash : expandedCommit.compareWithHash);
 			sendMessage({ command: 'viewDiff', repo: this.currentRepo, fromHash: commitOrder.from, toHash: commitOrder.to, oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!), newFilePath: decodeURIComponent(sourceElem.dataset.newfilepath!), type: <GG.GitFileChangeType>sourceElem.dataset.type });
 		});
+		addListenerToClass('openGitFile', 'click', (e) => {
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.openGitFile')!;
+			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: decodeURIComponent(sourceElem.dataset.filepath!) });
+		});
 
 		if (!expandedCommit.loading) {
 			let commitDetailsFiles = document.getElementById('commitDetailsFiles')!, timeout: NodeJS.Timer | null = null;
@@ -1415,6 +1419,11 @@ window.addEventListener('load', () => {
 			case 'mergeCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Merge Commit');
 				break;
+			case 'openFile':
+				if (msg.error !== null) {
+					showErrorDialog('Unable to Open File', msg.error, null, null, null);
+				}
+				break;
 			case 'pullBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');
 				break;
@@ -1448,7 +1457,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
 				break;
 			case 'viewDiff':
-				showErrorIfNotSuccess(msg.success, 'Unable to view Diff of File');
+				showErrorIfNotSuccess(msg.success, 'Unable to View Diff of File');
 				break;
 			case 'viewScm':
 				showErrorIfNotSuccess(msg.success, 'Unable to open the Source Control View');
@@ -1546,7 +1555,9 @@ function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GG.GitFileChange[]
 		} else {
 			gitFile = gitFiles[(<GitFile>(folder.contents[keys[i]])).index];
 			diffPossible = gitFile.type === 'U' || (gitFile.additions !== null && gitFile.deletions !== null);
-			html += '<li class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '" title="' + (diffPossible ? 'Click to view diff' : 'This is a binary file, unable to view diff.') + '"><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + (gitFile.type === 'R' ? ' <span class="gitFileRename" title="' + escapeHtml(gitFile.oldFilePath + ' was renamed to ' + gitFile.newFilePath) + '">R</span>' : '') + (gitFile.type !== 'A' && gitFile.type !== 'U' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') + '</li>';
+			html += '<li><span class="gitFileRecord"><span class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'This is a binary file, unable to View Diff') + ' • ' + GIT_FILE_CHANGE_TYPES[gitFile.type] + (gitFile.type === 'R' ? ' (' + escapeHtml(gitFile.oldFilePath) + ' → ' + escapeHtml(gitFile.newFilePath) + ')' : '') + '"><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + '</span>' +
+				(gitFile.type !== 'A' && gitFile.type !== 'U' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') +
+				(gitFile.type !== 'D' ? '<span class="openGitFile" title="Click to Open File" data-filepath="' + encodeURIComponent(gitFile.newFilePath) + '">' + svgIcons.openFile + '</span>' : '') + '</span></li>';
 		}
 	}
 	return html + '</ul>';

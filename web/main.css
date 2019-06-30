@@ -273,14 +273,33 @@ tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
 }
 
 /* Diff Tree */
-svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
+.gitFileIcon, .gitFolderIcon, .openGitFile{
+	position:relative;
+	display:inline-block;
 	width:13px;
-	height:13px;
-	margin-top:2.5px;
+	height:18px;
+	vertical-align:top;
+}
+.gitFileIcon, .gitFolderIcon{
+	margin-right:8px;
+}
+.openGitFile{
+	margin-left:8px;
+	opacity:0;
+}
+.gitFileRecord:hover .openGitFile{
+	cursor:pointer;
+	opacity:1;
+}
+svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .openGitFile svg{
+	position:absolute;
+	top:2.5px;
+	height:13px !important;
 	fill:var(--vscode-editor-foreground);
 	fill-opacity:0.6;
-	margin-right:8px;
-	vertical-align:top;
+}
+svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
+	width:13px;
 }
 .gitFolderContents.hidden{
 	display:none;
@@ -300,7 +319,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .gitFile.gitDiffPossible{
 	cursor:pointer;
 }
-.gitFileAddDel, .gitFileRename{
+.gitFileAddDel{
 	color:var(--vscode-editor-foreground);
 	margin-left:8px;
 }
@@ -313,9 +332,6 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 }
 .gitFileDeletions{
 	color:var(--vscode-gitDecoration-deletedResourceForeground);
-}
-.gitFileRename{
-	cursor:help;
 }
 
 .commit .avatar > img{

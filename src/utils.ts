@@ -1,7 +1,8 @@
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
-import { GitFileChangeType } from './types';
+import { GitCommandError, GitFileChangeType } from './types';
 
 const FS_REGEX = /\\/g;
 
@@ -46,6 +47,20 @@ export function getNonce() {
 export function copyToClipboard(text: string) {
 	return new Promise<boolean>(resolve => {
 		vscode.env.clipboard.writeText(text).then(() => resolve(true), () => resolve(false));
+	});
+}
+
+export function openFile(repo: string, filePath: string) {
+	return new Promise<GitCommandError>(resolve => {
+		let path = repo + '/' + filePath;
+		fs.exists(path, exists => {
+			if (exists) {
+				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
+					.then(() => resolve(null), () => resolve('Visual Studio Code was unable to open ' + filePath + '.'));
+			} else {
+				resolve(filePath + ' no longer exists in this repository.');
+			}
+		});
 	});
 }
 

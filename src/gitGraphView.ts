@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
-import { copyToClipboard, getNonce, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyToClipboard, getNonce, openFile, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -226,6 +226,12 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'mergeCommit',
 						error: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit, msg.squash)
+					});
+					break;
+				case 'openFile':
+					this.sendMessage({
+						command: 'openFile',
+						error: await openFile(msg.repo, msg.filePath)
 					});
 					break;
 				case 'pullBranch':

@@ -374,6 +374,16 @@ export interface ResponseMergeCommit {
 	error: GitCommandError;
 }
 
+export interface RequestOpenFile {
+	command: 'openFile';
+	repo: string;
+	filePath: string;
+}
+export interface ResponseOpenFile {
+	command: 'openFile';
+	error: GitCommandError;
+}
+
 export interface RequestPullBranch {
 	command: 'pullBranch';
 	repo: string;
@@ -510,6 +520,7 @@ export type RequestMessage =
 	| RequestLoadRepos
 	| RequestMergeBranch
 	| RequestMergeCommit
+	| RequestOpenFile
 	| RequestPullBranch
 	| RequestPushBranch
 	| RequestPushTag
@@ -541,6 +552,7 @@ export type ResponseMessage =
 	| ResponseLoadRepos
 	| ResponseMergeBranch
 	| ResponseMergeCommit
+	| ResponseOpenFile
 	| ResponsePullBranch
 	| ResponsePushBranch
 	| ResponsePushTag

@@ -258,8 +258,13 @@ export class DataSource {
 		return this.runGitCommand('branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName), repo);
 	}
 
-	public deleteRemoteBranch(repo: string, branchName: string, remote: string) {
-		return this.runGitCommand('push ' + escapeRefName(remote) + ' --delete ' + escapeRefName(branchName), repo);
+	public async deleteRemoteBranch(repo: string, branchName: string, remote: string) {
+		let remoteStatus = await this.runGitCommand('push ' + escapeRefName(remote) + ' --delete ' + escapeRefName(branchName), repo);
+		if (remoteStatus !== null && (new RegExp('remote ref does not exist', 'i')).test(remoteStatus)) {
+			let trackingBranchStatus = await this.runGitCommand('branch -d -r ' + escapeRefName(remote + '/' + branchName), repo);
+			return trackingBranchStatus === null ? null : 'Branch does not exist on the remote, deleting the remote tracking branch ' + remote + '/' + branchName + '.\n' + trackingBranchStatus;
+		}
+		return remoteStatus;
 	}
 
 	public renameBranch(repo: string, oldName: string, newName: string) {

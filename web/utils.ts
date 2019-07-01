@@ -34,6 +34,7 @@ const htmlUnescapes: { [key: string]: string } = { '&amp;': '&', '&lt;': '<', '&
 const htmlEscaper = /[&<>"'\/]/g;
 const htmlUnescaper = /&lt;|&gt;|&amp;|&quot;|&#x27;|&#x2F;/g;
 const refInvalid = /^[-\/].*|[\\" ><~^:?*[]|\.\.|\/\/|\/\.|@{|[.\/]$|\.lock$|^@$/g;
+const ENCLOSING_GROUPS: { [close: string]: string } = { ')': '(', ']': '[', '}': '{', '>': '<' };
 
 const ELLIPSIS = '&#8230;';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -116,9 +117,35 @@ function unescapeHtml(str: string) {
 
 /* Formatters */
 function formatText(str: string) {
-	return escapeHtml(str.replace(EMOJI_SHORTCODE_REGEX, (match, shortcode) => typeof EMOJI_MAPPINGS[shortcode] === 'string' ? EMOJI_MAPPINGS[shortcode] : match));
+	let urlRegexp = /https?:\/\/\S+[^,.?!'":;\s]/gu, match: RegExpExecArray | null, matchEnd = 0, outStr = '';
+	while (match = urlRegexp.exec(str)) {
+		if (matchEnd !== match.index) {
+			// Output the text before the url match
+			outStr += escapeHtml(substituteEmojis(str.substring(matchEnd, match.index)));
+		}
+		matchEnd = urlRegexp.lastIndex;
+
+		// Correct urls which are enclosed with: (), [], {} or <>
+		let url = match[0];
+		let suffix = url.substring(url.length - 1);
+		if (match.index > 0 && typeof ENCLOSING_GROUPS[suffix] === 'string' && str.substring(match.index - 1, match.index) === ENCLOSING_GROUPS[suffix]) {
+			url = url.substring(0, url.length - 1);
+		} else {
+			suffix = '';
+		}
+
+		let escapedUrl = escapeHtml(url);
+		// Output the detected url
+		outStr += '<a href="' + escapedUrl + '" target="_blank">' + escapedUrl + '</a>' + escapeHtml(suffix);
+	}
+
+	// Return the output string, followed by any text after the last match
+	return outStr + escapeHtml(substituteEmojis(str.substring(matchEnd)));
 }
 
+function substituteEmojis(str: string) {
+	return str.replace(EMOJI_SHORTCODE_REGEX, (match, shortcode) => typeof EMOJI_MAPPINGS[shortcode] === 'string' ? EMOJI_MAPPINGS[shortcode] : match);
+}
 function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[]) {
 	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
 	for (let i = 0; i < mappings.length; i++) {

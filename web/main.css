@@ -298,6 +298,9 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .openGitFile svg{
 	fill:var(--vscode-editor-foreground);
 	fill-opacity:0.6;
 }
+.gitFolder:hover svg.openFolderIcon, .gitFolder:hover svg.closedFolderIcon, .gitFileRecord:hover svg.fileIcon, .openGitFile:hover svg{
+	fill-opacity:0.8;
+}
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	width:13px;
 }
@@ -682,6 +685,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	margin-top:10px;
 	text-align:left;
 	width:100%;
+	word-wrap:break-word;
 }
 #dialogBacking.active{
 	display:block;

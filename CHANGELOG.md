@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.10.0 - 2019-07-02
+* #108 New button to open any file displayed in the Commit Details View or Commit Comparison View file trees (to the right of each file).
+* #114 Prompt the user for remote credentials if they are requested by commands that communicate with a remote (askpass).
+* #115 When running the "Delete Remote Branch..." action and the branch doesn't exist on the remote (i.e. it was already deleted), automatically delete the remote tracking branch instead of showing an error message.
+* #116 Detect and generate links for HTTP/HTTPS urls in the commit body on the Commit Details View, so they can be clicked and opened in your default web browser.
+* Various minor UI improvements to the Commit Details View and Commit Comparison View file trees.
+
 ## 1.9.0 - 2019-06-23
 * #31 Find widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names). The find widget can be activated by the new find icon on the top right control bar, or from the new `CTRL/CMD + f` keystroke.
 * #98 New "Pull into current branch..." action available from the remote branch context menu.

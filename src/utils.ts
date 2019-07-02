@@ -58,7 +58,7 @@ export function openFile(repo: string, filePath: string) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
 					.then(() => resolve(null), () => resolve('Visual Studio Code was unable to open ' + filePath + '.'));
 			} else {
-				resolve(filePath + ' no longer exists in this repository.');
+				resolve('The file ' + filePath + ' doesn\'t currently exist in this repository.');
 			}
 		});
 	});

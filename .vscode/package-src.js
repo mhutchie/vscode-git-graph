@@ -3,10 +3,10 @@ const fs = require('fs');
 
 const SRC_DIRECTORY = './src/';
 const OUT_DIRECTORY = './out/';
+const ASKPASS_DIRECTORY = '/askpass';
 
-let askpassFiles = fs.readdirSync(SRC_DIRECTORY + '/askpass');
-for (let i = 0; i < askpassFiles.length; i++) {
-	if (!askpassFiles[i].endsWith('.ts')) {
-		fs.writeFileSync(OUT_DIRECTORY + '/askpass/' + askpassFiles[i], fs.readFileSync(SRC_DIRECTORY + '/askpass/' + askpassFiles[i]).toString());
+fs.readdirSync(SRC_DIRECTORY + ASKPASS_DIRECTORY).forEach(filename => {
+	if (!filename.endsWith('.ts')) {
+		fs.writeFileSync(OUT_DIRECTORY + ASKPASS_DIRECTORY + '/' + filename, fs.readFileSync(SRC_DIRECTORY + ASKPASS_DIRECTORY + '/' + filename).toString());
 	}
-}
+});

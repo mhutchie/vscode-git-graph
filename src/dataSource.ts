@@ -1,5 +1,4 @@
 import * as cp from 'child_process';
-import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
@@ -14,15 +13,14 @@ export class DataSource {
 	private gitExecPath!: string;
 	private gitLogFormat!: string;
 	private gitCommitDetailsFormat!: string;
+	private askpassManager: AskpassManager;
 	private askpassEnv: AskpassEnvironment;
 
-	constructor(context: vscode.ExtensionContext) {
+	constructor() {
 		this.registerGitPath();
 		this.generateGitCommandFormats();
-
-		const askpassManager = new AskpassManager();
-		this.askpassEnv = askpassManager.getEnv();
-		context.subscriptions.push(askpassManager);
+		this.askpassManager = new AskpassManager();
+		this.askpassEnv = this.askpassManager.getEnv();
 	}
 
 	public registerGitPath() {
@@ -34,6 +32,10 @@ export class DataSource {
 		let dateType = getConfig().dateType() === 'Author Date' ? '%at' : '%ct';
 		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(gitLogSeparator);
 		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(gitLogSeparator) + '%n%B';
+	}
+
+	public dispose() {
+		this.askpassManager.dispose();
 	}
 
 	public getBranches(repo: string, showRemoteBranches: boolean) {

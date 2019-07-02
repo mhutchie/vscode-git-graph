@@ -11,7 +11,7 @@ import { getPathFromUri, isPathInWorkspace } from './utils';
 
 export function activate(context: vscode.ExtensionContext) {
 	const extensionState = new ExtensionState(context);
-	const dataSource = new DataSource(context);
+	const dataSource = new DataSource();
 	const avatarManager = new AvatarManager(dataSource, extensionState);
 	const statusBarItem = new StatusBarItem(context);
 	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem);
@@ -71,6 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
 				dataSource.registerGitPath();
 			}
 		}),
+		dataSource,
 		repoManager
 	);
 }

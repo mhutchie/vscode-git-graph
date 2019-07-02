@@ -34,7 +34,7 @@ function main(argv: string[]): void {
 				let response = JSON.parse(resData);
 				fs.writeFileSync(output, response + '\n');
 			} catch (err) {
-				return fatal(`Error parsing response`);
+				return fatal('Error parsing response');
 			}
 			setTimeout(() => process.exit(0), 0);
 		});

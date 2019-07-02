@@ -17,18 +17,16 @@ const DEBUG = process.argv.length > 2 && process.argv[2] === 'debug';
 
 // Determine the JS files to be packaged. The order is: utils.ts, *.ts, and then main.ts
 let packageJsFiles = [MEDIA_DIRECTORY + UTILS_JS_FILE];
-let mediaFiles = fs.readdirSync(MEDIA_DIRECTORY);
-for (let i = 0; i < mediaFiles.length; i++) {
-	if (mediaFiles[i].endsWith('.js') && mediaFiles[i] !== OUTPUT_MIN_JS_FILE && mediaFiles[i] !== UTILS_JS_FILE && mediaFiles[i] !== MAIN_JS_FILE) packageJsFiles.push(MEDIA_DIRECTORY + mediaFiles[i]);
-}
+fs.readdirSync(MEDIA_DIRECTORY).forEach(filename => {
+	if (filename.endsWith('.js') && filename !== OUTPUT_MIN_JS_FILE && filename !== UTILS_JS_FILE && filename !== MAIN_JS_FILE) packageJsFiles.push(MEDIA_DIRECTORY + filename);
+});
 packageJsFiles.push(MEDIA_DIRECTORY + MAIN_JS_FILE);
 
 // Determine the CSS files to be packaged. The order is: main.css, and then *.css
 let packageCssFiles = [WEB_DIRECTORY + MAIN_CSS_FILE];
-let webFiles = fs.readdirSync(WEB_DIRECTORY);
-for (let i = 0; i < webFiles.length; i++) {
-	if (webFiles[i].endsWith('.css') && webFiles[i] !== MAIN_CSS_FILE) packageCssFiles.push(WEB_DIRECTORY + webFiles[i]);
-}
+fs.readdirSync(WEB_DIRECTORY).forEach(filename => {
+	if (filename.endsWith('.css') && filename !== MAIN_CSS_FILE) packageCssFiles.push(WEB_DIRECTORY + filename);
+});
 
 // Log packaging information
 console.log('Packaging CSS files: ' + packageCssFiles.join(', '));
@@ -38,10 +36,10 @@ if (DEBUG) console.log('Debug Mode = ON');
 
 // Combine the JS files into an IIFE, with a single "use strict" directive
 let jsFileContents = '';
-for (let i = 0; i < packageJsFiles.length; i++) {
-	jsFileContents += fs.readFileSync(packageJsFiles[i]).toString().replace('"use strict";\r\n', '') + '\r\n';
-	fs.unlinkSync(packageJsFiles[i])
-}
+packageJsFiles.forEach(filename => {
+	jsFileContents += fs.readFileSync(filename).toString().replace('"use strict";\r\n', '') + '\r\n';
+	fs.unlinkSync(filename);
+});
 fs.writeFileSync(MEDIA_DIRECTORY + OUTPUT_TMP_JS_FILE, '"use strict";\r\n(function(document, window){\r\n' + jsFileContents + '})(document, window);\r\n');
 
 
@@ -64,8 +62,8 @@ cp.exec('uglifyjs ' + MEDIA_DIRECTORY + OUTPUT_TMP_JS_FILE + ' ' + (DEBUG ? '-b'
 
 // Combine the CSS files
 let cssFileContents = '';
-for (let i = 0; i < packageCssFiles.length; i++) {
-	let contents = fs.readFileSync(packageCssFiles[i]).toString();
+packageCssFiles.forEach(filename => {
+	let contents = fs.readFileSync(filename).toString();
 	if (DEBUG) {
 		cssFileContents += contents + '\r\n';
 	} else {
@@ -83,6 +81,5 @@ for (let i = 0; i < packageCssFiles.length; i++) {
 		}
 		cssFileContents += lines.join('');
 	}
-
-}
+});
 fs.writeFileSync(MEDIA_DIRECTORY + OUTPUT_MIN_CSS_FILE, cssFileContents);

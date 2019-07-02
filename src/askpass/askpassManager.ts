@@ -40,8 +40,8 @@ export class AskpassManager implements vscode.Disposable {
 		} catch (err) {
 			this.enabled = false;
 		}
-		fs.chmod(path.join(__dirname, 'askpass.sh'), '755', () => {});
-		fs.chmod(path.join(__dirname, 'askpass-empty.sh'), '755', () => {});
+		fs.chmod(path.join(__dirname, 'askpass.sh'), '755', () => { });
+		fs.chmod(path.join(__dirname, 'askpass-empty.sh'), '755', () => { });
 	}
 
 	private onRequest(req: http.IncomingMessage, res: http.ServerResponse): void {

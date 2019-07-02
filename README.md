@@ -11,11 +11,6 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Local & Remote Branches
         * Local Refs: Heads, Tags & Remotes
         * Uncommitted Changes
-    * View commit details and file changes by clicking on a commit
-        * View the Visual Studio Code Diff of any file change by clicking on it in the Commit Details View.
-    * Compare commits by clicking on a commit, and then CTRL/CMD clicking on another commit
-        * View the Visual Studio Code Diff of any file change between the selected commits by clicking on the desired file in the Commit Details View.
-    * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
         * Create, Checkout, Rename, Delete, Merge, Push, Pull & Rebase branches
         * Add, Delete & Push tags
@@ -23,6 +18,14 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Reset current branch to commit
         * Reset & Clean uncommitted changes
         * Copy commit hashes, tag names & branch names to the clipboard
+    * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
+        * View the Visual Studio Code Diff of any file change by clicking on it.
+        * Open the current version of any file that was affected in the commit.
+        * Click on any HTTP/HTTPS url in the commit body to open it in your default web browser.
+    * Compare any two commits by clicking on a commit, and then CTRL/CMD clicking on another commit. On the Commit Comparison View you can:
+        * View the Visual Studio Code Diff of any file change between the selected commits by clicking on it.
+        * Open the current version of any file that was affected between the selected commits.
+    * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Filter the branches shown in Git Graph using the 'Branches' dropdown menu. The options for filtering the branches are:
         * Show All branches
         * Select one or more branches to be viewed

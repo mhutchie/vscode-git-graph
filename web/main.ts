@@ -544,8 +544,11 @@ class GitGraphView {
 					{
 						title: 'Create Branch' + ELLIPSIS,
 						onClick: () => {
-							showRefInputDialog('Enter the name of the branch you would like to create from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', '', 'Create Branch', (name) => {
-								runAction({ command: 'createBranch', repo: this.currentRepo, branchName: name, commitHash: hash }, 'Creating Branch');
+							showFormDialog('Create branch from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
+								{ type: 'checkbox', name: 'Check out: ', value: false }
+							], 'Create Branch', values => {
+								runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');
 							}, sourceElem);
 						}
 					},

@@ -152,7 +152,7 @@ export class GitGraphView {
 				case 'createBranch':
 					this.sendMessage({
 						command: 'createBranch',
-						error: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash)
+						error: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash, msg.checkout)
 					});
 					break;
 				case 'deleteBranch':

@@ -244,8 +244,8 @@ export class DataSource {
 		return this.runGitCommand('push ' + escapeRefName(remote) + ' ' + escapeRefName(tagName), repo);
 	}
 
-	public createBranch(repo: string, branchName: string, commitHash: string) {
-		return this.runGitCommand('branch ' + escapeRefName(branchName) + ' ' + commitHash, repo);
+	public createBranch(repo: string, branchName: string, commitHash: string, checkout: boolean) {
+		return this.runGitCommand((checkout ? 'checkout -b ' : 'branch ') + escapeRefName(branchName) + ' ' + commitHash, repo);
 	}
 
 	public checkoutBranch(repo: string, branchName: string, remoteBranch: string | null) {

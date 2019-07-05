@@ -246,6 +246,7 @@ export interface RequestCreateBranch {
 	repo: string;
 	commitHash: string;
 	branchName: string;
+	checkout: boolean;
 }
 export interface ResponseCreateBranch {
 	command: 'createBranch';

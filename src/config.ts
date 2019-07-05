@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateType, DefaultColumnVisibility, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateType, DefaultColumnVisibility, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private workspaceConfiguration: vscode.WorkspaceConfiguration;
@@ -18,6 +18,11 @@ class Config {
 
 	public commitDetailsViewLocation(): CommitDetailsViewLocation {
 		return this.workspaceConfiguration.get('commitDetailsViewLocation', 'Inline');
+	}
+
+	public commitOrdering(): CommitOrdering {
+		const ordering = this.workspaceConfiguration.get('commitOrdering', 'date');
+		return ordering === 'date' || ordering === 'author-date' || ordering === 'topo' ? ordering : 'date';
 	}
 
 	public customBranchGlobPatterns(): CustomBranchGlobPattern[] {

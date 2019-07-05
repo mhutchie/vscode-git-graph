@@ -73,6 +73,21 @@
 					"default": true,
 					"description": "Combine local and remote branch labels if they refer to the same branch, and are on the same commit."
 				},
+				"git-graph.commitOrdering": {
+					"type": "string",
+					"enum": [
+						"date",
+						"author-date",
+						"topo"
+					],
+					"enumDescriptions": [
+						"Show commits in the commit timestamp order.",
+						"Show commits in the author timestamp order.",
+						"Avoid showing commits on multiple lines of history intermixed."
+					],
+					"default": "date",
+					"markdownDescription": "Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option."
+				},
 				"git-graph.commitDetailsViewLocation": {
 					"type": "string",
 					"enum": [

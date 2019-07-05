@@ -1,7 +1,7 @@
 import * as cp from 'child_process';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
-import { DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
+import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const eolRegex = /\r\n|\r|\n/g;
@@ -66,9 +66,10 @@ export class DataSource {
 	}
 
 	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean) {
+		const config = getConfig();
 		return new Promise<GitCommitData>(resolve => {
 			Promise.all([
-				this.getGitLog(repo, branches, maxCommits + 1, showRemoteBranches),
+				this.getGitLog(repo, branches, maxCommits + 1, showRemoteBranches, config.commitOrdering()),
 				this.getRefs(repo, showRemoteBranches).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 				this.getRemotes(repo)
 			]).then(async (results) => {
@@ -91,7 +92,7 @@ export class DataSource {
 				if (refData.head !== null) {
 					for (i = 0; i < commits.length; i++) {
 						if (refData.head === commits[i].hash) {
-							unsavedChanges = getConfig().showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
+							unsavedChanges = config.showUncommittedChanges() ? await this.getGitUnsavedChanges(repo) : null;
 							if (unsavedChanges !== null) {
 								commits.unshift({ hash: UNCOMMITTED, parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 							}
@@ -372,8 +373,8 @@ export class DataSource {
 		});
 	}
 
-	private getGitLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean) {
-		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--date-order'];
+	private getGitLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean, order: CommitOrdering) {
+		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--' + order + '-order'];
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
 				args.push(escapeRefName(branches[i]));

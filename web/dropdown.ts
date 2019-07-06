@@ -146,7 +146,7 @@ class Dropdown {
 		this.currentValueElem.innerHTML = this.getCurrentValueText();
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
-			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '">' + (this.multipleAllowed && this.optionsSelected[i] ? '<div class="dropdownOptionMultiSelected">' + svgIcons.check + '</div>' : '') + escapeHtml(this.options[i].name) + (this.showInfo ? '<div class="dropdownOptionInfo" title="' + escapeHtml(this.options[i].value) + '">' + svgIcons.info + '</div>' : '') + '</div>';
+			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '">' + (this.multipleAllowed && this.optionsSelected[i] ? '<div class="dropdownOptionMultiSelected">' + SVG_ICONS.check + '</div>' : '') + escapeHtml(this.options[i].name) + (this.showInfo ? '<div class="dropdownOptionInfo" title="' + escapeHtml(this.options[i].value) + '">' + SVG_ICONS.info + '</div>' : '') + '</div>';
 		}
 		this.optionsElem.className = 'dropdownOptions' + (this.showInfo ? ' showInfo' : '');
 		this.optionsElem.innerHTML = html;

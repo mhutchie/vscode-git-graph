@@ -251,6 +251,7 @@ class Graph {
 		this.vertices = [];
 		this.branches = [];
 		this.availableColours = [];
+		if (commits.length === 0) return;
 
 		let i: number, j: number;
 		for (i = 0; i < commits.length; i++) {
@@ -264,13 +265,11 @@ class Graph {
 			}
 		}
 
-		if (commits.length > 0) {
-			if (commits[0].hash === '*') {
-				this.vertices[0].setCurrent();
-				this.vertices[0].setNotCommited();
-			} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
-				this.vertices[commitLookup[commitHead]].setCurrent();
-			}
+		if (commits[0].hash === '*') {
+			this.vertices[0].setCurrent();
+			this.vertices[0].setNotCommited();
+		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
+			this.vertices[commitLookup[commitHead]].setCurrent();
 		}
 
 		while ((i = this.findStart()) !== -1) {

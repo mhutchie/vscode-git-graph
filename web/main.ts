@@ -103,11 +103,11 @@ class GitGraphView {
 		}
 
 		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!;
-		fetchBtn.innerHTML = svgIcons.download;
+		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => {
 			runAction({ command: 'fetch', repo: this.currentRepo }, 'Fetching from Remote(s)');
 		});
-		findBtn.innerHTML = svgIcons.search;
+		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 	}
 
@@ -146,7 +146,7 @@ class GitGraphView {
 		this.showRemoteBranchesElem.checked = this.gitRepos[this.currentRepo].showRemoteBranches;
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitRemotes = [];
-		alterClass(this.controlsElem, 'fetchSupported', false);
+		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, false);
 		this.closeCommitDetails(false);
 		this.currentBranches = null;
 		this.saveState();
@@ -370,7 +370,7 @@ class GitGraphView {
 
 	/* State */
 	public saveState() {
-		vscode.setState({
+		VSCODE_API.setState({
 			gitRepos: this.gitRepos,
 			gitBranches: this.gitBranches,
 			gitBranchHead: this.gitBranchHead,
@@ -393,7 +393,7 @@ class GitGraphView {
 
 	/* Renderers */
 	private render() {
-		alterClass(this.controlsElem, 'fetchSupported', this.gitRemotes.length > 0);
+		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, this.gitRemotes.length > 0);
 		this.renderTable();
 		this.renderGraph();
 	}
@@ -422,7 +422,7 @@ class GitGraphView {
 			for (j = 0; j < branchLabels.heads.length; j++) {
 				refName = escapeHtml(branchLabels.heads[j].name);
 				refActive = branchLabels.heads[j].name === this.gitBranchHead;
-				refHtml = '<span class="gitRef head' + (refActive ? ' active' : '') + '" data-name="' + refName + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span>';
+				refHtml = '<span class="gitRef head' + (refActive ? ' active' : '') + '" data-name="' + refName + '">' + SVG_ICONS.branch + '<span class="gitRefName">' + refName + '</span>';
 				for (k = 0; k < branchLabels.heads[j].remotes.length; k++) {
 					remoteName = escapeHtml(branchLabels.heads[j].remotes[k]);
 					refHtml += '<span class="gitRefHeadRemote" data-remote="' + remoteName + '">' + remoteName + '</span>';
@@ -432,11 +432,11 @@ class GitGraphView {
 			}
 			for (j = 0; j < branchLabels.remotes.length; j++) {
 				refName = escapeHtml(branchLabels.remotes[j].name);
-				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + (branchLabels.remotes[j].remote !== null ? escapeHtml(branchLabels.remotes[j].remote!) : '') + '">' + svgIcons.branch + '<span class="gitRefName">' + refName + '</span></span>';
+				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + (branchLabels.remotes[j].remote !== null ? escapeHtml(branchLabels.remotes[j].remote!) : '') + '">' + SVG_ICONS.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			for (j = 0; j < commit.tags.length; j++) {
 				refName = escapeHtml(commit.tags[j]);
-				refTags += '<span class="gitRef tag" data-name="' + refName + '">' + svgIcons.tag + '<span class="gitRefName">' + refName + '</span></span>';
+				refTags += '<span class="gitRef tag" data-name="' + refName + '">' + SVG_ICONS.tag + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
@@ -454,7 +454,7 @@ class GitGraphView {
 
 		if (this.moreCommitsAvailable) {
 			document.getElementById('loadMoreCommitsBtn')!.addEventListener('click', () => {
-				this.footerElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
+				this.footerElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
 				this.maxCommits += this.config.loadMoreCommits;
 				this.closeCommitDetails(true);
 				this.saveState();
@@ -854,13 +854,13 @@ class GitGraphView {
 	private renderShowLoading() {
 		hideDialogAndContextMenu();
 		this.graph.clear();
-		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + svgIcons.loading + 'Loading ...</h2>';
+		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
 		this.footerElem.innerHTML = '';
 		this.findWidget.update([]);
 	}
 	public renderRefreshButton(enabled: boolean) {
 		this.refreshBtnElem.title = enabled ? 'Refresh' : 'Refreshing';
-		this.refreshBtnElem.innerHTML = enabled ? svgIcons.refresh : svgIcons.loading;
+		this.refreshBtnElem.innerHTML = enabled ? SVG_ICONS.refresh : SVG_ICONS.loading;
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
 	}
 
@@ -1086,15 +1086,15 @@ class GitGraphView {
 					if (e.key === 'Escape') {
 						this.closeCommitDetails(true);
 					} else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-						let hashIndex = -1;
-						if (e.key === 'ArrowUp' && this.commitLookup[this.expandedCommit.hash] > 0) {
-							hashIndex = this.commitLookup[this.expandedCommit.hash] - 1;
-						} else if (e.key === 'ArrowDown' && this.commitLookup[this.expandedCommit.hash] < this.commits.length - 1) {
-							hashIndex = this.commitLookup[this.expandedCommit.hash] + 1;
+						let curHashIndex = this.commitLookup[this.expandedCommit.hash], newHashIndex = -1;
+						if (e.key === 'ArrowUp' && curHashIndex > 0) {
+							newHashIndex = curHashIndex - 1;
+						} else if (e.key === 'ArrowDown' && curHashIndex < this.commits.length - 1) {
+							newHashIndex = curHashIndex + 1;
 						}
-						if (hashIndex > -1) {
+						if (newHashIndex > -1) {
 							e.preventDefault();
-							let hash = this.commits[hashIndex].hash, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+							let hash = this.commits[newHashIndex].hash, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
 							for (let i = 0; i < elems.length; i++) {
 								if (hash === elems[i].dataset.hash) {
 									this.loadCommitDetails(elems[i]);
@@ -1215,7 +1215,7 @@ class GitGraphView {
 			insertAfter(elem, expandedCommit.srcElem);
 		}
 		if (expandedCommit.loading) {
-			html += '<div id="commitDetailsLoading">' + svgIcons.loading + ' Loading ' + (expandedCommit.compareWithHash === null ? expandedCommit.hash !== UNCOMMITTED ? 'Commit Details' : 'Uncommitted Changes' : 'Commit Comparison') + ' ...</div>';
+			html += '<div id="commitDetailsLoading">' + SVG_ICONS.loading + ' Loading ' + (expandedCommit.compareWithHash === null ? expandedCommit.hash !== UNCOMMITTED ? 'Commit Details' : 'Uncommitted Changes' : 'Commit Comparison') + ' ...</div>';
 			if (expandedCommit.compareWithHash === null) this.renderGraph();
 		} else {
 			html += '<div id="commitDetailsSummary">';
@@ -1243,7 +1243,7 @@ class GitGraphView {
 			}
 			html += '</div><div id="commitDetailsFiles">' + generateGitFileTreeHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!) + '</div>';
 		}
-		html += '<div id="commitDetailsClose" title="Close">' + svgIcons.close + '</div>';
+		html += '<div id="commitDetailsClose" title="Close">' + SVG_ICONS.close + '</div>';
 
 		elem.innerHTML = isDocked ? html : '<td></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
 		if (isDocked) document.body.classList.add(CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN);
@@ -1284,7 +1284,7 @@ class GitGraphView {
 			let parent = sourceElem.parentElement!;
 			parent.classList.toggle('closed');
 			let isOpen = !parent.classList.contains('closed');
-			parent.children[0].children[0].innerHTML = isOpen ? svgIcons.openFolder : svgIcons.closedFolder;
+			parent.children[0].children[0].innerHTML = isOpen ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder;
 			parent.children[1].classList.toggle('hidden');
 			alterGitFileTree(expandedCommit.fileTree!, decodeURIComponent(sourceElem.dataset.folderpath!), isOpen);
 			this.saveState();
@@ -1349,7 +1349,7 @@ window.addEventListener('load', () => {
 		muteMergeCommits: viewState.muteMergeCommits,
 		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
 		tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
-	}, vscode.getState());
+	}, VSCODE_API.getState());
 
 	/* Command Processing */
 	window.addEventListener('message', event => {
@@ -1495,7 +1495,7 @@ window.addEventListener('load', () => {
 /* Dates */
 function getCommitDate(dateVal: number) {
 	let date = new Date(dateVal * 1000), value;
-	let dateStr = date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+	let dateStr = date.getDate() + ' ' + MONTHS[date.getMonth()] + ' ' + date.getFullYear();
 	let timeStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
 
 	switch (viewState.dateFormat) {
@@ -1557,7 +1557,7 @@ function generateGitFileTree(gitFiles: GG.GitFileChange[]) {
 	return files;
 }
 function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GG.GitFileChange[]) {
-	let html = (folder.name !== '' ? '<span class="gitFolder" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="gitFolderIcon">' + (folder.open ? svgIcons.openFolder : svgIcons.closedFolder) + '</span><span class="gitFolderName">' + folder.name + '</span></span>' : '') + '<ul class="gitFolderContents' + (!folder.open ? ' hidden' : '') + '">', keys = Object.keys(folder.contents), i, gitFile, gitFolder, diffPossible;
+	let html = (folder.name !== '' ? '<span class="gitFolder" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="gitFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + folder.name + '</span></span>' : '') + '<ul class="gitFolderContents' + (!folder.open ? ' hidden' : '') + '">', keys = Object.keys(folder.contents), i, gitFile, gitFolder, diffPossible;
 	keys.sort((a, b) => folder.contents[a].type === 'folder' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type === 'folder' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
 	for (i = 0; i < keys.length; i++) {
 		if (folder.contents[keys[i]].type === 'folder') {
@@ -1566,9 +1566,9 @@ function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GG.GitFileChange[]
 		} else {
 			gitFile = gitFiles[(<GitFile>(folder.contents[keys[i]])).index];
 			diffPossible = gitFile.type === 'U' || (gitFile.additions !== null && gitFile.deletions !== null);
-			html += '<li><span class="gitFileRecord"><span class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff (this is a binary file)') + ' • ' + GIT_FILE_CHANGE_TYPES[gitFile.type] + (gitFile.type === 'R' ? ' (' + escapeHtml(gitFile.oldFilePath) + ' → ' + escapeHtml(gitFile.newFilePath) + ')' : '') + '"><span class="gitFileIcon">' + svgIcons.file + '</span>' + folder.contents[keys[i]].name + '</span>' +
+			html += '<li><span class="gitFileRecord"><span class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff (this is a binary file)') + ' • ' + GIT_FILE_CHANGE_TYPES[gitFile.type] + (gitFile.type === 'R' ? ' (' + escapeHtml(gitFile.oldFilePath) + ' → ' + escapeHtml(gitFile.newFilePath) + ')' : '') + '"><span class="gitFileIcon">' + SVG_ICONS.file + '</span>' + folder.contents[keys[i]].name + '</span>' +
 				(gitFile.type !== 'A' && gitFile.type !== 'U' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') +
-				(gitFile.type !== 'D' ? '<span class="openGitFile" title="Click to Open File" data-filepath="' + encodeURIComponent(gitFile.newFilePath) + '">' + svgIcons.openFile + '</span>' : '') + '</span></li>';
+				(gitFile.type !== 'D' ? '<span class="openGitFile" title="Click to Open File" data-filepath="' + encodeURIComponent(gitFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
 		}
 	}
 	return html + '</ul>';
@@ -1603,7 +1603,7 @@ function abbrevCommit(commitHash: string) {
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {
-	showDialog(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + svgIcons.loading + action + ' ...</span>', null, 'Dismiss', null, null);
+	showDialog(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null);
 	sendMessage(msg);
 }
 
@@ -1660,7 +1660,7 @@ function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem:
 }
 function showCheckedContextMenu(e: MouseEvent, items: ContextMenuItem[], sourceElem: HTMLElement | null) {
 	for (let i = 0; i < items.length; i++) {
-		items[i].title = '<span class="contextMenuItemCheck">' + (items[i].checked ? svgIcons.check : '') + '</span>' + items[i].title;
+		items[i].title = '<span class="contextMenuItemCheck">' + (items[i].checked ? SVG_ICONS.check : '') + '</span>' + items[i].title;
 	}
 	showContextMenu(e, items, sourceElem);
 	contextMenu.classList.add('checked');
@@ -1749,7 +1749,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 		if (dialogInput.value === '') dialog.className = CLASS_ACTIVE + ' noInput';
 		dialogInput.focus();
 		dialogInput.addEventListener('keyup', () => {
-			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(refInvalid) !== null;
+			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
 			let newClassName = CLASS_ACTIVE + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
 			if (dialog.className !== newClassName) {
 				dialog.className = newClassName;
@@ -1759,7 +1759,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	}
 }
 function showErrorDialog(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-	showDialog(ERROR_DIALOG, svgIcons.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, sourceElem);
+	showDialog(ERROR_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, sourceElem);
 }
 function showDialog(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
 	hideDialogAndContextMenu();

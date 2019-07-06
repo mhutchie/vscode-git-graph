@@ -73,16 +73,16 @@ class FindWidget {
 
 		this.prevElem = document.getElementById('findPrev')!;
 		this.prevElem.classList.add(CLASS_DISABLED);
-		this.prevElem.innerHTML = svgIcons.arrowLeft;
+		this.prevElem.innerHTML = SVG_ICONS.arrowLeft;
 		this.prevElem.addEventListener('click', () => this.prev());
 
 		this.nextElem = document.getElementById('findNext')!;
 		this.nextElem.classList.add(CLASS_DISABLED);
-		this.nextElem.innerHTML = svgIcons.arrowRight;
+		this.nextElem.innerHTML = SVG_ICONS.arrowRight;
 		this.nextElem.addEventListener('click', () => this.next());
 
 		const findClose = document.getElementById('findClose')!;
-		findClose.innerHTML = svgIcons.close;
+		findClose.innerHTML = SVG_ICONS.close;
 		findClose.addEventListener('click', () => this.close());
 	}
 

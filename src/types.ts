@@ -72,6 +72,7 @@ export interface GitRefData {
 export type GitRepoSet = { [repo: string]: GitRepoState };
 export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
+	showRemoteBranches: boolean;
 }
 export type ColumnWidth = number;
 

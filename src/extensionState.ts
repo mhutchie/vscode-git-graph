@@ -1,12 +1,17 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
-import { Avatar, AvatarCache, GitRepoSet } from './types';
+import { Avatar, AvatarCache, GitRepoSet, GitRepoState } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
 const REPO_STATES = 'repoStates';
+
+export const DEFAULT_REPO_STATE: GitRepoState = {
+	columnWidths: null,
+	showRemoteBranches: true
+};
 
 export class ExtensionState {
 	private globalState: Memento;
@@ -34,7 +39,11 @@ export class ExtensionState {
 
 	/* Discovered Repos */
 	public getRepos() {
-		return this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
+		const repoSet = this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
+		Object.keys(repoSet).forEach(repo => {
+			repoSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
+		});
+		return repoSet;
 	}
 	public saveRepos(gitRepoSet: GitRepoSet) {
 		this.workspaceState.update(REPO_STATES, gitRepoSet);

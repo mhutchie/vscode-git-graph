@@ -132,7 +132,6 @@ declare global {
 		currentRepo: string;
 		moreCommitsAvailable: boolean;
 		maxCommits: number;
-		showRemoteBranches: boolean;
 		expandedCommit: ExpandedCommit | null;
 		scrollTop: number;
 		findWidget: FindWidgetState;

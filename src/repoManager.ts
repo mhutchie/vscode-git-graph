@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { ExtensionState } from './extensionState';
+import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri } from './utils';
@@ -150,7 +150,7 @@ export class RepoManager {
 		return typeof this.repos[repo] !== 'undefined';
 	}
 	private addRepo(repo: string) {
-		this.repos[repo] = { columnWidths: null };
+		this.repos[repo] = Object.assign({}, DEFAULT_REPO_STATE);
 		this.extensionState.saveRepos(this.repos);
 	}
 	private removeRepo(repo: string) {

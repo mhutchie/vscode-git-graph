@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { getPathFromUri } from './utils';
 
-const fileChangeRegex = /(^\.git\/(config|index|HEAD|refs\/stash|refs\/heads\/.*|refs\/remotes\/.*|refs\/tags\/.*)$)|(^(?!\.git).*$)|(^\.git[^\/]+$)/;
+const FILE_CHANGE_REGEX = /(^\.git\/(config|index|HEAD|refs\/stash|refs\/heads\/.*|refs\/remotes\/.*|refs\/tags\/.*)$)|(^(?!\.git).*$)|(^\.git[^\/]+$)/;
 
 export class RepoFileWatcher {
 	private repo: string | null = null;
@@ -17,10 +17,12 @@ export class RepoFileWatcher {
 
 	public start(repo: string) {
 		if (this.fsWatcher !== null) {
+			// If there is an existing File System Watcher, stop it
 			this.stop();
 		}
 
 		this.repo = repo;
+		// Create a File System Watcher for all events within the specified repository
 		this.fsWatcher = vscode.workspace.createFileSystemWatcher(repo + '/**');
 		this.fsWatcher.onDidCreate(uri => this.refresh(uri));
 		this.fsWatcher.onDidChange(uri => this.refresh(uri));
@@ -29,23 +31,30 @@ export class RepoFileWatcher {
 
 	public stop() {
 		if (this.fsWatcher !== null) {
+			// If there is an existing File System Watcher, stop it
 			this.fsWatcher.dispose();
 			this.fsWatcher = null;
 		}
+		if (this.refreshTimeout !== null) {
+			// If a timeout is active, clear it
+			clearTimeout(this.refreshTimeout);
+			this.refreshTimeout = null;
+		}
 	}
 
+	// Mute and unmute events - used to prevent many change events being triggered when git actions are run via the Git Graph view
 	public mute() {
 		this.muted = true;
 	}
-
 	public unmute() {
 		this.muted = false;
 		this.resumeAt = (new Date()).getTime() + 1500;
 	}
 
+	// Handle an event detected by the File System Watcher
 	private async refresh(uri: vscode.Uri) {
 		if (this.muted) return;
-		if (!getPathFromUri(uri).replace(this.repo + '/', '').match(fileChangeRegex)) return;
+		if (!getPathFromUri(uri).replace(this.repo + '/', '').match(FILE_CHANGE_REGEX)) return;
 		if ((new Date()).getTime() < this.resumeAt) return;
 
 		if (this.refreshTimeout !== null) {

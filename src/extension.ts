@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const extensionState = new ExtensionState(context);
 	const dataSource = new DataSource();
 	const avatarManager = new AvatarManager(dataSource, extensionState);
-	const statusBarItem = new StatusBarItem(context);
+	const statusBarItem = new StatusBarItem();
 	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem);
 
 	context.subscriptions.push(
@@ -71,8 +71,10 @@ export function activate(context: vscode.ExtensionContext) {
 				dataSource.registerGitPath();
 			}
 		}),
-		dataSource,
-		repoManager
+		repoManager,
+		statusBarItem,
+		avatarManager,
+		dataSource
 	);
 }
 

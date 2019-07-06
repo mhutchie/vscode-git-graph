@@ -36,6 +36,17 @@ export class AvatarManager {
 		});
 	}
 
+	public dispose() {
+		this.stopInterval();
+	}
+
+	private stopInterval() {
+		if (this.interval !== null) {
+			clearInterval(this.interval);
+			this.interval = null;
+		}
+	}
+
 	public fetchAvatarImage(email: string, repo: string, commits: string[]) {
 		if (typeof this.avatars[email] !== 'undefined') {
 			// Avatar exists in the cache
@@ -92,10 +103,9 @@ export class AvatarManager {
 				default:
 					this.fetchFromGravatar(avatarRequest);
 			}
-		} else if (this.interval !== null) {
+		} else {
 			// Stop the interval if there are no items remaining in the queue
-			clearInterval(this.interval);
-			this.interval = null;
+			this.stopInterval();
 		}
 	}
 

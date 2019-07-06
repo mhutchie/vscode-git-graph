@@ -4,9 +4,9 @@ import { getConfig } from './config';
 import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
-const eolRegex = /\r\n|\r|\n/g;
-const headRegex = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
-const gitLogSeparator = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
+const EOL_REGEX = /\r\n|\r|\n/g;
+const DETACHED_HEAD_REGEX = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
+const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
 	private gitPath!: string;
@@ -30,8 +30,8 @@ export class DataSource {
 
 	public generateGitCommandFormats() {
 		let dateType = getConfig().dateType() === 'Author Date' ? '%at' : '%ct';
-		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(gitLogSeparator);
-		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(gitLogSeparator) + '%n%B';
+		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
+		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
 	}
 
 	public dispose() {
@@ -46,10 +46,10 @@ export class DataSource {
 				if (err) {
 					branchData.error = getErrorMessage(err, stdout, stderr);
 				} else {
-					let lines = stdout.split(eolRegex);
+					let lines = stdout.split(EOL_REGEX);
 					for (let i = 0; i < lines.length - 1; i++) {
 						let name = lines[i].substring(2).split(' -> ')[0];
-						if (name.match(headRegex) !== null) continue;
+						if (name.match(DETACHED_HEAD_REGEX) !== null) continue;
 
 						if (lines[i][0] === '*') {
 							branchData.head = name;
@@ -136,10 +136,10 @@ export class DataSource {
 					if (err) {
 						reject(getErrorMessage(err, stdout, stderr));
 					} else {
-						let lines = stdout.split(eolRegex);
+						let lines = stdout.split(EOL_REGEX);
 						let lastLine = lines.length - 1;
 						while (lines.length > 0 && lines[lastLine] === '') lastLine--;
-						let commitInfo = lines[0].split(gitLogSeparator);
+						let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
 						resolve({
 							hash: commitInfo[0],
 							parents: commitInfo[1].split(' '),
@@ -201,7 +201,7 @@ export class DataSource {
 	public async getRemoteUrl(repo: string) {
 		return new Promise<string | null>(resolve => {
 			this.execGit('config --get remote.origin.url', repo, (err, stdout) => {
-				resolve(!err ? stdout.split(eolRegex)[0] : null);
+				resolve(!err ? stdout.split(EOL_REGEX)[0] : null);
 			});
 		});
 	}
@@ -337,7 +337,7 @@ export class DataSource {
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
-			let lines = stdout.split(eolRegex);
+			let lines = stdout.split(EOL_REGEX);
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(' ');
 				if (line.length < 2) continue;
@@ -365,7 +365,7 @@ export class DataSource {
 				if (err) {
 					reject(getErrorMessage(err, stdout, stderr));
 				} else {
-					let lines = stdout.split(eolRegex);
+					let lines = stdout.split(EOL_REGEX);
 					lines.pop();
 					resolve(lines);
 				}
@@ -385,10 +385,10 @@ export class DataSource {
 		}
 
 		return this.spawnGit(args, repo, (stdout) => {
-			let lines = stdout.split(eolRegex);
+			let lines = stdout.split(EOL_REGEX);
 			let gitCommits: GitCommit[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
-				let line = lines[i].split(gitLogSeparator);
+				let line = lines[i].split(GIT_LOG_SEPARATOR);
 				if (line.length !== 6) break;
 				gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
 			}
@@ -402,7 +402,7 @@ export class DataSource {
 				if (err) {
 					reject(getErrorMessage(err, stdout, stderr));
 				} else {
-					let lines = stdout.split(eolRegex);
+					let lines = stdout.split(EOL_REGEX);
 					resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
 				}
 			});
@@ -415,7 +415,7 @@ export class DataSource {
 				if (err) {
 					reject(getErrorMessage(err, stdout, stderr));
 				} else {
-					let files = [], lines = stdout.split(eolRegex);
+					let files = [], lines = stdout.split(EOL_REGEX);
 					for (let i = 0; i < lines.length; i++) {
 						if (lines[i].startsWith('??')) files.push(lines[i].substr(3));
 					}
@@ -442,7 +442,7 @@ export class DataSource {
 			if (err) {
 				reject(getErrorMessage(err, stdout, stderr));
 			} else {
-				let lines = stdout.split(eolRegex);
+				let lines = stdout.split(EOL_REGEX);
 				if (fromHash === toHash) lines.shift();
 				resolve(lines);
 			}
@@ -546,10 +546,10 @@ function generateFileChanges(nameStatusResults: string[], numStatResults: string
 function getErrorMessage(error: Error | null, stdout: string, stderr: string) {
 	let lines: string[];
 	if (stdout !== '' || stderr !== '') {
-		lines = (stderr + stdout).split(eolRegex);
+		lines = (stderr + stdout).split(EOL_REGEX);
 		lines.pop();
 	} else if (error) {
-		lines = error.message.split(eolRegex);
+		lines = error.message.split(EOL_REGEX);
 	} else {
 		lines = [];
 	}

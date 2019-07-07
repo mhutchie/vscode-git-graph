@@ -362,9 +362,9 @@ class GitGraphView {
 		});
 	}
 	private requestAvatars(avatars: { [email: string]: string[] }) {
-		let emails = Object.keys(avatars);
+		let emails = Object.keys(avatars), remote = this.gitRemotes.length > 0 ? this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0] : null;
 		for (let i = 0; i < emails.length; i++) {
-			sendMessage({ command: 'fetchAvatar', repo: this.currentRepo, email: emails[i], commits: avatars[emails[i]] });
+			sendMessage({ command: 'fetchAvatar', repo: this.currentRepo, remote: remote, email: emails[i], commits: avatars[emails[i]] });
 		}
 	}
 

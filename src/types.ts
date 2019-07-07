@@ -300,6 +300,7 @@ export interface ResponseFetch {
 export interface RequestFetchAvatar {
 	command: 'fetchAvatar';
 	repo: string;
+	remote: string | null;
 	email: string;
 	commits: string[];
 }

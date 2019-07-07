@@ -180,7 +180,7 @@ export class GitGraphView {
 					});
 					break;
 				case 'fetchAvatar':
-					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.commits);
+					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
 					break;
 				case 'loadBranches':
 					let branchData = await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches), isRepo = true;

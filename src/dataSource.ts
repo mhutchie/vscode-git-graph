@@ -198,9 +198,9 @@ export class DataSource {
 			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout);
 	}
 
-	public async getRemoteUrl(repo: string) {
+	public async getRemoteUrl(repo: string, remote: string) {
 		return new Promise<string | null>(resolve => {
-			this.execGit('config --get remote.origin.url', repo, (err, stdout) => {
+			this.execGit('config --get remote.' + remote + '.url', repo, (err, stdout) => {
 				resolve(!err ? stdout.split(EOL_REGEX)[0] : null);
 			});
 		});

@@ -47,25 +47,25 @@ export class AvatarManager {
 		}
 	}
 
-	public fetchAvatarImage(email: string, repo: string, commits: string[]) {
+	public fetchAvatarImage(email: string, repo: string, remote: string | null, commits: string[]) {
 		if (typeof this.avatars[email] !== 'undefined') {
 			// Avatar exists in the cache
 			let t = (new Date()).getTime();
 			if (this.avatars[email].timestamp < t - 1209600000 || (this.avatars[email].identicon && this.avatars[email].timestamp < t - 345600000)) {
 				// Refresh avatar after 14 days, or if an avatar couldn't previously be found after 4 days
-				this.queue.add(email, repo, commits, false);
+				this.queue.add(email, repo, remote, commits, false);
 			}
 			if (this.avatars[email].image !== null) {
 				// Avatar image is available
 				this.sendAvatarToWebView(email, () => {
 					// Avatar couldn't be found, request it again
 					this.removeAvatarFromCache(email);
-					this.queue.add(email, repo, commits, true);
+					this.queue.add(email, repo, remote, commits, true);
 				});
 			}
 		} else {
 			// Avatar not in the cache, request it
-			this.queue.add(email, repo, commits, true);
+			this.queue.add(email, repo, remote, commits, true);
 		}
 	}
 
@@ -115,19 +115,18 @@ export class AvatarManager {
 			return this.remoteSourceCache[avatarRequest.repo];
 		} else {
 			// Fetch the remote repo source
-			let remoteUrl = await this.dataSource.getRemoteUrl(avatarRequest.repo), remoteSource: RemoteSource;
-			if (remoteUrl !== null) {
-				// Depending on the domain of the remote repo source, determine the type of source it is
-				if (remoteUrl.startsWith('https://github.com/')) {
-					let remoteUrlComps = remoteUrl.split('/');
-					remoteSource = { type: 'github', owner: remoteUrlComps[3], repo: remoteUrlComps[4].replace(/\.git$/, '') };
-				} else if (remoteUrl.startsWith('https://gitlab.com/')) {
-					remoteSource = { type: 'gitlab' };
-				} else {
-					remoteSource = { type: 'gravatar' };
+			let remoteSource: RemoteSource = { type: 'gravatar' };
+			if (avatarRequest.remote !== null) {
+				let remoteUrl = await this.dataSource.getRemoteUrl(avatarRequest.repo, avatarRequest.remote);
+				if (remoteUrl !== null) {
+					// Depending on the domain of the remote repo source, determine the type of source it is
+					let match;
+					if ((match = remoteUrl.match(/^(https:\/\/github\.com\/|git@github\.com:)([^\/]+)\/(.*)\.git$/)) !== null) {
+						remoteSource = { type: 'github', owner: match[2], repo: match[3] };
+					} else if (remoteUrl.startsWith('https://gitlab.com/') || remoteUrl.startsWith('git@gitlab.com:')) {
+						remoteSource = { type: 'gitlab' };
+					}
 				}
-			} else {
-				remoteSource = { type: 'gravatar' };
 			}
 			this.remoteSourceCache[avatarRequest.repo] = remoteSource; // Add the remote source to the cache for future use
 			return remoteSource;
@@ -311,7 +310,7 @@ class AvatarRequestQueue {
 	}
 
 	// Add a new avatar request to queue
-	public add(email: string, repo: string, commits: string[], immediate: boolean) {
+	public add(email: string, repo: string, remote: string | null, commits: string[], immediate: boolean) {
 		let emailIndex = this.queue.findIndex(v => v.email === email && v.repo === repo);
 		if (emailIndex > -1) {
 			let l = commits.indexOf(this.queue[emailIndex].commits[this.queue[emailIndex].commits.length - 1]);
@@ -323,6 +322,7 @@ class AvatarRequestQueue {
 			this.insertItem({
 				email: email,
 				repo: repo,
+				remote: remote,
 				commits: commits,
 				checkAfter: immediate || this.queue.length === 0 ? 0 : this.queue[this.queue.length - 1].checkAfter + 1,
 				attempts: 0
@@ -363,6 +363,7 @@ class AvatarRequestQueue {
 interface AvatarRequestItem {
 	email: string;
 	repo: string;
+	remote: string | null;
 	commits: string[];
 	checkAfter: number;
 	attempts: number;

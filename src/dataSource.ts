@@ -380,8 +380,10 @@ export class DataSource {
 				args.push(escapeRefName(branches[i]));
 			}
 		} else {
+			// Show All
 			args.push('--branches', '--tags');
 			if (showRemoteBranches) args.push('--remotes');
+			args.push('HEAD');
 		}
 
 		return this.spawnGit(args, repo, (stdout) => {

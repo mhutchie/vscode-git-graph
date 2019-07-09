@@ -296,6 +296,10 @@ class GitGraphView {
 		}
 	}
 
+	public getNumBranches() {
+		return this.gitBranches.length;
+	}
+
 	/* Refresh */
 	public refresh(hard: boolean) {
 		if (hard) {
@@ -1418,6 +1422,7 @@ window.addEventListener('load', () => {
 				if (msg.error === null) {
 					gitGraph.loadCommits(msg.commits, msg.head, msg.remotes, msg.moreCommitsAvailable, msg.hard);
 				} else {
+					if (gitGraph.getNumBranches() === 0 && msg.error.indexOf('ambiguous argument \'HEAD\': unknown revision') > -1) msg.error = 'There are no commits in this repository.';
 					gitGraph.loadDataError('Unable to load commits', msg.error);
 				}
 				break;

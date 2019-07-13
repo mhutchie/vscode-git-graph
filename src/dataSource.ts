@@ -132,26 +132,22 @@ export class DataSource {
 	public commitDetails(repo: string, commitHash: string) {
 		return new Promise<GitCommitDetails>(resolve => {
 			Promise.all([
-				new Promise<GitCommitDetails>((resolve, reject) => this.execGit('show --quiet ' + commitHash + ' --format="' + this.gitCommitDetailsFormat + '"', repo, (err, stdout, stderr) => {
-					if (err) {
-						reject(getErrorMessage(err, stdout, stderr));
-					} else {
-						let lines = stdout.split(EOL_REGEX);
-						let lastLine = lines.length - 1;
-						while (lines.length > 0 && lines[lastLine] === '') lastLine--;
-						let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
-						resolve({
-							hash: commitInfo[0],
-							parents: commitInfo[1].split(' '),
-							author: commitInfo[2],
-							email: commitInfo[3],
-							date: parseInt(commitInfo[4]),
-							committer: commitInfo[5],
-							body: lines.slice(1, lastLine + 1).join('\n'),
-							fileChanges: [], error: null
-						});
-					}
-				})),
+				this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitCommitDetailsFormat], repo, (stdout): GitCommitDetails => {
+					let lines = stdout.split(EOL_REGEX);
+					let lastLine = lines.length - 1;
+					while (lines.length > 0 && lines[lastLine] === '') lastLine--;
+					let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
+					return {
+						hash: commitInfo[0],
+						parents: commitInfo[1].split(' '),
+						author: commitInfo[2],
+						email: commitInfo[3],
+						date: parseInt(commitInfo[4]),
+						committer: commitInfo[5],
+						body: lines.slice(1, lastLine + 1).join('\n'),
+						fileChanges: [], error: null
+					};
+				}),
 				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
 				this.getDiffTreeNumStat(repo, commitHash, commitHash)
 			]).then((results) => {
@@ -227,9 +223,9 @@ export class DataSource {
 
 	public async getRemoteUrl(repo: string, remote: string) {
 		return new Promise<string | null>(resolve => {
-			this.execGit('config --get remote.' + remote + '.url', repo, (err, stdout) => {
-				resolve(!err ? stdout.split(EOL_REGEX)[0] : null);
-			});
+			this.spawnGit(['config', '--get', 'remote.' + remote + '.url'], repo, stdout => stdout.split(EOL_REGEX)[0])
+				.then(value => resolve(value))
+				.catch(() => resolve(null));
 		});
 	}
 
@@ -242,11 +238,11 @@ export class DataSource {
 	}
 
 	public async addRemote(repo: string, name: string, url: string, pushUrl: string | null, fetch: boolean) {
-		let status = await this.runGitCommandSpawn(['remote', 'add', name, url], repo);
+		let status = await this.runGitCommand(['remote', 'add', name, url], repo);
 		if (status !== null) return status;
 
 		if (pushUrl !== null) {
-			status = await this.runGitCommandSpawn(['remote', 'set-url', name, '--push', pushUrl], repo);
+			status = await this.runGitCommand(['remote', 'set-url', name, '--push', pushUrl], repo);
 			if (status !== null) return status;
 		}
 
@@ -255,7 +251,7 @@ export class DataSource {
 
 	public async editRemote(repo: string, nameOld: string, nameNew: string, urlOld: string | null, urlNew: string | null, pushUrlOld: string | null, pushUrlNew: string | null) {
 		if (nameOld !== nameNew) {
-			let status = await this.runGitCommandSpawn(['remote', 'rename', nameOld, nameNew], repo);
+			let status = await this.runGitCommand(['remote', 'rename', nameOld, nameNew], repo);
 			if (status !== null) return status;
 		}
 
@@ -265,7 +261,7 @@ export class DataSource {
 			else if (urlOld === null) args.push('--add', urlNew);
 			else args.push(urlNew, urlOld);
 
-			let status = await this.runGitCommandSpawn(args, repo);
+			let status = await this.runGitCommand(args, repo);
 			if (status !== null) return status;
 		}
 
@@ -275,7 +271,7 @@ export class DataSource {
 			else if (pushUrlOld === null) args.push('--add', pushUrlNew);
 			else args.push(pushUrlNew, pushUrlOld);
 
-			let status = await this.runGitCommandSpawn(args, repo);
+			let status = await this.runGitCommand(args, repo);
 			if (status !== null) return status;
 		}
 
@@ -283,7 +279,7 @@ export class DataSource {
 	}
 
 	public deleteRemote(repo: string, name: string) {
-		return this.runGitCommandSpawn(['remote', 'remove', name], repo);
+		return this.runGitCommand(['remote', 'remove', name], repo);
 	}
 
 	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
@@ -294,112 +290,148 @@ export class DataSource {
 			args.push('-a', tagName, '-m', message);
 		}
 		args.push(commitHash);
-		return this.runGitCommandSpawn(args, repo);
+		return this.runGitCommand(args, repo);
 	}
 
 	public async deleteTag(repo: string, tagName: string, deleteOnRemote: string | null) {
 		if (deleteOnRemote !== null) {
-			let status = await this.runGitCommand('push ' + escapeRefName(deleteOnRemote) + ' --delete ' + escapeRefName(tagName), repo);
+			let status = await this.runGitCommand(['push', deleteOnRemote, '--delete', tagName], repo);
 			if (status !== null) return status;
 		}
-		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
+		return this.runGitCommand(['tag', '-d', tagName], repo);
 	}
 
 	public fetch(repo: string, remote: string | null) {
-		return this.runGitCommandSpawn(['fetch', remote === null ? '--all' : remote], repo);
+		return this.runGitCommand(['fetch', remote === null ? '--all' : remote], repo);
 	}
 
 	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean) {
-		return this.runGitCommand('push' + (setUpstream ? ' -u' : '') + ' ' + escapeRefName(remote) + ' ' + escapeRefName(branchName), repo);
+		let args = ['push'];
+		if (setUpstream) args.push('-u');
+		args.push(remote, branchName);
+
+		return this.runGitCommand(args, repo);
 	}
 
 	public pushTag(repo: string, tagName: string, remote: string) {
-		return this.runGitCommand('push ' + escapeRefName(remote) + ' ' + escapeRefName(tagName), repo);
+		return this.runGitCommand(['push', remote, tagName], repo);
 	}
 
 	public createBranch(repo: string, branchName: string, commitHash: string, checkout: boolean) {
-		return this.runGitCommand((checkout ? 'checkout -b ' : 'branch ') + escapeRefName(branchName) + ' ' + commitHash, repo);
+		let args = [];
+		if (checkout) args.push('checkout', '-b');
+		else args.push('branch');
+		args.push(branchName, commitHash);
+
+		return this.runGitCommand(args, repo);
 	}
 
 	public checkoutBranch(repo: string, branchName: string, remoteBranch: string | null) {
-		return this.runGitCommand('checkout ' + (remoteBranch === null ? escapeRefName(branchName) : ' -b ' + escapeRefName(branchName) + ' ' + escapeRefName(remoteBranch)), repo);
+		let args = ['checkout'];
+		if (remoteBranch === null) args.push(branchName);
+		else args.push('-b', branchName, remoteBranch);
+
+		return this.runGitCommand(args, repo);
 	}
 
 	public checkoutCommit(repo: string, commitHash: string) {
-		return this.runGitCommand('checkout ' + commitHash, repo);
+		return this.runGitCommand(['checkout', commitHash], repo);
 	}
 
 	public deleteBranch(repo: string, branchName: string, forceDelete: boolean) {
-		return this.runGitCommand('branch --delete' + (forceDelete ? ' --force' : '') + ' ' + escapeRefName(branchName), repo);
+		let args = ['branch', '--delete'];
+		if (forceDelete) args.push('--force');
+		args.push(branchName);
+
+		return this.runGitCommand(args, repo);
 	}
 
 	public async deleteRemoteBranch(repo: string, branchName: string, remote: string) {
-		let remoteStatus = await this.runGitCommand('push ' + escapeRefName(remote) + ' --delete ' + escapeRefName(branchName), repo);
+		let remoteStatus = await this.runGitCommand(['push', remote, '--delete', branchName], repo);
 		if (remoteStatus !== null && (new RegExp('remote ref does not exist', 'i')).test(remoteStatus)) {
-			let trackingBranchStatus = await this.runGitCommand('branch -d -r ' + escapeRefName(remote + '/' + branchName), repo);
+			let trackingBranchStatus = await this.runGitCommand(['branch', '-d', '-r', remote + '/' + branchName], repo);
 			return trackingBranchStatus === null ? null : 'Branch does not exist on the remote, deleting the remote tracking branch ' + remote + '/' + branchName + '.\n' + trackingBranchStatus;
 		}
 		return remoteStatus;
 	}
 
 	public renameBranch(repo: string, oldName: string, newName: string) {
-		return this.runGitCommand('branch -m ' + escapeRefName(oldName) + ' ' + escapeRefName(newName), repo);
+		return this.runGitCommand(['branch', '-m', oldName, newName], repo);
 	}
 
 	public async mergeBranch(repo: string, branchName: string, createNewCommit: boolean, squash: boolean) {
-		let mergeStatus = await this.runGitCommand('merge ' + escapeRefName(branchName) + (squash ? ' --squash' : (createNewCommit ? ' --no-ff' : '')), repo);
+		let args = ['merge', branchName];
+		if (squash) args.push('--squash');
+		else if (createNewCommit) args.push('--no-ff');
+
+		let mergeStatus = await this.runGitCommand(args, repo);
 		if (mergeStatus === null && squash) {
 			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand('commit -m "Merge branch \'' + escapeRefName(branchName) + '\'"', repo);
+				return this.runGitCommand(['commit', '-m', 'Merge branch \'' + branchName + '\''], repo);
 			}
 		}
 		return mergeStatus;
 	}
 
 	public async mergeCommit(repo: string, commitHash: string, createNewCommit: boolean, squash: boolean) {
-		let mergeStatus = await this.runGitCommand('merge ' + commitHash + (squash ? ' --squash' : (createNewCommit ? ' --no-ff' : '')), repo);
+		let args = ['merge', commitHash];
+		if (squash) args.push('--squash');
+		else if (createNewCommit) args.push('--no-ff');
+
+		let mergeStatus = await this.runGitCommand(args, repo);
 		if (mergeStatus === null && squash) {
 			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand('commit -m "Merge commit \'' + commitHash + '\'"', repo);
+				return this.runGitCommand(['commit', '-m', 'Merge commit \'' + commitHash + '\''], repo);
 			}
 		}
 		return mergeStatus;
 	}
 
 	public async pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
-		let pullStatus = await this.runGitCommand('pull ' + escapeRefName(remote) + ' ' + escapeRefName(branchName) + (squash ? ' --squash' : (createNewCommit ? ' --no-ff' : '')), repo);
+		let args = ['pull', remote, branchName];
+		if (squash) args.push('--squash');
+		else if (createNewCommit) args.push('--no-ff');
+
+		let pullStatus = await this.runGitCommand(args, repo);
 		if (pullStatus === null && squash) {
 			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand('commit -m "Merge branch \'' + escapeRefName(remote + '/' + branchName) + '\'"', repo);
+				return this.runGitCommand(['commit', '-m', 'Merge branch \'' + remote + '/' + branchName + '\''], repo);
 			}
 		}
 		return pullStatus;
 	}
 
 	public rebaseOn(repo: string, base: string, type: RebaseOnType, ignoreDate: boolean, interactive: boolean) {
-		let escapedBase = type === 'Branch' ? escapeRefName(base) : base;
 		if (interactive) {
-			runCommandInNewTerminal(repo, this.gitExecPath + ' rebase --interactive ' + escapedBase, 'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
+			runCommandInNewTerminal(repo,
+				this.gitExecPath + ' rebase --interactive ' + (type === 'Branch' ? base.replace(/'/g, '"\'"') : base),
+				'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
 			return new Promise<GitCommandError>(resolve => setTimeout(() => resolve(null), 1000));
 		} else {
-			return this.runGitCommand('rebase ' + escapedBase + (ignoreDate ? ' --ignore-date' : ''), repo);
+			let args = ['rebase', base];
+			if (ignoreDate) args.push('--ignore-date');
+			return this.runGitCommand(args, repo);
 		}
 	}
 
 	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number) {
-		return this.runGitCommand('cherry-pick ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
+		let args = ['cherry-pick', commitHash];
+		if (parentIndex > 0) args.push('-m', parentIndex.toString());
+		return this.runGitCommand(args, repo);
 	}
 
 	public cleanUntrackedFiles(repo: string, directories: boolean) {
-		return this.runGitCommand('clean -f' + (directories ? 'd' : ''), repo);
+		return this.runGitCommand(['clean', '-f' + (directories ? 'd' : '')], repo);
 	}
 
 	public revertCommit(repo: string, commitHash: string, parentIndex: number) {
-		return this.runGitCommand('revert --no-edit ' + commitHash + (parentIndex > 0 ? ' -m ' + parentIndex : ''), repo);
+		let args = ['revert', '--no-edit', commitHash];
+		if (parentIndex > 0) args.push('-m', parentIndex.toString());
+		return this.runGitCommand(args, repo);
 	}
 
 	public resetToCommit(repo: string, commitHash: string, resetMode: GitResetMode) {
-		return this.runGitCommand('reset --' + resetMode + ' ' + commitHash, repo);
+		return this.runGitCommand(['reset', '--' + resetMode, commitHash], repo);
 	}
 
 	private getRefs(repo: string, showRemoteBranches: boolean) {
@@ -453,7 +485,7 @@ export class DataSource {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--' + order + '-order'];
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
-				args.push(escapeRefName(branches[i]));
+				args.push(branches[i]);
 			}
 		} else {
 			// Show All
@@ -504,27 +536,31 @@ export class DataSource {
 	}
 
 	private getDiffTreeNameStatus(repo: string, fromHash: string, toHash: string) {
-		let cmd = fromHash === toHash
-			? 'diff-tree --name-status -r -m --root --find-renames --diff-filter=AMDR ' + fromHash
-			: 'diff --name-status -m --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : '');
-		return this.execDiffTree(repo, cmd, fromHash, toHash);
+		let args = ['-c', 'core.quotepath=false'];
+		if (fromHash === toHash) {
+			args.push('diff-tree', '--name-status', '-r', '-m', '--root', '--find-renames', '--diff-filter=AMDR', fromHash);
+		} else {
+			args.push('diff', '--name-status', '-m', '--find-renames', '--diff-filter=AMDR', fromHash);
+			if (toHash !== '') args.push(toHash);
+		}
+		return this.execDiffTree(repo, args, fromHash, toHash);
 	}
 	private getDiffTreeNumStat(repo: string, fromHash: string, toHash: string) {
-		let cmd = fromHash === toHash
-			? 'diff-tree --numstat -r -m --root --find-renames --diff-filter=AMDR ' + fromHash
-			: 'diff --numstat -m --find-renames --diff-filter=AMDR ' + fromHash + (toHash !== '' ? ' ' + toHash : '');
-		return this.execDiffTree(repo, cmd, fromHash, toHash);
+		let args = ['-c', 'core.quotepath=false'];
+		if (fromHash === toHash) {
+			args.push('diff-tree', '--numstat', '-r', '-m', '--root', '--find-renames', '--diff-filter=AMDR', fromHash);
+		} else {
+			args.push('diff', '--numstat', '-m', '--find-renames', '--diff-filter=AMDR', fromHash);
+			if (toHash !== '') args.push(toHash);
+		}
+		return this.execDiffTree(repo, args, fromHash, toHash);
 	}
-	private execDiffTree(repo: string, cmd: string, fromHash: string, toHash: string) {
-		return new Promise<string[]>((resolve, reject) => this.execGit('-c core.quotepath=false ' + cmd, repo, (err, stdout, stderr) => {
-			if (err) {
-				reject(getErrorMessage(err, stdout, stderr));
-			} else {
-				let lines = stdout.split(EOL_REGEX);
-				if (fromHash === toHash) lines.shift();
-				resolve(lines);
-			}
-		}));
+	private execDiffTree(repo: string, args: string[], fromHash: string, toHash: string) {
+		return this.spawnGit(args, repo, (stdout) => {
+			let lines = stdout.split(EOL_REGEX);
+			if (fromHash === toHash) lines.shift();
+			return lines;
+		});
 	}
 
 	private areStagedChanges(repo: string) {
@@ -533,15 +569,7 @@ export class DataSource {
 		});
 	}
 
-	private runGitCommand(command: string, repo: string) {
-		return new Promise<GitCommandError>((resolve) => {
-			this.execGit(command, repo, (err, stdout, stderr) => {
-				resolve(err ? getErrorMessage(err, stdout, stderr) : null);
-			});
-		});
-	}
-
-	private runGitCommandSpawn(args: string[], repo: string) {
+	private runGitCommand(args: string[], repo: string) {
 		return new Promise<GitCommandError>((resolve) => {
 			let stdout = '', stderr = '', err = false;
 			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.getEnv() });
@@ -586,10 +614,6 @@ export class DataSource {
 	private getEnv() {
 		return Object.assign({}, process.env, this.askpassEnv);
 	}
-}
-
-function escapeRefName(str: string) {
-	return str.replace(/'/g, '\'');
 }
 
 // Generates a list of file changes from each diff-tree output

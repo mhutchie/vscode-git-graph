@@ -1,4 +1,3 @@
-const CLASS_FIND_TRANSITION = 'transition';
 const CLASS_FIND_CURRENT_COMMIT = 'findCurrentCommit';
 const CLASS_FIND_MATCH = 'findMatch';
 
@@ -92,7 +91,7 @@ class FindWidget {
 			this.inputElem.value = this.text;
 			this.inputElem.disabled = false;
 			this.updatePosition(-1, false);
-			alterClass(this.widgetElem, CLASS_FIND_TRANSITION, transition);
+			alterClass(this.widgetElem, CLASS_TRANSITION, transition);
 			this.widgetElem.classList.add(CLASS_ACTIVE);
 		}
 		this.inputElem.focus();
@@ -101,7 +100,7 @@ class FindWidget {
 	public close() {
 		if (!this.visible) return;
 		this.visible = false;
-		this.widgetElem.classList.add(CLASS_FIND_TRANSITION);
+		this.widgetElem.classList.add(CLASS_TRANSITION);
 		this.widgetElem.classList.remove(CLASS_ACTIVE);
 		this.clearMatches();
 		this.text = '';

@@ -453,7 +453,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	left:0;
 	right:0;
 	top:0;
-	padding:4px 72px 4px 0;
+	padding:4px 102px 4px 0;
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	line-height:32px;
 	text-align:center;
@@ -471,7 +471,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	width:14px;
 	vertical-align:text-top;
 }
-#findBtn, #fetchBtn, #refreshBtn{
+#findBtn, #settingsBtn, #fetchBtn, #refreshBtn{
 	position:absolute;
 	top:50%;
 	width:20px;
@@ -481,6 +481,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	user-select:none;
 }
 #findBtn{
+	right:70px;
+}
+#settingsBtn{
 	right:40px;
 }
 #fetchBtn{
@@ -493,7 +496,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 #refreshBtn.refreshing{
 	cursor:default;
 }
-#findBtn svg, #fetchBtn svg, #refreshBtn svg{
+#findBtn svg, #settingsBtn svg, #fetchBtn svg, #refreshBtn svg{
 	position:absolute;
 	fill:var(--vscode-editor-foreground);
 	opacity:0.8;
@@ -501,7 +504,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	stroke-opacity:0.4;
 	stroke-width:0;
 }
-#findBtn:hover svg, #fetchBtn:hover svg, #refreshBtn:hover svg{
+#findBtn:hover svg, #settingsBtn:hover svg, #fetchBtn:hover svg, #refreshBtn:hover svg{
 	opacity:1;
 	stroke-width:0.5px;
 }
@@ -511,7 +514,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 #findBtn svg:hover{
 	stroke-width:1.5px;
 }
-#findBtn svg, #fetchBtn svg{
+#findBtn svg, #settingsBtn svg, #fetchBtn svg{
 	left:1px;
 	top:1px;
 	width:18px !important;
@@ -539,9 +542,12 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 
 #controls.fetchSupported{
-	padding-right:102px;
+	padding-right:132px;
 }
 #controls.fetchSupported #findBtn{
+	right:100px;
+}
+#controls.fetchSupported #settingsBtn{
 	right:70px;
 }
 #controls.fetchSupported #fetchBtn{
@@ -624,7 +630,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	text-align:center;
 	max-width:360px;
 	max-height:80%;
-	z-index:31;
+	z-index:41;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 	overflow-y:auto;
 }
@@ -694,7 +700,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	right:0;
 	top:0;
 	bottom:0;
-	z-index:30;
+	z-index:40;
 }
 #dialog #dialogAction{
 	background-color:rgba(128,128,128,0.15);

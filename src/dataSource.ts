@@ -1,7 +1,7 @@
 import * as cp from 'child_process';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
-import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
+import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -198,6 +198,33 @@ export class DataSource {
 			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout);
 	}
 
+	public async getRepoSettings(repo: string) {
+		return new Promise<GitRepoSettingsData>(resolve => {
+			Promise.all([
+				this.getConfigList(repo, 'local'),
+				this.getRemotes(repo)
+			]).then((results) => {
+				let configNames: string[] = [];
+				results[1].forEach(remote => {
+					configNames.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
+				});
+				let configs = getConfigs(results[0], configNames);
+				resolve({
+					settings: {
+						remotes: results[1].map(remote => ({
+							name: remote,
+							url: configs['remote.' + remote + '.url'],
+							pushUrl: configs['remote.' + remote + '.pushurl']
+						}))
+					},
+					error: null
+				});
+			}).catch((errorMessage) => {
+				resolve({ settings: null, error: errorMessage });
+			});
+		});
+	}
+
 	public async getRemoteUrl(repo: string, remote: string) {
 		return new Promise<string | null>(resolve => {
 			this.execGit('config --get remote.' + remote + '.url', repo, (err, stdout) => {
@@ -212,6 +239,51 @@ export class DataSource {
 				resolve(!err);
 			});
 		});
+	}
+
+	public async addRemote(repo: string, name: string, url: string, pushUrl: string | null, fetch: boolean) {
+		let status = await this.runGitCommandSpawn(['remote', 'add', name, url], repo);
+		if (status !== null) return status;
+
+		if (pushUrl !== null) {
+			status = await this.runGitCommandSpawn(['remote', 'set-url', name, '--push', pushUrl], repo);
+			if (status !== null) return status;
+		}
+
+		return fetch ? this.fetch(repo, name) : null;
+	}
+
+	public async editRemote(repo: string, nameOld: string, nameNew: string, urlOld: string | null, urlNew: string | null, pushUrlOld: string | null, pushUrlNew: string | null) {
+		if (nameOld !== nameNew) {
+			let status = await this.runGitCommandSpawn(['remote', 'rename', nameOld, nameNew], repo);
+			if (status !== null) return status;
+		}
+
+		if (urlOld !== urlNew) {
+			let args = ['remote', 'set-url', nameNew];
+			if (urlNew === null) args.push('--delete', urlOld!);
+			else if (urlOld === null) args.push('--add', urlNew);
+			else args.push(urlNew, urlOld);
+
+			let status = await this.runGitCommandSpawn(args, repo);
+			if (status !== null) return status;
+		}
+
+		if (pushUrlOld !== pushUrlNew) {
+			let args = ['remote', 'set-url', '--push', nameNew];
+			if (pushUrlNew === null) args.push('--delete', pushUrlOld!);
+			else if (pushUrlOld === null) args.push('--add', pushUrlNew);
+			else args.push(pushUrlNew, pushUrlOld);
+
+			let status = await this.runGitCommandSpawn(args, repo);
+			if (status !== null) return status;
+		}
+
+		return null;
+	}
+
+	public deleteRemote(repo: string, name: string) {
+		return this.runGitCommandSpawn(['remote', 'remove', name], repo);
 	}
 
 	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
@@ -233,8 +305,8 @@ export class DataSource {
 		return this.runGitCommand('tag -d ' + escapeRefName(tagName), repo);
 	}
 
-	public fetch(repo: string) {
-		return this.runGitCommand('fetch --all', repo);
+	public fetch(repo: string, remote: string | null) {
+		return this.runGitCommandSpawn(['fetch', remote === null ? '--all' : remote], repo);
 	}
 
 	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean) {
@@ -371,6 +443,10 @@ export class DataSource {
 				}
 			});
 		});
+	}
+
+	private async getConfigList(repo: string, type: 'local' | 'global' | 'system') {
+		return this.spawnGit(['--no-pager', 'config', '--list', '--' + type], repo, (stdout) => stdout.split(EOL_REGEX));
 	}
 
 	private getGitLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean, order: CommitOrdering) {
@@ -543,6 +619,24 @@ function generateFileChanges(nameStatusResults: string[], numStatResults: string
 	}
 
 	return fileChanges;
+}
+
+// Get the specified config values from a git config list
+function getConfigs(configList: string[], configNames: string[]) {
+	let results: { [configName: string]: string | null } = {}, matchConfigs: string[] = [];
+	configNames.forEach(configName => {
+		results[configName] = null;
+		matchConfigs.push(configName + '=');
+	});
+	for (let i = 0; i < configList.length; i++) {
+		for (let j = 0; j < configNames.length; j++) {
+			if (configList[i].startsWith(matchConfigs[j])) {
+				results[configNames[j]] = configList[i].substring(configNames[j].length + 1);
+				break;
+			}
+		}
+	}
+	return results;
 }
 
 function getErrorMessage(error: Error | null, stdout: string, stderr: string) {

@@ -1,0 +1,160 @@
+.settingsWidget{
+	display:block;
+	position:fixed;
+	top:-108px;
+	right:28px;
+	width:400px;
+	min-height:96px;
+	padding:0 10px 4px 10px;
+	z-index:31;
+	background-color:var(--vscode-editorWidget-background);
+	box-shadow:0 2px 8px var(--vscode-widget-shadow);
+	line-height:17px;
+	font-size:13px;
+	color:var(--vscode-editorSuggestWidget-foreground);
+	fill:var(--vscode-editorSuggestWidget-foreground);
+	fill-opacity:0.7;
+	user-select:none;
+}
+.settingsWidget.active{
+	top:0;
+}
+.settingsWidget.transition{
+	transition:top .2s linear;
+}
+
+.settingsWidget h2{
+	margin:7px 10px;
+	padding:0;
+	font-size:15px;
+	line-height:20px;
+	text-align:center;
+}
+.settingsWidget h3{
+	position:relative;
+	margin:5px 0;
+	padding:10px 0 0 0;
+	font-size:14px;
+	line-height:18px;
+	text-align:center;
+}
+
+.settingsWidget table{
+	width:100%;
+	border-collapse:collapse;
+}
+.settingsWidget table tr.lineAbove td:before, .settingsWidget h3:before{
+	content:'';
+	position:absolute;
+	display:block;
+	left:0;
+	top:0;
+	right:0;
+	height:1px;
+	background-color:var(--vscode-editorSuggestWidget-foreground);
+	opacity:0.3;
+}
+.settingsWidget table th, .settingsWidget table td{
+	position:relative;
+	padding:3px 5px;
+	text-align:center;
+	white-space:nowrap;
+}
+.settingsWidget table th{
+	font-weight:bold;
+}
+.settingsWidget table td.remoteUrl{
+	width:100%;
+	max-width:0;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	text-align:left;
+}
+.settingsWidget .editRemote, .settingsWidget .deleteRemote{
+	display:inline-block;
+	position:relative;
+	width:18px;
+	height:18px;
+	vertical-align:middle;
+	cursor:pointer;
+}
+.settingsWidget .editRemote svg{
+	position:absolute;
+	left:2px;
+	top:2px;
+	width:14px !important;
+	height:14px !important;
+}
+.settingsWidget .deleteRemote svg{
+	position:absolute;
+	left:1px;
+	top:1px;
+	width:16px !important;
+	height:16px !important;
+}
+#settingsAddRemote{
+	line-height:24px;
+	cursor:pointer;
+}
+#settingsAddRemote svg{
+	vertical-align:top;
+	margin:6px;
+	width:12px !important;
+	height:12px !important;
+	transform:rotate(45deg);
+}
+
+#settingsLoading{
+	display:none;
+	position:absolute;
+	top:27px;
+	left:0;
+	right:0;
+	bottom:0;
+	z-index:32;
+	line-height:24px;
+	text-align:center;
+}
+#settingsLoading span{
+	position:absolute;
+	top:50%;
+	margin-top:-12px;
+	left:0;
+	right:0;
+}
+#settingsLoading svg{
+	display:inline-block;
+	width:15px !important;
+	height:20px !important;
+	margin-top:2px;
+	margin-right:8px;
+	vertical-align:top;
+	animation:loadingIconAnimation 2s linear infinite;
+}
+
+#settingsClose{
+	position:absolute;
+	width:24px;
+	height:24px;
+	top:5px;
+	right:10px;
+	cursor:pointer;
+	z-index:33;
+}
+#settingsClose svg{
+	position:absolute;
+	left:4px;
+	top:4px;
+	width:16px !important;
+	height:16px !important;
+}
+
+#settingsAddRemote:hover svg, .settingsWidget .editRemote:hover svg, .settingsWidget .deleteRemote:hover svg, #settingsClose:hover{
+	fill-opacity:1;
+}
+.settingsWidget.loading #settingsContent{
+	opacity:0.1;
+}
+.settingsWidget.loading #settingsLoading{
+	display:block;
+}

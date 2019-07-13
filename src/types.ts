@@ -19,6 +19,21 @@ export interface GitCommitComparisonData {
 	error: GitCommandError;
 }
 
+export interface GitRepoSettingsData {
+	settings: GitRepoSettings | null;
+	error: GitCommandError;
+}
+
+export interface GitRepoSettings {
+	remotes: GitRepoSettingsRemote[];
+}
+
+export interface GitRepoSettingsRemote {
+	name: string;
+	url: string | null;
+	pushUrl: string | null;
+}
+
 export interface GitCommitNode {
 	hash: string;
 	parentHashes: string[];
@@ -117,6 +132,9 @@ export interface Avatar {
 }
 export type AvatarCache = { [email: string]: Avatar };
 
+
+/* Extension Settings Types */
+
 export type CommitDetailsViewLocation = 'Inline' | 'Docked to Bottom';
 export type CommitOrdering = 'date' | 'author-date' | 'topo';
 export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
@@ -146,6 +164,19 @@ export interface DefaultColumnVisibility {
 
 
 /* Request / Response Messages */
+
+export interface RequestAddRemote {
+	command: 'addRemote';
+	repo: string;
+	name: string;
+	url: string;
+	pushUrl: string | null;
+	fetch: boolean;
+}
+export interface ResponseAddRemote {
+	command: 'addRemote';
+	error: GitCommandError;
+}
 
 export interface RequestAddTag {
 	command: 'addTag';
@@ -266,6 +297,16 @@ export interface ResponseDeleteBranch {
 	error: GitCommandError;
 }
 
+export interface RequestDeleteRemote {
+	command: 'deleteRemote';
+	repo: string;
+	name: string;
+}
+export interface ResponseDeleteRemote {
+	command: 'deleteRemote';
+	error: GitCommandError;
+}
+
 export interface RequestDeleteRemoteBranch {
 	command: 'deleteRemoteBranch';
 	repo: string;
@@ -285,6 +326,21 @@ export interface RequestDeleteTag {
 }
 export interface ResponseDeleteTag {
 	command: 'deleteTag';
+	error: GitCommandError;
+}
+
+export interface RequestEditRemote {
+	command: 'editRemote';
+	repo: string;
+	nameOld: string;
+	nameNew: string;
+	urlOld: string | null;
+	urlNew: string | null;
+	pushUrlOld: string | null;
+	pushUrlNew: string | null;
+}
+export interface ResponseEditRemote {
+	command: 'editRemote';
 	error: GitCommandError;
 }
 
@@ -308,6 +364,16 @@ export interface ResponseFetchAvatar {
 	command: 'fetchAvatar';
 	email: string;
 	image: string;
+}
+
+export interface RequestGetSettings {
+	command: 'getSettings';
+	repo: string;
+}
+export interface ResponseGetSettings {
+	command: 'getSettings';
+	settings: GitRepoSettings | null;
+	error: GitCommandError;
 }
 
 export interface RequestLoadBranches {
@@ -505,7 +571,8 @@ export interface ResponseViewScm {
 }
 
 export type RequestMessage =
-	RequestAddTag
+	RequestAddRemote
+	| RequestAddTag
 	| RequestCheckoutBranch
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
@@ -515,10 +582,13 @@ export type RequestMessage =
 	| RequestCopyToClipboard
 	| RequestCreateBranch
 	| RequestDeleteBranch
+	| RequestDeleteRemote
 	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
+	| RequestEditRemote
 	| RequestFetch
 	| RequestFetchAvatar
+	| RequestGetSettings
 	| RequestLoadBranches
 	| RequestLoadCommits
 	| RequestLoadRepos
@@ -537,7 +607,8 @@ export type RequestMessage =
 	| RequestViewScm;
 
 export type ResponseMessage =
-	ResponseAddTag
+	ResponseAddRemote
+	| ResponseAddTag
 	| ResponseCheckoutBranch
 	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit
@@ -547,10 +618,13 @@ export type ResponseMessage =
 	| ResponseCopyToClipboard
 	| ResponseCreateBranch
 	| ResponseDeleteBranch
+	| ResponseDeleteRemote
 	| ResponseDeleteRemoteBranch
 	| ResponseDeleteTag
+	| ResponseEditRemote
 	| ResponseFetch
 	| ResponseFetchAvatar
+	| ResponseGetSettings
 	| ResponseLoadBranches
 	| ResponseLoadCommits
 	| ResponseLoadRepos

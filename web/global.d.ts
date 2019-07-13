@@ -135,6 +135,7 @@ declare global {
 		expandedCommit: ExpandedCommit | null;
 		scrollTop: number;
 		findWidget: FindWidgetState;
+		settingsWidget: SettingsWidgetState;
 	}
 }
 

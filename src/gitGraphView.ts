@@ -97,6 +97,12 @@ export class GitGraphView {
 			if (this.dataSource === null) return;
 			this.repoFileWatcher.mute();
 			switch (msg.command) {
+				case 'addRemote':
+					this.sendMessage({
+						command: 'addRemote',
+						error: await this.dataSource.addRemote(msg.repo, msg.name, msg.url, msg.pushUrl, msg.fetch)
+					});
+					break;
 				case 'addTag':
 					this.sendMessage({
 						command: 'addTag',
@@ -161,6 +167,12 @@ export class GitGraphView {
 						error: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
 					});
 					break;
+				case 'deleteRemote': 
+					this.sendMessage({
+						command:'deleteRemote',
+						error: await this.dataSource.deleteRemote(msg.repo, msg.name)
+					});
+					break;
 				case 'deleteRemoteBranch':
 					this.sendMessage({
 						command: 'deleteRemoteBranch',
@@ -173,14 +185,26 @@ export class GitGraphView {
 						error: await this.dataSource.deleteTag(msg.repo, msg.tagName, msg.deleteOnRemote)
 					});
 					break;
+				case 'editRemote':
+					this.sendMessage({
+						command: 'editRemote',
+						error: await this.dataSource.editRemote(msg.repo, msg.nameOld, msg.nameNew, msg.urlOld, msg.urlNew, msg.pushUrlOld, msg.pushUrlNew)
+					});
+					break;
 				case 'fetch':
 					this.sendMessage({
 						command: 'fetch',
-						error: await this.dataSource.fetch(msg.repo)
+						error: await this.dataSource.fetch(msg.repo, null)
 					});
 					break;
 				case 'fetchAvatar':
 					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
+					break;
+				case 'getSettings':
+					this.sendMessage({
+						command: 'getSettings',
+						... await this.dataSource.getRepoSettings(msg.repo)
+					});
 					break;
 				case 'loadBranches':
 					let branchData = await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches), isRepo = true;
@@ -352,6 +376,7 @@ export class GitGraphView {
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchSelect" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox">Show Remote Branches</label>
 					<div id="findBtn" title="Find"></div>
+					<div id="settingsBtn" title="Repository Settings"></div>
 					<div id="fetchBtn" title="Fetch from Remote(s)"></div>
 					<div id="refreshBtn"></div>
 				</div>

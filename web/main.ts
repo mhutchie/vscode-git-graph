@@ -18,6 +18,7 @@ class GitGraphView {
 	private scrollTop = 0;
 	private renderedGitBranchHead: string | null = null;
 	private findWidget: FindWidget;
+	private settingsWidget: SettingsWidget;
 
 	private viewElem: HTMLElement;
 	private controlsElem: HTMLElement;
@@ -73,6 +74,7 @@ class GitGraphView {
 		this.renderRefreshButton(true);
 
 		this.findWidget = new FindWidget(this);
+		this.settingsWidget = new SettingsWidget(this);
 
 		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, config.branchLabelsAlignedToGraph);
 		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, config.tagLabelsOnRight);
@@ -92,6 +94,7 @@ class GitGraphView {
 			this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitRemotes, prevState.moreCommitsAvailable, true);
 			this.findWidget.restoreState(prevState.findWidget);
+			this.settingsWidget.restoreState(prevState.settingsWidget);
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
 		if (!this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo)) {
@@ -102,13 +105,15 @@ class GitGraphView {
 			this.requestLoadBranchesAndCommits(false);
 		}
 
-		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!;
+		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!;
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => {
 			runAction({ command: 'fetch', repo: this.currentRepo }, 'Fetching from Remote(s)');
 		});
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
+		settingsBtn.innerHTML = SVG_ICONS.gear;
+		settingsBtn.addEventListener('click', () => this.settingsWidget.show(this.currentRepo, true));
 	}
 
 	/* Loading Data */
@@ -148,6 +153,7 @@ class GitGraphView {
 		this.gitRemotes = [];
 		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, false);
 		this.closeCommitDetails(false);
+		this.settingsWidget.close();
 		this.currentBranches = null;
 		this.saveState();
 		this.refresh(true);
@@ -299,6 +305,9 @@ class GitGraphView {
 	public getNumBranches() {
 		return this.gitBranches.length;
 	}
+	public getSettingsWidget() {
+		return this.settingsWidget;
+	}
 
 	/* Refresh */
 	public refresh(hard: boolean) {
@@ -388,7 +397,8 @@ class GitGraphView {
 			maxCommits: this.maxCommits,
 			expandedCommit: this.expandedCommit,
 			scrollTop: this.scrollTop,
-			findWidget: this.findWidget.getState()
+			findWidget: this.findWidget.getState(),
+			settingsWidget: this.settingsWidget.getState()
 		});
 	}
 	public saveRepoState() {
@@ -1084,6 +1094,8 @@ class GitGraphView {
 					this.refresh(true);
 				} else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
 					this.findWidget.show(true);
+				} else if (e.key === 'Escape' && this.settingsWidget.isVisible()) {
+					this.settingsWidget.close();
 				} else if (e.key === 'Escape' && this.findWidget.isVisible()) {
 					this.findWidget.close();
 				} else if (this.expandedCommit !== null) { // Commit Details View is open
@@ -1337,7 +1349,7 @@ window.addEventListener('load', () => {
 
 	registerCustomEmojiMappings(viewState.customEmojiShortcodeMappings);
 
-	let gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
+	const gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
 		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
 		branchLabelsAlignedToGraph: viewState.refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
 		combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
@@ -1354,11 +1366,16 @@ window.addEventListener('load', () => {
 		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
 		tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
 	}, VSCODE_API.getState());
+	const settingsWidget = gitGraph.getSettingsWidget();
 
 	/* Command Processing */
 	window.addEventListener('message', event => {
 		const msg: GG.ResponseMessage = event.data;
 		switch (msg.command) {
+			case 'addRemote':
+				refreshOrDisplayError(msg.error, 'Unable to Add Remote');
+				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				break;
 			case 'addTag':
 				refreshOrDisplayError(msg.error, 'Unable to Add Tag');
 				break;
@@ -1399,17 +1416,28 @@ window.addEventListener('load', () => {
 			case 'deleteBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Branch');
 				break;
+			case 'deleteRemote':
+				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
+				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				break;
 			case 'deleteRemoteBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
 				break;
 			case 'deleteTag':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
 				break;
+			case 'editRemote':
+				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');
+				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				break;
 			case 'fetch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch from Remote(s)');
 				break;
 			case 'fetchAvatar':
 				gitGraph.loadAvatar(msg.email, msg.image);
+				break;
+			case 'getSettings':
+				settingsWidget.loadSettings(msg.settings, msg.error);
 				break;
 			case 'loadBranches':
 				if (msg.error === null) {

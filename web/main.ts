@@ -566,7 +566,7 @@ class GitGraphView {
 					{
 						title: 'Create Branch' + ELLIPSIS,
 						onClick: () => {
-							showFormDialog('Create branch from commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+							showFormDialog('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
 								{ type: 'checkbox', name: 'Check out: ', value: false }
 							], 'Create Branch', values => {
@@ -1780,7 +1780,6 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	if (textRefInput > -1) {
 		let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
 		if (dialogInput.value === '') dialog.className = CLASS_ACTIVE + ' noInput';
-		dialogInput.focus();
 		dialogInput.addEventListener('keyup', () => {
 			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
 			let newClassName = CLASS_ACTIVE + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
@@ -1789,6 +1788,11 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 				dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';
 			}
 		});
+	}
+
+	if (inputs.length > 0 && (inputs[0].type === 'text' || inputs[0].type === 'text-ref')) {
+		// If the first input is a text field, set focus to it.
+		(<HTMLInputElement>document.getElementById('dialogInput0')).focus();
 	}
 }
 function showErrorDialog(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {

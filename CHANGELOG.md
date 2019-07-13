@@ -1,5 +1,18 @@
 # Change Log
 
+## 1.11.0 - 2019-07-13
+* #95 New repository settings menu (opened by clicking on the new settings icon on the top right control bar). Thanks [Raphaël Balet (@rbalet)](https://github.com/rbalet) for helping with this! From the repository settings menu, you can:
+    * View the remotes of the repository
+    * Add a new remote to the repository
+    * Edit an existing remote of the repository
+    * Delete an existing remote of the repository
+* #117 New setting `git-graph.commitOrdering` allows you to choose the order of commits (date, date-author or topo). See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option. Default: date
+* #119 New option to immediately check out a branch after it has been created with the "Create Branch..." action.
+* #123 Persist the "Show Remote Branches" checkbox state across Git Graph view sessions per repository.
+* #125 Extend avatar fetching to support SSH GitHub & GitLab remotes (prior support for GitHub & GitLab was for HTTPS remotes only).
+* #126 When "Show All" is selected for the visible branches, include the HEAD commit on the graph when it is not on a branch (e.g. during rebasing).
+* Various code improvements.
+
 ## 1.10.0 - 2019-07-02
 * #108 New button to open any file displayed in the Commit Details View or Commit Comparison View file trees (to the right of each file).
 * #114 Prompt the user for remote credentials if they are requested by commands that communicate with a remote (askpass).

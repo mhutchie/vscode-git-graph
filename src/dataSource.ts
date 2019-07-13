@@ -5,7 +5,7 @@ import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, Gi
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
-const DETACHED_HEAD_REGEX = /^\(HEAD detached at [0-9A-Za-z]+\)/g;
+const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
@@ -49,7 +49,7 @@ export class DataSource {
 					let lines = stdout.split(EOL_REGEX);
 					for (let i = 0; i < lines.length - 1; i++) {
 						let name = lines[i].substring(2).split(' -> ')[0];
-						if (name.match(DETACHED_HEAD_REGEX) !== null) continue;
+						if (INVALID_BRANCH_REGEX.test(name)) continue;
 
 						if (lines[i][0] === '*') {
 							branchData.head = name;

@@ -31,7 +31,8 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Select one or more branches to be viewed
         * Select from a user predefined array of custom glob patterns (by setting `git-graph.customBranchGlobPatterns`)
     * Fetch from Remote(s) _(available on the top control bar)_
-    * Find widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names).
+    * Find Widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names).
+    * Repository Settings Widget allows you to view, add, edit & delete remotes of the repository.
     * Keyboard Shortcuts:
         * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
         * CTRL/CMD + f: Open the find widget.
@@ -53,6 +54,7 @@ A summary of the Git Graph extension settings are:
 * **Auto Center Commit Details View**: Automatically center the commit details view when it is opened.
 * **Combine Local And Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
 * **Commit Details View Location**: Specifies where the Commit Details View is rendered in the Git Graph view. Default: Inline (with graph)
+* **Commit Ordering**: Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option. Default: date
 * **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the 'Branches' dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
 * **Custom Emoji Shortcode Mappings**: An array of custom Emoji Shortcode mappings. Example: `[{"shortcode": ":sparkles:", "emoji":"✨"}]`
 * **Date Format**: Specifies the date format to be used in the date column of the graph.

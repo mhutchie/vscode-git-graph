@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
+import { Logger } from './logger';
 import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri } from './utils';
@@ -11,6 +12,7 @@ export class RepoManager {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly statusBarItem: StatusBarItem;
+	private readonly logger: Logger;
 	private repos: GitRepoSet;
 	private maxDepthOfRepoSearch: number;
 	private folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
@@ -22,10 +24,11 @@ export class RepoManager {
 	private processCreateEventsTimeout: NodeJS.Timer | null = null;
 	private processChangeEventsTimeout: NodeJS.Timer | null = null;
 
-	constructor(dataSource: DataSource, extensionState: ExtensionState, statusBarItem: StatusBarItem) {
+	constructor(dataSource: DataSource, extensionState: ExtensionState, statusBarItem: StatusBarItem, logger: Logger) {
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.statusBarItem = statusBarItem;
+		this.logger = logger;
 		this.repos = extensionState.getRepos();
 		this.maxDepthOfRepoSearch = getConfig().maxDepthOfRepoSearch();
 		this.startupTasks();
@@ -152,10 +155,12 @@ export class RepoManager {
 	private addRepo(repo: string) {
 		this.repos[repo] = Object.assign({}, DEFAULT_REPO_STATE);
 		this.extensionState.saveRepos(this.repos);
+		this.logger.log('Added new repo: ' + repo);
 	}
 	private removeRepo(repo: string) {
 		delete this.repos[repo];
 		this.extensionState.saveRepos(this.repos);
+		this.logger.log('Removed repo: ' + repo);
 	}
 	private removeReposWithinFolder(path: string) {
 		let reposInFolder = this.getReposInFolder(path);
@@ -199,12 +204,14 @@ export class RepoManager {
 
 	/* Repo Searching */
 	private async searchWorkspaceForRepos() {
+		this.logger.log('Searching workspace for new repos ...');
 		let rootFolders = vscode.workspace.workspaceFolders, changes = false;
 		if (typeof rootFolders !== 'undefined') {
 			for (let i = 0; i < rootFolders.length; i++) {
 				if (await this.searchDirectoryForRepos(getPathFromUri(rootFolders[i].uri), this.maxDepthOfRepoSearch)) changes = true;
 			}
 		}
+		this.logger.log('Completed searching workspace for new repos');
 		if (changes) this.sendRepos();
 	}
 	private searchDirectoryForRepos(directory: string, maxDepth: number) { // Returns a promise resolving to a boolean, that indicates if new repositories were found.

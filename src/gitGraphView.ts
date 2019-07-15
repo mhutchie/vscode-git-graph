@@ -4,6 +4,7 @@ import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { ExtensionState } from './extensionState';
+import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
@@ -19,13 +20,14 @@ export class GitGraphView {
 	private readonly extensionState: ExtensionState;
 	private readonly repoFileWatcher: RepoFileWatcher;
 	private readonly repoManager: RepoManager;
+	private readonly logger: Logger;
 	private disposables: vscode.Disposable[] = [];
 	private isGraphViewLoaded: boolean = false;
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
 	private loadRepo: string | null = null; // Is used by the next call to getHtmlForWebview, and is then reset to null
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, loadRepo: string | null) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadRepo: string | null) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -42,16 +44,17 @@ export class GitGraphView {
 			GitGraphView.currentPanel.panel.reveal(column);
 		} else {
 			// If Git Graph panel doesn't already exist
-			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo, column);
+			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadRepo, column);
 		}
 	}
 
-	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, loadRepo: string | null, column: vscode.ViewColumn | undefined) {
+	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadRepo: string | null, column: vscode.ViewColumn | undefined) {
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.repoManager = repoManager;
+		this.logger = logger;
 		this.loadRepo = loadRepo;
 		this.avatarManager.registerView(this);
 
@@ -78,7 +81,7 @@ export class GitGraphView {
 			}
 		}, null, this.disposables);
 
-		this.repoFileWatcher = new RepoFileWatcher(() => {
+		this.repoFileWatcher = new RepoFileWatcher(logger, () => {
 			if (this.panel.visible) {
 				this.sendMessage({ command: 'refresh' });
 			}
@@ -167,9 +170,9 @@ export class GitGraphView {
 						error: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
 					});
 					break;
-				case 'deleteRemote': 
+				case 'deleteRemote':
 					this.sendMessage({
-						command:'deleteRemote',
+						command: 'deleteRemote',
 						error: await this.dataSource.deleteRemote(msg.repo, msg.name)
 					});
 					break;
@@ -318,6 +321,8 @@ export class GitGraphView {
 			}
 			this.repoFileWatcher.unmute();
 		}, null, this.disposables);
+
+		this.logger.log('Created Git Graph View');
 	}
 
 	public sendMessage(msg: ResponseMessage) {
@@ -334,6 +339,7 @@ export class GitGraphView {
 			const x = this.disposables.pop();
 			if (x) x.dispose();
 		}
+		this.logger.log('Disposed Git Graph View');
 	}
 
 	private update() {

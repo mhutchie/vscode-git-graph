@@ -1,6 +1,7 @@
 import * as cp from 'child_process';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
+import { Logger } from './logger';
 import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
 
@@ -9,6 +10,7 @@ const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
+	private readonly logger: Logger;
 	private gitPath!: string;
 	private gitExecPath!: string;
 	private gitLogFormat!: string;
@@ -16,7 +18,8 @@ export class DataSource {
 	private askpassManager: AskpassManager;
 	private askpassEnv: AskpassEnvironment;
 
-	constructor() {
+	constructor(logger: Logger) {
+		this.logger = logger;
 		this.registerGitPath();
 		this.generateGitCommandFormats();
 		this.askpassManager = new AskpassManager();
@@ -583,11 +586,13 @@ export class DataSource {
 				if (err) return;
 				resolve(code === 0 ? null : getErrorMessage(null, stdout, stderr));
 			});
+			this.logger.logCmd('git', args);
 		});
 	}
 
 	private execGit(command: string, repo: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
 		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo, env: this.getEnv() }, callback);
+		this.logger.logCmd('git', [command]);
 	}
 
 	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }) {
@@ -608,6 +613,7 @@ export class DataSource {
 					reject(getErrorMessage(null, stdout, stderr));
 				}
 			});
+			this.logger.logCmd('git', args);
 		});
 	}
 

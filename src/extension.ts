@@ -5,16 +5,20 @@ import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
+import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
 import { getPathFromUri, isPathInWorkspace } from './utils';
 
 export function activate(context: vscode.ExtensionContext) {
+	const logger = new Logger();
+	logger.log('Starting Git Graph ...');
+
 	const extensionState = new ExtensionState(context);
-	const dataSource = new DataSource();
-	const avatarManager = new AvatarManager(dataSource, extensionState);
+	const dataSource = new DataSource(logger);
+	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
 	const statusBarItem = new StatusBarItem();
-	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem);
+	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem, logger);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('git-graph.view', args => {
@@ -26,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (!repoManager.isKnownRepo(loadRepo)) {
 					repoManager.registerRepo(loadRepo, true, true).then(valid => {
 						if (!valid) loadRepo = null;
-						GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
+						GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadRepo);
 					});
 					return;
 				}
@@ -35,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
 				loadRepo = repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 			}
 
-			GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, loadRepo);
+			GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadRepo);
 		}),
 		vscode.commands.registerCommand('git-graph.addGitRepository', () => {
 			vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {
@@ -74,8 +78,10 @@ export function activate(context: vscode.ExtensionContext) {
 		repoManager,
 		statusBarItem,
 		avatarManager,
-		dataSource
+		dataSource,
+		logger
 	);
+	logger.log('Started Git Graph - Ready to use!');
 }
 
 export function deactivate() { }

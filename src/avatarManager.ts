@@ -6,11 +6,13 @@ import * as url from 'url';
 import { DataSource } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
+import { Logger, maskEmail } from './logger';
 import { AvatarCache } from './types';
 
 export class AvatarManager {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
+	private readonly logger: Logger;
 	private readonly avatarStorageFolder: string;
 	private view: GitGraphView | null = null;
 	private avatars: AvatarCache;
@@ -21,9 +23,10 @@ export class AvatarManager {
 	private githubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
 
-	constructor(dataSource: DataSource, extensionState: ExtensionState) {
+	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
+		this.logger = logger;
 		this.avatarStorageFolder = this.extensionState.getAvatarStoragePath();
 		this.avatars = this.extensionState.getAvatarCache();
 		this.queue = new AvatarRequestQueue(() => {
@@ -44,6 +47,7 @@ export class AvatarManager {
 		if (this.interval !== null) {
 			clearInterval(this.interval);
 			this.interval = null;
+			this.remoteSourceCache = {};
 		}
 	}
 
@@ -110,7 +114,7 @@ export class AvatarManager {
 	}
 
 	private async getRemoteSource(avatarRequest: AvatarRequestItem) {
-		if (typeof this.remoteSourceCache[avatarRequest.repo] === 'string') {
+		if (typeof this.remoteSourceCache[avatarRequest.repo] === 'object') {
 			// If the repo exists in the cache of remote sources
 			return this.remoteSourceCache[avatarRequest.repo];
 		} else {
@@ -141,6 +145,8 @@ export class AvatarManager {
 			this.fetchAvatarsInterval();
 			return;
 		}
+		this.logger.log('Requesting Avatar for ' + maskEmail(avatarRequest.email) + ' from GitHub');
+
 		let commitIndex = avatarRequest.commits.length < 5 ? avatarRequest.commits.length - 1 - avatarRequest.attempts : Math.round((4 - avatarRequest.attempts) * 0.25 * (avatarRequest.commits.length - 1));
 		https.get({
 			hostname: 'api.github.com', path: '/repos/' + owner + '/' + repo + '/commits/' + avatarRequest.commits[commitIndex],
@@ -153,6 +159,7 @@ export class AvatarManager {
 				if (res.headers['x-ratelimit-remaining'] === '0') {
 					// If the GitHub Api rate limit was reached, store the github timeout to prevent subsequent requests
 					this.githubTimeout = parseInt(<string>res.headers['x-ratelimit-reset']) * 1000;
+					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset.');
 				}
 
 				if (res.statusCode === 200) { // Sucess
@@ -193,6 +200,8 @@ export class AvatarManager {
 			this.fetchAvatarsInterval();
 			return;
 		}
+		this.logger.log('Requesting Avatar for ' + maskEmail(avatarRequest.email) + ' from GitLab');
+
 		https.get({
 			hostname: 'gitlab.com', path: '/api/v4/users?search=' + avatarRequest.email,
 			headers: { 'User-Agent': 'vscode-git-graph', 'Private-Token': 'w87U_3gAxWWaPtFgCcus' }, // Token only has read access
@@ -202,8 +211,9 @@ export class AvatarManager {
 			res.on('data', (chunk: Buffer) => { respBody += chunk; });
 			res.on('end', async () => {
 				if (res.headers['ratelimit-remaining'] === '0') {
-					// If the GitLab Api rate limit was reached, store the github timeout to prevent subsequent requests
+					// If the GitLab Api rate limit was reached, store the gitlab timeout to prevent subsequent requests
 					this.gitLabTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
+					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset.');
 				}
 
 				if (res.statusCode === 200) { // Sucess
@@ -233,7 +243,9 @@ export class AvatarManager {
 	}
 
 	private async fetchFromGravatar(avatarRequest: AvatarRequestItem) {
+		this.logger.log('Requesting Avatar for ' + maskEmail(avatarRequest.email) + ' from Gravatar');
 		let hash: string = crypto.createHash('md5').update(avatarRequest.email).digest('hex');
+
 		let img = await this.downloadAvatarImage(avatarRequest.email, 'https://secure.gravatar.com/avatar/' + hash + '?s=54&d=404'), identicon = false;
 		if (img === null) {
 			img = await this.downloadAvatarImage(avatarRequest.email, 'https://secure.gravatar.com/avatar/' + hash + '?s=54&d=identicon');
@@ -280,6 +292,7 @@ export class AvatarManager {
 		}
 		this.extensionState.saveAvatar(email, this.avatars[email]);
 		this.sendAvatarToWebView(email, () => { });
+		this.logger.log('Saved Avatar for ' + maskEmail(email));
 	}
 
 	private sendAvatarToWebView(email: string, onError: () => void) {

@@ -1,17 +1,20 @@
 import * as vscode from 'vscode';
+import { Logger } from './logger';
 import { getPathFromUri } from './utils';
 
 const FILE_CHANGE_REGEX = /(^\.git\/(config|index|HEAD|refs\/stash|refs\/heads\/.*|refs\/remotes\/.*|refs\/tags\/.*)$)|(^(?!\.git).*$)|(^\.git[^\/]+$)/;
 
 export class RepoFileWatcher {
 	private repo: string | null = null;
+	private readonly logger: Logger;
 	private readonly repoChangeCallback: () => void;
 	private fsWatcher: vscode.FileSystemWatcher | null = null;
 	private refreshTimeout: NodeJS.Timer | null = null;
 	private muted: boolean = false;
 	private resumeAt: number = 0;
 
-	constructor(repoChangeCallback: () => void) {
+	constructor(logger: Logger, repoChangeCallback: () => void) {
+		this.logger = logger;
 		this.repoChangeCallback = repoChangeCallback;
 	}
 
@@ -27,6 +30,7 @@ export class RepoFileWatcher {
 		this.fsWatcher.onDidCreate(uri => this.refresh(uri));
 		this.fsWatcher.onDidChange(uri => this.refresh(uri));
 		this.fsWatcher.onDidDelete(uri => this.refresh(uri));
+		this.logger.log('Started watching repo: ' + repo);
 	}
 
 	public stop() {
@@ -34,6 +38,7 @@ export class RepoFileWatcher {
 			// If there is an existing File System Watcher, stop it
 			this.fsWatcher.dispose();
 			this.fsWatcher = null;
+			this.logger.log('Stopped watching repo: ' + this.repo);
 		}
 		if (this.refreshTimeout !== null) {
 			// If a timeout is active, clear it

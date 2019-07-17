@@ -43,27 +43,28 @@ export class DataSource {
 
 	public getBranches(repo: string, showRemoteBranches: boolean) {
 		return new Promise<GitBranchData>((resolve) => {
-			this.execGit('branch' + (showRemoteBranches ? ' -a' : ''), repo, (err, stdout, stderr) => {
+			let args = ['branch'];
+			if (showRemoteBranches) args.push('-a');
+
+			this.spawnGit(args, repo, (stdout) => {
 				let branchData: GitBranchData = { branches: [], head: null, error: null };
+				let lines = stdout.split(EOL_REGEX);
+				for (let i = 0; i < lines.length - 1; i++) {
+					let name = lines[i].substring(2).split(' -> ')[0];
+					if (INVALID_BRANCH_REGEX.test(name)) continue;
 
-				if (err) {
-					branchData.error = getErrorMessage(err, stdout, stderr);
-				} else {
-					let lines = stdout.split(EOL_REGEX);
-					for (let i = 0; i < lines.length - 1; i++) {
-						let name = lines[i].substring(2).split(' -> ')[0];
-						if (INVALID_BRANCH_REGEX.test(name)) continue;
-
-						if (lines[i][0] === '*') {
-							branchData.head = name;
-							branchData.branches.unshift(name);
-						} else {
-							branchData.branches.push(name);
-						}
+					if (lines[i][0] === '*') {
+						branchData.head = name;
+						branchData.branches.unshift(name);
+					} else {
+						branchData.branches.push(name);
 					}
 				}
-
-				resolve(branchData);
+				return branchData;
+			}).then((data) => {
+				resolve(data);
+			}).catch((errorMessage) => {
+				resolve({ branches: [], head: null, error: errorMessage });
 			});
 		});
 	}
@@ -233,11 +234,7 @@ export class DataSource {
 	}
 
 	public isGitRepository(path: string) {
-		return new Promise<boolean>(resolve => {
-			this.execGit('rev-parse --git-dir', path, (err) => {
-				resolve(!err);
-			});
-		});
+		return this.spawnGit(['rev-parse', '--git-dir'], path, (stdout) => stdout).then(() => true, () => false);
 	}
 
 	public async addRemote(repo: string, name: string, url: string, pushUrl: string | null, fetch: boolean) {
@@ -467,16 +464,10 @@ export class DataSource {
 	}
 
 	private getRemotes(repo: string) {
-		return new Promise<string[]>((resolve, reject) => {
-			this.execGit('remote', repo, (err, stdout, stderr) => {
-				if (err) {
-					reject(getErrorMessage(err, stdout, stderr));
-				} else {
-					let lines = stdout.split(EOL_REGEX);
-					lines.pop();
-					resolve(lines);
-				}
-			});
+		return this.spawnGit(['remote'], repo, (stdout) => {
+			let lines = stdout.split(EOL_REGEX);
+			lines.pop();
+			return lines;
 		});
 	}
 
@@ -510,31 +501,21 @@ export class DataSource {
 	}
 
 	private getGitUnsavedChanges(repo: string) {
-		return new Promise<GitUnsavedChanges | null>((resolve, reject) => {
-			this.execGit('status -s --branch --untracked-files --porcelain', repo, (err, stdout, stderr) => {
-				if (err) {
-					reject(getErrorMessage(err, stdout, stderr));
-				} else {
-					let lines = stdout.split(EOL_REGEX);
-					resolve(lines.length > 2 ? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 } : null);
-				}
-			});
+		return this.spawnGit<GitUnsavedChanges | null>(['status', '-s', '--branch', '--untracked-files', '--porcelain'], repo, (stdout) => {
+			let lines = stdout.split(EOL_REGEX);
+			return lines.length > 2
+				? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 }
+				: null;
 		});
 	}
 
 	private getUntrackedFiles(repo: string) {
-		return new Promise<string[]>((resolve, reject) => {
-			this.execGit('-c core.quotepath=false status -s --untracked-files --porcelain', repo, (err, stdout, stderr) => {
-				if (err) {
-					reject(getErrorMessage(err, stdout, stderr));
-				} else {
-					let files = [], lines = stdout.split(EOL_REGEX);
-					for (let i = 0; i < lines.length; i++) {
-						if (lines[i].startsWith('??')) files.push(lines[i].substr(3));
-					}
-					resolve(files);
-				}
-			});
+		return this.spawnGit(['-c', 'core.quotepath=false', 'status', '-s', '--untracked-files', '--porcelain'], repo, (stdout) => {
+			let files = [], lines = stdout.split(EOL_REGEX);
+			for (let i = 0; i < lines.length; i++) {
+				if (lines[i].startsWith('??')) files.push(lines[i].substr(3));
+			}
+			return files;
 		});
 	}
 
@@ -567,9 +548,7 @@ export class DataSource {
 	}
 
 	private areStagedChanges(repo: string) {
-		return new Promise<boolean>(resolve => {
-			this.execGit('diff-index HEAD', repo, (err, stdout) => resolve(!err && stdout !== ''));
-		});
+		return this.spawnGit(['diff-index', 'HEAD'], repo, (stdout) => stdout !== '').then(changes => changes, () => false);
 	}
 
 	private runGitCommand(args: string[], repo: string) {
@@ -588,11 +567,6 @@ export class DataSource {
 			});
 			this.logger.logCmd('git', args);
 		});
-	}
-
-	private execGit(command: string, repo: string, callback: { (error: Error | null, stdout: string, stderr: string): void }) {
-		cp.exec(this.gitExecPath + ' ' + command, { cwd: repo, env: this.getEnv() }, callback);
-		this.logger.logCmd('git', [command]);
 	}
 
 	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }) {

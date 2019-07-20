@@ -18,3 +18,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Licenses for software that are referenced, used and/or modified in the Git Graph
+extension are provided in the ./licenses directory, in accordance with their 
+respective licenses. This includes:
+- LICENSE_MICROSOFT - Copyright (c) 2015 - present Microsoft Corporation
+- LICENSE_OCTICONS - Copyright (c) 2019 GitHub Inc.

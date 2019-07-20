@@ -18,6 +18,10 @@ export class Logger {
 	public logCmd(cmd: string, args: string[]) {
 		this.channel.appendLine(timestamp() + '> ' + cmd + ' ' + args.join(' ').replace(/--format=[^ ]+/, '--format=...'));
 	}
+
+	public logError(message: string) {
+		this.channel.appendLine(timestamp() + 'ERROR: ' + message);
+	}
 }
 
 function timestamp() {

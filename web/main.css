@@ -533,13 +533,6 @@ body.tagLabelsRightAligned .gitRef.tag{
 	height:18px !important;
 	animation:loadingIconAnimation 2s linear infinite;
 }
-#loadMoreCommitsBtn{
-	width:180px;
-	height:28px;
-	margin:10px auto;
-	border-radius:14px;
-	line-height:28px;
-}
 
 #controls.fetchSupported{
 	padding-right:132px;
@@ -743,6 +736,19 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 
 /* Buttons */
+#loadMoreCommitsBtn, #rescanForReposBtn{
+	height:28px;
+	margin:10px auto;
+	border-radius:14px;
+	line-height:28px;
+}
+#loadMoreCommitsBtn{
+	width:180px;
+}
+#rescanForReposBtn{
+	width:350px;
+}
+
 .roundedBtn{
 	display:block;
 	background-color:rgba(128,128,128,0.1);

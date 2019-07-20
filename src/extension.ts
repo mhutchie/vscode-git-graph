@@ -8,14 +8,26 @@ import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { getPathFromUri, isPathInWorkspace } from './utils';
+import { findGit, getPathFromUri, GitExecutable, isPathInWorkspace, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	const logger = new Logger();
 	logger.log('Starting Git Graph ...');
 
 	const extensionState = new ExtensionState(context);
-	const dataSource = new DataSource(logger);
+
+	let gitExecutable: GitExecutable | null;
+	try {
+		gitExecutable = await findGit(extensionState);
+		extensionState.setLastKnownGitPath(gitExecutable.path);
+		logger.log('Using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')');
+	} catch (_) {
+		gitExecutable = null;
+		vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+		logger.logError(UNABLE_TO_FIND_GIT_MSG);
+	}
+
+	const dataSource = new DataSource(gitExecutable, logger);
 	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
 	const statusBarItem = new StatusBarItem();
 	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem, logger);
@@ -42,6 +54,11 @@ export function activate(context: vscode.ExtensionContext) {
 			GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadRepo);
 		}),
 		vscode.commands.registerCommand('git-graph.addGitRepository', () => {
+			if (gitExecutable === null) {
+				vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+				return;
+			}
+
 			vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {
 				if (uris && uris.length > 0) {
 					let path = getPathFromUri(uris[0]);
@@ -72,7 +89,18 @@ export function activate(context: vscode.ExtensionContext) {
 			} else if (e.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
 				repoManager.maxDepthOfRepoSearchChanged();
 			} else if (e.affectsConfiguration('git.path')) {
-				dataSource.registerGitPath();
+				findGit(extensionState).then(exec => {
+					gitExecutable = exec;
+					extensionState.setLastKnownGitPath(gitExecutable.path);
+					dataSource.setGitExecutable(gitExecutable);
+					logger.log('Using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')');
+					repoManager.searchWorkspaceForRepos();
+				}, () => {
+					if (gitExecutable === null) {
+						vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+						logger.logError(UNABLE_TO_FIND_GIT_MSG);
+					}
+				});
 			}
 		}),
 		repoManager,

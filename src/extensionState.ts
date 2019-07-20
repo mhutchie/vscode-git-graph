@@ -6,6 +6,7 @@ import { getPathFromStr } from './utils';
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
+const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
 const REPO_STATES = 'repoStates';
 
 export const DEFAULT_REPO_STATE: GitRepoState = {
@@ -55,6 +56,13 @@ export class ExtensionState {
 	}
 	public setLastActiveRepo(repo: string | null) {
 		this.workspaceState.update(LAST_ACTIVE_REPO, repo);
+	}
+
+	public getLastKnownGitPath() {
+		return this.globalState.get<string | null>(LAST_KNOWN_GIT_PATH, null);
+	}
+	public setLastKnownGitPath(path: string) {
+		this.globalState.update(LAST_KNOWN_GIT_PATH, path);
 	}
 
 	/* Avatars */

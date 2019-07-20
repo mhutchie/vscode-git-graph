@@ -520,6 +520,10 @@ export interface ResponseRenameBranch {
 	error: GitCommandError;
 }
 
+export interface RequestRescanForRepos {
+	command: 'rescanForRepos';
+}
+
 export interface RequestResetToCommit {
 	command: 'resetToCommit';
 	repo: string;
@@ -600,6 +604,7 @@ export type RequestMessage =
 	| RequestPushTag
 	| RequestRebaseOn
 	| RequestRenameBranch
+	| RequestRescanForRepos
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSaveRepoState

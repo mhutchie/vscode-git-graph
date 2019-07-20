@@ -1,12 +1,17 @@
+import * as cp from 'child_process';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
+import { ExtensionState } from './extensionState';
 import { GitCommandError, GitFileChangeType } from './types';
 
 const FS_REGEX = /\\/g;
 
 export const UNCOMMITTED = '*';
+
+export const UNABLE_TO_FIND_GIT_MSG = 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.';
 
 export function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
@@ -92,12 +97,19 @@ export function viewScm() {
 	});
 }
 
-export function runCommandInNewTerminal(cwd: string, command: string, name: string) {
-	let terminal = vscode.window.createTerminal({ cwd: cwd, name: name });
-	terminal.sendText(command);
+export function runGitCommandInNewTerminal(cwd: string, gitExecutable: GitExecutable, command: string, name: string) {
+	let p = process.env['PATH'] || '', sep = isWindows() ? ';' : ':';
+	if (p !== '' && !p.endsWith(sep)) p += sep;
+	p += path.dirname(gitExecutable.path);
+
+	let terminal = vscode.window.createTerminal({ cwd: cwd, name: name, env: { 'PATH': p } });
+	terminal.sendText('git ' + command);
 	terminal.show();
 }
 
+function isWindows() {
+	return process.platform === 'win32' || process.env.OSTYPE === 'cygwin' || process.env.OSTYPE === 'msys';
+}
 
 // Evaluate promises in parallel, with at most maxParallel running at any time
 export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise: (val: X) => Promise<Y>) {
@@ -127,3 +139,120 @@ export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise
 		}
 	});
 }
+
+
+/* Find Git Executable */
+
+// The following code matches the behaviour of equivalent functions in Visual Studio Code's Git Extension,
+// however was rewritten to meet the needs of this extension.
+// The original code has the following copyright notice "Copyright (c) 2015 - present Microsoft Corporation",
+// and is licensed under the MIT License provided in ./licenses/LICENSE_MICROSOFT.
+// https://github.com/microsoft/vscode/blob/473af338e1bd9ad4d9853933da1cd9d5d9e07dc9/extensions/git/src/git.ts#L44-L135
+
+export interface GitExecutable {
+	path: string;
+	version: string;
+}
+
+export async function findGit(extensionState: ExtensionState) {
+	const lastKnownPath = extensionState.getLastKnownGitPath();
+	if (lastKnownPath !== null) {
+		try {
+			return await getGitExecutable(lastKnownPath);
+		} catch (_) { }
+	}
+
+	const configGitPath = getConfig().gitPath();
+	if (configGitPath !== null) {
+		try {
+			return await getGitExecutable(configGitPath);
+		} catch (_) { }
+	}
+
+	switch (process.platform) {
+		case 'darwin':
+			return findGitOnDarwin();
+		case 'win32':
+			return findGitOnWin32();
+		default:
+			return getGitExecutable('git');
+	}
+}
+
+/* Find Git on Darwin */
+function findGitOnDarwin() {
+	return new Promise<GitExecutable>((resolve, reject) => {
+		cp.exec('which git', (err, stdout) => {
+			if (err) return reject();
+
+			const path = stdout.trim();
+			if (path !== '/usr/bin/git') {
+				getGitExecutable(path).then((exec) => resolve(exec), () => reject());
+			} else {
+				// must check if XCode is installed
+				cp.exec('xcode-select -p', (err: any) => {
+					if (err && err.code === 2) {
+						// git is not installed, and launching /usr/bin/git will prompt the user to install it
+						reject();
+					} else {
+						getGitExecutable(path).then((exec) => resolve(exec), () => reject());
+					}
+				});
+			}
+		});
+	});
+}
+
+/* Find Git on Windows */
+function findGitOnWin32() {
+	return findSystemGitWin32(process.env['ProgramW6432'])
+		.then(undefined, () => findSystemGitWin32(process.env['ProgramFiles(x86)']))
+		.then(undefined, () => findSystemGitWin32(process.env['ProgramFiles']))
+		.then(undefined, () => findSystemGitWin32(process.env['LocalAppData'] ? path.join(process.env['LocalAppData']!, 'Programs') : undefined))
+		.then(undefined, () => findGitWin32InPath());
+}
+function findSystemGitWin32(pathBase?: string) {
+	return pathBase
+		? getGitExecutable(path.join(pathBase, 'Git', 'cmd', 'git.exe'))
+		: Promise.reject<GitExecutable>();
+}
+async function findGitWin32InPath() {
+	let dirs = (process.env['PATH'] || '').split(';');
+	dirs.unshift(process.cwd());
+
+	for (let i = 0; i < dirs.length; i++) {
+		let file = path.join(dirs[i], 'git.exe');
+		if (await isExecutable(file)) {
+			try {
+				return await getGitExecutable(file);
+			} catch (_) { }
+		}
+	}
+	return Promise.reject<GitExecutable>();
+}
+
+/* Find Git Helpers */
+function isExecutable(path: string) {
+	return new Promise<boolean>(resolve => {
+		fs.stat(path, (err, stat) => {
+			resolve(!err && (stat.isFile() || stat.isSymbolicLink()));
+		});
+	});
+}
+function getGitExecutable(path: string): Promise<GitExecutable> {
+	return new Promise<GitExecutable>((resolve, reject) => {
+		const cmd = cp.spawn(path, ['--version']);
+		let stdout = '';
+		cmd.stdout.on('data', (d) => { stdout += d; });
+		cmd.on('error', () => reject());
+		cmd.on('exit', (code) => {
+			if (code) {
+				reject();
+			} else {
+				resolve({ path: path, version: stdout.trim().replace(/^git version /, '') });
+			}
+		});
+	});
+}
+
+/* End of Find Git Executable */

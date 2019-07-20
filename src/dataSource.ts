@@ -3,7 +3,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
-import { abbrevCommit, getPathFromStr, runCommandInNewTerminal, UNCOMMITTED } from './utils';
+import { abbrevCommit, getPathFromStr, GitExecutable, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -11,24 +11,26 @@ const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
 	private readonly logger: Logger;
-	private gitPath!: string;
-	private gitExecPath!: string;
+	private gitExecutable: GitExecutable | null;
 	private gitLogFormat!: string;
 	private gitCommitDetailsFormat!: string;
 	private askpassManager: AskpassManager;
 	private askpassEnv: AskpassEnvironment;
 
-	constructor(logger: Logger) {
+	constructor(gitExecutable: GitExecutable | null, logger: Logger) {
+		this.gitExecutable = gitExecutable;
 		this.logger = logger;
-		this.registerGitPath();
 		this.generateGitCommandFormats();
 		this.askpassManager = new AskpassManager();
 		this.askpassEnv = this.askpassManager.getEnv();
 	}
 
-	public registerGitPath() {
-		this.gitPath = getConfig().gitPath();
-		this.gitExecPath = this.gitPath.indexOf(' ') > -1 ? '"' + this.gitPath + '"' : this.gitPath;
+	public isGitExecutableUnknown() {
+		return this.gitExecutable === null;
+	}
+
+	public setGitExecutable(gitExecutable: GitExecutable) {
+		this.gitExecutable = gitExecutable;
 	}
 
 	public generateGitCommandFormats() {
@@ -403,10 +405,14 @@ export class DataSource {
 
 	public rebaseOn(repo: string, base: string, type: RebaseOnType, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
-			runCommandInNewTerminal(repo,
-				this.gitExecPath + ' rebase --interactive ' + (type === 'Branch' ? base.replace(/'/g, '"\'"') : base),
-				'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
-			return new Promise<GitCommandError>(resolve => setTimeout(() => resolve(null), 1000));
+			return new Promise<GitCommandError>(resolve => {
+				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
+
+				runGitCommandInNewTerminal(repo, this.gitExecutable, 
+					'rebase --interactive ' + (type === 'Branch' ? base.replace(/'/g, '"\'"') : base),
+					'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
+				setTimeout(() => resolve(null), 1000);
+			});
 		} else {
 			let args = ['rebase', base];
 			if (ignoreDate) args.push('--ignore-date');
@@ -553,8 +559,10 @@ export class DataSource {
 
 	private runGitCommand(args: string[], repo: string) {
 		return new Promise<GitCommandError>((resolve) => {
+			if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
+
 			let stdout = '', stderr = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.getEnv() });
+			const cmd = cp.spawn(this.gitExecutable.path, args, { cwd: repo, env: this.getEnv() });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {
@@ -571,8 +579,10 @@ export class DataSource {
 
 	private spawnGit<T>(args: string[], repo: string, successValue: { (stdout: string): T }) {
 		return new Promise<T>((resolve, reject) => {
+			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
+
 			let stdout = '', stderr = '', err = false;
-			const cmd = cp.spawn(this.gitPath, args, { cwd: repo, env: this.getEnv() });
+			const cmd = cp.spawn(this.gitExecutable.path, args, { cwd: repo, env: this.getEnv() });
 			cmd.stdout.on('data', (d) => { stdout += d; });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {

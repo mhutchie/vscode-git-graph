@@ -203,7 +203,7 @@ export class RepoManager {
 	}
 
 	/* Repo Searching */
-	private async searchWorkspaceForRepos() {
+	public async searchWorkspaceForRepos() {
 		this.logger.log('Searching workspace for new repos ...');
 		let rootFolders = vscode.workspace.workspaceFolders, changes = false;
 		if (typeof rootFolders !== 'undefined') {
@@ -213,6 +213,7 @@ export class RepoManager {
 		}
 		this.logger.log('Completed searching workspace for new repos');
 		if (changes) this.sendRepos();
+		return changes;
 	}
 	private searchDirectoryForRepos(directory: string, maxDepth: number) { // Returns a promise resolving to a boolean, that indicates if new repositories were found.
 		return new Promise<boolean>(resolve => {

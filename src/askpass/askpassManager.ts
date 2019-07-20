@@ -3,7 +3,7 @@
  *  https://github.com/microsoft/vscode/blob/473af338e1bd9ad4d9853933da1cd9d5d9e07dc9/extensions/git/src/askpass.ts,
  *  which has the following copyright notice & license:
  *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See ./src/askpass/LICENSE_MICROSOFT for license information.
+ *  Licensed under the MIT License. See ./licenses/LICENSE_MICROSOFT for license information.
  *--------------------------------------------------------------------------------------------*/
 
 import * as fs from 'fs';

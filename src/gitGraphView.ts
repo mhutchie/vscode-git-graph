@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
-import { copyToClipboard, getNonce, openFile, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -291,6 +291,11 @@ export class GitGraphView {
 						error: await this.dataSource.renameBranch(msg.repo, msg.oldName, msg.newName)
 					});
 					break;
+				case 'rescanForRepos':
+					if (!(await this.repoManager.searchWorkspaceForRepos())) {
+						vscode.window.showErrorMessage('No Git repositories were found in the current workspace.');
+					}
+					break;
 				case 'resetToCommit':
 					this.sendMessage({
 						command: 'resetToCommit',
@@ -374,7 +379,13 @@ export class GitGraphView {
 			colorVars += '--git-graph-color' + i + ':' + viewState.graphColours[i] + '; ';
 			colorParams += '[data-color="' + i + '"]{--git-graph-color:var(--git-graph-color' + i + ');} ';
 		}
-		if (numRepos > 0) {
+
+		if (this.dataSource.isGitExecutableUnknown()) {
+			body = `<body class="unableToLoad" style="${colorVars}">
+			<h2>Unable to load Git Graph</h2>
+			<p class="unableToLoadMessage">${UNABLE_TO_FIND_GIT_MSG}</p>
+			</body>`;
+		} else if (numRepos > 0) {
 			body = `<body style="${colorVars}">
 			<div id="view">
 				<div id="controls">
@@ -403,11 +414,10 @@ export class GitGraphView {
 		} else {
 			body = `<body class="unableToLoad" style="${colorVars}">
 			<h2>Unable to load Git Graph</h2>
-			<p class="unableToLoadMessage">Either no Git repositories could be found in the current workspace, or the Git executable could not be found.</p>
-			<br>
-			<h3>Troubleshooting</h3>
-			<p>If you're using a portable Git installation, make sure you have set the Visual Studio Code Setting "git.path" to the path of your portable installation (e.g. "C:\\Program Files\\Git\\bin\\git.exe" on Windows).</p>
+			<p class="unableToLoadMessage">No Git repositories were found in the current workspace when it was last scanned by Git Graph.</p>
 			<p>If your repositories are in subfolders of the open workspace folder(s), make sure you have set the Git Graph Setting "git-graph.maxDepthOfRepoSearch" appropriately (read the <a href="https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">documentation</a> for more information).</p>
+			<p><div id="rescanForReposBtn" class="roundedBtn">Re-scan the current workspace for repositories</div></p>
+			<script nonce="${nonce}">(function(){ var api = acquireVsCodeApi(); document.getElementById('rescanForReposBtn').addEventListener('click', function(){ api.postMessage({command: 'rescanForRepos'}); }); })();</script>
 			</body>`;
 		}
 		this.isGraphViewLoaded = numRepos > 0;

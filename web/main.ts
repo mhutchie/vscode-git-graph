@@ -592,7 +592,7 @@ class GitGraphView {
 								}, sourceElem);
 							} else {
 								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
-									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + escapeHtml(this.commits[this.commitLookup[hash]].message) : ''),
+									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 									value: (index + 1).toString()
 								}));
 								showSelectDialog('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick', (parentIndex) => {
@@ -610,7 +610,7 @@ class GitGraphView {
 								}, sourceElem);
 							} else {
 								let options = this.commits[this.commitLookup[hash]].parentHashes.map((hash, index) => ({
-									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + escapeHtml(this.commits[this.commitLookup[hash]].message) : ''),
+									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 									value: (index + 1).toString()
 								}));
 								showSelectDialog('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert', (parentIndex) => {
@@ -695,7 +695,7 @@ class GitGraphView {
 						let message = 'Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?';
 						if (this.gitRemotes.length > 1) {
 							let options = [{ name: 'Don\'t delete on any remote', value: '-1' }];
-							this.gitRemotes.forEach((remote, i) => options.push({ name: escapeHtml(remote), value: i.toString() }));
+							this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
 							showSelectDialog(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
 								this.deleteTagAction(refName, remoteIndex !== '-1' ? this.gitRemotes[parseInt(remoteIndex)] : null);
 							}, null);
@@ -719,7 +719,7 @@ class GitGraphView {
 									runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[0] }, 'Pushing Tag');
 								}, null);
 							} else if (this.gitRemotes.length > 1) {
-								let options = this.gitRemotes.map((remote, index) => ({ name: escapeHtml(remote), value: index.toString() }));
+								let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
 								showSelectDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
 									runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
 								}, null);
@@ -739,7 +739,7 @@ class GitGraphView {
 					if (this.gitBranchHead !== refName) {
 						menu.push({
 							title: 'Checkout Branch',
-							onClick: () => this.checkoutBranchAction(refName, null)
+							onClick: () => this.checkoutBranchAction(refName, null, null)
 						});
 					}
 					menu.push({
@@ -792,7 +792,7 @@ class GitGraphView {
 										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[0], setUpstream: setUpstream }, 'Pushing Branch');
 									}, null);
 								} else if (this.gitRemotes.length > 1) {
-									let options = this.gitRemotes.map((remote, index) => ({ name: escapeHtml(remote), value: index.toString() }));
+									let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
 									showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>?', [
 										{ type: 'select', name: 'Push to Remote: ', default: '0', options: options },
 										{ type: 'checkbox', name: 'Set Upstream: ', value: true }
@@ -807,7 +807,7 @@ class GitGraphView {
 					let remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!);
 					menu.push({
 						title: 'Checkout Branch' + ELLIPSIS,
-						onClick: () => this.checkoutBranchAction(refName, remote)
+						onClick: () => this.checkoutBranchAction(refName, remote, null)
 					});
 					if (remote !== '') { // If the remote of the remote branch ref is known
 						menu.push(
@@ -854,7 +854,7 @@ class GitGraphView {
 					refName = unescapeHtml((<HTMLElement>e.target).dataset.remote!) + '/' + refName;
 					isHead = false;
 				}
-				this.checkoutBranchAction(refName, isHead ? null : unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!));
+				this.checkoutBranchAction(refName, isHead ? null : unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!), null);
 			}
 		});
 	}
@@ -879,10 +879,18 @@ class GitGraphView {
 	}
 
 	/* Actions */
-	private checkoutBranchAction(refName: string, remote: string | null) {
+	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null) {
 		if (remote !== null) {
-			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (remote !== '' ? refName.substr(remote.length + 1) : refName), 'Checkout Branch', newBranch => {
-				runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName }, 'Checking out Branch');
+			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substr(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
+				if (this.gitBranches.includes(newBranch)) {
+					showButtonsDialog('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
+						this.checkoutBranchAction(refName, remote, newBranch);
+					}, 'Check out the existing branch', () => {
+						this.checkoutBranchAction(newBranch, null, null);
+					}, null);
+				} else {
+					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName }, 'Checking out Branch');
+				}
 			}, null);
 		} else {
 			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null }, 'Checking out Branch');
@@ -1636,7 +1644,7 @@ function abbrevCommit(commitHash: string) {
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {
-	showDialog(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null);
+	showDialog(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
 	sendMessage(msg);
 }
 
@@ -1716,6 +1724,15 @@ function showConfirmationDialog(message: string, confirmed: () => void, sourceEl
 	showDialog(FORM_DIALOG, message, 'Yes', 'No', () => {
 		hideDialog();
 		confirmed();
+	}, null, sourceElem);
+}
+function showButtonsDialog(message: string, buttonLabel1: string, buttonAction1: () => void, buttonLabel2: string, buttonAction2: () => void, sourceElem: HTMLElement | null) {
+	showDialog(FORM_DIALOG, message, buttonLabel1, buttonLabel2, () => {
+		hideDialog();
+		buttonAction1();
+	}, () => {
+		hideDialog();
+		buttonAction2();
 	}, sourceElem);
 }
 function showRefInputDialog(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
@@ -1747,13 +1764,13 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 		if (input.type === 'select') {
 			html += '<select id="dialogInput' + i + '">';
 			for (let j = 0; j < input.options.length; j++) {
-				html += '<option value="' + input.options[j].value + '"' + (input.options[j].value === input.default ? ' selected' : '') + '>' + input.options[j].name + '</option>';
+				html += '<option value="' + escapeHtml(input.options[j].value) + '"' + (input.options[j].value === input.default ? ' selected' : '') + '>' + escapeHtml(input.options[j].name) + '</option>';
 			}
 			html += '</select>';
 		} else if (input.type === 'checkbox') {
 			html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElement && !multiCheckbox ? '' : input.name) + '</label></span>';
 		} else {
-			html += '<input id="dialogInput' + i + '" type="text" value="' + input.default + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + input.placeholder + '"' : '') + '/>';
+			html += '<input id="dialogInput' + i + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + '/>';
 			if (input.type === 'text-ref') textRefInput = i;
 		}
 		html += '</td></tr>';
@@ -1775,7 +1792,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 		}
 		hideDialog();
 		actioned(values);
-	}, sourceElem);
+	}, null, sourceElem);
 
 	if (textRefInput > -1) {
 		let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
@@ -1796,9 +1813,9 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	}
 }
 function showErrorDialog(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-	showDialog(ERROR_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, sourceElem);
+	showDialog(ERROR_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
 }
-function showDialog(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
+function showDialog(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, sourceElem: HTMLElement | null) {
 	hideDialogAndContextMenu();
 
 	dialogType = type;
@@ -1809,7 +1826,7 @@ function showDialog(type: DialogType, html: string, actionName: string | null, d
 		document.getElementById('dialogAction')!.addEventListener('click', actioned);
 		dialogAction = actioned;
 	}
-	document.getElementById('dialogDismiss')!.addEventListener('click', hideDialog);
+	document.getElementById('dialogDismiss')!.addEventListener('click', dismissed !== null ? dismissed : hideDialog);
 
 	dialogMenuSource = sourceElem;
 	if (dialogMenuSource !== null) dialogMenuSource.classList.add(CLASS_DIALOG_ACTIVE);

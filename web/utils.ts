@@ -71,7 +71,7 @@ const ATTR_ERROR = 'data-error';
 
 const ACTION_RUNNING_DIALOG = 'action-running';
 const FORM_DIALOG = 'form';
-const ERROR_DIALOG = 'error';
+const MESSAGE_DIALOG = 'message';
 
 
 /* General Helpers */

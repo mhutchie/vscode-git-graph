@@ -311,6 +311,13 @@ export class GitGraphView {
 				case 'saveRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
 					break;
+				case 'tagDetails':
+					this.sendMessage({
+						command: 'tagDetails',
+						tagName: msg.tagName,
+						... await this.dataSource.tagDetails(msg.repo, msg.tagName)
+					});
+					break;
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',

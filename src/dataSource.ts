@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitUnsavedChanges, RebaseOnType } from './types';
+import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges, RebaseOnType } from './types';
 import { abbrevCommit, getPathFromStr, GitExecutable, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -118,7 +118,7 @@ export class DataSource {
 					if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
 				}
 				for (i = 0; i < refData.tags.length; i++) {
-					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push(refData.tags[i].name);
+					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
 				}
 				for (i = 0; i < refData.remotes.length; i++) {
 					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
@@ -191,6 +191,25 @@ export class DataSource {
 			Promise.all(promises)
 				.then((results) => resolve({ fileChanges: generateFileChanges(results[0], results[1], toHash === UNCOMMITTED ? results[2] : []), error: null }))
 				.catch((errorMessage) => resolve({ fileChanges: [], error: errorMessage }));
+		});
+	}
+
+	public tagDetails(repo: string, tagName: string) {
+		return new Promise<GitTagDetailsData>(resolve => {
+			this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout => {
+				let data = stdout.split(GIT_LOG_SEPARATOR);
+				return {
+					name: data[0],
+					email: data[1].substring(data[1].startsWith('<') ? 1 : 0, data[1].length - (data[1].endsWith('>') ? 1 : 0)),
+					date: parseInt(data[2]),
+					message: data[3].trim().split(EOL_REGEX).join('\n'),
+					error: null
+				};
+			})).then((data) => {
+				resolve(data);
+			}).catch((errorMessage) => {
+				resolve({ name: '', email: '', date: 0, message: '', error: errorMessage });
+			});
 		});
 	}
 
@@ -408,7 +427,7 @@ export class DataSource {
 			return new Promise<GitCommandError>(resolve => {
 				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
 
-				runGitCommandInNewTerminal(repo, this.gitExecutable, 
+				runGitCommandInNewTerminal(repo, this.gitExecutable,
 					'rebase --interactive ' + (type === 'Branch' ? base.replace(/'/g, '"\'"') : base),
 					'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
 				setTimeout(() => resolve(null), 1000);
@@ -458,7 +477,8 @@ export class DataSource {
 				if (ref.startsWith('refs/heads/')) {
 					refData.heads.push({ hash: hash, name: ref.substring(11) });
 				} else if (ref.startsWith('refs/tags/')) {
-					refData.tags.push({ hash: hash, name: (ref.endsWith('^{}') ? ref.substring(10, ref.length - 3) : ref.substring(10)) });
+					let annotated = ref.endsWith('^{}');
+					refData.tags.push({ hash: hash, name: (annotated ? ref.substring(10, ref.length - 3) : ref.substring(10)), annotated: annotated });
 				} else if (ref.startsWith('refs/remotes/')) {
 					refData.remotes.push({ hash: hash, name: ref.substring(13) });
 				} else if (ref === 'HEAD') {

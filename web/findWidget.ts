@@ -178,7 +178,7 @@ class FindWidget {
 						|| findPattern.test(commit.message)
 						|| branchLabels.heads.some(head => findPattern!.test(head.name) || head.remotes.some(remote => findPattern!.test(remote)))
 						|| branchLabels.remotes.some(remote => findPattern!.test(remote.name))
-						|| commit.tags.some(tag => findPattern!.test(tag))
+						|| commit.tags.some(tag => findPattern!.test(tag.name))
 						|| (colVisibility.date && findPattern.test(getCommitDate(commit.date).value)))) {
 
 						while (j < commits.length && commits[j].dataset.hash! !== commit.hash) j++;

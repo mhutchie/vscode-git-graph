@@ -19,6 +19,14 @@ export interface GitCommitComparisonData {
 	error: GitCommandError;
 }
 
+export interface GitTagDetailsData {
+	name: string;
+	email: string;
+	date: number;
+	message: string;
+	error: GitCommandError;
+}
+
 export interface GitRepoSettingsData {
 	settings: GitRepoSettings | null;
 	error: GitCommandError;
@@ -42,8 +50,18 @@ export interface GitCommitNode {
 	date: number;
 	message: string;
 	heads: string[];
-	tags: string[];
-	remotes: GitRemoteRef[];
+	tags: GitCommitTag[];
+	remotes: GitCommitRemote[];
+}
+
+export interface GitCommitTag {
+	name: string;
+	annotated: boolean;
+}
+
+export interface GitCommitRemote {
+	name: string;
+	remote: string | null; // null => remote not found, otherwise => remote name
 }
 
 export interface GitCommit {
@@ -72,15 +90,16 @@ export interface GitRef {
 	name: string;
 }
 
-export interface GitRemoteRef {
+export interface GitTagRef {
+	hash: string;
 	name: string;
-	remote: string | null; // null => remote not found, otherwise => remote name
+	annotated: boolean;
 }
 
 export interface GitRefData {
 	head: string | null;
 	heads: GitRef[];
-	tags: GitRef[];
+	tags: GitTagRef[];
 	remotes: GitRef[];
 }
 
@@ -552,6 +571,21 @@ export interface RequestSaveRepoState {
 	state: GitRepoState;
 }
 
+export interface RequestTagDetails {
+	command: 'tagDetails';
+	repo: string;
+	tagName: string;
+}
+export interface ResponseTagDetails {
+	command: 'tagDetails';
+	tagName: string;
+	name: string;
+	email: string;
+	date: number;
+	message: string;
+	error: GitCommandError;
+}
+
 export interface RequestViewDiff {
 	command: 'viewDiff';
 	repo: string;
@@ -608,6 +642,7 @@ export type RequestMessage =
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSaveRepoState
+	| RequestTagDetails
 	| RequestViewDiff
 	| RequestViewScm;
 
@@ -644,5 +679,6 @@ export type ResponseMessage =
 	| ResponseRenameBranch
 	| ResponseResetToCommit
 	| ResponseRevertCommit
+	| ResponseTagDetails
 	| ResponseViewDiff
 	| ResponseViewScm;

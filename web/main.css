@@ -678,13 +678,15 @@ body.tagLabelsRightAligned .gitRef.tag{
 	height:22px;
 	border-radius:11px;
 }
-#dialog .errorReason{
+#dialog .messageContent{
 	display:inline-block;
-	font-style:italic;
 	margin-top:10px;
 	text-align:left;
 	width:100%;
 	word-wrap:break-word;
+}
+#dialog .errorContent{
+	font-style:italic;
 }
 #dialogBacking.active{
 	display:block;

@@ -349,7 +349,7 @@ class GitGraphView {
 		this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
 			if (isRepo) {
 				this.requestLoadCommits(hard, (commitChanges: boolean) => {
-					if ((!hard && (branchChanges || commitChanges) && dialogType !== ERROR_DIALOG) || dialogType === ACTION_RUNNING_DIALOG) {
+					if ((!hard && (branchChanges || commitChanges) && dialogType !== MESSAGE_DIALOG) || dialogType === ACTION_RUNNING_DIALOG) {
 						hideDialogAndContextMenu();
 					}
 					this.renderRefreshButton(true);
@@ -449,8 +449,8 @@ class GitGraphView {
 				refBranches += '<span class="gitRef remote" data-name="' + refName + '" data-remote="' + (branchLabels.remotes[j].remote !== null ? escapeHtml(branchLabels.remotes[j].remote!) : '') + '">' + SVG_ICONS.branch + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			for (j = 0; j < commit.tags.length; j++) {
-				refName = escapeHtml(commit.tags[j]);
-				refTags += '<span class="gitRef tag" data-name="' + refName + '">' + SVG_ICONS.tag + '<span class="gitRefName">' + refName + '</span></span>';
+				refName = escapeHtml(commit.tags[j].name);
+				refTags += '<span class="gitRef tag" data-name="' + refName + '" data-tagtype="' + (commit.tags[j].annotated ? 'annotated' : 'lightweight') + '">' + SVG_ICONS.tag + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
@@ -689,7 +689,16 @@ class GitGraphView {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
 			let refName = unescapeHtml(sourceElem.dataset.name!), menu: ContextMenuElement[], copyType: string;
 			if (sourceElem.classList.contains('tag')) {
-				menu = [{
+				menu = [];
+				if (sourceElem.dataset.tagtype === 'annotated') {
+					menu.push({
+						title: 'View Details',
+						onClick: () => {
+							runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: refName }, 'Retrieving Tag Details');
+						}
+					});
+				}
+				menu.push({
 					title: 'Delete Tag' + ELLIPSIS,
 					onClick: () => {
 						let message = 'Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?';
@@ -709,7 +718,7 @@ class GitGraphView {
 							}, null);
 						}
 					}
-				}];
+				});
 				if (this.gitRemotes.length > 0) {
 					menu.push({
 						title: 'Push Tag' + ELLIPSIS,
@@ -1508,6 +1517,13 @@ window.addEventListener('load', () => {
 			case 'revertCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
 				break;
+			case 'tagDetails':
+				if (msg.error === null) {
+					showTagDetailsDialog(msg.tagName, msg.name, msg.email, msg.date, msg.message);
+				} else {
+					showErrorDialog('Unable to retrieve Tag Details', msg.error, null, null, null);
+				}
+				break;
 			case 'viewDiff':
 				showErrorIfNotSuccess(msg.success, 'Unable to View Diff of File');
 				break;
@@ -1648,8 +1664,16 @@ function runAction(msg: GG.RequestMessage, action: string) {
 	sendMessage(msg);
 }
 
-function getBranchLabels(heads: string[], remotes: GG.GitRemoteRef[]) {
-	let headLabels: { name: string; remotes: string[] }[] = [], headLookup: { [name: string]: number } = {}, remoteLabels: GG.GitRemoteRef[];
+function showTagDetailsDialog(tag: string, name: string, email: string, date: number, message: string) {
+	let html = 'Tag <b><i>' + escapeHtml(tag) + '</i></b><br><span class="messageContent">';
+	html += '<b>Author: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
+	html += '<b>Date: </b>' + (new Date(date * 1000)).toString() + '<br><br>';
+	html += formatText(message).replace(/\n/g, '<br>') + '</span>';
+	showDialog(MESSAGE_DIALOG, html, null, 'Close', null, null, null);
+}
+
+function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
+	let headLabels: { name: string; remotes: string[] }[] = [], headLookup: { [name: string]: number } = {}, remoteLabels: GG.GitCommitRemote[];
 	for (let i = 0; i < heads.length; i++) {
 		headLabels.push({ name: heads[i], remotes: [] });
 		headLookup[heads[i]] = i;
@@ -1813,7 +1837,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	}
 }
 function showErrorDialog(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-	showDialog(ERROR_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="errorReason">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
+	showDialog(MESSAGE_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
 }
 function showDialog(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, sourceElem: HTMLElement | null) {
 	hideDialogAndContextMenu();

@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.12.0 - 2019-07-21
+* #129 Added logging through a Visual Studio Code Output Channel. The logs currently include all Git commands that are run, and numerous core extension events.
+* #130 Added support for repositories with a significant number of branches (1000+).
+* #131 When checking out a remote branch and the new branch name already exists, prompt the user with a new dialog to choose another name, or check out the existing branch.
+* #135 Git Graph now behaves the same as the Visual Studio Code Git Extensions git executable detection. This allows:
+    * A better first experience for users who don't have a Git executable in their PATH.
+    * Two new error pages (replacing the existing "Unable to load Git Graph" error page). These new pages provide more useful information and actions to users who are presented with an error.
+* #136 View annotated tag details (name, email, date and message) from the tag context menu.
+* Various code improvements.
+
 ## 1.11.0 - 2019-07-13
 * #95 New repository settings menu (opened by clicking on the new settings icon on the top right control bar). Thanks [Raphaël Balet (@rbalet)](https://github.com/rbalet) for helping with this! From the repository settings menu, you can:
     * View the remotes of the repository

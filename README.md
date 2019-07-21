@@ -17,6 +17,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Checkout, Cherry Pick, Merge & Revert commits
         * Reset current branch to commit
         * Reset & Clean uncommitted changes
+        * View annotated tag details (name, email, date and message)
         * Copy commit hashes, tag names & branch names to the clipboard
     * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
         * View the Visual Studio Code Diff of any file change by clicking on it.

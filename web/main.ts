@@ -1666,7 +1666,7 @@ function runAction(msg: GG.RequestMessage, action: string) {
 
 function showTagDetailsDialog(tag: string, name: string, email: string, date: number, message: string) {
 	let html = 'Tag <b><i>' + escapeHtml(tag) + '</i></b><br><span class="messageContent">';
-	html += '<b>Author: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
+	html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
 	html += '<b>Date: </b>' + (new Date(date * 1000)).toString() + '<br><br>';
 	html += formatText(message).replace(/\n/g, '<br>') + '</span>';
 	showDialog(MESSAGE_DIALOG, html, null, 'Close', null, null, null);

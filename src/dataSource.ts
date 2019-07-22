@@ -151,26 +151,30 @@ export class DataSource {
 						date: parseInt(commitInfo[4]),
 						committer: commitInfo[5],
 						body: lines.slice(1, lastLine + 1).join('\n'),
-						fileChanges: [], error: null
+						repoRoot: '', fileChanges: [], error: null
 					};
 				}),
 				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
-				this.getDiffTreeNumStat(repo, commitHash, commitHash)
+				this.getDiffTreeNumStat(repo, commitHash, commitHash),
+				this.topLevel(repo)
 			]).then((results) => {
+				results[0].repoRoot = results[3];
 				results[0].fileChanges = generateFileChanges(results[1], results[2], []);
 				resolve(results[0]);
-			}).catch((errorMessage) => resolve({ hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage }));
+			}).catch((errorMessage) => resolve({ hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', repoRoot: '', fileChanges: [], error: errorMessage }));
 		});
 	}
 
 	public uncommittedDetails(repo: string) {
 		return new Promise<GitCommitDetails>(resolve => {
-			let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: null };
+			let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', repoRoot: '', fileChanges: [], error: null };
 			Promise.all([
 				this.getDiffTreeNameStatus(repo, 'HEAD', ''),
 				this.getDiffTreeNumStat(repo, 'HEAD', ''),
-				this.getUntrackedFiles(repo)
+				this.getUntrackedFiles(repo),
+				this.topLevel(repo)
 			]).then((results) => {
+				details.repoRoot = results[3];
 				details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
 				resolve(details);
 			}).catch((errorMessage) => {
@@ -182,15 +186,20 @@ export class DataSource {
 
 	public compareCommits(repo: string, fromHash: string, toHash: string) {
 		return new Promise<GitCommitComparisonData>(resolve => {
-			let promises = [
+			Promise.all([
 				this.getDiffTreeNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-				this.getDiffTreeNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash)
-			];
-			if (toHash === UNCOMMITTED) promises.push(this.getUntrackedFiles(repo));
-
-			Promise.all(promises)
-				.then((results) => resolve({ fileChanges: generateFileChanges(results[0], results[1], toHash === UNCOMMITTED ? results[2] : []), error: null }))
-				.catch((errorMessage) => resolve({ fileChanges: [], error: errorMessage }));
+				this.getDiffTreeNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
+				toHash === UNCOMMITTED ? this.getUntrackedFiles(repo) : Promise.resolve<string[]>([]),
+				this.topLevel(repo)
+			]).then((results) => {
+				resolve({
+					repoRoot: results[3],
+					fileChanges: generateFileChanges(results[0], results[1], results[2]),
+					error: null
+				});
+			}).catch((errorMessage) => {
+				resolve({ repoRoot: '', fileChanges: [], error: errorMessage });
+			});
 		});
 	}
 
@@ -256,6 +265,10 @@ export class DataSource {
 
 	public isGitRepository(path: string) {
 		return this.spawnGit(['rev-parse', '--git-dir'], path, (stdout) => stdout).then(() => true, () => false);
+	}
+
+	public topLevel(repo: string) {
+		return this.spawnGit(['rev-parse', '--show-toplevel'], repo, (stdout) => getPathFromStr(stdout.trim()));
 	}
 
 	public async addRemote(repo: string, name: string, url: string, pushUrl: string | null, fetch: boolean) {

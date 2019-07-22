@@ -66,6 +66,7 @@ declare global {
 		hash: string;
 		srcElem: HTMLElement | null;
 		commitDetails: GG.GitCommitDetails | null;
+		repoRoot: string;
 		fileChanges: GG.GitFileChange[] | null;
 		fileTree: GitFolder | null;
 		compareWithHash: string | null;

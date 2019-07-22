@@ -55,9 +55,9 @@ export function copyToClipboard(text: string) {
 	});
 }
 
-export function openFile(repo: string, filePath: string) {
+export function openFile(repoRoot: string, filePath: string) {
 	return new Promise<GitCommandError>(resolve => {
-		let path = repo + '/' + filePath;
+		let path = repoRoot + '/' + filePath;
 		fs.exists(path, exists => {
 			if (exists) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
@@ -69,7 +69,7 @@ export function openFile(repo: string, filePath: string) {
 	});
 }
 
-export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
+export function viewDiff(repo: string, repoRoot: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
 	return new Promise<boolean>(resolve => {
 		let options = { preview: true, viewColumn: getConfig().openDiffTabLocation() };
 		if (type !== 'U') {
@@ -82,10 +82,10 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 			let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 			if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, newFilePath, toHash, type, 'new'), title, options)
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, repoRoot, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, repoRoot, newFilePath, toHash, type, 'new'), title, options)
 				.then(() => resolve(true), () => resolve(false));
 		} else {
-			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repo + '/' + newFilePath), options)
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repoRoot + '/' + newFilePath), options)
 				.then(() => resolve(true), () => resolve(false));
 		}
 	});

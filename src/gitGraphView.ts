@@ -258,7 +258,7 @@ export class GitGraphView {
 				case 'openFile':
 					this.sendMessage({
 						command: 'openFile',
-						error: await openFile(msg.repo, msg.filePath)
+						error: await openFile(msg.repoRoot, msg.filePath)
 					});
 					break;
 				case 'pullBranch':
@@ -321,7 +321,7 @@ export class GitGraphView {
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
-						success: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+						success: await viewDiff(msg.repo, msg.repoRoot, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
 					});
 					break;
 				case 'viewScm':

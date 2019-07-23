@@ -38,7 +38,9 @@ export class ExtensionState {
 		});
 	}
 
+
 	/* Discovered Repos */
+
 	public getRepos() {
 		const repoSet = this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
 		Object.keys(repoSet).forEach(repo => {
@@ -46,45 +48,60 @@ export class ExtensionState {
 		});
 		return repoSet;
 	}
+
 	public saveRepos(gitRepoSet: GitRepoSet) {
 		this.workspaceState.update(REPO_STATES, gitRepoSet);
 	}
 
+
 	/* Last Active Repo */
+
 	public getLastActiveRepo() {
 		return this.workspaceState.get<string | null>(LAST_ACTIVE_REPO, null);
 	}
+
 	public setLastActiveRepo(repo: string | null) {
 		this.workspaceState.update(LAST_ACTIVE_REPO, repo);
 	}
 
+
+	/* Last Known Git Path */
+
 	public getLastKnownGitPath() {
 		return this.globalState.get<string | null>(LAST_KNOWN_GIT_PATH, null);
 	}
+
 	public setLastKnownGitPath(path: string) {
 		this.globalState.update(LAST_KNOWN_GIT_PATH, path);
 	}
 
+
 	/* Avatars */
+
 	public isAvatarStorageAvailable() {
 		return this.avatarStorageAvailable;
 	}
+
 	public getAvatarStoragePath() {
 		return this.globalStoragePath + AVATAR_STORAGE_FOLDER;
 	}
+
 	public getAvatarCache() {
 		return this.globalState.get<AvatarCache>(AVATAR_CACHE, {});
 	}
+
 	public saveAvatar(email: string, avatar: Avatar) {
 		let avatars = this.getAvatarCache();
 		avatars[email] = avatar;
 		this.globalState.update(AVATAR_CACHE, avatars);
 	}
+
 	public removeAvatarFromCache(email: string) {
 		let avatars = this.getAvatarCache();
 		delete avatars[email];
 		this.globalState.update(AVATAR_CACHE, avatars);
 	}
+
 	public clearAvatarCache() {
 		this.globalState.update(AVATAR_CACHE, {});
 		fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {

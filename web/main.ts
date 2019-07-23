@@ -116,7 +116,9 @@ class GitGraphView {
 		settingsBtn.addEventListener('click', () => this.settingsWidget.show(this.currentRepo, true));
 	}
 
+
 	/* Loading Data */
+
 	public loadRepos(repos: GG.GitRepoSet, lastActiveRepo: string | null, loadRepo: string | null) {
 		this.gitRepos = repos;
 		this.saveState();
@@ -210,7 +212,7 @@ class GitGraphView {
 	}
 
 	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, remotes: string[], moreAvailable: boolean, hard: boolean) {
-		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysStrictlyEqual(a.tags, b.tags) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parentHashes, b.parentHashes)) && arraysStrictlyEqual(this.gitRemotes, remotes) && this.renderedGitBranchHead === this.gitBranchHead) {
+		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parentHashes, b.parentHashes)) && arraysStrictlyEqual(this.gitRemotes, remotes) && this.renderedGitBranchHead === this.gitBranchHead) {
 			if (this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED) {
 				this.commits[0] = commits[0];
 				this.saveState();
@@ -302,14 +304,20 @@ class GitGraphView {
 		}
 	}
 
+
+	/* Public Get Methods checking the GitGraphView state */
+
 	public getNumBranches() {
 		return this.gitBranches.length;
 	}
+
 	public getSettingsWidget() {
 		return this.settingsWidget;
 	}
 
+
 	/* Refresh */
+
 	public refresh(hard: boolean) {
 		if (hard) {
 			if (this.expandedCommit !== null) {
@@ -321,7 +329,9 @@ class GitGraphView {
 		this.requestLoadBranchesAndCommits(hard);
 	}
 
+
 	/* Requests */
+
 	private requestLoadBranches(hard: boolean, loadedCallback: (changes: boolean, isRepo: boolean) => void) {
 		if (this.loadBranchesCallback !== null) return;
 		this.loadBranchesCallback = loadedCallback;
@@ -332,6 +342,7 @@ class GitGraphView {
 			hard: hard
 		});
 	}
+
 	private requestLoadCommits(hard: boolean, loadedCallback: (changes: boolean) => void) {
 		if (this.loadCommitsCallback !== null) return;
 		this.loadCommitsCallback = loadedCallback;
@@ -344,6 +355,7 @@ class GitGraphView {
 			hard: hard
 		});
 	}
+
 	private requestLoadBranchesAndCommits(hard: boolean) {
 		this.renderRefreshButton(false);
 		this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
@@ -361,9 +373,11 @@ class GitGraphView {
 			}
 		});
 	}
+
 	public requestCommitDetails(hash: string, refresh: boolean) {
 		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: hash, refresh: refresh });
 	}
+
 	public requestCommitComparison(hash: string, compareWithHash: string, refresh: boolean) {
 		let commitOrder = this.getCommitOrder(hash, compareWithHash);
 		sendMessage({
@@ -374,6 +388,7 @@ class GitGraphView {
 			refresh: refresh
 		});
 	}
+
 	private requestAvatars(avatars: { [email: string]: string[] }) {
 		let emails = Object.keys(avatars), remote = this.gitRemotes.length > 0 ? this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0] : null;
 		for (let i = 0; i < emails.length; i++) {
@@ -381,7 +396,9 @@ class GitGraphView {
 		}
 	}
 
+
 	/* State */
+
 	public saveState() {
 		VSCODE_API.setState({
 			gitRepos: this.gitRepos,
@@ -401,16 +418,20 @@ class GitGraphView {
 			settingsWidget: this.settingsWidget.getState()
 		});
 	}
+
 	public saveRepoState() {
 		sendMessage({ command: 'saveRepoState', repo: this.currentRepo, state: this.gitRepos[this.currentRepo] });
 	}
 
+
 	/* Renderers */
+
 	private render() {
 		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, this.gitRemotes.length > 0);
 		this.renderTable();
 		this.renderGraph();
 	}
+
 	private renderGraph() {
 		let colHeadersElem = document.getElementById('tableColHeaders');
 		if (colHeadersElem === null) return;
@@ -421,6 +442,7 @@ class GitGraphView {
 		this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
 		this.graph.render(expandedCommit);
 	}
+
 	private renderTable() {
 		let commit, colVisibility = this.getColumnVisibility(), currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
@@ -867,6 +889,7 @@ class GitGraphView {
 			}
 		});
 	}
+
 	private renderUncommittedChanges() {
 		let colVisibility = this.getColumnVisibility(), date = getCommitDate(this.commits[0].date);
 		document.getElementById('uncommittedChanges')!.innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td>' +
@@ -874,6 +897,7 @@ class GitGraphView {
 			(colVisibility.author ? '<td title="* <>">*</td>' : '') +
 			(colVisibility.commit ? '<td title="*">*</td>' : '');
 	}
+
 	private renderShowLoading() {
 		hideDialogAndContextMenu();
 		this.graph.clear();
@@ -881,13 +905,16 @@ class GitGraphView {
 		this.footerElem.innerHTML = '';
 		this.findWidget.update([]);
 	}
+
 	public renderRefreshButton(enabled: boolean) {
 		this.refreshBtnElem.title = enabled ? 'Refresh' : 'Refreshing';
 		this.refreshBtnElem.innerHTML = enabled ? SVG_ICONS.refresh : SVG_ICONS.loading;
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
 	}
 
+
 	/* Actions */
+
 	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null) {
 		if (remote !== null) {
 			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substr(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
@@ -905,11 +932,14 @@ class GitGraphView {
 			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null }, 'Checking out Branch');
 		}
 	}
+
 	private deleteTagAction(refName: string, deleteOnRemote: string | null) {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
 	}
 
+
 	/* Table Utils */
+
 	private makeTableResizable() {
 		let colHeadersElem = document.getElementById('tableColHeaders')!, cols = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tableColHeader');
 		let columnWidths: GG.ColumnWidth[], mouseX = -1, col = -1, colIndex = -1;
@@ -1028,10 +1058,12 @@ class GitGraphView {
 			], null);
 		});
 	}
+
 	private saveColumnWidths(columnWidths: GG.ColumnWidth[]) {
 		this.gitRepos[this.currentRepo].columnWidths = [columnWidths[0], columnWidths[2], columnWidths[3], columnWidths[4]];
 		this.saveRepoState();
 	}
+
 	public getColumnVisibility() {
 		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (colWidths !== null) {
@@ -1041,10 +1073,12 @@ class GitGraphView {
 			return { date: defaults.date, author: defaults.author, commit: defaults.commit };
 		}
 	}
+
 	private getNumColumns() {
 		let colVisibility = this.getColumnVisibility();
 		return 2 + (colVisibility.date ? 1 : 0) + (colVisibility.author ? 1 : 0) + (colVisibility.commit ? 1 : 0);
 	}
+
 	public scrollToCommit(hash: string, alwaysCenterCommit: boolean) {
 		let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
 		for (let i = 0; i < commits.length; i++) {
@@ -1058,7 +1092,9 @@ class GitGraphView {
 		}
 	}
 
+
 	/* Observers */
+
 	private observeWindowSizeChanges() {
 		let windowWidth = window.outerWidth, windowHeight = window.outerHeight;
 		window.addEventListener('resize', () => {
@@ -1070,6 +1106,7 @@ class GitGraphView {
 			}
 		});
 	}
+
 	private observeWebviewStyleChanges() {
 		let fontFamily = getVSCodeStyle(CSS_PROP_FONT_FAMILY), editorFontFamily = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), findMatchColour = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
 		this.findWidget.setColour(findMatchColour);
@@ -1087,6 +1124,7 @@ class GitGraphView {
 			}
 		})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 	}
+
 	private observeWebviewScroll() {
 		let active = this.viewElem.scrollTop > 0, timeout: NodeJS.Timer | null = null;
 		this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
@@ -1104,6 +1142,7 @@ class GitGraphView {
 			}, 250);
 		});
 	}
+
 	private observeKeyboardEvents() {
 		document.addEventListener('keydown', e => {
 			if (graphFocus) {
@@ -1147,7 +1186,9 @@ class GitGraphView {
 		});
 	}
 
-	/* Commit Details */
+
+	/* Commit Details View */
+
 	private loadCommitDetails(sourceElem: HTMLElement) {
 		this.closeCommitDetails(true);
 		this.expandedCommit = {
@@ -1168,6 +1209,7 @@ class GitGraphView {
 		this.renderCommitDetailsView(false);
 		this.requestCommitDetails(this.expandedCommit.hash, false);
 	}
+
 	public closeCommitDetails(saveAndRender: boolean) {
 		if (this.expandedCommit !== null) {
 			if (this.config.commitDetailsViewLocation === 'Inline') {
@@ -1186,6 +1228,7 @@ class GitGraphView {
 			}
 		}
 	}
+
 	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: GitFolder, refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.hash !== commitDetails.hash) return;
 		let elem = document.getElementById('commitDetails');
@@ -1204,6 +1247,9 @@ class GitGraphView {
 		this.renderCommitDetailsView(refresh);
 	}
 
+
+	/* Commit Comparison View */
+
 	private loadCommitComparison(compareWithSrcElem: HTMLElement) {
 		if (this.expandedCommit !== null && this.expandedCommit.srcElem !== null) {
 			this.closeCommitComparison(false);
@@ -1218,6 +1264,7 @@ class GitGraphView {
 			this.requestCommitComparison(this.expandedCommit.hash, this.expandedCommit.compareWithHash, false);
 		}
 	}
+
 	public closeCommitComparison(requestCommitDetails: boolean) {
 		if (this.expandedCommit !== null && this.expandedCommit.compareWithHash) {
 			if (typeof this.expandedCommit.compareWithSrcElem === 'object' && this.expandedCommit.compareWithSrcElem !== null) this.expandedCommit.compareWithSrcElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
@@ -1234,6 +1281,7 @@ class GitGraphView {
 			this.saveState();
 		}
 	}
+
 	public showCommitComparison(commitHash: string, compareWithHash: string, repoRoot: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder, refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.compareWithSrcElem === null || this.expandedCommit.hash !== commitHash || this.expandedCommit.compareWithHash !== compareWithHash) return;
 		this.expandedCommit.commitDetails = null;
@@ -1249,6 +1297,9 @@ class GitGraphView {
 
 		this.renderCommitDetailsView(refresh);
 	}
+
+
+	/* Render Commit Details / Comparison View */
 
 	private renderCommitDetailsView(refresh: boolean) {
 		if (this.expandedCommit === null) return;

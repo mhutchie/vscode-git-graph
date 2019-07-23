@@ -97,10 +97,10 @@ export function viewScm() {
 	});
 }
 
-export function runGitCommandInNewTerminal(cwd: string, gitExecutable: GitExecutable, command: string, name: string) {
+export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command: string, name: string) {
 	let p = process.env['PATH'] || '', sep = isWindows() ? ';' : ':';
 	if (p !== '' && !p.endsWith(sep)) p += sep;
-	p += path.dirname(gitExecutable.path);
+	p += path.dirname(gitPath);
 
 	let terminal = vscode.window.createTerminal({ cwd: cwd, name: name, env: { 'PATH': p } });
 	terminal.sendText('git ' + command);

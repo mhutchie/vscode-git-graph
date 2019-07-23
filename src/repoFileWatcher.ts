@@ -47,16 +47,21 @@ export class RepoFileWatcher {
 		}
 	}
 
-	// Mute and unmute events - used to prevent many change events being triggered when git actions are run via the Git Graph view
+
+	/* Mute and unmute events (Used to prevent many change events being triggered when git actions are run via the Git Graph view) */
+
 	public mute() {
 		this.muted = true;
 	}
+
 	public unmute() {
 		this.muted = false;
 		this.resumeAt = (new Date()).getTime() + 1500;
 	}
 
-	// Handle an event detected by the File System Watcher
+
+	/* Handle an event detected by the File System Watcher */
+
 	private async refresh(uri: vscode.Uri) {
 		if (this.muted) return;
 		if (!getPathFromUri(uri).replace(this.repo + '/', '').match(FILE_CHANGE_REGEX)) return;

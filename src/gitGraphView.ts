@@ -139,7 +139,7 @@ export class GitGraphView {
 				case 'commitDetails':
 					this.sendMessage({
 						command: 'commitDetails',
-						commitDetails: await (msg.commitHash !== UNCOMMITTED ? this.dataSource.commitDetails(msg.repo, msg.commitHash) : this.dataSource.uncommittedDetails(msg.repo)),
+						commitDetails: await (msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash) : this.dataSource.getUncommittedDetails(msg.repo)),
 						refresh: msg.refresh
 					});
 					break;
@@ -147,7 +147,7 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'compareCommits',
 						commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
-						... await this.dataSource.compareCommits(msg.repo, msg.fromHash, msg.toHash),
+						... await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
 						refresh: msg.refresh
 					});
 					break;
@@ -315,7 +315,7 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'tagDetails',
 						tagName: msg.tagName,
-						... await this.dataSource.tagDetails(msg.repo, msg.tagName)
+						... await this.dataSource.getTagDetails(msg.repo, msg.tagName)
 					});
 					break;
 				case 'viewDiff':

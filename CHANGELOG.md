@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.12.1 - 2019-07-23
+* #137 Fixed a file path construction issue when Visual Studio Code is opened to a subfolder of a repository, and the user clicks to view the current version of a file from the Commit Details View.
+* #141 Include the object and commit hashes when showing the new "View Details" action on annotated tags.
+* #142 New button to copy the path of any file displayed in the Commit Details View or Commit Comparison View file trees to the clipboard (to the right of each file).
+* Various code improvements.
+
 ## 1.12.0 - 2019-07-21
 * #129 Added logging through a Visual Studio Code Output Channel. The logs currently include all Git commands that are run, and numerous core extension events.
 * #130 Added support for repositories with a significant number of branches (1000+).

@@ -22,10 +22,12 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
     * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
         * View the Visual Studio Code Diff of any file change by clicking on it.
         * Open the current version of any file that was affected in the commit.
+        * Copy the path of any file that was affected in the commit to the clipboard.
         * Click on any HTTP/HTTPS url in the commit body to open it in your default web browser.
     * Compare any two commits by clicking on a commit, and then CTRL/CMD clicking on another commit. On the Commit Comparison View you can:
         * View the Visual Studio Code Diff of any file change between the selected commits by clicking on it.
         * Open the current version of any file that was affected between the selected commits.
+        * Copy the path of any file that was affected between the selected commits to the clipboard.
     * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Filter the branches shown in Git Graph using the 'Branches' dropdown menu. The options for filtering the branches are:
         * Show All branches
@@ -80,7 +82,7 @@ A summary of the Git Graph extension settings are:
 
 This extension consumes the following settings:
 
-* `git.path`: Specifies the path of a portable Git installation.
+* `git.path`: Specifies the path and filename of a portable Git installation.
 
 ## Extension Commands
 

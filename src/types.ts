@@ -286,6 +286,16 @@ export interface ResponseCompareCommits {
 	error: GitCommandError;
 }
 
+export interface RequestCopyFilePath {
+	command: 'copyFilePath';
+	repoRoot: string;
+	filePath: string;
+}
+export interface ResponseCopyFilePath {
+	command: 'copyFilePath';
+	success: boolean;
+}
+
 export interface RequestCopyToClipboard {
 	command: 'copyToClipboard';
 	type: string;
@@ -469,7 +479,6 @@ export interface ResponseMergeCommit {
 
 export interface RequestOpenFile {
 	command: 'openFile';
-	repo: string;
 	repoRoot: string;
 	filePath: string;
 }
@@ -626,6 +635,7 @@ export type RequestMessage =
 	| RequestCleanUntrackedFiles
 	| RequestCommitDetails
 	| RequestCompareCommits
+	| RequestCopyFilePath
 	| RequestCopyToClipboard
 	| RequestCreateBranch
 	| RequestDeleteBranch
@@ -664,6 +674,7 @@ export type ResponseMessage =
 	| ResponseCleanUntrackedFiles
 	| ResponseCompareCommits
 	| ResponseCommitDetails
+	| ResponseCopyFilePath
 	| ResponseCopyToClipboard
 	| ResponseCreateBranch
 	| ResponseDeleteBranch

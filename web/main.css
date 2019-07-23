@@ -273,7 +273,7 @@ tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
 }
 
 /* Diff Tree */
-.gitFileIcon, .gitFolderIcon, .openGitFile{
+.gitFileIcon, .gitFolderIcon, .gitFileAction{
 	position:relative;
 	display:inline-block;
 	width:13px;
@@ -283,22 +283,31 @@ tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
 .gitFileIcon, .gitFolderIcon{
 	margin-right:8px;
 }
-.openGitFile{
+.gitFileAction{
 	margin-left:8px;
 	opacity:0;
 }
-.gitFileRecord:hover .openGitFile{
+.gitFileAction.openGitFile{
+	margin-left:6px;
+}
+.gitFileRecord:hover .gitFileAction{
 	cursor:pointer;
 	opacity:1;
 }
-svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .openGitFile svg{
+svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .gitFileAction svg{
 	position:absolute;
 	top:2.5px;
 	height:13px !important;
 	fill:var(--vscode-editor-foreground);
 	fill-opacity:0.6;
 }
-.gitFolder:hover svg.openFolderIcon, .gitFolder:hover svg.closedFolderIcon, .gitFileRecord:hover svg.fileIcon, .openGitFile:hover svg{
+.gitFileAction.copyGitFile svg{
+	top:3px;
+}
+.gitFileAction.openGitFile svg{
+	top:4px;
+}
+.gitFolder:hover svg.openFolderIcon, .gitFolder:hover svg.closedFolderIcon, .gitFileRecord:hover svg.fileIcon, .gitFileAction:hover svg{
 	fill-opacity:0.8;
 }
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{

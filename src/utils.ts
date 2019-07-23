@@ -49,18 +49,20 @@ export function getNonce() {
 
 // Visual Studio Code Command Wrappers
 
+export function copyFilePathToClipboard(repoRoot: string, filePath: string) {
+	return vscode.env.clipboard.writeText(path.join(repoRoot, filePath)).then(() => true, () => false);
+}
+
 export function copyToClipboard(text: string) {
-	return new Promise<boolean>(resolve => {
-		vscode.env.clipboard.writeText(text).then(() => resolve(true), () => resolve(false));
-	});
+	return vscode.env.clipboard.writeText(text).then(() => true, () => false);
 }
 
 export function openFile(repoRoot: string, filePath: string) {
 	return new Promise<GitCommandError>(resolve => {
-		let path = repoRoot + '/' + filePath;
-		fs.exists(path, exists => {
+		let p = path.join(repoRoot, filePath);
+		fs.exists(p, exists => {
 			if (exists) {
-				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
+				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
 					.then(() => resolve(null), () => resolve('Visual Studio Code was unable to open ' + filePath + '.'));
 			} else {
 				resolve('The file ' + filePath + ' doesn\'t currently exist in this repository.');
@@ -85,7 +87,7 @@ export function viewDiff(repo: string, repoRoot: string, fromHash: string, toHas
 			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, repoRoot, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, repoRoot, newFilePath, toHash, type, 'new'), title, options)
 				.then(() => resolve(true), () => resolve(false));
 		} else {
-			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(repoRoot + '/' + newFilePath), options)
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path.join(repoRoot, newFilePath)), options)
 				.then(() => resolve(true), () => resolve(false));
 		}
 	});

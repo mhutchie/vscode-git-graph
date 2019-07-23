@@ -1403,11 +1403,18 @@ class GitGraphView {
 				type: <GG.GitFileChangeType>sourceElem.dataset.type
 			});
 		});
+		addListenerToClass('copyGitFile', 'click', (e) => {
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.copyGitFile')!;
+			sendMessage({
+				command: 'copyFilePath',
+				repoRoot: expandedCommit.repoRoot,
+				filePath: decodeURIComponent(sourceElem.dataset.filepath!)
+			});
+		});
 		addListenerToClass('openGitFile', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.openGitFile')!;
 			sendMessage({
 				command: 'openFile',
-				repo: this.currentRepo,
 				repoRoot: expandedCommit.repoRoot,
 				filePath: decodeURIComponent(sourceElem.dataset.filepath!)
 			});
@@ -1503,6 +1510,9 @@ window.addEventListener('load', () => {
 					gitGraph.closeCommitComparison(true);
 					showErrorDialog('Unable to compare Commits', msg.error, null, null, null);
 				}
+				break;
+			case 'copyFilePath':
+				showErrorIfNotSuccess(msg.success, 'Unable to Copy File Path to the Clipboard');
 				break;
 			case 'copyToClipboard':
 				showErrorIfNotSuccess(msg.success, 'Unable to Copy ' + msg.type + ' to Clipboard');
@@ -1705,7 +1715,8 @@ function generateGitFileTreeHtml(folder: GitFolder, gitFiles: GG.GitFileChange[]
 			diffPossible = gitFile.type === 'U' || (gitFile.additions !== null && gitFile.deletions !== null);
 			html += '<li><span class="gitFileRecord"><span class="gitFile ' + gitFile.type + (diffPossible ? ' gitDiffPossible' : '') + '" data-oldfilepath="' + encodeURIComponent(gitFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(gitFile.newFilePath) + '" data-type="' + gitFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff (this is a binary file)') + ' • ' + GIT_FILE_CHANGE_TYPES[gitFile.type] + (gitFile.type === 'R' ? ' (' + escapeHtml(gitFile.oldFilePath) + ' → ' + escapeHtml(gitFile.newFilePath) + ')' : '') + '"><span class="gitFileIcon">' + SVG_ICONS.file + '</span>' + folder.contents[keys[i]].name + '</span>' +
 				(gitFile.type !== 'A' && gitFile.type !== 'U' && gitFile.type !== 'D' && gitFile.additions !== null && gitFile.deletions !== null ? '<span class="gitFileAddDel">(<span class="gitFileAdditions" title="' + gitFile.additions + ' addition' + (gitFile.additions !== 1 ? 's' : '') + '">+' + gitFile.additions + '</span>|<span class="gitFileDeletions" title="' + gitFile.deletions + ' deletion' + (gitFile.deletions !== 1 ? 's' : '') + '">-' + gitFile.deletions + '</span>)</span>' : '') +
-				(gitFile.type !== 'D' ? '<span class="openGitFile" title="Click to Open File" data-filepath="' + encodeURIComponent(gitFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
+				'<span class="copyGitFile gitFileAction" title="Copy File Path to the Clipboard" data-filepath="' + encodeURIComponent(gitFile.newFilePath) + '">' + SVG_ICONS.copy + '</span>' +
+				(gitFile.type !== 'D' ? '<span class="openGitFile gitFileAction" title="Click to Open File" data-filepath="' + encodeURIComponent(gitFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
 		}
 	}
 	return html + '</ul>';

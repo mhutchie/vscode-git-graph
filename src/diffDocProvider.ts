@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
 import { DiffSide, GitFileChangeType } from './types';
@@ -56,10 +57,10 @@ class DiffDocument {
 	}
 }
 
-export function encodeDiffDocUri(repo: string, repoRoot: string, path: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
+export function encodeDiffDocUri(repo: string, repoRoot: string, filePath: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
 	return commit === UNCOMMITTED && type !== 'D'
-		? vscode.Uri.file(repoRoot + '/' + path)
-		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(path) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&diffSide=' + diffSide + '&repo=' + encodeURIComponent(repo));
+		? vscode.Uri.file(path.join(repoRoot, filePath))
+		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(filePath) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&diffSide=' + diffSide + '&repo=' + encodeURIComponent(repo));
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri) {

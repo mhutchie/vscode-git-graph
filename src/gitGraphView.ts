@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
-import { copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -149,6 +149,12 @@ export class GitGraphView {
 						commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
 						... await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
 						refresh: msg.refresh
+					});
+					break;
+				case 'copyFilePath':
+					this.sendMessage({
+						command: 'copyFilePath',
+						success: await copyFilePathToClipboard(msg.repoRoot, msg.filePath)
 					});
 					break;
 				case 'copyToClipboard':

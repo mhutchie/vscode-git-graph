@@ -315,6 +315,7 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'tagDetails',
 						tagName: msg.tagName,
+						commitHash: msg.commitHash,
 						... await this.dataSource.getTagDetails(msg.repo, msg.tagName)
 					});
 					break;

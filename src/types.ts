@@ -21,6 +21,7 @@ export interface GitCommitComparisonData {
 }
 
 export interface GitTagDetailsData {
+	tagHash: string;
 	name: string;
 	email: string;
 	date: number;
@@ -579,10 +580,13 @@ export interface RequestTagDetails {
 	command: 'tagDetails';
 	repo: string;
 	tagName: string;
+	commitHash: string;
 }
 export interface ResponseTagDetails {
 	command: 'tagDetails';
 	tagName: string;
+	tagHash: string;
+	commitHash: string;
 	name: string;
 	email: string;
 	date: number;

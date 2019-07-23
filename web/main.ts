@@ -716,7 +716,8 @@ class GitGraphView {
 					menu.push({
 						title: 'View Details',
 						onClick: () => {
-							runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: refName }, 'Retrieving Tag Details');
+							let commitElem = <HTMLElement>sourceElem.closest('.commit')!;
+							runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: refName, commitHash: commitElem.dataset.hash! }, 'Retrieving Tag Details');
 						}
 					});
 				}
@@ -1598,7 +1599,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'tagDetails':
 				if (msg.error === null) {
-					showTagDetailsDialog(msg.tagName, msg.name, msg.email, msg.date, msg.message);
+					showTagDetailsDialog(msg.tagName, msg.tagHash, msg.commitHash, msg.name, msg.email, msg.date, msg.message);
 				} else {
 					showErrorDialog('Unable to retrieve Tag Details', msg.error, null, null, null);
 				}
@@ -1743,8 +1744,10 @@ function runAction(msg: GG.RequestMessage, action: string) {
 	sendMessage(msg);
 }
 
-function showTagDetailsDialog(tag: string, name: string, email: string, date: number, message: string) {
-	let html = 'Tag <b><i>' + escapeHtml(tag) + '</i></b><br><span class="messageContent">';
+function showTagDetailsDialog(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
+	let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
+	html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
+	html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
 	html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
 	html += '<b>Date: </b>' + (new Date(date * 1000)).toString() + '<br><br>';
 	html += formatText(message).replace(/\n/g, '<br>') + '</span>';

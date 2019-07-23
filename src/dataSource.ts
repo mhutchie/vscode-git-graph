@@ -255,19 +255,20 @@ export class DataSource {
 
 	public getTagDetails(repo: string, tagName: string) {
 		return new Promise<GitTagDetailsData>(resolve => {
-			this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout => {
+			this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout => {
 				let data = stdout.split(GIT_LOG_SEPARATOR);
 				return {
-					name: data[0],
-					email: data[1].substring(data[1].startsWith('<') ? 1 : 0, data[1].length - (data[1].endsWith('>') ? 1 : 0)),
-					date: parseInt(data[2]),
-					message: data[3].trim().split(EOL_REGEX).join('\n'),
+					tagHash: data[0],
+					name: data[1],
+					email: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
+					date: parseInt(data[3]),
+					message: data[4].trim().split(EOL_REGEX).join('\n'),
 					error: null
 				};
 			})).then((data) => {
 				resolve(data);
 			}).catch((errorMessage) => {
-				resolve({ name: '', email: '', date: 0, message: '', error: errorMessage });
+				resolve({ tagHash: '', name: '', email: '', date: 0, message: '', error: errorMessage });
 			});
 		});
 	}

@@ -34,9 +34,11 @@ export class DataSource {
 	}
 
 	public generateGitCommandFormats() {
-		let dateType = getConfig().dateType() === 'Author Date' ? '%at' : '%ct';
-		this.gitLogFormat = ['%H', '%P', '%an', '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
-		this.gitCommitDetailsFormat = ['%H', '%P', '%an', '%ae', dateType, '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
+		const config = getConfig();
+		let dateType = config.dateType() === 'Author Date' ? '%at' : '%ct';
+		let useMailmap = config.useMailmap();
+		this.gitLogFormat = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
+		this.gitCommitDetailsFormat = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
 	}
 
 	public dispose() {

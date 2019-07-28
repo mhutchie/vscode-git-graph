@@ -84,7 +84,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
 				statusBarItem.refresh();
-			} else if (e.affectsConfiguration('git-graph.dateType')) {
+			} else if (e.affectsConfiguration('git-graph.dateType') || e.affectsConfiguration('git-graph.useMailmap')) {
 				dataSource.generateGitCommandFormats();
 			} else if (e.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
 				repoManager.maxDepthOfRepoSearchChanged();

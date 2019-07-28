@@ -357,6 +357,11 @@
 					],
 					"default": "colour",
 					"description": "Specifies the colour theme of the icon displayed on the Git Graph tab."
+				},
+				"git-graph.useMailmap": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Respect [.mailmap](https://git-scm.com/docs/git-check-mailmap#_mapping_authors) files when displaying author & committer names and email addresses."
 				}
 			}
 		},

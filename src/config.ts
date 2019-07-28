@@ -140,6 +140,10 @@ class Config {
 		return this.config.get('tabIconColourTheme', 'colour');
 	}
 
+	public useMailmap() {
+		return this.config.get('useMailmap', false);
+	}
+
 	public gitPath(): string | null {
 		return vscode.workspace.getConfiguration('git').get('path', null);
 	}

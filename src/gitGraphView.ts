@@ -375,6 +375,7 @@ export class GitGraphView {
 			customEmojiShortcodeMappings: config.customEmojiShortcodeMappings(),
 			dateFormat: config.dateFormat(),
 			defaultColumnVisibility: config.defaultColumnVisibility(),
+			dialogDefaults: config.dialogDefaults(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),

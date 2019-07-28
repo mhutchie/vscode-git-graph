@@ -16,6 +16,7 @@ declare global {
 		commitDetailsViewLocation: GG.CommitDetailsViewLocation;
 		customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
 		defaultColumnVisibility: GG.DefaultColumnVisibility;
+		dialogDefaults: GG.DialogDefaults;
 		fetchAvatars: boolean;
 		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';

@@ -126,6 +126,7 @@ export interface GitGraphViewState {
 	customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
 	dateFormat: DateFormat;
 	defaultColumnVisibility: DefaultColumnVisibility;
+	dialogDefaults: DialogDefaults;
 	fetchAvatars: boolean;
 	graphColours: string[];
 	graphStyle: GraphStyle;
@@ -182,6 +183,18 @@ export interface DefaultColumnVisibility {
 	date: boolean;
 	author: boolean;
 	commit: boolean;
+}
+export interface DialogDefaults {
+	addTag: {
+		type: 'annotated' | 'lightweight'
+	};
+	createBranch: {
+		checkout: boolean
+	};
+	rebase: {
+		ignoreDate: boolean,
+		interactive: boolean
+	};
 }
 
 

@@ -578,7 +578,7 @@ class GitGraphView {
 						onClick: () => {
 							showFormDialog('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
-								{ type: 'select' as 'select', name: 'Type: ', default: 'annotated', options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+								{ type: 'select' as 'select', name: 'Type: ', default: this.config.dialogDefaults.addTag.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
 								{ type: 'text' as 'text', name: 'Message: ', default: '', placeholder: 'Optional' }
 							], 'Add Tag', values => {
 								runAction({ command: 'addTag', repo: this.currentRepo, tagName: values[0], commitHash: hash, lightweight: values[1] === 'lightweight', message: values[2] }, 'Adding Tag');
@@ -590,7 +590,7 @@ class GitGraphView {
 						onClick: () => {
 							showFormDialog('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
-								{ type: 'checkbox', name: 'Check out: ', value: false }
+								{ type: 'checkbox', name: 'Check out: ', value: this.config.dialogDefaults.createBranch.checkout }
 							], 'Create Branch', values => {
 								runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');
 							}, sourceElem);
@@ -657,8 +657,8 @@ class GitGraphView {
 						title: 'Rebase current branch on this Commit' + ELLIPSIS,
 						onClick: () => {
 							showFormDialog('Are you sure you want to rebase the current branch on commit <b><i>' + abbrevCommit(hash) + '</i></b>?', [
-								{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: false },
-								{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: true }
+								{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
+								{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
 							], 'Yes, rebase', values => {
 								let interactive = values[0] === 'checked';
 								runAction({ command: 'rebaseOn', repo: this.currentRepo, base: hash, type: 'Commit', ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on Commit');
@@ -805,8 +805,8 @@ class GitGraphView {
 								title: 'Rebase current branch on Branch' + ELLIPSIS,
 								onClick: () => {
 									showFormDialog('Are you sure you want to rebase the current branch on branch <b><i>' + escapeHtml(refName) + '</i></b>?', [
-										{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: false },
-										{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: true }
+										{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
+										{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
 									], 'Yes, rebase', values => {
 										let interactive = values[0] === 'checked';
 										runAction({ command: 'rebaseOn', repo: this.currentRepo, base: refName, type: 'Branch', ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on Branch');
@@ -1460,6 +1460,7 @@ window.addEventListener('load', () => {
 		commitDetailsViewLocation: viewState.commitDetailsViewLocation,
 		customBranchGlobPatterns: viewState.customBranchGlobPatterns,
 		defaultColumnVisibility: viewState.defaultColumnVisibility,
+		dialogDefaults: viewState.dialogDefaults,
 		fetchAvatars: viewState.fetchAvatars,
 		graphColours: viewState.graphColours,
 		graphStyle: viewState.graphStyle,

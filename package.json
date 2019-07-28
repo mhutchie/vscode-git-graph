@@ -194,6 +194,30 @@
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},
+				"git-graph.dialog.addTag.type": {
+					"type": "string",
+					"enum": [
+						"Annotated",
+						"Lightweight"
+					],
+					"default": "Annotated",
+					"description": "Default type of the tag being added."
+				},
+				"git-graph.dialog.createBranch.checkOut": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Check out\" checkbox."
+				},
+				"git-graph.dialog.rebase.ignoreDate": {
+					"type": "boolean",
+					"default": true,
+					"description": "Default state of the \"Ignore Date (non-interactive rebase only)\" checkbox."
+				},
+				"git-graph.dialog.rebase.launchInteractiveRebase": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Launch Interactive Rebase in new Terminal\" checkbox."
+				},
 				"git-graph.fetchAvatars": {
 					"type": "boolean",
 					"default": false,

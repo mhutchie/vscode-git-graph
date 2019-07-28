@@ -57,6 +57,11 @@
 				"category": "Git Graph",
 				"command": "git-graph.clearAvatarCache",
 				"title": "Clear Avatar Cache"
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.removeGitRepository",
+				"title": "Remove Git Repository"
 			}
 		],
 		"configuration": {

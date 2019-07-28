@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
+import { addGitRepository, removeGitRepositoy } from './commands';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
@@ -8,7 +9,8 @@ import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { findGit, getPathFromUri, GitExecutable, isPathInWorkspace, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { findGit, getPathFromUri, GitExecutable, UNABLE_TO_FIND_GIT_MSG } from './utils';
+
 
 export async function activate(context: vscode.ExtensionContext) {
 	const logger = new Logger();
@@ -54,28 +56,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadRepo);
 		}),
 		vscode.commands.registerCommand('git-graph.addGitRepository', () => {
-			if (gitExecutable === null) {
-				vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
-				return;
-			}
-
-			vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {
-				if (uris && uris.length > 0) {
-					let path = getPathFromUri(uris[0]);
-					let folderName = path.substr(path.lastIndexOf('/') + 1);
-					if (isPathInWorkspace(path)) {
-						repoManager.registerRepo(path, false, false).then(valid => {
-							if (valid) {
-								vscode.window.showInformationMessage('The repository "' + folderName + '" was added to Git Graph.');
-							} else {
-								vscode.window.showErrorMessage('The folder "' + folderName + '" is not a Git repository, and therefore could not be added to Git Graph.');
-							}
-						});
-					} else {
-						vscode.window.showErrorMessage('The folder "' + folderName + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
-					}
-				}
-			});
+			addGitRepository(gitExecutable, repoManager);
+		}),
+		vscode.commands.registerCommand('git-graph.removeGitRepository', () => {
+			removeGitRepositoy(gitExecutable, repoManager);
 		}),
 		vscode.commands.registerCommand('git-graph.clearAvatarCache', () => {
 			avatarManager.clearCache();

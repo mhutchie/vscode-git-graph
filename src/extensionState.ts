@@ -5,6 +5,7 @@ import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
+const IGNORED_REPOS = 'ignoredRepos';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
 const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
 const REPO_STATES = 'repoStates';
@@ -51,6 +52,17 @@ export class ExtensionState {
 
 	public saveRepos(gitRepoSet: GitRepoSet) {
 		this.workspaceState.update(REPO_STATES, gitRepoSet);
+	}
+
+
+	/* Ignored Repos */
+
+	public getIgnoredRepos() {
+		return this.workspaceState.get<string[]>(IGNORED_REPOS, []);
+	}
+
+	public setIgnoredRepos(ignoredRepos: string[]) {
+		return this.workspaceState.update(IGNORED_REPOS, ignoredRepos);
 	}
 
 

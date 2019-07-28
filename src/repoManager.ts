@@ -14,6 +14,7 @@ export class RepoManager {
 	private readonly statusBarItem: StatusBarItem;
 	private readonly logger: Logger;
 	private repos: GitRepoSet;
+	private ignoredRepos: string[];
 	private maxDepthOfRepoSearch: number;
 	private folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
 	private viewCallback: ((repos: GitRepoSet, numRepos: number, loadRepo: string | null) => void) | null = null;
@@ -30,6 +31,7 @@ export class RepoManager {
 		this.statusBarItem = statusBarItem;
 		this.logger = logger;
 		this.repos = extensionState.getRepos();
+		this.ignoredRepos = extensionState.getIgnoredRepos();
 		this.maxDepthOfRepoSearch = getConfig().maxDepthOfRepoSearch();
 		this.startupTasks();
 
@@ -118,6 +120,10 @@ export class RepoManager {
 						if (reposInFolder.findIndex(knownRepo => reposInFolder[i].startsWith(knownRepo + '/')) === -1) this.removeRepo(reposInFolder[i]);
 					}
 				}
+				if (this.ignoredRepos.includes(path)) {
+					this.ignoredRepos.splice(this.ignoredRepos.indexOf(path), 1);
+					this.extensionState.setIgnoredRepos(this.ignoredRepos);
+				}
 				this.addRepo(path);
 				this.sendRepos(loadRepo ? path : null);
 				resolve(true);
@@ -125,6 +131,18 @@ export class RepoManager {
 				resolve(false);
 			}
 		});
+	}
+
+	public ignoreRepo(repo: string) {
+		if (this.isKnownRepo(repo)) {
+			if (!this.ignoredRepos.includes(repo)) this.ignoredRepos.push(repo);
+			this.extensionState.setIgnoredRepos(this.ignoredRepos);
+			this.removeRepo(repo);
+			this.sendRepos();
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 
@@ -232,7 +250,7 @@ export class RepoManager {
 
 	private searchDirectoryForRepos(directory: string, maxDepth: number) { // Returns a promise resolving to a boolean, that indicates if new repositories were found.
 		return new Promise<boolean>(resolve => {
-			if (this.isDirectoryWithinRepos(directory)) {
+			if (this.isDirectoryWithinRepos(directory) || this.ignoredRepos.includes(directory)) {
 				resolve(false);
 				return;
 			}

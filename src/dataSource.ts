@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges, RebaseOnType } from './types';
+import { BranchOrCommit, CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges } from './types';
 import { abbrevCommit, getPathFromStr, GitExecutable, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -416,20 +416,6 @@ export class DataSource {
 		return remoteStatus;
 	}
 
-	public async mergeBranch(repo: string, branchName: string, createNewCommit: boolean, squash: boolean) {
-		let args = ['merge', branchName];
-		if (squash) args.push('--squash');
-		else if (createNewCommit) args.push('--no-ff');
-
-		let mergeStatus = await this.runGitCommand(args, repo);
-		if (mergeStatus === null && squash) {
-			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge branch \'' + branchName + '\''], repo);
-			}
-		}
-		return mergeStatus;
-	}
-
 	public async pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
 		let args = ['pull', remote, branchName];
 		if (squash) args.push('--squash');
@@ -444,25 +430,42 @@ export class DataSource {
 		return pullStatus;
 	}
 
-	public rebaseOn(repo: string, base: string, type: RebaseOnType, ignoreDate: boolean, interactive: boolean) {
+	public renameBranch(repo: string, oldName: string, newName: string) {
+		return this.runGitCommand(['branch', '-m', oldName, newName], repo);
+	}
+
+
+	/* Git Action Methods - Branches & Commits */
+
+	public async merge(repo: string, obj: string, type: BranchOrCommit, createNewCommit: boolean, squash: boolean) {
+		let args = ['merge', obj];
+		if (squash) args.push('--squash');
+		else if (createNewCommit) args.push('--no-ff');
+
+		let mergeStatus = await this.runGitCommand(args, repo);
+		if (mergeStatus === null && squash) {
+			if (await this.areStagedChanges(repo)) {
+				return this.runGitCommand(['commit', '-m', 'Merge ' + type.toLowerCase() + ' \'' + obj + '\''], repo);
+			}
+		}
+		return mergeStatus;
+	}
+
+	public rebase(repo: string, obj: string, type: BranchOrCommit, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
 			return new Promise<GitCommandError>(resolve => {
 				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
 
 				runGitCommandInNewTerminal(repo, this.gitExecutable.path,
-					'rebase --interactive ' + (type === 'Branch' ? base.replace(/'/g, '"\'"') : base),
-					'Git Rebase on "' + (type === 'Branch' ? base : abbrevCommit(base)) + '"');
+					'rebase --interactive ' + (type === 'Branch' ? obj.replace(/'/g, '"\'"') : obj),
+					'Git Rebase on "' + (type === 'Branch' ? obj : abbrevCommit(obj)) + '"');
 				setTimeout(() => resolve(null), 1000);
 			});
 		} else {
-			let args = ['rebase', base];
+			let args = ['rebase', obj];
 			if (ignoreDate) args.push('--ignore-date');
 			return this.runGitCommand(args, repo);
 		}
-	}
-
-	public renameBranch(repo: string, oldName: string, newName: string) {
-		return this.runGitCommand(['branch', '-m', oldName, newName], repo);
 	}
 
 
@@ -476,20 +479,6 @@ export class DataSource {
 		let args = ['cherry-pick', commitHash];
 		if (parentIndex > 0) args.push('-m', parentIndex.toString());
 		return this.runGitCommand(args, repo);
-	}
-
-	public async mergeCommit(repo: string, commitHash: string, createNewCommit: boolean, squash: boolean) {
-		let args = ['merge', commitHash];
-		if (squash) args.push('--squash');
-		else if (createNewCommit) args.push('--no-ff');
-
-		let mergeStatus = await this.runGitCommand(args, repo);
-		if (mergeStatus === null && squash) {
-			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge commit \'' + commitHash + '\''], repo);
-			}
-		}
-		return mergeStatus;
 	}
 
 	public resetToCommit(repo: string, commitHash: string, resetMode: GitResetMode) {

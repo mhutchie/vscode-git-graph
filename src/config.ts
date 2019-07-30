@@ -70,11 +70,15 @@ class Config {
 				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? 'lightweight' : 'annotated'
 			},
 			createBranch: {
-				checkout: this.config.get('dialog.createBranch.checkOut', false) ? true : false
+				checkout: !!this.config.get('dialog.createBranch.checkOut', false)
+			},
+			merge: {
+				noFastForward: !!this.config.get('dialog.merge.noFastForward', true),
+				squash: !!this.config.get('dialog.merge.squashCommits', false)
 			},
 			rebase: {
-				ignoreDate: this.config.get('dialog.rebase.ignoreDate', true) ? true : false,
-				interactive: this.config.get('dialog.rebase.launchInteractiveRebase', false) ? true : false
+				ignoreDate: !!this.config.get('dialog.rebase.ignoreDate', true),
+				interactive: !!this.config.get('dialog.rebase.launchInteractiveRebase', false)
 			}
 		};
 	}

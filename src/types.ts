@@ -169,7 +169,7 @@ export type GitCommandError = string | null; // null => no error, otherwise => e
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
 export type DiffSide = 'old' | 'new';
-export type RebaseOnType = 'Branch' | 'Commit';
+export type BranchOrCommit = 'Branch' | 'Commit';
 
 export interface CustomBranchGlobPattern {
 	name: string;
@@ -190,6 +190,10 @@ export interface DialogDefaults {
 	};
 	createBranch: {
 		checkout: boolean
+	};
+	merge: {
+		noFastForward: boolean,
+		squash: boolean
 	};
 	rebase: {
 		ignoreDate: boolean,
@@ -466,27 +470,17 @@ export interface ResponseLoadRepos {
 	loadRepo: string | null;
 }
 
-export interface RequestMergeBranch {
-	command: 'mergeBranch';
+export interface RequestMerge {
+	command: 'merge';
 	repo: string;
-	branchName: string;
+	obj: string;
+	type: BranchOrCommit;
 	createNewCommit: boolean;
 	squash: boolean;
 }
-export interface ResponseMergeBranch {
-	command: 'mergeBranch';
-	error: GitCommandError;
-}
-
-export interface RequestMergeCommit {
-	command: 'mergeCommit';
-	repo: string;
-	commitHash: string;
-	createNewCommit: boolean;
-	squash: boolean;
-}
-export interface ResponseMergeCommit {
-	command: 'mergeCommit';
+export interface ResponseMerge {
+	command: 'merge';
+	type: BranchOrCommit;
 	error: GitCommandError;
 }
 
@@ -536,17 +530,17 @@ export interface ResponsePushTag {
 	error: GitCommandError;
 }
 
-export interface RequestRebaseOn {
-	command: 'rebaseOn';
+export interface RequestRebase {
+	command: 'rebase';
 	repo: string;
-	type: RebaseOnType;
-	base: string;
+	obj: string;
+	type: BranchOrCommit;
 	ignoreDate: boolean;
 	interactive: boolean;
 }
-export interface ResponseRebaseOn {
-	command: 'rebaseOn';
-	type: RebaseOnType;
+export interface ResponseRebase {
+	command: 'rebase';
+	type: BranchOrCommit;
 	interactive: boolean;
 	error: GitCommandError;
 }
@@ -662,13 +656,12 @@ export type RequestMessage =
 	| RequestLoadBranches
 	| RequestLoadCommits
 	| RequestLoadRepos
-	| RequestMergeBranch
-	| RequestMergeCommit
+	| RequestMerge
 	| RequestOpenFile
 	| RequestPullBranch
 	| RequestPushBranch
 	| RequestPushTag
-	| RequestRebaseOn
+	| RequestRebase
 	| RequestRenameBranch
 	| RequestRescanForRepos
 	| RequestResetToCommit
@@ -701,13 +694,12 @@ export type ResponseMessage =
 	| ResponseLoadBranches
 	| ResponseLoadCommits
 	| ResponseLoadRepos
-	| ResponseMergeBranch
-	| ResponseMergeCommit
+	| ResponseMerge
 	| ResponseOpenFile
 	| ResponsePullBranch
 	| ResponsePushBranch
 	| ResponsePushTag
-	| ResponseRebaseOn
+	| ResponseRebase
 	| ResponseRefresh
 	| ResponseRenameBranch
 	| ResponseResetToCommit

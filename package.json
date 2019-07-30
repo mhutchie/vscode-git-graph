@@ -213,6 +213,16 @@
 					"default": false,
 					"description": "Default state of the \"Check out\" checkbox."
 				},
+				"git-graph.dialog.merge.noFastForward": {
+					"type": "boolean",
+					"default": true,
+					"description": "Default state of the \"Create a new commit even if fast-forward is possible\" checkbox."
+				},
+				"git-graph.dialog.merge.squashCommits": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Squash commits\" checkbox."
+				},
 				"git-graph.dialog.rebase.ignoreDate": {
 					"type": "boolean",
 					"default": true,

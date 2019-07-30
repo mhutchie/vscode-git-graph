@@ -644,26 +644,11 @@ class GitGraphView {
 					null,
 					{
 						title: 'Merge into current branch' + ELLIPSIS,
-						onClick: () => {
-							showFormDialog('Are you sure you want to merge commit <b><i>' + abbrevCommit(hash) + '</i></b> into the current branch?', [
-								{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: true },
-								{ type: 'checkbox', name: 'Squash commits', value: false }
-							], 'Yes, merge', values => {
-								runAction({ command: 'mergeCommit', repo: this.currentRepo, commitHash: hash, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Merging Commit');
-							}, sourceElem);
-						}
+						onClick: () => this.mergeAction(hash, abbrevCommit(hash), 'Commit', sourceElem)
 					},
 					{
 						title: 'Rebase current branch on this Commit' + ELLIPSIS,
-						onClick: () => {
-							showFormDialog('Are you sure you want to rebase the current branch on commit <b><i>' + abbrevCommit(hash) + '</i></b>?', [
-								{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
-								{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
-							], 'Yes, rebase', values => {
-								let interactive = values[0] === 'checked';
-								runAction({ command: 'rebaseOn', repo: this.currentRepo, base: hash, type: 'Commit', ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on Commit');
-							}, sourceElem);
-						}
+						onClick: () => this.rebaseAction(hash, abbrevCommit(hash), 'Commit', sourceElem)
 					},
 					{
 						title: 'Reset current branch to this Commit' + ELLIPSIS,
@@ -793,25 +778,10 @@ class GitGraphView {
 								}
 							}, {
 								title: 'Merge into current branch' + ELLIPSIS,
-								onClick: () => {
-									showFormDialog('Are you sure you want to merge branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch?', [
-										{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: true },
-										{ type: 'checkbox', name: 'Squash commits', value: false }
-									], 'Yes, merge', values => {
-										runAction({ command: 'mergeBranch', repo: this.currentRepo, branchName: refName, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Merging Branch');
-									}, null);
-								}
+								onClick: () => this.mergeAction(refName, refName, 'Branch', null)
 							}, {
 								title: 'Rebase current branch on Branch' + ELLIPSIS,
-								onClick: () => {
-									showFormDialog('Are you sure you want to rebase the current branch on branch <b><i>' + escapeHtml(refName) + '</i></b>?', [
-										{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
-										{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
-									], 'Yes, rebase', values => {
-										let interactive = values[0] === 'checked';
-										runAction({ command: 'rebaseOn', repo: this.currentRepo, base: refName, type: 'Branch', ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on Branch');
-									}, null);
-								}
+								onClick: () => this.rebaseAction(refName, refName, 'Branch', null)
 							}
 						);
 					}
@@ -936,6 +906,25 @@ class GitGraphView {
 
 	private deleteTagAction(refName: string, deleteOnRemote: string | null) {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
+	}
+
+	private mergeAction(obj: string, name: string, type: GG.BranchOrCommit, sourceElem: HTMLElement | null) {
+		showFormDialog('Are you sure you want to merge ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
+			{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
+			{ type: 'checkbox', name: 'Squash commits', value: this.config.dialogDefaults.merge.squash }
+		], 'Yes, merge', values => {
+			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, type: type, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Merging ' + type);
+		}, sourceElem);
+	}
+
+	private rebaseAction(obj: string, name: string, type: GG.BranchOrCommit, sourceElem: HTMLElement | null) {
+		showFormDialog('Are you sure you want to rebase the current branch on ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
+			{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
+			{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
+		], 'Yes, rebase', values => {
+			let interactive = values[0] === 'checked';
+			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, type: type, ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + type);
+		}, sourceElem);
 	}
 
 
@@ -1565,11 +1554,8 @@ window.addEventListener('load', () => {
 			case 'loadRepos':
 				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
 				break;
-			case 'mergeBranch':
-				refreshOrDisplayError(msg.error, 'Unable to Merge Branch');
-				break;
-			case 'mergeCommit':
-				refreshOrDisplayError(msg.error, 'Unable to Merge Commit');
+			case 'merge':
+				refreshOrDisplayError(msg.error, 'Unable to Merge ' + msg.type);
 				break;
 			case 'openFile':
 				if (msg.error !== null) {
@@ -1585,7 +1571,7 @@ window.addEventListener('load', () => {
 			case 'pushTag':
 				refreshOrDisplayError(msg.error, 'Unable to Push Tag');
 				break;
-			case 'rebaseOn':
+			case 'rebase':
 				if (msg.error === null) {
 					if (msg.interactive) {
 						if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();

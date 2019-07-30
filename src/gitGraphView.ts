@@ -249,16 +249,10 @@ export class GitGraphView {
 						this.respondLoadRepos(this.repoManager.getRepos(), null);
 					}
 					break;
-				case 'mergeBranch':
+				case 'merge':
 					this.sendMessage({
-						command: 'mergeBranch',
-						error: await this.dataSource.mergeBranch(msg.repo, msg.branchName, msg.createNewCommit, msg.squash)
-					});
-					break;
-				case 'mergeCommit':
-					this.sendMessage({
-						command: 'mergeCommit',
-						error: await this.dataSource.mergeCommit(msg.repo, msg.commitHash, msg.createNewCommit, msg.squash)
+						command: 'merge', type: msg.type,
+						error: await this.dataSource.merge(msg.repo, msg.obj, msg.type, msg.createNewCommit, msg.squash)
 					});
 					break;
 				case 'openFile':
@@ -285,10 +279,10 @@ export class GitGraphView {
 						error: await this.dataSource.pushTag(msg.repo, msg.tagName, msg.remote)
 					});
 					break;
-				case 'rebaseOn':
+				case 'rebase':
 					this.sendMessage({
-						command: 'rebaseOn', type: msg.type, interactive: msg.interactive,
-						error: await this.dataSource.rebaseOn(msg.repo, msg.base, msg.type, msg.ignoreDate, msg.interactive)
+						command: 'rebase', type: msg.type, interactive: msg.interactive,
+						error: await this.dataSource.rebase(msg.repo, msg.obj, msg.type, msg.ignoreDate, msg.interactive)
 					});
 					break;
 				case 'renameBranch':

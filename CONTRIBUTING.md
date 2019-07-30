@@ -58,6 +58,8 @@ Step 3: To compile the code, run the appropriate npm script in the Visual Studio
 * `npm run compile-web`: Compiles the frontend code only, with minification.
 * `npm run compile-web-debug`: Compiles the frontend code, without minification.
 
+_Note: When you first open the codebase, you'll need to run `npm run compile-src` so that the types defined by the backend are made available for the frontend to use, otherwise there will be a number of type errors in the frontend code. Similarly, if you make a change to the backend types that you also want to use in the frontend via the GG namespace, you'll need to run `npm run compile-src` before they can be used._
+
 Step 4: To quickly test your changes:
 * Pressing F5 launches the Extension Development Host in a new window, overriding the installed version of Git Graph with the version compiled in Step 3. You can:
     * Use the extension to test your changes
@@ -73,7 +75,7 @@ Step 4: To quickly test your changes:
 
 Step 5: To do a complete test of your changes:
 1. Install Visual Studio Code Extensions `npm install -g vsce` if it is not already installed.
-2. Change the version of the extension defined in `package.json` on line 4 to an alpha release, for example `1.4.6-alpha.0`. You should increment the alpha version each time you package a modified version of the extension. _Make sure you don't commit the version number with your changes._
+2. Change the version of the extension defined in `package.json` on line 4 to an alpha release, for example `1.13.0-alpha.0`. You should increment the alpha version each time you package a modified version of the extension. _Make sure you don't commit the version number with your changes._
 3. Run the npm script `npm run package-and-install` in the Visual Studio Code terminal. This will compile and package the extension into a `vsix` file, and then install it.
 4. Restart Visual Studio Code, and verify that you have the correct alpha version installed.
 5. Test out the extension, it will behave exactly the same as a published release.

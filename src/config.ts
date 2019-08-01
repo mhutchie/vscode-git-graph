@@ -100,6 +100,10 @@ class Config {
 		return this.config.get('initialLoadCommits', 300);
 	}
 
+	public integratedTerminalShell() {
+		return this.config.get('integratedTerminalShell', '');
+	}
+
 	public loadMoreCommits() {
 		return this.config.get('loadMoreCommits', 75);
 	}

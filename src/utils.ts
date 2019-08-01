@@ -104,7 +104,11 @@ export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command
 	if (p !== '' && !p.endsWith(sep)) p += sep;
 	p += path.dirname(gitPath);
 
-	let terminal = vscode.window.createTerminal({ cwd: cwd, name: name, env: { 'PATH': p } });
+	let options: vscode.TerminalOptions = { cwd: cwd, name: name, env: { 'PATH': p } };
+	let shell = getConfig().integratedTerminalShell();
+	if (shell !== '') options.shellPath = shell;
+
+	let terminal = vscode.window.createTerminal(options);
 	terminal.sendText('git ' + command);
 	terminal.show();
 }

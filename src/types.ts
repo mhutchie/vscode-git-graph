@@ -127,6 +127,7 @@ export interface GitGraphViewState {
 	dateFormat: DateFormat;
 	defaultColumnVisibility: DefaultColumnVisibility;
 	dialogDefaults: DialogDefaults;
+	fetchAndPrune: boolean;
 	fetchAvatars: boolean;
 	graphColours: string[];
 	graphStyle: GraphStyle;
@@ -397,6 +398,8 @@ export interface ResponseEditRemote {
 export interface RequestFetch {
 	command: 'fetch';
 	repo: string;
+	name: string | null; // null => Fetch all remotes
+	prune: boolean;
 }
 export interface ResponseFetch {
 	command: 'fetch';
@@ -491,6 +494,16 @@ export interface RequestOpenFile {
 }
 export interface ResponseOpenFile {
 	command: 'openFile';
+	error: GitCommandError;
+}
+
+export interface RequestPruneRemote {
+	command: 'pruneRemote';
+	repo: string;
+	name: string;
+}
+export interface ResponsePruneRemote {
+	command: 'pruneRemote';
 	error: GitCommandError;
 }
 
@@ -658,6 +671,7 @@ export type RequestMessage =
 	| RequestLoadRepos
 	| RequestMerge
 	| RequestOpenFile
+	| RequestPruneRemote
 	| RequestPullBranch
 	| RequestPushBranch
 	| RequestPushTag
@@ -696,6 +710,7 @@ export type ResponseMessage =
 	| ResponseLoadRepos
 	| ResponseMerge
 	| ResponseOpenFile
+	| ResponsePruneRemote
 	| ResponsePullBranch
 	| ResponsePushBranch
 	| ResponsePushTag

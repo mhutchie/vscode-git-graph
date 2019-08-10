@@ -100,7 +100,7 @@ class SettingsWidget {
 			let html = '<h3>Remote Configuration</h3><table><tr><th>Name</th><th>Remote URL</th><th>Type</th><th>Action</th></tr>', pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
 			if (this.settings.remotes.length > 0) {
 				this.settings.remotes.forEach((remote, i) => {
-					html += '<tr class="lineAbove"><td rowspan="2">' + escapeHtml(remote.name) + '</td><td class="remoteUrl">' + escapeHtml(remote.url || 'Not Set') + '</td><td>Fetch</td><td rowspan="2"><div class="editRemote" data-index="' + i + '" title="Edit Remote">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" data-index="' + i + '" title="Delete Remote">' + SVG_ICONS.close + '</div></td></tr><tr><td class="remoteUrl">' + escapeHtml(remote.pushUrl || remote.url || 'Not Set') + '</td><td>Push</td></tr>';
+					html += '<tr class="lineAbove"><td rowspan="2">' + escapeHtml(remote.name) + '</td><td class="remoteUrl">' + escapeHtml(remote.url || 'Not Set') + '</td><td>Fetch</td><td class="remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td></tr><tr><td class="remoteUrl">' + escapeHtml(remote.pushUrl || remote.url || 'Not Set') + '</td><td>Push</td></tr>';
 				});
 			} else {
 				html += '<tr class="lineAbove"><td colspan="4">There are no remotes configured for this repository.</td></tr>';
@@ -119,7 +119,7 @@ class SettingsWidget {
 				}, null);
 			});
 			addListenerToClass('editRemote', 'click', (e) => {
-				let remote = this.settings!.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.editRemote')!).dataset.index!)];
+				let remote = this.getRemoteForBtnEvent(e);
 				showFormDialog('Edit the remote <b><i>' + escapeHtml(remote.name) + '</i></b>:', [
 					{ type: 'text', name: 'Name: ', default: remote.name, placeholder: null },
 					{ type: 'text', name: 'Fetch URL: ', default: remote.url !== null ? remote.url : '', placeholder: null },
@@ -129,9 +129,18 @@ class SettingsWidget {
 				}, null);
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {
-				let remote = this.settings!.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.deleteRemote')!).dataset.index!)];
+				let remote = this.getRemoteForBtnEvent(e);
 				showConfirmationDialog('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
 					runAction({ command: 'deleteRemote', repo: this.repo!, name: remote.name }, 'Deleting Remote');
+				}, null);
+			});
+			addListenerToClass('fetchRemote', 'click', (e) => {
+				runAction({ command: 'fetch', repo: this.repo!, name: this.getRemoteForBtnEvent(e).name, prune: false }, 'Fetching from Remote');
+			});
+			addListenerToClass('pruneRemote', 'click', (e) => {
+				let remote = this.getRemoteForBtnEvent(e);
+				showConfirmationDialog('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
 				}, null);
 			});
 		}
@@ -143,5 +152,9 @@ class SettingsWidget {
 		if (this.repo === null) return;
 		sendMessage({ command: 'getSettings', repo: this.repo });
 		this.render();
+	}
+
+	private getRemoteForBtnEvent(e: Event) {
+		return this.settings!.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.remoteBtns')!).dataset.index!)];
 	}
 }

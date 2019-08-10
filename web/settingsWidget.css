@@ -56,12 +56,18 @@
 }
 .settingsWidget table th, .settingsWidget table td{
 	position:relative;
-	padding:3px 5px;
 	text-align:center;
 	white-space:nowrap;
 }
 .settingsWidget table th{
 	font-weight:bold;
+	padding:3px 5px;
+}
+.settingsWidget table td{
+	padding:0 5px 3px 5px;
+}
+.settingsWidget table tr.lineAbove td{
+	padding-top:3px;
 }
 .settingsWidget table td.remoteUrl{
 	width:100%;
@@ -70,25 +76,25 @@
 	text-overflow:ellipsis;
 	text-align:left;
 }
-.settingsWidget .editRemote, .settingsWidget .deleteRemote{
+.settingsWidget .remoteBtns div{
 	display:inline-block;
 	position:relative;
-	width:18px;
-	height:18px;
+	width:17px;
+	height:17px;
 	vertical-align:middle;
 	cursor:pointer;
 }
 .settingsWidget .editRemote svg{
 	position:absolute;
-	left:2px;
-	top:2px;
+	left:1.5px;
+	top:1.5px;
 	width:14px !important;
 	height:14px !important;
 }
-.settingsWidget .deleteRemote svg{
+.settingsWidget .deleteRemote svg, .settingsWidget .fetchRemote svg, .settingsWidget .pruneRemote svg{
 	position:absolute;
-	left:1px;
-	top:1px;
+	left:0.5px;
+	top:0.5px;
 	width:16px !important;
 	height:16px !important;
 }
@@ -149,7 +155,7 @@
 	height:16px !important;
 }
 
-#settingsAddRemote:hover svg, .settingsWidget .editRemote:hover svg, .settingsWidget .deleteRemote:hover svg, #settingsClose:hover{
+#settingsAddRemote:hover svg, .settingsWidget .remoteBtns div:hover svg, #settingsClose:hover{
 	fill-opacity:1;
 }
 .settingsWidget.loading #settingsContent{

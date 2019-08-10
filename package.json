@@ -233,6 +233,11 @@
 					"default": false,
 					"description": "Default state of the \"Launch Interactive Rebase in new Terminal\" checkbox."
 				},
+				"git-graph.fetchAndPrune": {
+					"type": "boolean",
+					"default": false,
+					"description": "Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote(s)."
+				},
 				"git-graph.fetchAvatars": {
 					"type": "boolean",
 					"default": false,

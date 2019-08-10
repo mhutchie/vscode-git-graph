@@ -308,7 +308,7 @@ export class DataSource {
 			if (status !== null) return status;
 		}
 
-		return fetch ? this.fetch(repo, name) : null;
+		return fetch ? this.fetch(repo, name, false) : null;
 	}
 
 	public deleteRemote(repo: string, name: string) {
@@ -344,6 +344,10 @@ export class DataSource {
 		return null;
 	}
 
+	public pruneRemote(repo: string, name: string) {
+		return this.runGitCommand(['remote', 'prune', name], repo);
+	}
+
 
 	/* Git Action Methods - Tags */
 
@@ -369,8 +373,11 @@ export class DataSource {
 
 	/* Git Action Methods - Remote Sync */
 
-	public fetch(repo: string, remote: string | null) {
-		return this.runGitCommand(['fetch', remote === null ? '--all' : remote], repo);
+	public fetch(repo: string, remote: string | null, prune: boolean) {
+		let args = ['fetch', remote === null ? '--all' : remote];
+		if (prune) args.push('--prune');
+
+		return this.runGitCommand(args, repo);
 	}
 
 	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean) {

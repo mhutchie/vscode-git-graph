@@ -17,6 +17,7 @@ declare global {
 		customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
 		defaultColumnVisibility: GG.DefaultColumnVisibility;
 		dialogDefaults: GG.DialogDefaults;
+		fetchAndPrune: boolean;
 		fetchAvatars: boolean;
 		graphColours: string[];
 		graphStyle: 'rounded' | 'angular';

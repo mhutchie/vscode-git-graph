@@ -106,9 +106,10 @@ class GitGraphView {
 		}
 
 		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!;
+		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => {
-			runAction({ command: 'fetch', repo: this.currentRepo }, 'Fetching from Remote(s)');
+			runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune }, 'Fetching from Remote(s)');
 		});
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
@@ -1450,6 +1451,7 @@ window.addEventListener('load', () => {
 		customBranchGlobPatterns: viewState.customBranchGlobPatterns,
 		defaultColumnVisibility: viewState.defaultColumnVisibility,
 		dialogDefaults: viewState.dialogDefaults,
+		fetchAndPrune: viewState.fetchAndPrune,
 		fetchAvatars: viewState.fetchAvatars,
 		graphColours: viewState.graphColours,
 		graphStyle: viewState.graphStyle,
@@ -1561,6 +1563,9 @@ window.addEventListener('load', () => {
 				if (msg.error !== null) {
 					showErrorDialog('Unable to Open File', msg.error, null, null, null);
 				}
+				break;
+			case 'pruneRemote':
+				refreshOrDisplayError(msg.error, 'Unable to Prune Remote Branches');
 				break;
 			case 'pullBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');

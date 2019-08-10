@@ -83,6 +83,10 @@ class Config {
 		};
 	}
 
+	public fetchAndPrune() {
+		return !!this.config.get('fetchAndPrune', false);
+	}
+
 	public fetchAvatars() {
 		return this.config.get('fetchAvatars', false);
 	}

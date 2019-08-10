@@ -203,7 +203,7 @@ export class GitGraphView {
 				case 'fetch':
 					this.sendMessage({
 						command: 'fetch',
-						error: await this.dataSource.fetch(msg.repo, null)
+						error: await this.dataSource.fetch(msg.repo, msg.name, msg.prune)
 					});
 					break;
 				case 'fetchAvatar':
@@ -259,6 +259,12 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'openFile',
 						error: await openFile(msg.repoRoot, msg.filePath)
+					});
+					break;
+				case 'pruneRemote':
+					this.sendMessage({
+						command: 'pruneRemote',
+						error: await this.dataSource.pruneRemote(msg.repo, msg.name)
 					});
 					break;
 				case 'pullBranch':
@@ -370,6 +376,7 @@ export class GitGraphView {
 			dateFormat: config.dateFormat(),
 			defaultColumnVisibility: config.defaultColumnVisibility(),
 			dialogDefaults: config.dialogDefaults(),
+			fetchAndPrune: config.fetchAndPrune(),
 			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 			graphColours: config.graphColours(),
 			graphStyle: config.graphStyle(),
@@ -403,7 +410,7 @@ export class GitGraphView {
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox">Show Remote Branches</label>
 					<div id="findBtn" title="Find"></div>
 					<div id="settingsBtn" title="Repository Settings"></div>
-					<div id="fetchBtn" title="Fetch from Remote(s)"></div>
+					<div id="fetchBtn"></div>
 					<div id="refreshBtn"></div>
 				</div>
 				<div id="content">

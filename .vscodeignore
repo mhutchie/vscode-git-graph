@@ -1,5 +1,6 @@
 .github/
 .vscode/
+node_modules/*/*.md
 out/askpass/*.d.ts
 out/askpass/*.js.map
 out/*.d.ts

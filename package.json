@@ -238,6 +238,11 @@
 					"default": false,
 					"description": "Fetch avatars of commit authors and committers. By enabling this setting, you consent to commit author and committer email addresses being sent GitHub, GitLab or Gravatar, depending on the repositories remote origin."
 				},
+				"git-graph.fileEncoding": {
+					"type": "string",
+					"default": "utf8",
+					"markdownDescription": "The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings)."
+				},
 				"git-graph.graphColours": {
 					"type": "array",
 					"items": {
@@ -411,6 +416,9 @@
 		"package": "npm run clean && vsce package",
 		"package-and-install": "npm run clean && vsce package && node ./.vscode/install-package.js",
 		"postinstall": "node ./node_modules/vscode/bin/install"
+	},
+	"dependencies": {
+		"iconv-lite": "0.5.0"
 	},
 	"devDependencies": {
 		"@types/node": "^8.10.25",

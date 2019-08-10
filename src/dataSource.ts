@@ -1,4 +1,5 @@
 import * as cp from 'child_process';
+import { decode, encodingExists } from 'iconv-lite';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
@@ -212,9 +213,14 @@ export class DataSource {
 	}
 
 	public getCommitFile(repo: string, commitHash: string, filePath: string, type: GitFileChangeType, diffSide: DiffSide) {
-		return (commitHash === UNCOMMITTED && type === 'D') || (diffSide === 'old' && type === 'A') || (diffSide === 'new' && type === 'D')
-			? new Promise<string>(resolve => resolve(''))
-			: this.spawnGit(['show', commitHash + ':' + filePath], repo, stdout => stdout);
+		if ((commitHash === UNCOMMITTED && type === 'D') || (diffSide === 'old' && type === 'A') || (diffSide === 'new' && type === 'D')) {
+			return new Promise<string>(resolve => resolve(''));
+		} else {
+			return this._spawnGit(['show', commitHash + ':' + filePath], repo, stdout => {
+				let encoding = getConfig().fileEncoding();
+				return decode(stdout, encodingExists(encoding) ? encoding : 'utf8');
+			});
+		}
 	}
 
 
@@ -615,30 +621,36 @@ export class DataSource {
 	}
 
 	private runGitCommand(args: string[], repo: string): Promise<GitCommandError> {
-		return this.spawnGit(args, repo, () => null).catch((errorMessage: string) => errorMessage);
+		return this._spawnGit(args, repo, () => null).catch((errorMessage: string) => errorMessage);
 	}
 
 	private spawnGit<T>(args: string[], repo: string, resolveValue: { (stdout: string): T }) {
+		return this._spawnGit(args, repo, (stdout) => resolveValue(stdout.toString()));
+	}
+
+	private _spawnGit<T>(args: string[], repo: string, resolveValue: { (stdout: Buffer): T }) {
 		return new Promise<T>((resolve, reject) => {
 			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
 
-			let stdout = '', stderr = '', err = false;
+			let stdoutBuffers = <Buffer[]>[], stderr = '', err = false;
 			const cmd = cp.spawn(this.gitExecutable.path, args, {
 				cwd: repo,
 				env: Object.assign({}, process.env, this.askpassEnv)
 			});
-			cmd.stdout.on('data', (d) => { stdout += d; });
+			cmd.stdout.on('data', (b: Buffer) => { stdoutBuffers.push(b); });
 			cmd.stderr.on('data', (d) => { stderr += d; });
 			cmd.on('error', (e) => {
-				reject(getErrorMessage(e, stdout, stderr));
+				reject(getErrorMessage(e, Buffer.concat(stdoutBuffers), stderr));
 				err = true;
 			});
 			cmd.on('exit', (code) => {
 				if (err) return;
+
+				let stdoutBuffer = Buffer.concat(stdoutBuffers);
 				if (code === 0) {
-					resolve(resolveValue(stdout));
+					resolve(resolveValue(stdoutBuffer));
 				} else {
-					reject(getErrorMessage(null, stdout, stderr));
+					reject(getErrorMessage(null, stdoutBuffer, stderr));
 				}
 			});
 			this.logger.logCmd('git', args);
@@ -693,8 +705,8 @@ function getConfigs(configList: string[], configNames: string[]) {
 	return results;
 }
 
-function getErrorMessage(error: Error | null, stdout: string, stderr: string) {
-	let lines: string[];
+function getErrorMessage(error: Error | null, stdoutBuffer: Buffer, stderr: string) {
+	let stdout = stdoutBuffer.toString(), lines: string[];
 	if (stdout !== '' || stderr !== '') {
 		lines = (stderr + stdout).split(EOL_REGEX);
 		lines.pop();

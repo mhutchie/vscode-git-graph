@@ -87,6 +87,10 @@ class Config {
 		return this.config.get('fetchAvatars', false);
 	}
 
+	public fileEncoding(): string {
+		return this.config.get('fileEncoding', 'utf8');
+	}
+
 	public graphColours() {
 		return this.config.get('graphColours', ['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000'])
 			.filter((v) => v.match(/^\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgb[a]?\s*\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))\s*$/) !== null);

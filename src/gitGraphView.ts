@@ -154,7 +154,7 @@ export class GitGraphView {
 				case 'copyFilePath':
 					this.sendMessage({
 						command: 'copyFilePath',
-						success: await copyFilePathToClipboard(msg.repoRoot, msg.filePath)
+						success: await copyFilePathToClipboard(msg.repo, msg.filePath)
 					});
 					break;
 				case 'copyToClipboard':
@@ -219,7 +219,7 @@ export class GitGraphView {
 					let branchData = await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches), isRepo = true;
 					if (branchData.error) {
 						// If an error occurred, check to make sure the repo still exists
-						isRepo = await this.dataSource.isGitRepository(msg.repo);
+						isRepo = (await this.dataSource.repoRoot(msg.repo)) !== null;
 						if (!isRepo) branchData.error = null; // If the error is caused by the repo no longer existing, clear the error message
 					}
 					this.sendMessage({
@@ -258,7 +258,7 @@ export class GitGraphView {
 				case 'openFile':
 					this.sendMessage({
 						command: 'openFile',
-						error: await openFile(msg.repoRoot, msg.filePath)
+						error: await openFile(msg.repo, msg.filePath)
 					});
 					break;
 				case 'pruneRemote':
@@ -328,7 +328,7 @@ export class GitGraphView {
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
-						success: await viewDiff(msg.repo, msg.repoRoot, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+						success: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
 					});
 					break;
 				case 'viewScm':

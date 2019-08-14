@@ -15,7 +15,6 @@ export interface GitCommitData {
 }
 
 export interface GitCommitComparisonData {
-	repoRoot: string;
 	fileChanges: GitFileChange[];
 	error: GitCommandError;
 }
@@ -83,7 +82,6 @@ export interface GitCommitDetails {
 	date: number;
 	committer: string;
 	body: string;
-	repoRoot: string;
 	fileChanges: GitFileChange[];
 	error: GitCommandError;
 }
@@ -298,7 +296,6 @@ export interface ResponseCompareCommits {
 	command: 'compareCommits';
 	commitHash: string;
 	compareWithHash: string;
-	repoRoot: string;
 	fileChanges: GitFileChange[];
 	refresh: boolean;
 	error: GitCommandError;
@@ -306,7 +303,7 @@ export interface ResponseCompareCommits {
 
 export interface RequestCopyFilePath {
 	command: 'copyFilePath';
-	repoRoot: string;
+	repo: string;
 	filePath: string;
 }
 export interface ResponseCopyFilePath {
@@ -489,7 +486,7 @@ export interface ResponseMerge {
 
 export interface RequestOpenFile {
 	command: 'openFile';
-	repoRoot: string;
+	repo: string;
 	filePath: string;
 }
 export interface ResponseOpenFile {
@@ -626,7 +623,6 @@ export interface ResponseTagDetails {
 export interface RequestViewDiff {
 	command: 'viewDiff';
 	repo: string;
-	repoRoot: string;
 	fromHash: string;
 	toHash: string;
 	oldFilePath: string;

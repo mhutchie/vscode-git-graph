@@ -57,9 +57,9 @@ class DiffDocument {
 	}
 }
 
-export function encodeDiffDocUri(repo: string, repoRoot: string, filePath: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
+export function encodeDiffDocUri(repo: string, filePath: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
 	return commit === UNCOMMITTED && type !== 'D'
-		? vscode.Uri.file(path.join(repoRoot, filePath))
+		? vscode.Uri.file(path.join(repo, filePath))
 		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(filePath) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&diffSide=' + diffSide + '&repo=' + encodeURIComponent(repo));
 }
 

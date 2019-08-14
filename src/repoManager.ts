@@ -111,24 +111,27 @@ export class RepoManager {
 	// expandExistingRepos: if true, in the event that a known repo is within the repo being registered, remove it (excluding subrepos)
 	// loadRepo: if true and the Git Graph view is visible, force it to be loaded with the repo that is being registered
 	public registerRepo(path: string, expandExistingRepos: boolean, loadRepo: boolean) {
-		return new Promise<boolean>(async resolve => {
-			if (await this.dataSource.isGitRepository(path)) {
+		return new Promise<{ root: string | null, error: string | null }>(async resolve => {
+			let root = await this.dataSource.repoRoot(path);
+			if (root === null) {
+				resolve({ root: null, error: 'The folder "' + path + '" is not a Git repository.' });
+			} else if (typeof this.repos[root] !== 'undefined') {
+				resolve({ root: null, error: 'The folder "' + path + '" is contained within the known repository "' + root + '".' });
+			} else {
 				if (expandExistingRepos) {
-					let reposInFolder = this.getReposInFolder(path);
+					let reposInFolder = this.getReposInFolder(root);
 					for (let i = 0; i < reposInFolder.length; i++) {
 						// Remove repos within the repo being registered, unless they are a subrepo of a currently known repo
 						if (reposInFolder.findIndex(knownRepo => reposInFolder[i].startsWith(knownRepo + '/')) === -1) this.removeRepo(reposInFolder[i]);
 					}
 				}
-				if (this.ignoredRepos.includes(path)) {
-					this.ignoredRepos.splice(this.ignoredRepos.indexOf(path), 1);
+				if (this.ignoredRepos.includes(root)) {
+					this.ignoredRepos.splice(this.ignoredRepos.indexOf(root), 1);
 					this.extensionState.setIgnoredRepos(this.ignoredRepos);
 				}
-				this.addRepo(path);
-				this.sendRepos(loadRepo ? path : null);
-				resolve(true);
-			} else {
-				resolve(false);
+				this.addRepo(root);
+				this.sendRepos(loadRepo ? root : null);
+				resolve({ root: root, error: null });
 			}
 		});
 	}
@@ -214,10 +217,13 @@ export class RepoManager {
 	public checkReposExist() {
 		return new Promise<boolean>(resolve => {
 			let repoPaths = Object.keys(this.repos), changes = false;
-			evalPromises(repoPaths, 3, path => this.dataSource.isGitRepository(path)).then(results => {
+			evalPromises(repoPaths, 3, path => this.dataSource.repoRoot(path)).then(results => {
 				for (let i = 0; i < repoPaths.length; i++) {
-					if (!results[i]) {
+					if (results[i] === null) {
 						this.removeRepo(repoPaths[i]);
+						changes = true;
+					} else if (repoPaths[i] !== results[i]) {
+						this.transferRepoState(repoPaths[i], results[i]!);
 						changes = true;
 					}
 				}
@@ -230,6 +236,14 @@ export class RepoManager {
 	public setRepoState(repo: string, state: GitRepoState) {
 		this.repos[repo] = state;
 		this.extensionState.saveRepos(this.repos);
+	}
+
+	private transferRepoState(oldRepo: string, newRepo: string) {
+		this.repos[newRepo] = this.repos[oldRepo];
+		delete this.repos[oldRepo];
+		this.extensionState.saveRepos(this.repos);
+		if (this.extensionState.getLastActiveRepo() === oldRepo) this.extensionState.setLastActiveRepo(newRepo);
+		this.logger.log('Transferred repo state: ' + oldRepo + ' -> ' + newRepo);
 	}
 
 
@@ -250,15 +264,19 @@ export class RepoManager {
 
 	private searchDirectoryForRepos(directory: string, maxDepth: number) { // Returns a promise resolving to a boolean, that indicates if new repositories were found.
 		return new Promise<boolean>(resolve => {
-			if (this.isDirectoryWithinRepos(directory) || this.ignoredRepos.includes(directory)) {
+			if (this.isDirectoryWithinRepos(directory)) {
 				resolve(false);
 				return;
 			}
 
-			this.dataSource.isGitRepository(directory).then(isRepo => {
-				if (isRepo) {
-					this.addRepo(directory);
-					resolve(true);
+			this.dataSource.repoRoot(directory).then(root => {
+				if (root !== null) {
+					if (this.ignoredRepos.includes(root)) {
+						resolve(false);
+					} else {
+						this.addRepo(root);
+						resolve(true);
+					}
 				} else if (maxDepth > 0) {
 					fs.readdir(directory, async (err, dirContents) => {
 						if (err) {

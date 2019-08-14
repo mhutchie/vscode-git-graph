@@ -1,10 +1,12 @@
 import * as cp from 'child_process';
 import { decode, encodingExists } from 'iconv-lite';
+import * as path from 'path';
+import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { BranchOrCommit, CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges } from './types';
-import { abbrevCommit, getPathFromStr, GitExecutable, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { abbrevCommit, getPathFromStr, getPathFromUri, GitExecutable, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -160,30 +162,26 @@ export class DataSource {
 						date: parseInt(commitInfo[4]),
 						committer: commitInfo[5],
 						body: lines.slice(1, lastLine + 1).join('\n'),
-						repoRoot: '', fileChanges: [], error: null
+						fileChanges: [], error: null
 					};
 				}),
 				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
-				this.getDiffTreeNumStat(repo, commitHash, commitHash),
-				this.topLevel(repo)
+				this.getDiffTreeNumStat(repo, commitHash, commitHash)
 			]).then((results) => {
-				results[0].repoRoot = results[3];
 				results[0].fileChanges = generateFileChanges(results[1], results[2], []);
 				resolve(results[0]);
-			}).catch((errorMessage) => resolve({ hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', repoRoot: '', fileChanges: [], error: errorMessage }));
+			}).catch((errorMessage) => resolve({ hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage }));
 		});
 	}
 
 	public getUncommittedDetails(repo: string) {
 		return new Promise<GitCommitDetails>(resolve => {
-			let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', repoRoot: '', fileChanges: [], error: null };
+			let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: null };
 			Promise.all([
 				this.getDiffTreeNameStatus(repo, 'HEAD', ''),
 				this.getDiffTreeNumStat(repo, 'HEAD', ''),
-				this.getUntrackedFiles(repo),
-				this.topLevel(repo)
+				this.getUntrackedFiles(repo)
 			]).then((results) => {
-				details.repoRoot = results[3];
 				details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
 				resolve(details);
 			}).catch((errorMessage) => {
@@ -198,16 +196,14 @@ export class DataSource {
 			Promise.all([
 				this.getDiffTreeNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
 				this.getDiffTreeNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-				toHash === UNCOMMITTED ? this.getUntrackedFiles(repo) : Promise.resolve<string[]>([]),
-				this.topLevel(repo)
+				toHash === UNCOMMITTED ? this.getUntrackedFiles(repo) : Promise.resolve<string[]>([])
 			]).then((results) => {
 				resolve({
-					repoRoot: results[3],
 					fileChanges: generateFileChanges(results[0], results[1], results[2]),
 					error: null
 				});
 			}).catch((errorMessage) => {
-				resolve({ repoRoot: '', fileChanges: [], error: errorMessage });
+				resolve({ fileChanges: [], error: errorMessage });
 			});
 		});
 	}
@@ -288,12 +284,9 @@ export class DataSource {
 		return this.spawnGit(['diff-index', 'HEAD'], repo, (stdout) => stdout !== '').then(changes => changes, () => false);
 	}
 
-	public isGitRepository(path: string) {
-		return this.spawnGit(['rev-parse', '--git-dir'], path, (stdout) => stdout).then(() => true, () => false);
-	}
-
-	public topLevel(repo: string) {
-		return this.spawnGit(['rev-parse', '--show-toplevel'], repo, (stdout) => getPathFromStr(stdout.trim()));
+	public repoRoot(repoPath: string) {
+		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(Uri.file(path.normalize(stdout.trim())))).then((root) => root, () => null);
+		// null => path is not in a repo
 	}
 
 

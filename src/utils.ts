@@ -49,17 +49,17 @@ export function getNonce() {
 
 // Visual Studio Code Command Wrappers
 
-export function copyFilePathToClipboard(repoRoot: string, filePath: string) {
-	return vscode.env.clipboard.writeText(path.join(repoRoot, filePath)).then(() => true, () => false);
+export function copyFilePathToClipboard(repo: string, filePath: string) {
+	return vscode.env.clipboard.writeText(path.join(repo, filePath)).then(() => true, () => false);
 }
 
 export function copyToClipboard(text: string) {
 	return vscode.env.clipboard.writeText(text).then(() => true, () => false);
 }
 
-export function openFile(repoRoot: string, filePath: string) {
+export function openFile(repo: string, filePath: string) {
 	return new Promise<GitCommandError>(resolve => {
-		let p = path.join(repoRoot, filePath);
+		let p = path.join(repo, filePath);
 		fs.exists(p, exists => {
 			if (exists) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
@@ -71,7 +71,7 @@ export function openFile(repoRoot: string, filePath: string) {
 	});
 }
 
-export function viewDiff(repo: string, repoRoot: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
+export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
 	return new Promise<boolean>(resolve => {
 		let options = { preview: true, viewColumn: getConfig().openDiffTabLocation() };
 		if (type !== 'U') {
@@ -84,10 +84,10 @@ export function viewDiff(repo: string, repoRoot: string, fromHash: string, toHas
 			let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 			if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, repoRoot, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, repoRoot, newFilePath, toHash, type, 'new'), title, options)
+			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, newFilePath, toHash, type, 'new'), title, options)
 				.then(() => resolve(true), () => resolve(false));
 		} else {
-			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path.join(repoRoot, newFilePath)), options)
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path.join(repo, newFilePath)), options)
 				.then(() => resolve(true), () => resolve(false));
 		}
 	});

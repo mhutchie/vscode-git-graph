@@ -530,7 +530,7 @@ class GitGraphView {
 				} else {
 					// Commit Comparison is open
 					if (!expandedCommit.loading && expandedCommit.fileChanges !== null && expandedCommit.fileTree !== null) {
-						this.showCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, expandedCommit.repoRoot, expandedCommit.fileChanges, expandedCommit.fileTree, false);
+						this.showCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, expandedCommit.fileChanges, expandedCommit.fileTree, false);
 						if (expandedCommit.hash === UNCOMMITTED || expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, true);
 					} else {
 						this.loadCommitComparison(compareWithElem!);
@@ -1188,7 +1188,6 @@ class GitGraphView {
 			srcElem: sourceElem,
 			commitDetails: null,
 			fileChanges: null,
-			repoRoot: '',
 			fileTree: null,
 			compareWithHash: null,
 			compareWithSrcElem: null,
@@ -1226,7 +1225,6 @@ class GitGraphView {
 		if (typeof elem === 'object' && elem !== null) elem.remove();
 
 		this.expandedCommit.commitDetails = commitDetails;
-		this.expandedCommit.repoRoot = commitDetails.repoRoot;
 		if (haveFilesChanged(this.expandedCommit.fileChanges, commitDetails.fileChanges)) {
 			this.expandedCommit.fileChanges = commitDetails.fileChanges;
 			this.expandedCommit.fileTree = fileTree;
@@ -1273,10 +1271,9 @@ class GitGraphView {
 		}
 	}
 
-	public showCommitComparison(commitHash: string, compareWithHash: string, repoRoot: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder, refresh: boolean) {
+	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: GG.GitFileChange[], fileTree: GitFolder, refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.compareWithSrcElem === null || this.expandedCommit.hash !== commitHash || this.expandedCommit.compareWithHash !== compareWithHash) return;
 		this.expandedCommit.commitDetails = null;
-		this.expandedCommit.repoRoot = repoRoot;
 		if (haveFilesChanged(this.expandedCommit.fileChanges, fileChanges)) {
 			this.expandedCommit.fileChanges = fileChanges;
 			this.expandedCommit.fileTree = fileTree;
@@ -1385,7 +1382,6 @@ class GitGraphView {
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
-				repoRoot: expandedCommit.repoRoot,
 				fromHash: commitOrder.from,
 				toHash: commitOrder.to,
 				oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!),
@@ -1395,19 +1391,11 @@ class GitGraphView {
 		});
 		addListenerToClass('copyGitFile', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.copyGitFile')!;
-			sendMessage({
-				command: 'copyFilePath',
-				repoRoot: expandedCommit.repoRoot,
-				filePath: decodeURIComponent(sourceElem.dataset.filepath!)
-			});
+			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: decodeURIComponent(sourceElem.dataset.filepath!) });
 		});
 		addListenerToClass('openGitFile', 'click', (e) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.openGitFile')!;
-			sendMessage({
-				command: 'openFile',
-				repoRoot: expandedCommit.repoRoot,
-				filePath: decodeURIComponent(sourceElem.dataset.filepath!)
-			});
+			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: decodeURIComponent(sourceElem.dataset.filepath!) });
 		});
 
 		if (!expandedCommit.loading) {
@@ -1497,7 +1485,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'compareCommits':
 				if (msg.error === null) {
-					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.repoRoot, msg.fileChanges, generateGitFileTree(msg.fileChanges), msg.refresh);
+					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, generateGitFileTree(msg.fileChanges), msg.refresh);
 				} else {
 					gitGraph.closeCommitComparison(true);
 					showErrorDialog('Unable to compare Commits', msg.error, null, null, null);

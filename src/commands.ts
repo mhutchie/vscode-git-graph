@@ -12,17 +12,16 @@ export function addGitRepository(gitExecutable: GitExecutable | null, repoManage
 	vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {
 		if (uris && uris.length > 0) {
 			let path = getPathFromUri(uris[0]);
-			let folderName = path.substring(path.lastIndexOf('/') + 1);
 			if (isPathInWorkspace(path)) {
-				repoManager.registerRepo(path, false, false).then(valid => {
-					if (valid) {
-						vscode.window.showInformationMessage('The repository "' + folderName + '" was added to Git Graph.');
+				repoManager.registerRepo(path, false, false).then(status => {
+					if (status.error === null) {
+						vscode.window.showInformationMessage('The repository "' + status.root! + '" was added to Git Graph.');
 					} else {
-						vscode.window.showErrorMessage('The folder "' + folderName + '" is not a Git repository, and therefore could not be added to Git Graph.');
+						vscode.window.showErrorMessage(status.error + ' Therefore it could not be added to Git Graph.');
 					}
 				});
 			} else {
-				vscode.window.showErrorMessage('The folder "' + folderName + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
+				vscode.window.showErrorMessage('The folder "' + path + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
 			}
 		}
 	}, () => { });

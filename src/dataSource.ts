@@ -168,7 +168,7 @@ export class DataSource {
 				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
 				this.getDiffTreeNumStat(repo, commitHash, commitHash)
 			]).then((results) => {
-				results[0].fileChanges = generateFileChanges(results[1], results[2], []);
+				results[0].fileChanges = generateFileChanges(results[1], results[2], null);
 				resolve(results[0]);
 			}).catch((errorMessage) => resolve({ hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage }));
 		});
@@ -180,7 +180,7 @@ export class DataSource {
 			Promise.all([
 				this.getDiffTreeNameStatus(repo, 'HEAD', ''),
 				this.getDiffTreeNumStat(repo, 'HEAD', ''),
-				this.getUntrackedFiles(repo)
+				this.getStatus(repo)
 			]).then((results) => {
 				details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
 				resolve(details);
@@ -196,7 +196,7 @@ export class DataSource {
 			Promise.all([
 				this.getDiffTreeNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
 				this.getDiffTreeNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-				toHash === UNCOMMITTED ? this.getUntrackedFiles(repo) : Promise.resolve<string[]>([])
+				toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null)
 			]).then((results) => {
 				resolve({
 					fileChanges: generateFileChanges(results[0], results[1], results[2]),
@@ -592,13 +592,20 @@ export class DataSource {
 		});
 	}
 
-	private getUntrackedFiles(repo: string) {
+	private getStatus(repo: string) {
 		return this.spawnGit(['-c', 'core.quotepath=false', 'status', '-s', '--untracked-files', '--porcelain'], repo, (stdout) => {
-			let files = [], lines = stdout.split(EOL_REGEX);
+			let lines = stdout.split(EOL_REGEX);
+			let status: GitFileStatus = { deleted: [], untracked: [] };
+			let path = '', c1 = '', c2 = '';
 			for (let i = 0; i < lines.length; i++) {
-				if (lines[i].startsWith('??')) files.push(lines[i].substr(3));
+				if (lines[i].length < 4) continue;
+				path = lines[i].substring(3);
+				c1 = lines[i].substring(0, 1);
+				c2 = lines[i].substring(1, 2);
+				if (c1 === 'D' || c2 === 'D') status.deleted.push(path);
+				else if (c1 === '?' || c2 === '?') status.untracked.push(path);
 			}
-			return files;
+			return status;
 		});
 	}
 
@@ -659,8 +666,9 @@ export class DataSource {
 	}
 }
 
+
 // Generates a list of file changes from each diff-tree output
-function generateFileChanges(nameStatusResults: string[], numStatResults: string[], unstagedFiles: string[]) {
+function generateFileChanges(nameStatusResults: string[], numStatResults: string[], status: GitFileStatus | null) {
 	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {}, i = 0;
 
 	for (i = 0; i < nameStatusResults.length - 1; i++) {
@@ -671,8 +679,20 @@ function generateFileChanges(nameStatusResults: string[], numStatResults: string
 		fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
 	}
 
-	for (i = 0; i < unstagedFiles.length; i++) {
-		fileChanges.push({ oldFilePath: unstagedFiles[i], newFilePath: unstagedFiles[i], type: 'U', additions: null, deletions: null });
+	if (status !== null) {
+		let filePath;
+		for (i = 0; i < status.deleted.length; i++) {
+			filePath = getPathFromStr(status.deleted[i]);
+			if (typeof fileLookup[filePath] === 'number') {
+				fileChanges[fileLookup[filePath]].type = 'D';
+			} else {
+				fileChanges.push({ oldFilePath: filePath, newFilePath: filePath, type: 'D', additions: null, deletions: null });
+			}
+		}
+		for (i = 0; i < status.untracked.length; i++) {
+			filePath = getPathFromStr(status.untracked[i]);
+			fileChanges.push({ oldFilePath: filePath, newFilePath: filePath, type: 'U', additions: null, deletions: null });
+		}
 	}
 
 	for (i = 0; i < numStatResults.length - 1; i++) {
@@ -717,4 +737,12 @@ function getErrorMessage(error: Error | null, stdoutBuffer: Buffer, stderr: stri
 		lines = [];
 	}
 	return lines.join('\n');
+}
+
+
+// Types
+
+interface GitFileStatus {
+	deleted: string[];
+	untracked: string[];
 }

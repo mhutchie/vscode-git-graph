@@ -55,6 +55,7 @@ export class DataSource {
 		return new Promise<GitBranchData>((resolve) => {
 			let args = ['branch'];
 			if (showRemoteBranches) args.push('-a');
+			args.push('--no-color');
 
 			this.spawnGit(args, repo, (stdout) => {
 				let branchData: GitBranchData = { branches: [], head: null, error: null };

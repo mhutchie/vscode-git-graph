@@ -276,7 +276,7 @@ export class GitGraphView {
 				case 'pushBranch':
 					this.sendMessage({
 						command: 'pushBranch',
-						error: await this.dataSource.pushBranch(msg.repo, msg.branchName, msg.remote, msg.setUpstream)
+						error: await this.dataSource.pushBranch(msg.repo, msg.branchName, msg.remote, msg.setUpstream, msg.force)
 					});
 					break;
 				case 'pushTag':

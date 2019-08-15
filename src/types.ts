@@ -523,6 +523,7 @@ export interface RequestPushBranch {
 	branchName: string;
 	remote: string;
 	setUpstream: boolean;
+	force: boolean;
 }
 export interface ResponsePushBranch {
 	command: 'pushBranch';

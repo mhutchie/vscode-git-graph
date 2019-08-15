@@ -791,16 +791,20 @@ class GitGraphView {
 							title: 'Push Branch' + ELLIPSIS,
 							onClick: () => {
 								if (this.gitRemotes.length === 1) {
-									showCheckboxDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', 'Set Upstream', true, 'Yes, push', (setUpstream) => {
-										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[0], setUpstream: setUpstream }, 'Pushing Branch');
+									showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', [
+										{ type: 'checkbox', name: 'Set Upstream', value: true },
+										{ type: 'checkbox', name: 'Force Push', value: false }
+									], 'Yes, push', (values) => {
+										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[0], setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
 									}, null);
 								} else if (this.gitRemotes.length > 1) {
 									let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
 									showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>?', [
 										{ type: 'select', name: 'Push to Remote: ', default: '0', options: options },
-										{ type: 'checkbox', name: 'Set Upstream: ', value: true }
+										{ type: 'checkbox', name: 'Set Upstream: ', value: true },
+										{ type: 'checkbox', name: 'Force Push: ', value: false }
 									], 'Yes, push', (values) => {
-										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[parseInt(values[0])], setUpstream: values[1] === 'checked' }, 'Pushing Branch');
+										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[parseInt(values[0])], setUpstream: values[1] === 'checked', force: values[2] === 'checked' }, 'Pushing Branch');
 									}, null);
 								}
 							}

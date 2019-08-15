@@ -373,10 +373,11 @@ export class DataSource {
 		return this.runGitCommand(args, repo);
 	}
 
-	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean) {
+	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean, force: boolean) {
 		let args = ['push'];
 		if (setUpstream) args.push('-u');
 		args.push(remote, branchName);
+		if (force) args.push('--force');
 
 		return this.runGitCommand(args, repo);
 	}

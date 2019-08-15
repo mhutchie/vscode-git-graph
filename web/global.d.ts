@@ -69,29 +69,35 @@ declare global {
 		srcElem: HTMLElement | null;
 		commitDetails: GG.GitCommitDetails | null;
 		fileChanges: GG.GitFileChange[] | null;
-		fileTree: GitFolder | null;
+		fileTree: FileTreeFolder | null;
 		compareWithHash: string | null;
 		compareWithSrcElem: HTMLElement | null;
 		loading: boolean;
 		fileChangesScrollTop: number;
 	}
 
-	interface GitFile {
+	interface FileTreeFile {
 		type: 'file';
 		name: string;
 		index: number;
 	}
 
-	interface GitFolder {
+	interface FileTreeRepo {
+		type: 'repo';
+		name: string;
+		path: string;
+	}
+
+	interface FileTreeFolder {
 		type: 'folder';
 		name: string;
 		folderPath: string;
-		contents: GitFolderContents;
+		contents: FileTreeFolderContents;
 		open: boolean;
 	}
 
-	type GitFolderOrFile = GitFolder | GitFile;
-	type GitFolderContents = { [name: string]: GitFolderOrFile };
+	type FileTreeNode = FileTreeFolder | FileTreeFile | FileTreeRepo;
+	type FileTreeFolderContents = { [name: string]: FileTreeNode };
 
 	interface Point {
 		x: number;

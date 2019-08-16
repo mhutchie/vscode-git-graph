@@ -1588,7 +1588,7 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'pruneRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Prune Remote Branches');
+				refreshOrDisplayError(msg.error, 'Unable to Prune Remote');
 				break;
 			case 'pullBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');

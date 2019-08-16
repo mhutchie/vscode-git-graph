@@ -35,7 +35,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Select from a user predefined array of custom glob patterns (by setting `git-graph.customBranchGlobPatterns`)
     * Fetch from Remote(s) _(available on the top control bar)_
     * Find Widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names).
-    * Repository Settings Widget allows you to view, add, edit & delete remotes of the repository.
+    * Repository Settings Widget allows you to view, add, edit, delete, fetch & prune remotes of the repository.
     * Keyboard Shortcuts:
         * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
         * CTRL/CMD + f: Open the find widget.
@@ -58,15 +58,19 @@ A summary of the Git Graph extension settings are:
 * **Combine Local And Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
 * **Commit Details View Location**: Specifies where the Commit Details View is rendered in the Git Graph view. Default: Inline (with graph)
 * **Commit Ordering**: Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option. Default: date
-* **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the 'Branches' dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
+* **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the "Branches" dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
 * **Custom Emoji Shortcode Mappings**: An array of custom Emoji Shortcode mappings. Example: `[{"shortcode": ":sparkles:", "emoji":"✨"}]`
 * **Date Format**: Specifies the date format to be used in the date column of the graph.
 * **Date Type**: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
+* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Create Branch, Merge, and Rebase
+* **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
+* **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8
 * **Graph Colours**: Specifies the colours used on the graph.
 * **Graph Style**: Specifies the style of the graph.
 * **Initial Load Commits**: Specifies the number of commits to initially load.
+* **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when opened by Git Graph during Interactive Rebase's.
 * **Load More Commits**: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
 * **Mute Merge Commits**: Show merge commits with a muted text colour. Default: true (enabled)
@@ -77,8 +81,9 @@ A summary of the Git Graph extension settings are:
 * **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * **Show Status Bar Item**: Show a Status Bar item which opens Git Graph when clicked.
 * **Show Uncommitted Changes**: Show uncommitted changes (set to false to decrease load time on large repositories).
-* **Source Code Provider Integration Location**: Specifies where the 'View Git Graph' action appears on the title of SCM Providers. Default: Inline
+* **Source Code Provider Integration Location**: Specifies where the "View Git Graph" action appears on the title of SCM Providers. Default: Inline
 * **Tab Icon Colour Theme**: Specifies the colour theme of the icon displayed on the Git Graph tab.
+* **Use Mailmap**: Respect [.mailmap](https://git-scm.com/docs/git-check-mailmap#_mapping_authors) files when displaying author & committer names and email addresses. Default: false (disabled)
 
 This extension consumes the following settings:
 
@@ -91,6 +96,7 @@ This extension contributes the following commands:
 * `git-graph.view`: Git Graph: View Git Graph
 * `git-graph.addGitRepository`: Git Graph: Add Git Repository _(can be used to add sub-repos to Git Graph)_
 * `git-graph.clearAvatarCache`: Git Graph: Clear Avatar Cache
+* `git-graph.removeGitRepository`: Git Graph: Remove Git Repository _(can be used to remove repositories from Git Graph)_
 
 ## Release Notes
 

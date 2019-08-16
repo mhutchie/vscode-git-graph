@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.13.0 - 2019-08-16
+* #143 New setting `git-graph.useMailmap` enables the use of .mailmap files when displaying author & committer names and email addresses.
+* #145 Added new extension settings to set the default options on the following dialogs: Add Tag, Create Branch, Merge, and Rebase
+* #146 New command "Git Graph: Remove Git Repository" removes a repository from Git Graph.
+* #149 New setting `git-graph.integratedTerminalShell` allows a specific Shell (not the default) to be used by the Visual Studio Code Integrated Terminal, when opened by Git Graph during Interactive Rebase's. For security reasons, this setting can only be specified in the User Settings, not in the Workspace Settings.
+* #150 New setting `git-graph.fileEncoding` specifies the character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8
+* #154 Fetch Enhancements:
+    * New setting `git-graph.fetchAndPrune` enables pruning when fetching from remote(s) using the Fetch button on the Git Graph View Control Bar. Default: false (disabled)
+    * Fetch or Prune a specific remote from the Repository Settings widget.
+* #155 If a known sub repository is included in the Commit Details View file tree, clicking on it will now load it in the Git Graph View.
+* #158 Improved repository management for various Visual Studio Code and Git repository workflows.
+* #159 Added force push option on the "Push Branch" dialog.
+* #160 Fixed: Shell color codes were included in the Branches dropdown when the user overrides Git Config "color.branch" to "always".
+* Various code and UI improvements. 
+
 ## 1.12.1 - 2019-07-23
 * #137 Fixed a file path construction issue when Visual Studio Code is opened to a subfolder of a repository, and the user clicks to view the current version of a file from the Commit Details View.
 * #141 Include the object and commit hashes when showing the new "View Details" action on annotated tags.

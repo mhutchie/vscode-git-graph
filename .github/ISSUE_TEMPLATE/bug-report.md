@@ -7,32 +7,29 @@ assignees: mhutchie
 
 ---
 
-**Describe the bug**
+**Describe the Bug**
 A clear and concise description of what the bug is.
 
-**What does the bug relate to**
-List the area(s) this issue relates to, for example:
-- Graph Rendering
-- Running a Git Command
-- Responsiveness
-- ....
-
-**To reproduce**
+**Steps to Reproduce**
 Steps to reproduce the behaviour:
 1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
+2. Click on '...'
+3. Scroll down to '...'
 4. See error
 
-**Expected behaviour**
+**Expected Behaviour**
 A clear and concise description of what you expected to happen.
 
 **Environment**
- - OS: [e.g. Windows 10]
- - Visual Studio Code Version: [e.g. 1.31.1]
+ - Git Graph Extension Version: [e.g. 1.13.0]
+ - Visual Studio Code Version: [e.g. 1.37.1]
+ - Operating System: [e.g. Windows 10]
 
 **Screenshots (optional)**
-Add any screenshots to help explain your problem.
+Add any screenshots showing the bug.
 
-**Additional context (optional)**
+**Additional Context (optional)**
 Add any other context about the problem here.
+
+
+⚠ Please make sure you complete all of the required sections of this template. Without this required information, it will be harder to replicate this bug, and cause additional delays in resolving it.

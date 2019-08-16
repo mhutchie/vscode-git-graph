@@ -12,29 +12,42 @@ This project and everyone participating in it is governed by the [Git Graph Code
 
 ### Reporting Bugs
 
-Raise a bug you've found to help us improve! Due to the extremely broad nature of Git repositories, some bugs might slip through the cracks.
+Raise a bug you've found to help us improve!
 
-Check the [open bugs](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"bugs"), and bugs ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040) to see if it is already in the process of being resolved. If it is, give the issue a thumbs up, and help provide additional context if the issue author was unable to provide some details.
+Check the [open bugs](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"bugs"), and any fixed bugs ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if it's already being resolved. If it is, give the issue a thumbs up, and help provide additional context if the issue author was unable to provide some details.
 
 If the bug hasn't previously been reported, please follow these steps:
-1. Raise an issue by selecting the "Bug Report" template on [this page](https://github.com/mhutchie/vscode-git-graph/issues/new/choose).
-2. Follow the template as you see appropriate, it's only meant to be a guide.
+1. Raise an issue using the "Bug Report" template. [Create Bug Report](https://github.com/mhutchie/vscode-git-graph/issues/new?assignees=mhutchie&labels=bug&template=bug-report.md&title=)
+2. Complete the template, providing information for all of the required sections.
 3. Click "Submit new issue"
 
-We aim to respond promptly, and get it resolved as quickly as possible.
+We will respond promptly, and get it resolved as quickly as possible.
 
-### Feature Suggestions
+### Feature Requests
 
-Suggest an idea for this extension! We want to make Git Graph an even more useful tool in Visual Studio Code, so any suggestions you have are greatly appreciated.
+Suggest a new feature for this extension! We want to make Git Graph an even more useful tool in Visual Studio Code, so any suggestions you have are greatly appreciated.
 
-Check the [open feature requests](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"feature+request"), and feature requests ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040) to see if your idea is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritsed.
+Check the [open feature requests](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"feature+request"), and any feature requests ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if your idea is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritsed.
 
 If your feature hasn't previously been suggested, please follow these steps:
-1. Raise an issue by selecting the "Feature Request" template on [this page](https://github.com/mhutchie/vscode-git-graph/issues/new/choose).
+1. Raise an issue using the "Feature Request" template. [Create Feature Request](https://github.com/mhutchie/vscode-git-graph/issues/new?assignees=mhutchie&labels=feature+request&template=feature-request.md&title=)
 2. Follow the template as you see appropriate, it's only meant to be a guide.
 3. Click "Submit new issue"
 
-We aim to respond promptly, and prioritise it as we and the community see appropriate.
+We will respond promptly, and your request will be prioritised according to the Git Graph [Issue Prioritisation](https://github.com/mhutchie/vscode-git-graph/wiki/Issue-Prioritisation).
+
+### Improvements
+
+Suggest an improvement to existing functionality of this extension! We want to make Git Graph an even more useful tool in Visual Studio Code, so any improvements you have are greatly appreciated.
+
+Check the [open improvements](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"improvement"), and any improvements ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if your improvement is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritsed.
+
+If your improvement hasn't previously been suggested, please follow these steps:
+1. Raise an issue using the "Improvement" template. [Create Improvement](https://github.com/mhutchie/vscode-git-graph/issues/new?assignees=mhutchie&labels=improvement&template=improvement.md&title=)
+2. Follow the template as you see appropriate, it's only meant to be a guide.
+3. Click "Submit new issue"
+
+We will respond promptly, and your request will be prioritised according to the Git Graph [Issue Prioritisation](https://github.com/mhutchie/vscode-git-graph/wiki/Issue-Prioritisation).
 
 ### Contributing To Development
 
@@ -50,7 +63,7 @@ Step 1: To set up your development environment, please follow these steps:
 5. Install the [TSLint](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-typescript-tslint-plugin) extension if it is not already installed.
 6. Create and checkout a branch for the issue you're going to work on.
 
-Step 2: Review the [Codebase Outline](https://github.com/mhutchie/vscode-git-graph/wiki/Codebase-Outline), so you have an understanding of the structure of the code.
+Step 2: Review the [Codebase Outline](https://github.com/mhutchie/vscode-git-graph/wiki/Codebase-Outline), so you have a general understanding of the structure of the codebase.
 
 Step 3: To compile the code, run the appropriate npm script in the Visual Studio Code terminal as follows:
 * `npm run compile`: Compiles both front and backend code

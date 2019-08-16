@@ -578,9 +578,9 @@ class GitGraphView {
 						title: 'Add Tag' + ELLIPSIS,
 						onClick: () => {
 							showFormDialog('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
-								{ type: 'select' as 'select', name: 'Type: ', default: this.config.dialogDefaults.addTag.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
-								{ type: 'text' as 'text', name: 'Message: ', default: '', placeholder: 'Optional' }
+								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
+								{ type: 'select' as 'select', name: 'Type', default: this.config.dialogDefaults.addTag.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+								{ type: 'text' as 'text', name: 'Message', default: '', placeholder: 'Optional' }
 							], 'Add Tag', values => {
 								runAction({ command: 'addTag', repo: this.currentRepo, tagName: values[0], commitHash: hash, lightweight: values[1] === 'lightweight', message: values[2] }, 'Adding Tag');
 							}, sourceElem);
@@ -590,8 +590,8 @@ class GitGraphView {
 						title: 'Create Branch' + ELLIPSIS,
 						onClick: () => {
 							showFormDialog('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-								{ type: 'text-ref' as 'text-ref', name: 'Name: ', default: '' },
-								{ type: 'checkbox', name: 'Check out: ', value: this.config.dialogDefaults.createBranch.checkout }
+								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
+								{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
 							], 'Create Branch', values => {
 								runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');
 							}, sourceElem);
@@ -790,23 +790,22 @@ class GitGraphView {
 						menu.push({
 							title: 'Push Branch' + ELLIPSIS,
 							onClick: () => {
-								if (this.gitRemotes.length === 1) {
-									showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', [
-										{ type: 'checkbox', name: 'Set Upstream', value: true },
-										{ type: 'checkbox', name: 'Force Push', value: false }
-									], 'Yes, push', (values) => {
-										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[0], setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
-									}, null);
-								} else if (this.gitRemotes.length > 1) {
-									let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
-									showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>?', [
-										{ type: 'select', name: 'Push to Remote: ', default: '0', options: options },
-										{ type: 'checkbox', name: 'Set Upstream: ', value: true },
-										{ type: 'checkbox', name: 'Force Push: ', value: false }
-									], 'Yes, push', (values) => {
-										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: this.gitRemotes[parseInt(values[0])], setUpstream: values[1] === 'checked', force: values[2] === 'checked' }, 'Pushing Branch');
-									}, null);
+								let multipleRemotes = this.gitRemotes.length > 1, inputs: DialogInput[] = [
+									{ type: 'checkbox', name: 'Set Upstream', value: true },
+									{ type: 'checkbox', name: 'Force Push', value: false }
+								];
+
+								if (multipleRemotes) {
+									inputs.unshift({
+										type: 'select', name: 'Push to Remote', default: '0',
+										options: this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }))
+									});
 								}
+
+								showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
+									let remote = this.gitRemotes[multipleRemotes ? parseInt(values.shift()!) : 0];
+									runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
+								}, null);
 							}
 						});
 					}
@@ -1876,7 +1875,7 @@ function showFormDialog(message: string, inputs: DialogInput[], actionName: stri
 	let html = message + '<br><table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">';
 	for (let i = 0; i < inputs.length; i++) {
 		let input = inputs[i];
-		html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + '</td>' : '') + '<td>';
+		html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '') + '<td>';
 		if (input.type === 'select') {
 			html += '<select id="dialogInput' + i + '">';
 			for (let j = 0; j < input.options.length; j++) {

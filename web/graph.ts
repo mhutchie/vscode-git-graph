@@ -1,3 +1,36 @@
+/* Types */
+
+interface Point {
+	x: number;
+	y: number;
+}
+interface Line {
+	p1: Point;
+	p2: Point;
+	lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+}
+
+interface Pixel {
+	x: number;
+	y: number;
+}
+interface PlacedLine {
+	p1: Pixel;
+	p2: Pixel;
+	isCommitted: boolean;
+	lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+}
+
+interface UnavailablePoint {
+	connectsTo: VertexOrNull;
+	onBranch: Branch;
+}
+
+type VertexOrNull = Vertex | null;
+
+
+/* Branch Class */
+
 class Branch {
 	private lines: Line[] = [];
 	private colour: number;
@@ -110,6 +143,9 @@ class Branch {
 	}
 }
 
+
+/* Vertex Class */
+
 class Vertex {
 	private x: number = 0;
 	private y: number;
@@ -210,6 +246,9 @@ class Vertex {
 		}
 	}
 }
+
+
+/* Graph Class */
 
 class Graph {
 	private config: Config;

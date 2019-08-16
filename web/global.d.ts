@@ -1,13 +1,21 @@
-import * as GG from "../out/types";
+import * as GG from "../out/types"; // Import types from back-end (requires `npm run compile-src`)
 
 declare global {
+
+	/* Visual Studio Code API Types */
+
 	function acquireVsCodeApi(): {
 		getState(): WebViewState | null,
 		postMessage(message: GG.RequestMessage): void,
 		setState(state: WebViewState): void
 	};
 
+
+	/* State Types */
+
 	var viewState: GG.GitGraphViewState;
+
+	type AvatarImageCollection = { [email: string]: string };
 
 	interface Config {
 		autoCenterCommitDetailsView: boolean;
@@ -20,7 +28,7 @@ declare global {
 		fetchAndPrune: boolean;
 		fetchAvatars: boolean;
 		graphColours: string[];
-		graphStyle: 'rounded' | 'angular';
+		graphStyle: GG.GraphStyle;
 		grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
 		initialLoadCommits: number;
 		loadMoreCommits: number;
@@ -28,40 +36,6 @@ declare global {
 		showCurrentBranchByDefault: boolean;
 		tagLabelsOnRight: boolean;
 	}
-
-	interface ContextMenuItem {
-		title: string;
-		onClick: () => void;
-		checked?: boolean; // Required in checked context menus
-	}
-
-	type ContextMenuElement = ContextMenuItem | null;
-
-	interface DialogTextInput {
-		type: 'text';
-		name: string;
-		default: string;
-		placeholder: string | null;
-	}
-	interface DialogTextRefInput {
-		type: 'text-ref';
-		name: string;
-		default: string;
-	}
-	interface DialogSelectInput {
-		type: 'select';
-		name: string;
-		options: { name: string, value: string }[];
-		default: string;
-	}
-	interface DialogCheckboxInput {
-		type: 'checkbox';
-		name: string;
-		value: boolean;
-	}
-	type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
-	type DialogInputValue = string | boolean;
-	type DialogType = 'form' | 'action-running' | 'message' | null;
 
 	interface ExpandedCommit {
 		id: number;
@@ -75,6 +49,71 @@ declare global {
 		loading: boolean;
 		fileChangesScrollTop: number;
 	}
+
+	interface WebViewState {
+		gitRepos: GG.GitRepoSet;
+		gitBranches: string[];
+		gitBranchHead: string | null;
+		gitRemotes: string[];
+		commits: GG.GitCommitNode[];
+		commitHead: string | null;
+		avatars: AvatarImageCollection;
+		currentBranches: string[] | null;
+		currentRepo: string;
+		moreCommitsAvailable: boolean;
+		maxCommits: number;
+		expandedCommit: ExpandedCommit | null;
+		scrollTop: number;
+		findWidget: FindWidgetState;
+		settingsWidget: SettingsWidgetState;
+	}
+
+
+	/* Context Menu Types */
+
+	interface ContextMenuItem {
+		title: string;
+		onClick: () => void;
+		checked?: boolean; // Required in checked context menus
+	}
+
+	type ContextMenuElement = ContextMenuItem | null;
+
+
+	/* Dialog Types */
+
+	interface DialogTextInput {
+		type: 'text';
+		name: string;
+		default: string;
+		placeholder: string | null;
+	}
+
+	interface DialogTextRefInput {
+		type: 'text-ref';
+		name: string;
+		default: string;
+	}
+
+	interface DialogSelectInput {
+		type: 'select';
+		name: string;
+		options: { name: string, value: string }[];
+		default: string;
+	}
+
+	interface DialogCheckboxInput {
+		type: 'checkbox';
+		name: string;
+		value: boolean;
+	}
+
+	type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
+	type DialogInputValue = string | boolean;
+	type DialogType = 'form' | 'action-running' | 'message' | null;
+
+
+	/* Commit Details / Comparison View File Tree Types */
 
 	interface FileTreeFile {
 		type: 'file';
@@ -99,52 +138,6 @@ declare global {
 	type FileTreeNode = FileTreeFolder | FileTreeFile | FileTreeRepo;
 	type FileTreeFolderContents = { [name: string]: FileTreeNode };
 
-	interface Point {
-		x: number;
-		y: number;
-	}
-	interface Line {
-		p1: Point;
-		p2: Point;
-		lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
-	}
-
-	interface Pixel {
-		x: number;
-		y: number;
-	}
-	interface PlacedLine {
-		p1: Pixel;
-		p2: Pixel;
-		isCommitted: boolean;
-		lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
-	}
-
-	interface UnavailablePoint {
-		connectsTo: VertexOrNull;
-		onBranch: Branch;
-	}
-	type VertexOrNull = Vertex | null;
-
-	type AvatarImageCollection = { [email: string]: string };
-
-	interface WebViewState {
-		gitRepos: GG.GitRepoSet;
-		gitBranches: string[];
-		gitBranchHead: string | null;
-		gitRemotes: string[];
-		commits: GG.GitCommitNode[];
-		commitHead: string | null;
-		avatars: AvatarImageCollection;
-		currentBranches: string[] | null;
-		currentRepo: string;
-		moreCommitsAvailable: boolean;
-		maxCommits: number;
-		expandedCommit: ExpandedCommit | null;
-		scrollTop: number;
-		findWidget: FindWidgetState;
-		settingsWidget: SettingsWidgetState;
-	}
 }
 
 export as namespace GG;

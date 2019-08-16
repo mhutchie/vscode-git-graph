@@ -110,10 +110,10 @@ class SettingsWidget {
 
 			document.getElementById('settingsAddRemote')!.addEventListener('click', () => {
 				showFormDialog('Add a new remote to this repository:', [
-					{ type: 'text', name: 'Name: ', default: '', placeholder: null },
-					{ type: 'text', name: 'Fetch URL: ', default: '', placeholder: null },
-					{ type: 'text', name: 'Push URL: ', default: '', placeholder: pushUrlPlaceholder },
-					{ type: 'checkbox', name: 'Fetch Immediately: ', value: true }
+					{ type: 'text', name: 'Name', default: '', placeholder: null },
+					{ type: 'text', name: 'Fetch URL', default: '', placeholder: null },
+					{ type: 'text', name: 'Push URL', default: '', placeholder: pushUrlPlaceholder },
+					{ type: 'checkbox', name: 'Fetch Immediately', value: true }
 				], 'Add Remote', values => {
 					runAction({ command: 'addRemote', name: values[0], repo: this.repo!, url: values[1], pushUrl: values[2] !== '' ? values[2] : null, fetch: values[3] === 'checked' }, 'Adding Remote');
 				}, null);
@@ -121,9 +121,9 @@ class SettingsWidget {
 			addListenerToClass('editRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
 				showFormDialog('Edit the remote <b><i>' + escapeHtml(remote.name) + '</i></b>:', [
-					{ type: 'text', name: 'Name: ', default: remote.name, placeholder: null },
-					{ type: 'text', name: 'Fetch URL: ', default: remote.url !== null ? remote.url : '', placeholder: null },
-					{ type: 'text', name: 'Push URL: ', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
+					{ type: 'text', name: 'Name', default: remote.name, placeholder: null },
+					{ type: 'text', name: 'Fetch URL', default: remote.url !== null ? remote.url : '', placeholder: null },
+					{ type: 'text', name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
 				], 'Save Changes', values => {
 					runAction({ command: 'editRemote', repo: this.repo!, nameOld: remote.name, nameNew: values[0], urlOld: remote.url, urlNew: values[1] !== '' ? values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: values[2] !== '' ? values[2] : null }, 'Saving Changes to Remote');
 				}, null);

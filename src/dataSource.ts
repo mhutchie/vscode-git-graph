@@ -533,6 +533,7 @@ export class DataSource {
 			if (showRemoteBranches) args.push('--remotes');
 			args.push('HEAD');
 		}
+		args.push('--');
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);

@@ -245,7 +245,7 @@ function isExecutable(path: string) {
 		});
 	});
 }
-function getGitExecutable(path: string): Promise<GitExecutable> {
+export function getGitExecutable(path: string): Promise<GitExecutable> {
 	return new Promise<GitExecutable>((resolve, reject) => {
 		const cmd = cp.spawn(path, ['--version']);
 		let stdout = '';

@@ -9,7 +9,7 @@ import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { findGit, getPathFromUri, GitExecutable, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { findGit, getGitExecutable, getPathFromUri, GitExecutable, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -72,17 +72,22 @@ export async function activate(context: vscode.ExtensionContext) {
 			} else if (e.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
 				repoManager.maxDepthOfRepoSearchChanged();
 			} else if (e.affectsConfiguration('git.path')) {
-				findGit(extensionState).then(exec => {
+				let path = getConfig().gitPath();
+				if (path === null) return;
+
+				getGitExecutable(path).then(exec => {
 					gitExecutable = exec;
 					extensionState.setLastKnownGitPath(gitExecutable.path);
 					dataSource.setGitExecutable(gitExecutable);
-					logger.log('Using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')');
+
+					let msg = 'Git Graph is now using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')';
+					vscode.window.showInformationMessage(msg);
+					logger.log(msg);
 					repoManager.searchWorkspaceForRepos();
 				}, () => {
-					if (gitExecutable === null) {
-						vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
-						logger.logError(UNABLE_TO_FIND_GIT_MSG);
-					}
+					let msg = 'The new value of "git.path" (' + path + ') does not match the path and filename of a valid Git executable.';
+					vscode.window.showErrorMessage(msg);
+					logger.logError(msg);
 				});
 			}
 		}),

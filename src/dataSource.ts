@@ -642,27 +642,45 @@ export class DataSource {
 		return new Promise<T>((resolve, reject) => {
 			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
 
-			let stdoutBuffers = <Buffer[]>[], stderr = '', err = false;
 			const cmd = cp.spawn(this.gitExecutable.path, args, {
 				cwd: repo,
 				env: Object.assign({}, process.env, this.askpassEnv)
 			});
-			cmd.stdout.on('data', (b: Buffer) => { stdoutBuffers.push(b); });
-			cmd.stderr.on('data', (d) => { stderr += d; });
-			cmd.on('error', (e) => {
-				reject(getErrorMessage(e, Buffer.concat(stdoutBuffers), stderr));
-				err = true;
-			});
-			cmd.on('exit', (code) => {
-				if (err) return;
 
-				let stdoutBuffer = Buffer.concat(stdoutBuffers);
-				if (code === 0) {
-					resolve(resolveValue(stdoutBuffer));
+			Promise.all([
+				new Promise<{ code: number, error: Error | null }>((resolve) => {
+					// status promise
+					let resolved = false;
+					cmd.on('error', (error) => {
+						resolve({ code: -1, error: error });
+						resolved = true;
+					});
+					cmd.on('exit', (code) => {
+						if (resolved) return;
+						resolve({ code: code, error: null });
+					});
+				}),
+				new Promise<Buffer>((resolve) => {
+					// stdout promise
+					let buffers: Buffer[] = [];
+					cmd.stdout.on('data', (b: Buffer) => { buffers.push(b); });
+					cmd.stdout.on('close', () => resolve(Buffer.concat(buffers)));
+				}),
+				new Promise<string>((resolve) => {
+					// stderr promise
+					let stderr = '';
+					cmd.stderr.on('data', (d) => { stderr += d; });
+					cmd.stderr.on('close', () => resolve(stderr));
+				})
+			]).then(values => {
+				let status = values[0], stdout = values[1];
+				if (status.code === 0) {
+					resolve(resolveValue(stdout));
 				} else {
-					reject(getErrorMessage(null, stdoutBuffer, stderr));
+					reject(getErrorMessage(status.error, stdout, values[2]));
 				}
 			});
+
 			this.logger.logCmd('git', args);
 		});
 	}

@@ -213,3 +213,35 @@ function sendMessage(msg: GG.RequestMessage) {
 function getVSCodeStyle(name: string) {
 	return document.documentElement.style.getPropertyValue(name);
 }
+
+
+/* Image Resizing for Avatars */
+class ImageResizer {
+	private canvas: HTMLCanvasElement | null = null;
+	private context: CanvasRenderingContext2D | null = null;
+
+	public resize(dataUri: string, callback: (dataUri: string) => void) {
+		if (this.canvas === null) this.canvas = document.createElement('canvas');
+		if (this.context === null) this.context = this.canvas.getContext('2d');
+		if (this.context === null) {
+			callback(dataUri);
+			return;
+		}
+
+		let image = new Image();
+		image.onload = () => {
+			let outputDataUri = '';
+			if (this.canvas === null || this.context === null) {
+				outputDataUri = dataUri;
+			} else {
+				let size = Math.ceil(18 * window.devicePixelRatio);
+				if (this.canvas.width !== size) this.canvas.width = size;
+				if (this.canvas.height !== size) this.canvas.height = size;
+				this.context.drawImage(image, 0, 0, size, size);
+				outputDataUri = this.canvas.toDataURL();
+			}
+			callback(outputDataUri);
+		};
+		image.src = dataUri;
+	}
+}

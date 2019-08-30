@@ -374,7 +374,13 @@ class GitGraphView {
 	}
 
 	public requestCommitDetails(hash: string, refresh: boolean) {
-		sendMessage({ command: 'commitDetails', repo: this.currentRepo, commitHash: hash, refresh: refresh });
+		sendMessage({
+			command: 'commitDetails',
+			repo: this.currentRepo,
+			commitHash: hash,
+			avatarEmail: this.config.fetchAvatars && hash !== UNCOMMITTED ? this.commits[this.commitLookup[hash]].email : null,
+			refresh: refresh
+		});
 	}
 
 	public requestCommitComparison(hash: string, compareWithHash: string, refresh: boolean) {
@@ -520,7 +526,7 @@ class GitGraphView {
 				if (expandedCommit.compareWithHash === null) {
 					// Commit Details View is open
 					if (!expandedCommit.loading && expandedCommit.commitDetails !== null && expandedCommit.fileTree !== null) {
-						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.fileTree, false);
+						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.fileTree, expandedCommit.avatar, false);
 						if (expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(expandedCommit.hash, true);
 					} else {
 						this.loadCommitDetails(elem);
@@ -1192,6 +1198,7 @@ class GitGraphView {
 			fileTree: null,
 			compareWithHash: null,
 			compareWithSrcElem: null,
+			avatar: null,
 			loading: true,
 			fileChangesScrollTop: 0
 		};
@@ -1216,7 +1223,7 @@ class GitGraphView {
 		}
 	}
 
-	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: FileTreeFolder, refresh: boolean) {
+	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: FileTreeFolder, avatar: string | null, refresh: boolean) {
 		if (this.expandedCommit === null || this.expandedCommit.srcElem === null || this.expandedCommit.hash !== commitDetails.hash) return;
 		if (!this.isCdvDocked()) {
 			let elem = document.getElementById('cdv');
@@ -1228,6 +1235,7 @@ class GitGraphView {
 			this.expandedCommit.fileChanges = commitDetails.fileChanges;
 			this.expandedCommit.fileTree = fileTree;
 		}
+		this.expandedCommit.avatar = avatar;
 		this.expandedCommit.srcElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 		this.expandedCommit.loading = false;
 		this.saveState();
@@ -1342,13 +1350,13 @@ class GitGraphView {
 				// Commit details should be shown
 				if (expandedCommit.hash !== UNCOMMITTED) {
 					let commitDetails = expandedCommit.commitDetails!;
-					html += '<span class="cdvSummaryTop' + (typeof this.avatars[commitDetails.email] === 'string' ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">';
+					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">';
 					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
 					html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
 					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
 					html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
-					if (typeof this.avatars[commitDetails.email] === 'string') html += '<span class="cdvSummaryAvatar"><img src="' + this.avatars[commitDetails.email] + '"></span>';
+					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';
 					html += '</span></span><br><br>';
 					html += formatText(commitDetails.body).replace(/\n/g, '<br>');
 				} else {
@@ -1547,6 +1555,7 @@ class GitGraphView {
 let viewElem = document.getElementById('view')!, graphFocus = true, loaded = false;
 let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
 let dialog = document.getElementById('dialog')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null, dialogType: DialogType = null;
+let imageResizer = new ImageResizer();
 
 window.addEventListener('load', () => {
 	if (loaded) return;
@@ -1600,7 +1609,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'commitDetails':
 				if (msg.commitDetails.error === null) {
-					gitGraph.showCommitDetails(msg.commitDetails, gitGraph.createFileTree(msg.commitDetails.fileChanges), msg.refresh);
+					gitGraph.showCommitDetails(msg.commitDetails, gitGraph.createFileTree(msg.commitDetails.fileChanges), msg.avatar, msg.refresh);
 				} else {
 					gitGraph.closeCommitDetails(true);
 					showErrorDialog('Unable to load Commit Details', msg.commitDetails.error, null, null, null);
@@ -1644,7 +1653,9 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Fetch from Remote(s)');
 				break;
 			case 'fetchAvatar':
-				gitGraph.loadAvatar(msg.email, msg.image);
+				imageResizer.resize(msg.image, (resizedImage) => {
+					gitGraph.loadAvatar(msg.email, resizedImage);
+				});
 				break;
 			case 'getSettings':
 				settingsWidget.loadSettings(msg.settings, msg.error);

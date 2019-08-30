@@ -46,6 +46,7 @@ declare global {
 		fileTree: FileTreeFolder | null;
 		compareWithHash: string | null;
 		compareWithSrcElem: HTMLElement | null;
+		avatar: string | null;
 		loading: boolean;
 		fileChangesScrollTop: number;
 	}

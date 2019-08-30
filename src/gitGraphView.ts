@@ -137,9 +137,14 @@ export class GitGraphView {
 					});
 					break;
 				case 'commitDetails':
+					let data = await Promise.all([
+						msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash) : this.dataSource.getUncommittedDetails(msg.repo),
+						msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
+					]);
 					this.sendMessage({
 						command: 'commitDetails',
-						commitDetails: await (msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash) : this.dataSource.getUncommittedDetails(msg.repo)),
+						commitDetails: data[0],
+						avatar: data[1],
 						refresh: msg.refresh
 					});
 					break;

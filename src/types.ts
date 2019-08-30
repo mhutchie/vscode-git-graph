@@ -277,11 +277,13 @@ export interface RequestCommitDetails {
 	command: 'commitDetails';
 	repo: string;
 	commitHash: string;
+	avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	refresh: boolean;
 }
 export interface ResponseCommitDetails {
 	command: 'commitDetails';
 	commitDetails: GitCommitDetails;
+	avatar: string | null;
 	refresh: boolean;
 }
 

@@ -393,6 +393,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .commit .avatar > img{
 	display:inline-block;
 	width:18px;
+	height:18px;
 	border-radius:4px;
 	vertical-align:top;
 	margin-top:3px;

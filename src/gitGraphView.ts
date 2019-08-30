@@ -420,8 +420,6 @@ export class GitGraphView {
 				<div id="footer"></div>
 				<ul id="contextMenu"></ul>
 			</div>
-			<div id="dockedCommitDetailsView"></div>
-			<div id="dialogBacking"></div>
 			<div id="dialog"></div>
 			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>

@@ -9,15 +9,6 @@ body.unableToLoad{
 body.unableToLoad h2, body.unableToLoad h3, body.unableToLoad p{
 	text-align:center;
 }
-#scrollShadow.active{
-	position:fixed;
-	top:0px;
-	left:0px;
-	width:100%;
-	height:0px;
-	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
-	z-index:20;
-}
 
 body #view{
 	display:block;
@@ -29,26 +20,36 @@ body #view{
 	overflow-x:hidden;
 	overflow-y:auto;
 }
-body.dockedCommitDetailsViewOpen #view{
-	bottom:252px;
-}
-body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
-	display:block;
-	position:fixed;
-	left:0;
-	right:0;
-	bottom:0;
-	height:250px;
-	background-color:rgba(128,128,128,0.1);
-	font-size:13px;
-	line-height:18px;
-	white-space:normal;
-	border-top:2px solid rgba(128,128,128,0.2);
-}
 
 /* Content */
 #content{
 	position:relative;
+}
+
+/* Overlays */
+#eventCaptureElem{
+	display:block;
+	position:fixed;
+	left:0;
+	right:0;
+	top:0;
+	bottom:0;
+	z-index:40;
+}
+#eventCaptureElem.rowResize{
+	cursor:row-resize;
+}
+#eventCaptureElem.colResize{
+	cursor:col-resize;
+}
+#scrollShadow.active{
+	position:fixed;
+	top:0px;
+	left:0px;
+	width:100%;
+	height:0px;
+	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
+	z-index:20;
 }
 
 /* Commit Graph */
@@ -147,75 +148,99 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 }
 
 /* Commit Details View */
-#commitDetails{
-	height:250px;
+#cdv.inline{
 	vertical-align:top;
 }
-#commitDetails td{
+#cdv.inline td{
 	background-color:rgba(128,128,128,0.1);
 	position:relative;
 	font-size:13px;
 	line-height:18px;
 	white-space:normal;
 }
-#commitDetails td:after{
-	content:'';
+#cdv.docked{
 	display:block;
-	position:absolute;
+	position:fixed;
 	left:0;
 	right:0;
 	bottom:0;
-	height:2px;
-	background-color:rgba(128,128,128,0.2);
+	background-color:rgba(128,128,128,0.1);
+	font-size:13px;
+	line-height:18px;
+	white-space:normal;
 }
-#commitDetailsSummary, #commitDetailsFiles, #commitDetailsLoading{
+#cdvContent{
+	position:absolute;
+	left:0;
+	right:32px;
+}
+#cdvClose{
+	position:absolute;
+	right:4px;
+	width:24px;
+	height:24px;
+	cursor:pointer;
+}
+#cdvClose svg{
+	width:24px;
+	height:24px;
+	fill:var(--vscode-editor-foreground);
+	fill-opacity:0.6;
+}
+#cdvSummary, #cdvFiles, #cdvLoading{
 	position:absolute;
 	top:0;
-	bottom:2px;
+	bottom:0;
 	box-sizing:border-box;
 	border-right:1px solid rgba(128,128,128,0.2);
 	overflow-x:hidden;
 	overflow-y:auto;
 }
-#commitDetailsSummary{
+#cdvDivider{
+	position:absolute;
+	left:50%;
+	width:6px;
+	cursor:col-resize;
+}
+#cdvSummary{
 	left:0;
-	width:45%;
+	width:50%;
 	padding:10px;
 	text-overflow:ellipsis;
 	user-select:text;
 }
-.commitDetailsSummaryTop{
+.cdvSummaryTop{
 	display:inline-table;
 	width:100%;
 }
-.commitDetailsSummaryTopRow{
+.cdvSummaryTopRow{
 	display:table-row;
 }
-.commitDetailsSummaryKeyValues, .commitDetailsSummaryAvatar{
+.cdvSummaryKeyValues, .cdvSummaryAvatar{
 	display:table-cell;
 	vertical-align:top;
 }
-.commitDetailsSummaryKeyValues{
+.cdvSummaryKeyValues{
 	max-width:0px;
 	overflow-x:hidden;
 	text-overflow:ellipsis;
 }
-.commitDetailsSummaryTop.withAvatar .commitDetailsSummaryKeyValues{
+.cdvSummaryTop.withAvatar .cdvSummaryKeyValues{
 	padding-right:10px;
 }
-.commitDetailsSummaryAvatar{
+.cdvSummaryAvatar{
 	width:54px;
 }
-.commitDetailsSummaryAvatar > img{
+.cdvSummaryAvatar > img{
 	width:54px;
 	border-radius:4px;
 }
-#commitDetailsFiles{
-	left:45%;
-	right:32px;
+#cdvFiles{
+	left:50%;
+	right:0;
 	padding:4px 8px 8px 0;
 }
-#commitDetailsFiles ul{
+#cdvFiles ul{
 	list-style-type:none;
 	-webkit-margin-before:0;
 	-webkit-margin-after:0;
@@ -223,42 +248,25 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	-webkit-margin-end:0px;
 	-webkit-padding-start:30px;
 }
-#commitDetailsFiles > ul{
+#cdvFiles > ul{
 	-webkit-padding-start:10px;
 }
-#commitDetailsFiles li{
+#cdvFiles li{
 	margin-top:4px;
 	white-space:nowrap;
 	text-overflow:ellipsis;
 	overflow-x:hidden;
 }
-#commitDetailsClose{
-	position:absolute;
-	right:4px;
-	top:4px;
-	width:24px;
-	height:24px;
-	cursor:pointer;
-}
-#commitDetailsClose svg{
-	width:24px;
-	height:24px;
-	fill:var(--vscode-editor-foreground);
-	fill-opacity:0.6;
-}
-#commitDetailsClose:hover svg{
-	fill-opacity:0.8;
-}
-#commitDetailsLoading{
+#cdvLoading{
 	left:0;
-	right:32px;
+	right:0;
 	padding:10px;
 	user-select:none;
 	text-align:center;
 	line-height:24px;
 	text-overflow:ellipsis;
 }
-#commitDetailsLoading svg{
+#cdvLoading svg{
 	display:inline-block;
 	width:15px !important;
 	height:20px !important;
@@ -268,8 +276,44 @@ body.dockedCommitDetailsViewOpen #dockedCommitDetailsView{
 	fill:var(--vscode-editor-foreground);
 	animation:loadingIconAnimation 2s linear infinite;
 }
-tr#commitDetails #commitDetailsSummary, tr#commitDetails #commitDetailsLoading{
+.cdvHeightResize{
+	position:absolute;
+	left:0;
+	right:0;
+	height:6px;
+	cursor:row-resize;
+}
+
+#cdv.inline #cdvContent{
+	top:0;
+	bottom:2px;
 	border-left:1px solid rgba(128,128,128,0.2);
+}
+#cdv.inline #cdvClose{
+	top:4px;
+}
+#cdv.inline #cdvDivider{
+	top:0;
+	bottom:6px;
+}
+#cdv.inline .cdvHeightResize{
+	bottom:0;
+	border-bottom:2px solid rgba(128,128,128,0.2);
+}
+#cdv.docked #cdvContent{
+	top:2px;
+	bottom:0;
+}
+#cdv.docked #cdvClose{
+	top:6px;
+}
+#cdv.docked #cdvDivider{
+	top:6px;
+	bottom:0;
+}
+#cdv.docked .cdvHeightResize{
+	top:0;
+	border-top:2px solid rgba(128,128,128,0.2);
 }
 
 /* File Tree */
@@ -307,7 +351,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .fileTreeFileAction svg{
 .fileTreeFileAction.openGitFile svg{
 	top:4px;
 }
-.fileTreeFolder:hover svg.openFolderIcon, .fileTreeFolder:hover svg.closedFolderIcon, .fileTreeFileRecord:hover svg.fileIcon, .fileTreeRepo:hover svg, .fileTreeFileAction:hover svg{
+#cdvClose:hover svg, .fileTreeFolder:hover svg.openFolderIcon, .fileTreeFolder:hover svg.closedFolderIcon, .fileTreeFileRecord:hover svg.fileIcon, .fileTreeRepo:hover svg, .fileTreeFileAction:hover svg{
 	fill-opacity:0.8;
 }
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
@@ -615,7 +659,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 
 /* Dialogs */
-#dialog, #dialogBacking{
+#dialog{
 	display:none;
 }
 #dialog.active{
@@ -696,15 +740,6 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 #dialog .errorContent{
 	font-style:italic;
-}
-#dialogBacking.active{
-	display:block;
-	position:fixed;
-	left:0;
-	right:0;
-	top:0;
-	bottom:0;
-	z-index:40;
 }
 #dialog #dialogAction{
 	background-color:rgba(128,128,128,0.15);

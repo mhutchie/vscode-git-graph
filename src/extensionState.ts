@@ -12,6 +12,8 @@ const REPO_STATES = 'repoStates';
 
 export const DEFAULT_REPO_STATE: GitRepoState = {
 	columnWidths: null,
+	cdvDivider: 0.5,
+	cdvHeight: 250,
 	showRemoteBranches: true
 };
 

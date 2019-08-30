@@ -57,12 +57,13 @@ const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_CONTEXT_MENU_ACTIVE = 'contextMenuActive';
 const CLASS_DIALOG_ACTIVE = 'dialogActive';
 const CLASS_DISABLED = 'disabled';
-const CLASS_DOCKED_COMMIT_DETAILS_VIEW_OPEN = 'dockedCommitDetailsViewOpen';
 const CLASS_FETCH_SUPPORTED = 'fetchSupported';
 const CLASS_LOADING = 'loading';
 const CLASS_REFRESHING = 'refreshing';
 const CLASS_TAG_LABELS_RIGHT_ALIGNED = 'tagLabelsRightAligned';
 const CLASS_TRANSITION = 'transition';
+
+const ID_EVENT_CAPTURE_ELEM = 'eventCaptureElem';
 
 const CSS_PROP_FONT_FAMILY = '--vscode-font-family';
 const CSS_PROP_EDITOR_FONT_FAMILY = '--vscode-editor-font-family';

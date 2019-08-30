@@ -1900,8 +1900,18 @@ function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem:
 	contextMenu.className = CLASS_ACTIVE;
 	contextMenu.innerHTML = html;
 	let bounds = contextMenu.getBoundingClientRect();
-	contextMenu.style.left = (viewElem.scrollLeft + event.pageX + (event.pageX + bounds.width < viewElem.clientWidth ? -2 : 2 - bounds.width)) + 'px';
-	contextMenu.style.top = (viewElem.scrollTop + event.pageY + (event.pageY + bounds.height < viewElem.clientHeight ? -2 : 2 - bounds.height)) + 'px';
+	let relativeX = event.pageX + bounds.width < viewElem.clientWidth
+		? -2 // context menu fits to the right
+		: event.pageX - bounds.width > 0
+			? 2 - bounds.width // context menu fits to the left
+			: -2 - (bounds.width - (viewElem.clientWidth - event.pageX)); // Overlap the context menu horizontally with the cursor
+	let relativeY = event.pageY + bounds.height < viewElem.clientHeight
+		? -2 // context menu fits below
+		: event.pageY - bounds.height > 0
+			? 2 - bounds.height // context menu fits above
+			: -2 - (bounds.height - (viewElem.clientHeight - event.pageY)); // Overlap the context menu vertically with the cursor
+	contextMenu.style.left = (viewElem.scrollLeft + Math.max(event.pageX + relativeX, 2)) + 'px';
+	contextMenu.style.top = (viewElem.scrollTop + Math.max(event.pageY + relativeY, 2)) + 'px';
 	contextMenu.style.opacity = '1';
 
 	addListenerToClass('contextMenuItem', 'click', (e) => {

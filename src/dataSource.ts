@@ -6,7 +6,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { BranchOrCommit, CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges } from './types';
-import { abbrevCommit, getPathFromStr, getPathFromUri, GitExecutable, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { abbrevCommit, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -286,8 +286,17 @@ export class DataSource {
 	}
 
 	public repoRoot(repoPath: string) {
-		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(Uri.file(path.normalize(stdout.trim())))).then((root) => root, () => null);
-		// null => path is not in a repo
+		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(Uri.file(path.normalize(stdout.trim())))).then(async (canonicalRoot) => {
+			let path = repoPath;
+			while (true) {
+				if (canonicalRoot === await realpath(path)) return path;
+				if (path.lastIndexOf('/') > -1) {
+					path = path.substring(0, path.lastIndexOf('/'));
+				} else {
+					return canonicalRoot;
+				}
+			}
+		}).catch(() => null); // null => path is not in a repo
 	}
 
 

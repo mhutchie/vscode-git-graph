@@ -136,6 +136,9 @@ export class GitGraphView {
 						error: await this.dataSource.cleanUntrackedFiles(msg.repo, msg.directories)
 					});
 					break;
+				case 'codeReviewFileReviewed':
+					this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath);
+					break;
 				case 'commitDetails':
 					let data = await Promise.all([
 						msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash) : this.dataSource.getUncommittedDetails(msg.repo),
@@ -145,6 +148,7 @@ export class GitGraphView {
 						command: 'commitDetails',
 						commitDetails: data[0],
 						avatar: data[1],
+						codeReview: msg.commitHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.commitHash) : null,
 						refresh: msg.refresh
 					});
 					break;
@@ -153,6 +157,7 @@ export class GitGraphView {
 						command: 'compareCommits',
 						commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
 						... await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
+						codeReview: msg.toHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.fromHash + '-' + msg.toHash) : null,
 						refresh: msg.refresh
 					});
 					break;
@@ -213,6 +218,9 @@ export class GitGraphView {
 					break;
 				case 'fetchAvatar':
 					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
+					break;
+				case 'endCodeReview':
+					this.extensionState.endCodeReview(msg.repo, msg.id);
 					break;
 				case 'getSettings':
 					this.sendMessage({
@@ -321,6 +329,15 @@ export class GitGraphView {
 					break;
 				case 'saveRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
+					break;
+				case 'startCodeReview':
+					this.sendMessage({
+						command: 'startCodeReview',
+						codeReview: this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile),
+						commitHash: msg.commitHash,
+						compareWithHash: msg.compareWithHash,
+						success: true
+					});
 					break;
 				case 'tagDetails':
 					this.sendMessage({

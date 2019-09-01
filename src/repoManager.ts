@@ -242,7 +242,8 @@ export class RepoManager {
 		this.repos[newRepo] = this.repos[oldRepo];
 		delete this.repos[oldRepo];
 		this.extensionState.saveRepos(this.repos);
-		if (this.extensionState.getLastActiveRepo() === oldRepo) this.extensionState.setLastActiveRepo(newRepo);
+		this.extensionState.transferRepo(oldRepo, newRepo);
+
 		this.logger.log('Transferred repo state: ' + oldRepo + ' -> ' + newRepo);
 	}
 

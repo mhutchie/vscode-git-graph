@@ -149,6 +149,13 @@ export interface GitFileChange {
 	deletions: number | null;
 }
 
+export interface CodeReview {
+	id: string;
+	lastActive: number;
+	lastViewedFile: string | null;
+	remainingFiles: string[];
+}
+
 export interface Avatar {
 	image: string;
 	timestamp: number;
@@ -273,6 +280,13 @@ export interface ResponseCleanUntrackedFiles {
 	error: GitCommandError;
 }
 
+export interface RequestCodeReviewFileReviewed {
+	command: 'codeReviewFileReviewed';
+	repo: string;
+	id: string;
+	filePath: string;
+}
+
 export interface RequestCommitDetails {
 	command: 'commitDetails';
 	repo: string;
@@ -284,6 +298,7 @@ export interface ResponseCommitDetails {
 	command: 'commitDetails';
 	commitDetails: GitCommitDetails;
 	avatar: string | null;
+	codeReview: CodeReview | null;
 	refresh: boolean;
 }
 
@@ -301,6 +316,7 @@ export interface ResponseCompareCommits {
 	commitHash: string;
 	compareWithHash: string;
 	fileChanges: GitFileChange[];
+	codeReview: CodeReview | null;
 	refresh: boolean;
 	error: GitCommandError;
 }
@@ -394,6 +410,12 @@ export interface RequestEditRemote {
 export interface ResponseEditRemote {
 	command: 'editRemote';
 	error: GitCommandError;
+}
+
+export interface RequestEndCodeReview {
+	command: 'endCodeReview';
+	repo: string;
+	id: string;
 }
 
 export interface RequestFetch {
@@ -607,6 +629,23 @@ export interface RequestSaveRepoState {
 	state: GitRepoState;
 }
 
+export interface RequestStartCodeReview {
+	command: 'startCodeReview';
+	repo: string;
+	id: string;
+	files: string[];
+	lastViewedFile: string | null;
+	commitHash: string;
+	compareWithHash: string | null;
+}
+export interface ResponseStartCodeReview {
+	command: 'startCodeReview';
+	codeReview: CodeReview;
+	commitHash: string;
+	compareWithHash: string | null;
+	success: boolean;
+}
+
 export interface RequestTagDetails {
 	command: 'tagDetails';
 	repo: string;
@@ -654,6 +693,7 @@ export type RequestMessage =
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCleanUntrackedFiles
+	| RequestCodeReviewFileReviewed
 	| RequestCommitDetails
 	| RequestCompareCommits
 	| RequestCopyFilePath
@@ -664,6 +704,7 @@ export type RequestMessage =
 	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
 	| RequestEditRemote
+	| RequestEndCodeReview
 	| RequestFetch
 	| RequestFetchAvatar
 	| RequestGetSettings
@@ -682,6 +723,7 @@ export type RequestMessage =
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSaveRepoState
+	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff
 	| RequestViewScm;
@@ -720,6 +762,7 @@ export type ResponseMessage =
 	| ResponseRenameBranch
 	| ResponseResetToCommit
 	| ResponseRevertCommit
+	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseViewDiff
 	| ResponseViewScm;

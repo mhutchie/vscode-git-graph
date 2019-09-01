@@ -60,6 +60,11 @@
 			},
 			{
 				"category": "Git Graph",
+				"command": "git-graph.endAllWorkspaceCodeReviews",
+				"title": "End All Code Reviews in Workspace"
+			},
+			{
+				"category": "Git Graph",
 				"command": "git-graph.removeGitRepository",
 				"title": "Remove Git Repository"
 			}

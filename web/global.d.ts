@@ -47,6 +47,8 @@ declare global {
 		compareWithHash: string | null;
 		compareWithSrcElem: HTMLElement | null;
 		avatar: string | null;
+		codeReview: GG.CodeReview | null;
+		lastViewedFile: string | null;
 		loading: boolean;
 		fileChangesScrollTop: number;
 	}
@@ -120,6 +122,7 @@ declare global {
 		type: 'file';
 		name: string;
 		index: number;
+		reviewed: boolean;
 	}
 
 	interface FileTreeRepo {
@@ -134,6 +137,7 @@ declare global {
 		folderPath: string;
 		contents: FileTreeFolderContents;
 		open: boolean;
+		reviewed: boolean;
 	}
 
 	type FileTreeNode = FileTreeFolder | FileTreeFile | FileTreeRepo;

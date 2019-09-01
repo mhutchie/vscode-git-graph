@@ -63,6 +63,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('git-graph.clearAvatarCache', () => {
 			avatarManager.clearCache();
 		}),
+		vscode.commands.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => {
+			extensionState.endAllWorkspaceCodeReviews();
+			vscode.window.showInformationMessage('Ended All Code Reviews in Workspace');
+		}),
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource)),
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
@@ -98,6 +102,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger
 	);
 	logger.log('Started Git Graph - Ready to use!');
+
+	extensionState.expireOldCodeReviews();
 }
 
 export function deactivate() { }

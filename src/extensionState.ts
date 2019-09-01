@@ -1,10 +1,11 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
-import { Avatar, AvatarCache, GitRepoSet, GitRepoState } from './types';
+import { Avatar, AvatarCache, CodeReview, GitRepoSet, GitRepoState } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
+const CODE_REVIEWS = 'codeReviews';
 const IGNORED_REPOS = 'ignoredRepos';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
 const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
@@ -16,6 +17,13 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	cdvHeight: 250,
 	showRemoteBranches: true
 };
+
+export interface CodeReviewData {
+	lastActive: number;
+	lastViewedFile: string | null;
+	remainingFiles: string[];
+}
+type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
 
 export class ExtensionState {
 	private globalState: Memento;
@@ -54,6 +62,19 @@ export class ExtensionState {
 
 	public saveRepos(gitRepoSet: GitRepoSet) {
 		this.workspaceState.update(REPO_STATES, gitRepoSet);
+	}
+
+	public transferRepo(oldRepo: string, newRepo: string) {
+		if (this.getLastActiveRepo() === oldRepo) {
+			this.setLastActiveRepo(newRepo);
+		}
+
+		let reviews = this.getCodeReviews();
+		if (typeof reviews[oldRepo] !== 'undefined') {
+			reviews[newRepo] = reviews[oldRepo];
+			delete reviews[oldRepo];
+			this.setCodeReviews(reviews);
+		}
 	}
 
 
@@ -124,5 +145,92 @@ export class ExtensionState {
 				fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => { });
 			}
 		});
+	}
+
+
+	/* Code Review */
+
+	// Note: id => the commit arguments to 'git diff' (either <commit hash> or <commit hash>-<commit hash>)
+
+	public startCodeReview(repo: string, id: string, files: string[], lastViewedFile: string | null) {
+		let reviews = this.getCodeReviews();
+		if (typeof reviews[repo] === 'undefined') reviews[repo] = {};
+		reviews[repo][id] = { lastActive: (new Date()).getTime(), lastViewedFile: lastViewedFile, remainingFiles: files };
+		this.setCodeReviews(reviews);
+		return <CodeReview>Object.assign({ id: id }, reviews[repo][id]);
+	}
+
+	public endCodeReview(repo: string, id: string) {
+		let reviews = this.getCodeReviews();
+		removeCodeReview(reviews, repo, id);
+		this.setCodeReviews(reviews);
+	}
+
+	public getCodeReview(repo: string, id: string) {
+		let reviews = this.getCodeReviews();
+		if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
+			reviews[repo][id].lastActive = (new Date()).getTime();
+			this.setCodeReviews(reviews);
+			return <CodeReview>Object.assign({ id: id }, reviews[repo][id]);
+		} else {
+			return null;
+		}
+	}
+
+	public updateCodeReviewFileReviewed(repo: string, id: string, file: string) {
+		let reviews = this.getCodeReviews();
+		if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
+			let i = reviews[repo][id].remainingFiles.indexOf(file);
+			if (i > -1) reviews[repo][id].remainingFiles.splice(i, 1);
+			if (reviews[repo][id].remainingFiles.length > 0) {
+				reviews[repo][id].lastViewedFile = file;
+				reviews[repo][id].lastActive = (new Date()).getTime();
+			} else {
+				removeCodeReview(reviews, repo, id);
+			}
+			this.setCodeReviews(reviews);
+		}
+	}
+
+	public expireOldCodeReviews() {
+		let reviews = this.getCodeReviews(), change = false, expireReviewsBefore = (new Date()).getTime() - 7776000000; // 90 days x 24 hours x 60 minutes x 60 seconds x 1000 milliseconds
+		Object.keys(reviews).forEach((repo) => {
+			Object.keys(reviews[repo]).forEach((id) => {
+				if (reviews[repo][id].lastActive < expireReviewsBefore) {
+					delete reviews[repo][id];
+					change = true;
+				}
+			});
+			removeCodeReviewRepoIfEmpty(reviews, repo);
+		});
+		if (change) this.setCodeReviews(reviews);
+	}
+
+	public endAllWorkspaceCodeReviews() {
+		this.setCodeReviews({});
+	}
+
+	private getCodeReviews() {
+		return this.workspaceState.get<CodeReviews>(CODE_REVIEWS, {});
+	}
+
+	private setCodeReviews(reviews: CodeReviews) {
+		this.workspaceState.update(CODE_REVIEWS, reviews);
+	}
+}
+
+
+/* Helper Methods */
+
+function removeCodeReview(reviews: CodeReviews, repo: string, id: string) {
+	if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
+		delete reviews[repo][id];
+		removeCodeReviewRepoIfEmpty(reviews, repo);
+	}
+}
+
+function removeCodeReviewRepoIfEmpty(reviews: CodeReviews, repo: string) {
+	if (typeof reviews[repo] !== 'undefined' && Object.keys(reviews[repo]).length === 0) {
+		delete reviews[repo];
 	}
 }

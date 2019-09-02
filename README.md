@@ -28,6 +28,10 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * View the Visual Studio Code Diff of any file change between the selected commits by clicking on it.
         * Open the current version of any file that was affected between the selected commits.
         * Copy the path of any file that was affected between the selected commits to the clipboard.
+    * Code Review - Keep track of which files you have reviewed in the Commit Details & Comparison Views.
+        * Code Review's can be performed on any commit, or between any two commits (not on Uncommitted Changes).
+        * When a Code Review is started, all files needing to be reviewed are bolded. When you view the diff / open a file, it will then be un-bolded.
+        * Code Reviews persist across Visual Studio Code sessions. They are automatically closed after 90 days of inactivity.
     * View uncommitted changes, and compare the uncommitted changes with any commit.
     * Filter the branches shown in Git Graph using the 'Branches' dropdown menu. The options for filtering the branches are:
         * Show All branches
@@ -96,6 +100,7 @@ This extension contributes the following commands:
 * `git-graph.view`: Git Graph: View Git Graph
 * `git-graph.addGitRepository`: Git Graph: Add Git Repository _(can be used to add sub-repos to Git Graph)_
 * `git-graph.clearAvatarCache`: Git Graph: Clear Avatar Cache
+* `git-graph.endAllWorkspaceCodeReviews`: Git Graph: End All Code Reviews in Workspace
 * `git-graph.removeGitRepository`: Git Graph: Remove Git Repository _(can be used to remove repositories from Git Graph)_
 
 ## Release Notes

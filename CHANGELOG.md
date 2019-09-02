@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.14.0 - 2019-09-02
+* Commit Details & Comparison View Enhancements:
+    * #122 Code Review - Keep track of which files you have reviewed in the Commit Details & Comparison Views.
+        * Code Review's can be performed on any commit, or between any two commits (not on Uncommitted Changes).
+        * There is a new button on the right of the Commit Details & Comparison Views to start and stop a code review.
+        * When a Code Review is started, all files needing to be reviewed are bolded. When you view the diff / open a file, it will then be un-bolded.
+        * Code Reviews persist across Visual Studio Code sessions.
+    * #122 The last file viewed is now indicated with an "eye" icon. It's only remembered while the view is open, or until a Code Review is finished.
+    * #151 The height and divider of the Commit Details View can now be dragged and resized to better suit your projects. The configured dimensions are stored per repository, across Visual Studio Code sessions.
+    * #164 Increased the resolution of commit author avatars for High DPI / Retina Displays. This only applies to all avatars fetched after this update is installed. To trigger higher resolution versions of cached avatars to be fetched (instead of waiting until their next automatic background refresh), you can run the command "Git Graph: Clear Avatar Cache" once, and reopen the Git Graph View.
+* #163 Fixed: Viewing branches that share the same name as a file in the repository.
+* #165 If the user changes `git.path` to a valid Git executable, the extension will now switch to use it, even if another known Git executable is already being used.
+* #168 Fixed: A race condition causing the stdout output of a few Git commands to only be partially returned for a small number of users.
+* Various code and UI improvements.
+
 ## 1.13.0 - 2019-08-16
 * #143 New setting `git-graph.useMailmap` enables the use of .mailmap files when displaying author & committer names and email addresses.
 * #145 Added new extension settings to set the default options on the following dialogs: Add Tag, Create Branch, Merge, and Rebase

@@ -259,6 +259,7 @@ class ImageResizer {
 				let size = Math.ceil(18 * window.devicePixelRatio);
 				if (this.canvas.width !== size) this.canvas.width = size;
 				if (this.canvas.height !== size) this.canvas.height = size;
+				this.context.clearRect(0, 0, size, size);
 				this.context.drawImage(image, 0, 0, size, size);
 				outputDataUri = this.canvas.toDataURL();
 			}

@@ -1503,7 +1503,7 @@ class GitGraphView {
 					let expandedCommit = this.expandedCommit;
 					if (expandedCommit === null) return;
 					let sourceElem = <HTMLElement>(<Element>e.target).closest('#cdvCodeReview')!;
-					if (sourceElem.classList.contains('active')) {
+					if (sourceElem.classList.contains(CLASS_ACTIVE)) {
 						sendMessage({ command: 'endCodeReview', repo: this.currentRepo, id: expandedCommit.codeReview!.id });
 						this.endCodeReview();
 					} else {

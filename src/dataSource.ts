@@ -288,10 +288,12 @@ export class DataSource {
 	public repoRoot(repoPath: string) {
 		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(Uri.file(path.normalize(stdout.trim())))).then(async (canonicalRoot) => {
 			let path = repoPath;
+			let first = path.indexOf('/');
 			while (true) {
-				if (canonicalRoot === await realpath(path)) return path;
-				if (path.lastIndexOf('/') > -1) {
-					path = path.substring(0, path.lastIndexOf('/'));
+				if (canonicalRoot === path || canonicalRoot === await realpath(path)) return path;
+				let next = path.lastIndexOf('/');
+				if (first !== next && next > -1) {
+					path = path.substring(0, next);
 				} else {
 					return canonicalRoot;
 				}

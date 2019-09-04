@@ -31,7 +31,9 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 		if (document) return document.value;
 
 		let request = decodeDiffDocUri(uri);
-		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath, request.type, request.diffSide).then(
+		if (request === null) return ''; // Return empty file (used for one side of added / deleted file diff)
+
+		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath).then(
 			(contents) => {
 				let document = new DiffDocument(contents);
 				this.docs.set(uri.toString(), document);
@@ -57,22 +59,36 @@ class DiffDocument {
 	}
 }
 
+
+/* Encoding and decoding URI's */
+
+type DiffDocUriData = {
+	filePath: string;
+	commit: string;
+	repo: string;
+} | null;
+
 export function encodeDiffDocUri(repo: string, filePath: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
-	return commit === UNCOMMITTED && type !== 'D'
-		? vscode.Uri.file(path.join(repo, filePath))
-		: vscode.Uri.parse(DiffDocProvider.scheme + ':' + getPathFromStr(filePath) + '?commit=' + encodeURIComponent(commit) + '&type=' + type + '&diffSide=' + diffSide + '&repo=' + encodeURIComponent(repo));
-}
-
-export function decodeDiffDocUri(uri: vscode.Uri) {
-	let queryArgs = decodeUriQueryArgs(uri.query);
-	return { filePath: uri.path, commit: queryArgs.commit, type: <GitFileChangeType>queryArgs.type, diffSide: <DiffSide>queryArgs.diffSide, repo: queryArgs.repo };
-}
-
-function decodeUriQueryArgs(query: string) {
-	let queryComps = query.split('&'), queryArgs: { [key: string]: string } = {}, i;
-	for (i = 0; i < queryComps.length; i++) {
-		let pair = queryComps[i].split('=');
-		queryArgs[pair[0]] = decodeURIComponent(pair[1]);
+	if (commit === UNCOMMITTED && type !== 'D') {
+		return vscode.Uri.file(path.join(repo, filePath));
 	}
-	return queryArgs;
+
+	let data: DiffDocUriData, extension: string;
+	if ((diffSide === 'old' && type === 'A') || (diffSide === 'new' && type === 'D')) {
+		data = null;
+		extension = '';
+	} else {
+		data = {
+			filePath: getPathFromStr(filePath),
+			commit: commit,
+			repo: repo
+		};
+		let extIndex = data.filePath.indexOf('.', data.filePath.lastIndexOf('/') + 1);
+		extension = extIndex > -1 ? data.filePath.substring(extIndex) : '';
+	}
+	return vscode.Uri.parse(DiffDocProvider.scheme + ':file' + extension + '?' + Buffer.from(JSON.stringify(data)).toString('base64'));
+}
+
+export function decodeDiffDocUri(uri: vscode.Uri): DiffDocUriData {
+	return JSON.parse(Buffer.from(uri.query, 'base64').toString());
 }

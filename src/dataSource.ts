@@ -5,7 +5,7 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { BranchOrCommit, CommitOrdering, DiffSide, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges } from './types';
+import { BranchOrCommit, CommitOrdering, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges } from './types';
 import { abbrevCommit, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -209,15 +209,11 @@ export class DataSource {
 		});
 	}
 
-	public getCommitFile(repo: string, commitHash: string, filePath: string, type: GitFileChangeType, diffSide: DiffSide) {
-		if ((commitHash === UNCOMMITTED && type === 'D') || (diffSide === 'old' && type === 'A') || (diffSide === 'new' && type === 'D')) {
-			return new Promise<string>(resolve => resolve(''));
-		} else {
-			return this._spawnGit(['show', commitHash + ':' + filePath], repo, stdout => {
-				let encoding = getConfig().fileEncoding();
-				return decode(stdout, encodingExists(encoding) ? encoding : 'utf8');
-			});
-		}
+	public getCommitFile(repo: string, commitHash: string, filePath: string) {
+		return this._spawnGit(['show', commitHash + ':' + filePath], repo, stdout => {
+			let encoding = getConfig().fileEncoding();
+			return decode(stdout, encodingExists(encoding) ? encoding : 'utf8');
+		});
 	}
 
 

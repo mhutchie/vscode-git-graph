@@ -252,17 +252,16 @@ class Vertex {
 
 class Graph {
 	private config: Config;
-
-	private svg: SVGElement;
-	private svgGroup: SVGGElement | null = null;
-	private svgMaskRect: SVGRectElement;
-	private svgGradientStop1: SVGStopElement;
-	private svgGradientStop2: SVGStopElement;
-	private maxWidth: number = -1;
-
 	private vertices: Vertex[] = [];
 	private branches: Branch[] = [];
 	private availableColours: number[] = [];
+	private maxWidth: number = -1;
+
+	private svg: SVGElement;
+	private group: SVGGElement | null = null;
+	private maskRect: SVGRectElement;
+	private gradientStop1: SVGStopElement;
+	private gradientStop2: SVGStopElement;
 
 	constructor(id: string, config: Config) {
 		this.config = config;
@@ -272,15 +271,15 @@ class Graph {
 
 		let linearGradient = defs.appendChild(document.createElementNS(SVG_NAMESPACE, 'linearGradient'));
 		linearGradient.setAttribute('id', 'GraphGradient');
-		this.svgGradientStop1 = linearGradient.appendChild(document.createElementNS(SVG_NAMESPACE, 'stop'));
-		this.svgGradientStop1.setAttribute('stop-color', 'white');
-		this.svgGradientStop2 = linearGradient.appendChild(document.createElementNS(SVG_NAMESPACE, 'stop'));
-		this.svgGradientStop2.setAttribute('stop-color', 'black');
+		this.gradientStop1 = linearGradient.appendChild(document.createElementNS(SVG_NAMESPACE, 'stop'));
+		this.gradientStop1.setAttribute('stop-color', 'white');
+		this.gradientStop2 = linearGradient.appendChild(document.createElementNS(SVG_NAMESPACE, 'stop'));
+		this.gradientStop2.setAttribute('stop-color', 'black');
 
 		let mask = defs.appendChild(document.createElementNS(SVG_NAMESPACE, 'mask'));
 		mask.setAttribute('id', 'GraphMask');
-		this.svgMaskRect = mask.appendChild(document.createElementNS(SVG_NAMESPACE, 'rect'));
-		this.svgMaskRect.setAttribute('fill', 'url(#GraphGradient)');
+		this.maskRect = mask.appendChild(document.createElementNS(SVG_NAMESPACE, 'rect'));
+		this.maskRect.setAttribute('fill', 'url(#GraphGradient)');
 
 		this.setDimensions(0, 0);
 		document.getElementById(id)!.appendChild(this.svg);
@@ -311,8 +310,13 @@ class Graph {
 			this.vertices[commitLookup[commitHead]].setCurrent();
 		}
 
-		while ((i = this.findStart()) !== -1) {
-			this.determinePath(i);
+		i = 0;
+		while (i < this.vertices.length) {
+			if (this.vertices[i].getNextParent() !== null || this.vertices[i].isNotOnBranch()) {
+				this.determinePath(i);
+			} else {
+				i++;
+			}
 		}
 	}
 
@@ -327,17 +331,17 @@ class Graph {
 			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.id);
 		}
 
-		if (this.svgGroup !== null) this.svg.removeChild(this.svgGroup);
+		if (this.group !== null) this.svg.removeChild(this.group);
 		this.svg.appendChild(group);
-		this.svgGroup = group;
+		this.group = group;
 		this.setDimensions(width, this.getHeight(expandedCommit));
 		this.applyMaxWidth(width);
 	}
 
 	public clear() {
-		if (this.svgGroup !== null) {
-			this.svg.removeChild(this.svgGroup);
-			this.svgGroup = null;
+		if (this.group !== null) {
+			this.svg.removeChild(this.group);
+			this.group = null;
 			this.setDimensions(0, 0);
 		}
 	}
@@ -379,15 +383,15 @@ class Graph {
 	private setDimensions(width: number, height: number) {
 		this.svg.setAttribute('width', width.toString());
 		this.svg.setAttribute('height', height.toString());
-		this.svgMaskRect.setAttribute('width', width.toString());
-		this.svgMaskRect.setAttribute('height', height.toString());
+		this.maskRect.setAttribute('width', width.toString());
+		this.maskRect.setAttribute('height', height.toString());
 	}
 
 	private applyMaxWidth(width: number) {
 		let offset1 = this.maxWidth > -1 ? (this.maxWidth - 12) / width : 1;
 		let offset2 = this.maxWidth > -1 ? this.maxWidth / width : 1;
-		this.svgGradientStop1.setAttribute('offset', offset1.toString());
-		this.svgGradientStop2.setAttribute('offset', offset2.toString());
+		this.gradientStop1.setAttribute('offset', offset1.toString());
+		this.gradientStop2.setAttribute('offset', offset2.toString());
 	}
 
 	private determinePath(startAt: number) {
@@ -440,13 +444,6 @@ class Graph {
 			this.branches.push(branch);
 			this.availableColours[branch.getColour()] = i;
 		}
-	}
-
-	private findStart() {
-		for (let i = 0; i < this.vertices.length; i++) {
-			if (this.vertices[i].getNextParent() !== null || this.vertices[i].isNotOnBranch()) return i;
-		}
-		return -1;
 	}
 
 	private getAvailableColour(startAt: number) {

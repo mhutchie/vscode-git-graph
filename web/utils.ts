@@ -56,8 +56,6 @@ const COLUMN_LEFT_RIGHT_PADDING = 24;
 const CLASS_ACTIVE = 'active';
 const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
-const CLASS_CONTEXT_MENU_ACTIVE = 'contextMenuActive';
-const CLASS_DIALOG_ACTIVE = 'dialogActive';
 const CLASS_DISABLED = 'disabled';
 const CLASS_FETCH_SUPPORTED = 'fetchSupported';
 const CLASS_LOADING = 'loading';
@@ -193,7 +191,9 @@ function alterClass(elem: HTMLElement, className: string, state: boolean) {
 		} else {
 			elem.classList.remove(className);
 		}
+		return true;
 	}
+	return false;
 }
 function getChildNodesWithTextContent(elem: Node) {
 	let textChildren: Node[] = [];

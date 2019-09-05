@@ -91,7 +91,7 @@ class SettingsWidget {
 			this.contentsElem.innerHTML = '';
 			this.loadingElem.innerHTML = '<span>' + errorTitle + '</span>';
 			alterClass(this.widgetElem, CLASS_LOADING, true);
-			showErrorDialog(errorTitle, error, 'Retry', () => this.requestSettings(), null);
+			dialog.showError(errorTitle, error, 'Retry', () => this.requestSettings(), null);
 		}
 	}
 
@@ -109,7 +109,7 @@ class SettingsWidget {
 			this.contentsElem.innerHTML = html;
 
 			document.getElementById('settingsAddRemote')!.addEventListener('click', () => {
-				showFormDialog('Add a new remote to this repository:', [
+				dialog.showForm('Add a new remote to this repository:', [
 					{ type: 'text', name: 'Name', default: '', placeholder: null },
 					{ type: 'text', name: 'Fetch URL', default: '', placeholder: null },
 					{ type: 'text', name: 'Push URL', default: '', placeholder: pushUrlPlaceholder },
@@ -120,7 +120,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('editRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				showFormDialog('Edit the remote <b><i>' + escapeHtml(remote.name) + '</i></b>:', [
+				dialog.showForm('Edit the remote <b><i>' + escapeHtml(remote.name) + '</i></b>:', [
 					{ type: 'text', name: 'Name', default: remote.name, placeholder: null },
 					{ type: 'text', name: 'Fetch URL', default: remote.url !== null ? remote.url : '', placeholder: null },
 					{ type: 'text', name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
@@ -130,7 +130,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				showConfirmationDialog('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
 					runAction({ command: 'deleteRemote', repo: this.repo!, name: remote.name }, 'Deleting Remote');
 				}, null);
 			});
@@ -139,7 +139,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('pruneRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				showConfirmationDialog('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
 					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
 				}, null);
 			});

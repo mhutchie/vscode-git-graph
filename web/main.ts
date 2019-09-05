@@ -287,7 +287,7 @@ class GitGraphView {
 		this.loadCommitsCallback = null;
 		this.renderRefreshButton(true);
 		this.findWidget.update([]);
-		showErrorDialog(message, reason, 'Retry', () => {
+		dialog.showError(message, reason, 'Retry', () => {
 			this.refresh(true);
 		}, null);
 	}
@@ -360,13 +360,14 @@ class GitGraphView {
 		this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
 			if (isRepo) {
 				this.requestLoadCommits(hard, (commitChanges: boolean) => {
+					let dialogType = dialog.getType();
 					if ((!hard && (branchChanges || commitChanges) && dialogType !== MESSAGE_DIALOG) || dialogType === ACTION_RUNNING_DIALOG) {
-						hideDialogAndContextMenu();
+						closeDialogAndContextMenu();
 					}
 					this.renderRefreshButton(true);
 				});
 			} else {
-				if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();
+				dialog.closeActionRunning();
 				this.renderRefreshButton(true);
 				sendMessage({ command: 'loadRepos', check: true });
 			}
@@ -552,7 +553,7 @@ class GitGraphView {
 					{
 						title: 'Reset uncommitted changes' + ELLIPSIS,
 						onClick: () => {
-							showSelectDialog('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', 'mixed', [
+							dialog.showSelect('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', 'mixed', [
 								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 								{ name: 'Hard - Discard all changes', value: 'hard' }
 							], 'Yes, reset', (mode) => {
@@ -563,7 +564,7 @@ class GitGraphView {
 					{
 						title: 'Clean untracked files' + ELLIPSIS,
 						onClick: () => {
-							showCheckboxDialog('Are you sure you want to clean all untracked files?', 'Clean untracked directories', true, 'Yes, clean', directories => {
+							dialog.showCheckbox('Are you sure you want to clean all untracked files?', 'Clean untracked directories', true, 'Yes, clean', directories => {
 								runAction({ command: 'cleanUntrackedFiles', repo: this.currentRepo, directories: directories }, 'Cleaning untracked files');
 							}, sourceElem);
 						}
@@ -581,7 +582,7 @@ class GitGraphView {
 					{
 						title: 'Add Tag' + ELLIPSIS,
 						onClick: () => {
-							showFormDialog('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+							dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
 								{ type: 'select' as 'select', name: 'Type', default: this.config.dialogDefaults.addTag.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
 								{ type: 'text' as 'text', name: 'Message', default: '', placeholder: 'Optional' }
@@ -593,7 +594,7 @@ class GitGraphView {
 					{
 						title: 'Create Branch' + ELLIPSIS,
 						onClick: () => {
-							showFormDialog('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+							dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
 								{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
 							], 'Create Branch', values => {
@@ -605,7 +606,7 @@ class GitGraphView {
 					{
 						title: 'Checkout' + ELLIPSIS,
 						onClick: () => {
-							showConfirmationDialog('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
+							dialog.showConfirmation('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
 								runAction({ command: 'checkoutCommit', repo: this.currentRepo, commitHash: hash }, 'Checking out Commit');
 							}, sourceElem);
 						}
@@ -614,7 +615,7 @@ class GitGraphView {
 						title: 'Cherry Pick' + ELLIPSIS,
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
-								showConfirmationDialog('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+								dialog.showConfirmation('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
 									runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 }, 'Cherry picking Commit');
 								}, sourceElem);
 							} else {
@@ -622,7 +623,7 @@ class GitGraphView {
 									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 									value: (index + 1).toString()
 								}));
-								showSelectDialog('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick', (parentIndex) => {
+								dialog.showSelect('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick', (parentIndex) => {
 									runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) }, 'Cherry picking Commit');
 								}, sourceElem);
 							}
@@ -632,7 +633,7 @@ class GitGraphView {
 						title: 'Revert' + ELLIPSIS,
 						onClick: () => {
 							if (this.commits[this.commitLookup[hash]].parentHashes.length === 1) {
-								showConfirmationDialog('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+								dialog.showConfirmation('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
 									runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 }, 'Reverting Commit');
 								}, sourceElem);
 							} else {
@@ -640,7 +641,7 @@ class GitGraphView {
 									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 									value: (index + 1).toString()
 								}));
-								showSelectDialog('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert', (parentIndex) => {
+								dialog.showSelect('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert', (parentIndex) => {
 									runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) }, 'Reverting Commit');
 								}, sourceElem);
 							}
@@ -658,7 +659,7 @@ class GitGraphView {
 					{
 						title: 'Reset current branch to this Commit' + ELLIPSIS,
 						onClick: () => {
-							showSelectDialog('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'mixed', [
+							dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'mixed', [
 								{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
 								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 								{ name: 'Hard - Discard all changes', value: 'hard' }
@@ -676,7 +677,7 @@ class GitGraphView {
 					}
 				];
 			}
-			showContextMenu(<MouseEvent>e, menu, sourceElem);
+			contextMenu.show(<MouseEvent>e, menu, false, sourceElem);
 		});
 		addListenerToClass('commit', 'click', (e: Event) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
@@ -718,15 +719,15 @@ class GitGraphView {
 						if (this.gitRemotes.length > 1) {
 							let options = [{ name: 'Don\'t delete on any remote', value: '-1' }];
 							this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
-							showSelectDialog(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
+							dialog.showSelect(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
 								this.deleteTagAction(refName, remoteIndex !== '-1' ? this.gitRemotes[parseInt(remoteIndex)] : null);
 							}, null);
 						} else if (this.gitRemotes.length === 1) {
-							showCheckboxDialog(message, 'Also delete on remote', false, 'Yes, delete', deleteOnRemote => {
+							dialog.showCheckbox(message, 'Also delete on remote', false, 'Yes, delete', deleteOnRemote => {
 								this.deleteTagAction(refName, deleteOnRemote ? this.gitRemotes[0] : null);
 							}, null);
 						} else {
-							showConfirmationDialog(message, () => {
+							dialog.showConfirmation(message, () => {
 								this.deleteTagAction(refName, null);
 							}, null);
 						}
@@ -737,12 +738,12 @@ class GitGraphView {
 						title: 'Push Tag' + ELLIPSIS,
 						onClick: () => {
 							if (this.gitRemotes.length === 1) {
-								showConfirmationDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', () => {
+								dialog.showConfirmation('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', () => {
 									runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[0] }, 'Pushing Tag');
 								}, null);
 							} else if (this.gitRemotes.length > 1) {
 								let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
-								showSelectDialog('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
+								dialog.showSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
 									runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
 								}, null);
 							}
@@ -767,7 +768,7 @@ class GitGraphView {
 					menu.push({
 						title: 'Rename Branch' + ELLIPSIS,
 						onClick: () => {
-							showRefInputDialog('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+							dialog.showRefInput('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
 								runAction({ command: 'renameBranch', repo: this.currentRepo, oldName: refName, newName: newName }, 'Renaming Branch');
 							}, null);
 						}
@@ -777,7 +778,7 @@ class GitGraphView {
 							{
 								title: 'Delete Branch' + ELLIPSIS,
 								onClick: () => {
-									showCheckboxDialog('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
+									dialog.showCheckbox('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
 										runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: forceDelete }, 'Deleting Branch');
 									}, null);
 								}
@@ -806,7 +807,7 @@ class GitGraphView {
 									});
 								}
 
-								showFormDialog('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
+								dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
 									let remote = this.gitRemotes[multipleRemotes ? parseInt(values.shift()!) : 0];
 									runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
 								}, null);
@@ -824,7 +825,7 @@ class GitGraphView {
 							{
 								title: 'Delete Remote Branch' + ELLIPSIS,
 								onClick: () => {
-									showConfirmationDialog('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+									dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
 										runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote }, 'Deleting Remote Branch');
 									}, null);
 								}
@@ -832,7 +833,7 @@ class GitGraphView {
 							{
 								title: 'Pull into current branch' + ELLIPSIS,
 								onClick: () => {
-									showFormDialog('Are you sure you want to pull branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
+									dialog.showForm('Are you sure you want to pull branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
 										{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
 										{ type: 'checkbox', name: 'Squash commits', value: false }
 									], 'Yes, pull', values => {
@@ -851,12 +852,12 @@ class GitGraphView {
 					sendMessage({ command: 'copyToClipboard', type: copyType, data: refName });
 				}
 			});
-			showContextMenu(<MouseEvent>e, menu, sourceElem);
+			contextMenu.show(<MouseEvent>e, menu, false, sourceElem);
 		});
 		addListenerToClass('gitRef', 'click', (e: Event) => e.stopPropagation());
 		addListenerToClass('gitRef', 'dblclick', (e: Event) => {
 			e.stopPropagation();
-			hideDialogAndContextMenu();
+			closeDialogAndContextMenu();
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
 			if (!sourceElem.classList.contains('tag')) {
 				let refName = unescapeHtml(sourceElem.dataset.name!), isHead = sourceElem.classList.contains('head'), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';
@@ -878,7 +879,7 @@ class GitGraphView {
 	}
 
 	private renderShowLoading() {
-		hideDialogAndContextMenu();
+		closeDialogAndContextMenu();
 		this.graph.clear();
 		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
 		this.footerElem.innerHTML = '';
@@ -896,9 +897,9 @@ class GitGraphView {
 
 	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null) {
 		if (remote !== null) {
-			showRefInputDialog('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substr(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
+			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substr(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
 				if (this.gitBranches.includes(newBranch)) {
-					showButtonsDialog('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
+					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch);
 					}, 'Check out the existing branch', () => {
 						this.checkoutBranchAction(newBranch, null, null);
@@ -917,7 +918,7 @@ class GitGraphView {
 	}
 
 	private mergeAction(obj: string, name: string, type: GG.BranchOrCommit, sourceElem: HTMLElement | null) {
-		showFormDialog('Are you sure you want to merge ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
+		dialog.showForm('Are you sure you want to merge ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
 			{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
 			{ type: 'checkbox', name: 'Squash commits', value: this.config.dialogDefaults.merge.squash }
 		], 'Yes, merge', values => {
@@ -926,7 +927,7 @@ class GitGraphView {
 	}
 
 	private rebaseAction(obj: string, name: string, type: GG.BranchOrCommit, sourceElem: HTMLElement | null) {
-		showFormDialog('Are you sure you want to rebase the current branch on ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
+		dialog.showForm('Are you sure you want to rebase the current branch on ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
 			{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
 			{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
 		], 'Yes, rebase', values => {
@@ -1034,10 +1035,10 @@ class GitGraphView {
 			const toggleColumnState = (col: number, defaultWidth: number) => {
 				columnWidths[col] = columnWidths[col] !== COLUMN_HIDDEN ? COLUMN_HIDDEN : columnWidths[0] === COLUMN_AUTO ? COLUMN_AUTO : defaultWidth - COLUMN_LEFT_RIGHT_PADDING;
 				this.saveColumnWidths(columnWidths);
-				hideContextMenu();
+				contextMenu.close();
 				this.render();
 			};
-			showCheckedContextMenu(e, [
+			contextMenu.show(e, [
 				{
 					title: 'Date',
 					checked: columnWidths[2] !== COLUMN_HIDDEN,
@@ -1053,7 +1054,7 @@ class GitGraphView {
 					checked: columnWidths[4] !== COLUMN_HIDDEN,
 					onClick: () => toggleColumnState(4, 80)
 				}
-			], null);
+			], true, null);
 		});
 	}
 
@@ -1143,7 +1144,17 @@ class GitGraphView {
 
 	private observeKeyboardEvents() {
 		document.addEventListener('keydown', e => {
-			if (graphFocus) {
+			if (dialog.isOpen()) {
+				if (e.key === 'Escape') {
+					dialog.close();
+				} else if (e.key === 'Enter') {
+					dialog.submit();
+				}
+			} else if (contextMenu.isOpen()) {
+				if (e.key === 'Escape') {
+					contextMenu.close();
+				}
+			} else {
 				if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
 					this.refresh(true);
 				} else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
@@ -1173,12 +1184,6 @@ class GitGraphView {
 							}
 						}
 					}
-				}
-			} else {
-				if (e.key === 'Escape') {
-					hideDialogAndContextMenu();
-				} else if (e.key === 'Enter' && dialogAction !== null) {
-					dialogAction();
 				}
 			}
 		});
@@ -1668,14 +1673,14 @@ class GitGraphView {
 	}
 
 	private saveAndRenderCodeReview(codeReview: GG.CodeReview | null) {
-		let fileElem = document.getElementById('cdvFiles');
-		if (this.expandedCommit === null || this.expandedCommit.fileTree === null || fileElem === null) return;
+		let filesElem = document.getElementById('cdvFiles');
+		if (this.expandedCommit === null || this.expandedCommit.fileTree === null || filesElem === null) return;
 
 		this.expandedCommit.codeReview = codeReview;
 		setFileTreeReviewed(this.expandedCommit.fileTree, codeReview === null);
 		this.saveState();
 		this.renderCodeReviewBtn();
-		updateFileTreeHtml(fileElem, this.expandedCommit.fileTree);
+		updateFileTreeHtml(filesElem, this.expandedCommit.fileTree);
 	}
 
 	private renderCodeReviewBtn() {
@@ -1690,16 +1695,19 @@ class GitGraphView {
 }
 
 
-let viewElem = document.getElementById('view')!, graphFocus = true, loaded = false;
-let contextMenu = document.getElementById('contextMenu')!, contextMenuSource: HTMLElement | null = null;
-let dialog = document.getElementById('dialog')!, dialogMenuSource: HTMLElement | null = null, dialogAction: (() => void) | null = null, dialogType: DialogType = null;
-let imageResizer = new ImageResizer();
+/* Main */
+
+const contextMenu = new ContextMenu(), dialog = new Dialog();
+let loaded = false;
 
 window.addEventListener('load', () => {
 	if (loaded) return;
 	loaded = true;
 
 	registerCustomEmojiMappings(viewState.customEmojiShortcodeMappings);
+
+	let viewElem = document.getElementById('view');
+	if (viewElem === null) return;
 
 	const gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
 		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
@@ -1720,7 +1728,9 @@ window.addEventListener('load', () => {
 		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
 		tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
 	}, VSCODE_API.getState());
+
 	const settingsWidget = gitGraph.getSettingsWidget();
+	const imageResizer = new ImageResizer();
 
 	/* Command Processing */
 	window.addEventListener('message', event => {
@@ -1750,7 +1760,7 @@ window.addEventListener('load', () => {
 					gitGraph.showCommitDetails(msg.commitDetails, gitGraph.createFileTree(msg.commitDetails.fileChanges, msg.codeReview), msg.avatar, msg.codeReview, msg.codeReview !== null ? msg.codeReview.lastViewedFile : null, msg.refresh);
 				} else {
 					gitGraph.closeCommitDetails(true);
-					showErrorDialog('Unable to load Commit Details', msg.commitDetails.error, null, null, null);
+					dialog.showError('Unable to load Commit Details', msg.commitDetails.error, null, null, null);
 				}
 				break;
 			case 'compareCommits':
@@ -1758,7 +1768,7 @@ window.addEventListener('load', () => {
 					gitGraph.showCommitComparison(msg.commitHash, msg.compareWithHash, msg.fileChanges, gitGraph.createFileTree(msg.fileChanges, msg.codeReview), msg.codeReview, msg.codeReview !== null ? msg.codeReview.lastViewedFile : null, msg.refresh);
 				} else {
 					gitGraph.closeCommitComparison(true);
-					showErrorDialog('Unable to compare Commits', msg.error, null, null, null);
+					dialog.showError('Unable to load Commit Comparison', msg.error, null, null, null);
 				}
 				break;
 			case 'copyFilePath':
@@ -1809,7 +1819,7 @@ window.addEventListener('load', () => {
 				if (msg.error === null) {
 					gitGraph.loadCommits(msg.commits, msg.head, msg.remotes, msg.moreCommitsAvailable, msg.hard);
 				} else {
-					if (gitGraph.getNumBranches() === 0 && msg.error.indexOf('ambiguous argument \'HEAD\': unknown revision') > -1) msg.error = 'There are no commits in this repository.';
+					if (gitGraph.getNumBranches() === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1) msg.error = 'There are no commits in this repository.';
 					gitGraph.loadDataError('Unable to load commits', msg.error);
 				}
 				break;
@@ -1821,7 +1831,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'openFile':
 				if (msg.error !== null) {
-					showErrorDialog('Unable to Open File', msg.error, null, null, null);
+					dialog.showError('Unable to Open File', msg.error, null, null, null);
 				}
 				break;
 			case 'pruneRemote':
@@ -1839,12 +1849,12 @@ window.addEventListener('load', () => {
 			case 'rebase':
 				if (msg.error === null) {
 					if (msg.interactive) {
-						if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();
+						dialog.closeActionRunning();
 					} else {
 						gitGraph.refresh(false);
 					}
 				} else {
-					showErrorDialog('Unable to Rebase current branch on ' + msg.type, msg.error, null, null, null);
+					dialog.showError('Unable to Rebase current branch on ' + msg.type, msg.error, null, null, null);
 				}
 				break;
 			case 'refresh':
@@ -1866,7 +1876,7 @@ window.addEventListener('load', () => {
 				if (msg.error === null) {
 					showTagDetailsDialog(msg.tagName, msg.tagHash, msg.commitHash, msg.name, msg.email, msg.date, msg.message);
 				} else {
-					showErrorDialog('Unable to retrieve Tag Details', msg.error, null, null, null);
+					dialog.showError('Unable to retrieve Tag Details', msg.error, null, null, null);
 				}
 				break;
 			case 'viewDiff':
@@ -1881,20 +1891,21 @@ window.addEventListener('load', () => {
 		if (error === null) {
 			gitGraph.refresh(false);
 		} else {
-			showErrorDialog(errorMessage, error, null, null, null);
+			dialog.showError(errorMessage, error, null, null, null);
 		}
 	}
 	function showErrorIfNotSuccess(success: boolean, errorMessage: string) {
 		if (success) {
-			if (dialogType === ACTION_RUNNING_DIALOG) hideDialog();
+			dialog.closeActionRunning();
 		} else {
-			showErrorDialog(errorMessage, null, null, null, null);
+			dialog.showError(errorMessage, null, null, null, null);
 		}
 	}
 });
 
 
-/* Dates */
+/* Date Methods */
+
 function getCommitDate(dateVal: number) {
 	let date = new Date(dateVal * 1000), value;
 	let dateStr = date.getDate() + ' ' + MONTHS[date.getMonth()] + ' ' + date.getFullYear();
@@ -1937,7 +1948,8 @@ function getCommitDate(dateVal: number) {
 }
 
 
-/* Utils */
+/* File Tree Methods (for the Commit Details & Comparison Views) */
+
 function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
 	let html = (folder.name !== '' ? '<span class="fileTreeFolder' + (folder.reviewed ? '' : ' pendingReview') + '" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(folder.name) + '</span></span>' : '') + '<ul class="fileTreeFolderContents' + (!folder.open ? ' hidden' : '') + '">', keys = Object.keys(folder.contents);
 	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
@@ -1960,6 +1972,7 @@ function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange
 	}
 	return html + '</ul>';
 }
+
 function alterFileTreeFolderOpen(folder: FileTreeFolder, folderPath: string, open: boolean) {
 	let path = folderPath.split('/'), i, cur = folder;
 	for (i = 0; i < path.length; i++) {
@@ -1971,6 +1984,7 @@ function alterFileTreeFolderOpen(folder: FileTreeFolder, folderPath: string, ope
 		}
 	}
 }
+
 function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
 	let path = filePath.split('/'), i, cur = folder, folders = [folder];
 	for (i = 0; i < path.length; i++) {
@@ -1997,6 +2011,7 @@ function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
 		folders[i].reviewed = reviewed;
 	}
 }
+
 function setFileTreeReviewed(folder: FileTreeFolder, reviewed: boolean) {
 	folder.reviewed = reviewed;
 	let keys = Object.keys(folder.contents);
@@ -2009,6 +2024,7 @@ function setFileTreeReviewed(folder: FileTreeFolder, reviewed: boolean) {
 		}
 	}
 }
+
 function calcFileTreeFoldersReviewed(folder: FileTreeFolder) {
 	const calc = (folder: FileTreeFolder) => {
 		let reviewed = true;
@@ -2022,6 +2038,7 @@ function calcFileTreeFoldersReviewed(folder: FileTreeFolder) {
 	};
 	calc(folder);
 }
+
 function updateFileTreeHtml(elem: HTMLElement, folder: FileTreeFolder) {
 	let ul = getChildUl(elem);
 	if (ul === null) return;
@@ -2038,6 +2055,7 @@ function updateFileTreeHtml(elem: HTMLElement, folder: FileTreeFolder) {
 		}
 	}
 }
+
 function updateFileTreeHtmlFileReviewed(elem: HTMLElement, folder: FileTreeFolder, filePath: string) {
 	let path = filePath.split('/');
 	const update = (elem: HTMLElement, folder: FileTreeFolder) => {
@@ -2062,6 +2080,7 @@ function updateFileTreeHtmlFileReviewed(elem: HTMLElement, folder: FileTreeFolde
 	};
 	update(elem, folder);
 }
+
 function getFilesInTree(folder: FileTreeFolder, gitFiles: GG.GitFileChange[]) {
 	let files: string[] = [];
 	const scanFolder = (folder: FileTreeFolder) => {
@@ -2079,6 +2098,9 @@ function getFilesInTree(folder: FileTreeFolder, gitFiles: GG.GitFileChange[]) {
 	return files;
 }
 
+
+/* Miscellaneous Helper Methods */
+
 function haveFilesChanged(oldFiles: GG.GitFileChange[] | null, newFiles: GG.GitFileChange[] | null) {
 	if ((oldFiles === null) !== (newFiles === null)) {
 		return true;
@@ -2094,7 +2116,7 @@ function abbrevCommit(commitHash: string) {
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {
-	showDialog(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
+	dialog.showActionRunning(action);
 	sendMessage(msg);
 }
 
@@ -2105,7 +2127,7 @@ function showTagDetailsDialog(tagName: string, tagHash: string, commitHash: stri
 	html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
 	html += '<b>Date: </b>' + (new Date(date * 1000)).toString() + '<br><br>';
 	html += formatText(message).replace(/\n/g, '<br>') + '</span>';
-	showDialog(MESSAGE_DIALOG, html, null, 'Close', null, null, null);
+	dialog.showMessage(html);
 }
 
 function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
@@ -2132,196 +2154,16 @@ function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
 	return { heads: headLabels, remotes: remoteLabels };
 }
 
-
-/* Context Menu */
-function showContextMenu(e: MouseEvent, items: ContextMenuElement[], sourceElem: HTMLElement | null) {
-	let html = '', i: number, event = <MouseEvent>e;
-	for (i = 0; i < items.length; i++) {
-		html += items[i] !== null ? '<li class="contextMenuItem" data-index="' + i + '">' + items[i]!.title + '</li>' : '<li class="contextMenuDivider"></li>';
-	}
-
-	hideContextMenuListener();
-	contextMenu.style.opacity = '0';
-	contextMenu.className = CLASS_ACTIVE;
-	contextMenu.innerHTML = html;
-	let bounds = contextMenu.getBoundingClientRect();
-	let relativeX = event.pageX + bounds.width < viewElem.clientWidth
-		? -2 // context menu fits to the right
-		: event.pageX - bounds.width > 0
-			? 2 - bounds.width // context menu fits to the left
-			: -2 - (bounds.width - (viewElem.clientWidth - event.pageX)); // Overlap the context menu horizontally with the cursor
-	let relativeY = event.pageY + bounds.height < viewElem.clientHeight
-		? -2 // context menu fits below
-		: event.pageY - bounds.height > 0
-			? 2 - bounds.height // context menu fits above
-			: -2 - (bounds.height - (viewElem.clientHeight - event.pageY)); // Overlap the context menu vertically with the cursor
-	contextMenu.style.left = (viewElem.scrollLeft + Math.max(event.pageX + relativeX, 2)) + 'px';
-	contextMenu.style.top = (viewElem.scrollTop + Math.max(event.pageY + relativeY, 2)) + 'px';
-	contextMenu.style.opacity = '1';
-
-	addListenerToClass('contextMenuItem', 'click', (e) => {
-		e.stopPropagation();
-		hideContextMenu();
-		items[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]!.onClick();
-	});
-
-	contextMenuSource = sourceElem;
-	if (contextMenuSource !== null) contextMenuSource.classList.add(CLASS_CONTEXT_MENU_ACTIVE);
-	graphFocus = false;
-}
-function showCheckedContextMenu(e: MouseEvent, items: ContextMenuItem[], sourceElem: HTMLElement | null) {
-	for (let i = 0; i < items.length; i++) {
-		items[i].title = '<span class="contextMenuItemCheck">' + (items[i].checked ? SVG_ICONS.check : '') + '</span>' + items[i].title;
-	}
-	showContextMenu(e, items, sourceElem);
-	contextMenu.classList.add('checked');
-}
-function hideContextMenu() {
-	contextMenu.className = '';
-	contextMenu.innerHTML = '';
-	contextMenu.style.left = '0px';
-	contextMenu.style.top = '0px';
-	if (contextMenuSource !== null) {
-		contextMenuSource.classList.remove(CLASS_CONTEXT_MENU_ACTIVE);
-		contextMenuSource = null;
-	}
-	graphFocus = true;
+function closeDialogAndContextMenu() {
+	if (dialog.isOpen()) dialog.close();
+	if (contextMenu.isOpen()) contextMenu.close();
 }
 
 
-/* Dialogs */
-function showConfirmationDialog(message: string, confirmed: () => void, sourceElem: HTMLElement | null) {
-	showDialog(FORM_DIALOG, message, 'Yes', 'No', () => {
-		hideDialog();
-		confirmed();
-	}, null, sourceElem);
-}
-function showButtonsDialog(message: string, buttonLabel1: string, buttonAction1: () => void, buttonLabel2: string, buttonAction2: () => void, sourceElem: HTMLElement | null) {
-	showDialog(FORM_DIALOG, message, buttonLabel1, buttonLabel2, () => {
-		hideDialog();
-		buttonAction1();
-	}, () => {
-		hideDialog();
-		buttonAction2();
-	}, sourceElem);
-}
-function showRefInputDialog(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
-	showFormDialog(message, [{ type: 'text-ref', name: '', default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
-}
-function showCheckboxDialog(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
-	showFormDialog(message, [{ type: 'checkbox', name: checkboxLabel, value: checkboxValue }], actionName, values => actioned(values[0] === 'checked'), sourceElem);
-}
-function showSelectDialog(message: string, defaultValue: string, options: { name: string, value: string }[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
-	showFormDialog(message, [{ type: 'select', name: '', options: options, default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
-}
-function showFormDialog(message: string, inputs: DialogInput[], actionName: string, actioned: (values: string[]) => void, sourceElem: HTMLElement | null) {
-	let textRefInput = -1, multiElement = inputs.length > 1;
-	let multiCheckbox = multiElement;
+/* Event Overlay (for blocking and/or capturing mouse events on the Git Graph View) */
 
-	if (multiElement) { // If has multiple elements, then check if they are all checkboxes. If so, then the form is a checkbox multi
-		for (let i = 0; i < inputs.length; i++) {
-			if (inputs[i].type !== 'checkbox') {
-				multiCheckbox = false;
-				break;
-			}
-		}
-	}
-
-	let html = message + '<br><table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">';
-	for (let i = 0; i < inputs.length; i++) {
-		let input = inputs[i];
-		html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '') + '<td>';
-		if (input.type === 'select') {
-			html += '<select id="dialogInput' + i + '">';
-			for (let j = 0; j < input.options.length; j++) {
-				html += '<option value="' + escapeHtml(input.options[j].value) + '"' + (input.options[j].value === input.default ? ' selected' : '') + '>' + escapeHtml(input.options[j].name) + '</option>';
-			}
-			html += '</select>';
-		} else if (input.type === 'checkbox') {
-			html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElement && !multiCheckbox ? '' : input.name) + '</label></span>';
-		} else {
-			html += '<input id="dialogInput' + i + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + '/>';
-			if (input.type === 'text-ref') textRefInput = i;
-		}
-		html += '</td></tr>';
-	}
-	html += '</table>';
-
-	showDialog(FORM_DIALOG, html, actionName, 'Cancel', () => {
-		if (dialog.className === CLASS_ACTIVE + ' noInput' || dialog.className === CLASS_ACTIVE + ' inputInvalid') return;
-		let values = [];
-		for (let i = 0; i < inputs.length; i++) {
-			let input = inputs[i], elem = document.getElementById('dialogInput' + i);
-			if (input.type === 'select') {
-				values.push((<HTMLSelectElement>elem).value);
-			} else if (input.type === 'checkbox') {
-				values.push((<HTMLInputElement>elem).checked ? 'checked' : 'unchecked');
-			} else {
-				values.push((<HTMLInputElement>elem).value);
-			}
-		}
-		hideDialog();
-		actioned(values);
-	}, null, sourceElem);
-
-	if (textRefInput > -1) {
-		let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
-		if (dialogInput.value === '') dialog.className = CLASS_ACTIVE + ' noInput';
-		dialogInput.addEventListener('keyup', () => {
-			let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
-			let newClassName = CLASS_ACTIVE + (noInput ? ' noInput' : invalidInput ? ' inputInvalid' : '');
-			if (dialog.className !== newClassName) {
-				dialog.className = newClassName;
-				dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';
-			}
-		});
-	}
-
-	if (inputs.length > 0 && (inputs[0].type === 'text' || inputs[0].type === 'text-ref')) {
-		// If the first input is a text field, set focus to it.
-		(<HTMLInputElement>document.getElementById('dialogInput0')).focus();
-	}
-}
-function showErrorDialog(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-	showDialog(MESSAGE_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
-}
-function showDialog(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, sourceElem: HTMLElement | null) {
-	hideDialogAndContextMenu();
-
-	dialogType = type;
-	createEventOverlay('dialogBacking', null, null);
-	dialog.className = CLASS_ACTIVE;
-	dialog.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
-	if (actionName !== null && actioned !== null) {
-		document.getElementById('dialogAction')!.addEventListener('click', actioned);
-		dialogAction = actioned;
-	}
-	document.getElementById('dialogDismiss')!.addEventListener('click', dismissed !== null ? dismissed : hideDialog);
-
-	dialogMenuSource = sourceElem;
-	if (dialogMenuSource !== null) dialogMenuSource.classList.add(CLASS_DIALOG_ACTIVE);
-	graphFocus = false;
-}
-function hideDialog() {
-	removeEventOverlay();
-	dialog.className = '';
-	dialog.innerHTML = '';
-	if (dialogMenuSource !== null) {
-		dialogMenuSource.classList.remove(CLASS_DIALOG_ACTIVE);
-		dialogMenuSource = null;
-	}
-	dialogAction = null;
-	dialogType = null;
-	graphFocus = true;
-}
-
-function hideDialogAndContextMenu() {
-	if (dialog.classList.contains(CLASS_ACTIVE)) hideDialog();
-	if (contextMenu.classList.contains(CLASS_ACTIVE)) hideContextMenu();
-}
-
-/* Event Overlay - Used for blocking or capturing mouse events on the Git Graph view */
 let moveListener: EventListener | null = null, stopListener: EventListener | null = null;
+
 function createEventOverlay(className: string, move: EventListener | null, stop: EventListener | null) {
 	if (document.getElementById(ID_EVENT_CAPTURE_ELEM) !== null) removeEventOverlay();
 
@@ -2341,6 +2183,7 @@ function createEventOverlay(className: string, move: EventListener | null, stop:
 
 	document.body.appendChild(eventOverlayElem);
 }
+
 function removeEventOverlay() {
 	let eventOverlayElem = document.getElementById(ID_EVENT_CAPTURE_ELEM);
 	if (eventOverlayElem === null) return;
@@ -2356,12 +2199,4 @@ function removeEventOverlay() {
 	}
 
 	document.body.removeChild(eventOverlayElem);
-}
-
-/* Global Listeners */
-document.addEventListener('click', hideContextMenuListener);
-document.addEventListener('contextmenu', hideContextMenuListener);
-document.addEventListener('mouseleave', hideContextMenuListener);
-function hideContextMenuListener() {
-	if (contextMenu.classList.contains(CLASS_ACTIVE)) hideContextMenu();
 }

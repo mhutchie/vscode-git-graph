@@ -440,9 +440,7 @@ export class GitGraphView {
 					<div id="commitTable"></div>
 				</div>
 				<div id="footer"></div>
-				<ul id="contextMenu"></ul>
 			</div>
-			<div id="dialog"></div>
 			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
 			<script src="${this.getMediaUri('out.min.js')}"></script>

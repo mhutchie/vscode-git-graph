@@ -7,6 +7,8 @@ class Dropdown {
 	private showInfo: boolean;
 	private multipleAllowed: boolean;
 	private changeCallback: { (values: string[]): void };
+	private lastClicked: number = 0;
+	private doubleClickTimeout: NodeJS.Timer | null = null;
 
 	private elem: HTMLElement;
 	private currentValueElem: HTMLDivElement;
@@ -60,49 +62,7 @@ class Dropdown {
 				} else {
 					let option = <HTMLElement | null>(<HTMLElement>e.target).closest('.dropdownOption');
 					if (option !== null && option.parentNode === this.optionsElem && typeof option.dataset.id !== 'undefined') {
-						let selectedOption = parseInt(option.dataset.id!), change = false;
-						if (this.multipleAllowed) {
-							// Note: Show All is always the first option (0 index) when multiple selected items are allowed
-							if (selectedOption === 0) {
-								if (!this.optionsSelected[0]) {
-									this.optionsSelected[0] = true;
-									for (let i = 1; i < this.optionsSelected.length; i++) {
-										this.optionsSelected[i] = false;
-									}
-									this.numSelected = 1;
-									change = true;
-								}
-							} else {
-								if (this.optionsSelected[0]) {
-									this.optionsSelected[0] = false;
-									this.numSelected--;
-								}
-
-								this.numSelected += this.optionsSelected[selectedOption] ? -1 : 1;
-								this.optionsSelected[selectedOption] = !this.optionsSelected[selectedOption];
-
-								if (this.numSelected === 0) {
-									this.optionsSelected[0] = true;
-									this.numSelected = 1;
-								}
-								change = true;
-							}
-							if (change && this.optionsSelected[selectedOption]) this.lastSelected = selectedOption;
-						} else {
-							this.close();
-							if (this.lastSelected !== selectedOption) {
-								this.optionsSelected[this.lastSelected] = false;
-								this.optionsSelected[selectedOption] = true;
-								this.lastSelected = selectedOption;
-								change = true;
-							}
-						}
-						if (change) {
-							let menuScroll = this.menuElem.scrollTop;
-							this.render();
-							if (this.dropdownVisible && this.multipleAllowed) this.menuElem.scroll(0, menuScroll);
-							this.changeCallback(this.getSelectedOptions(false));
-						}
+						this.selectOption(parseInt(option.dataset.id!));
 					}
 				}
 			}
@@ -135,6 +95,7 @@ class Dropdown {
 		this.lastSelected = selectedOption;
 		if (this.dropdownVisible && options.length <= 1) this.close();
 		this.render();
+		this.clearDoubleClickTimeout();
 	}
 
 	public refresh() {
@@ -174,10 +135,15 @@ class Dropdown {
 	private close() {
 		this.elem.classList.remove('dropdownOpen');
 		this.dropdownVisible = false;
+		this.clearDoubleClickTimeout();
 	}
 
 	private getSelectedOptions(names: boolean) {
 		let selected = [];
+		if (this.multipleAllowed && this.optionsSelected[0]) {
+			// Note: Show All is always the first option (0 index) when multiple selected items are allowed
+			return [names ? this.options[0].name : this.options[0].value];
+		}
 		for (let i = 0; i < this.options.length; i++) {
 			if (this.optionsSelected[i]) selected.push(names ? this.options[i].name : this.options[i].value);
 		}
@@ -190,6 +156,91 @@ class Dropdown {
 			str += (i > 0 ? i < selected.length - 1 ? ', ' : ' & ' : '') + selected[i];
 		}
 		return str;
+	}
+
+	private selectOption(option: number) {
+		// Note: Show All is always the first option (0 index) when multiple selected items are allowed
+		let change = false;
+		if (this.doubleClickTimeout !== null) {
+			if (this.lastClicked === option) {
+				// Double click
+				if (this.multipleAllowed && option === 0) {
+					this.numSelected = 1;
+					for (let i = 1; i < this.optionsSelected.length; i++) {
+						this.optionsSelected[i] = !this.optionsSelected[i];
+						if (this.optionsSelected[i]) this.numSelected++;
+					}
+					change = true;
+				}
+			}
+			this.clearDoubleClickTimeout();
+		} else {
+			// Single Click
+			if (this.multipleAllowed) {
+				// Multiple dropdown options can be selected
+				if (option === 0) {
+					// Show All was selected
+					if (!this.optionsSelected[0]) {
+						this.optionsSelected[0] = true;
+						for (let i = 1; i < this.optionsSelected.length; i++) {
+							this.optionsSelected[i] = false;
+						}
+						this.numSelected = 1;
+						change = true;
+					}
+				} else {
+					if (this.optionsSelected[0]) {
+						this.optionsSelected[0] = false;
+						this.numSelected--;
+					}
+
+					this.numSelected += this.optionsSelected[option] ? -1 : 1;
+					this.optionsSelected[option] = !this.optionsSelected[option];
+
+					if (this.numSelected === 0) {
+						this.optionsSelected[0] = true;
+						this.numSelected = 1;
+					}
+					change = true;
+				}
+				if (change && this.optionsSelected[option]) {
+					this.lastSelected = option;
+				}
+			} else {
+				// Only a single dropdown option can be selected
+				this.close();
+				if (this.lastSelected !== option) {
+					this.optionsSelected[this.lastSelected] = false;
+					this.optionsSelected[option] = true;
+					this.lastSelected = option;
+					change = true;
+				}
+			}
+
+			if (change) {
+				// If a change has occured, trigger the callback
+				this.changeCallback(this.getSelectedOptions(false));
+			}
+		}
+
+		if (change) {
+			// If a change has occured, re-render the dropdown elements
+			let menuScroll = this.menuElem.scrollTop;
+			this.render();
+			if (this.dropdownVisible) this.menuElem.scroll(0, menuScroll);
+		}
+
+		this.lastClicked = option;
+		this.doubleClickTimeout = setTimeout(() => {
+			this.clearDoubleClickTimeout();
+		}, 500);
+	}
+
+	private clearDoubleClickTimeout() {
+		if (this.doubleClickTimeout !== null) {
+			clearTimeout(this.doubleClickTimeout);
+			this.doubleClickTimeout = null;
+		}
 	}
 }
 

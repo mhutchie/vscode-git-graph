@@ -72,6 +72,12 @@ class Dropdown {
 									this.numSelected = 1;
 									change = true;
 								}
+								else {
+									for (let i = 1; i < this.optionsSelected.length; i++) {
+										this.optionsSelected[i] = !this.optionsSelected[i];
+									}
+									this.render();
+								}
 							} else {
 								if (this.optionsSelected[0]) {
 									this.optionsSelected[0] = false;
@@ -178,6 +184,10 @@ class Dropdown {
 
 	private getSelectedOptions(names: boolean) {
 		let selected = [];
+		if (this.multipleAllowed && this.optionsSelected[0]) {
+			// Note: Show All is always the first option (0 index) when multiple selected items are allowed
+			return [names ? this.options[0].name : this.options[0].value];
+		}
 		for (let i = 0; i < this.options.length; i++) {
 			if (this.optionsSelected[i]) selected.push(names ? this.options[i].name : this.options[i].value);
 		}

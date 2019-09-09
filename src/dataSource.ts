@@ -1,4 +1,5 @@
 import * as cp from 'child_process';
+import * as fs from 'fs';
 import { decode, encodingExists } from 'iconv-lite';
 import * as path from 'path';
 import { Uri } from 'vscode';
@@ -270,6 +271,33 @@ export class DataSource {
 				resolve(data);
 			}).catch((errorMessage) => {
 				resolve({ tagHash: '', name: '', email: '', date: 0, message: '', error: errorMessage });
+			});
+		});
+	}
+
+	public getSubmodules(repo: string) {
+		return new Promise<string[]>(resolve => {
+			fs.readFile(path.join(repo, '.gitmodules'), { encoding: 'utf8' }, async (err, data) => {
+				let submodules: string[] = [];
+				if (!err) {
+					let lines = data.split(EOL_REGEX), inSubmoduleSection = false, match;
+					const section = /^\s*\[.*\]\s*$/, submodule = /^\s*\[submodule "([^"]+)"\]\s*$/, pathProp = /^\s*path\s+=\s+(.*)$/;
+
+					for (let i = 0; i < lines.length; i++) {
+						if (lines[i].match(section) !== null) {
+							inSubmoduleSection = lines[i].match(submodule) !== null;
+							continue;
+						}
+
+						if (inSubmoduleSection && (match = lines[i].match(pathProp)) !== null) {
+							let root = await this.repoRoot(getPathFromUri(Uri.file(path.join(repo, getPathFromStr(match[1])))));
+							if (root !== null && !submodules.includes(root)) {
+								submodules.push(root);
+							}
+						}
+					}
+				}
+				resolve(submodules);
 			});
 		});
 	}

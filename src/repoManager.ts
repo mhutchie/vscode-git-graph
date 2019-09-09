@@ -87,6 +87,7 @@ export class RepoManager {
 	private async startupTasks() {
 		this.removeReposNotInWorkspace();
 		if (!await this.checkReposExist()) this.sendRepos();
+		await this.checkReposForNewSubmodules();
 		await this.searchWorkspaceForRepos();
 		this.startWatchingFolders();
 	}
@@ -129,7 +130,7 @@ export class RepoManager {
 					this.ignoredRepos.splice(this.ignoredRepos.indexOf(root), 1);
 					this.extensionState.setIgnoredRepos(this.ignoredRepos);
 				}
-				this.addRepo(root);
+				await this.addRepo(root);
 				this.sendRepos(loadRepo ? root : null);
 				resolve({ root: root, error: null });
 			}
@@ -179,10 +180,16 @@ export class RepoManager {
 		return typeof this.repos[repo] !== 'undefined';
 	}
 
-	private addRepo(repo: string) {
-		this.repos[repo] = Object.assign({}, DEFAULT_REPO_STATE);
-		this.extensionState.saveRepos(this.repos);
-		this.logger.log('Added new repo: ' + repo);
+	private async addRepo(repo: string) {
+		if (this.ignoredRepos.includes(repo)) {
+			return false; // Unable to add repo because it is ignored
+		} else {
+			this.repos[repo] = Object.assign({}, DEFAULT_REPO_STATE);
+			this.extensionState.saveRepos(this.repos);
+			this.logger.log('Added new repo: ' + repo);
+			await this.searchRepoForSubmodules(repo);
+			return true;
+		}
 	}
 
 	private removeRepo(repo: string) {
@@ -270,14 +277,9 @@ export class RepoManager {
 				return;
 			}
 
-			this.dataSource.repoRoot(directory).then(root => {
+			this.dataSource.repoRoot(directory).then(async (root) => {
 				if (root !== null) {
-					if (this.ignoredRepos.includes(root)) {
-						resolve(false);
-					} else {
-						this.addRepo(root);
-						resolve(true);
-					}
+					resolve(await this.addRepo(root));
 				} else if (maxDepth > 0) {
 					fs.readdir(directory, async (err, dirContents) => {
 						if (err) {
@@ -297,6 +299,24 @@ export class RepoManager {
 				}
 			}).catch(() => resolve(false));
 		});
+	}
+
+	private async checkReposForNewSubmodules() {
+		let repoPaths = Object.keys(this.repos), changes = false;
+		for (let i = 0; i < repoPaths.length; i++) {
+			if (await this.searchRepoForSubmodules(repoPaths[i])) changes = true;
+		}
+		if (changes) this.sendRepos();
+	}
+
+	private async searchRepoForSubmodules(repo: string) {
+		let submodules = await this.dataSource.getSubmodules(repo), changes = false;
+		for (let i = 0; i < submodules.length; i++) {
+			if (!this.isKnownRepo(submodules[i])) {
+				if (await this.addRepo(submodules[i])) changes = true;
+			}
+		}
+		return changes;
 	}
 
 

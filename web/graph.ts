@@ -49,15 +49,25 @@ class Branch {
 			this.numUncommitted++;
 		}
 	}
+
+
+	/* Get / Set */
+
 	public getColour() {
 		return this.colour;
 	}
+
 	public getEnd() {
 		return this.end;
 	}
+
 	public setEnd(end: number) {
 		this.end = end;
 	}
+
+
+	/* Rendering */
+
 	public draw(svg: SVGElement, config: Config, expandAt: number) {
 		let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.graphStyle === 'angular' ? 0.38 : 0.8), line, nextLine;
 
@@ -133,6 +143,7 @@ class Branch {
 
 		this.drawPath(svg, curPath, curColour); // Draw the remaining path
 	}
+
 	private drawPath(svg: SVGElement, path: string, colour: string) {
 		let shadow = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path')), line = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path'));
 		shadow.setAttribute('class', 'shadow');
@@ -149,6 +160,7 @@ class Branch {
 class Vertex {
 	private x: number = 0;
 	private y: number;
+	private children: Vertex[] = [];
 	private parents: Vertex[] = [];
 	private nextParent: number = 0;
 	private onBranch: Branch | null = null;
@@ -161,26 +173,48 @@ class Vertex {
 		this.y = y;
 	}
 
+
+	/* Children */
+
+	public addChild(vertex: Vertex) {
+		this.children.push(vertex);
+	}
+
+	public getChildren() {
+		return this.children;
+	}
+
+
+	/* Parents */
+
 	public addParent(vertex: Vertex) {
 		this.parents.push(vertex);
 	}
+
 	public hasParents() {
 		return this.parents.length > 0;
 	}
+
 	public getNextParent(): Vertex | null {
 		if (this.nextParent < this.parents.length) return this.parents[this.nextParent];
 		return null;
 	}
+
 	public getLastParent(): Vertex | null {
 		if (this.nextParent < 1) return null;
 		return this.parents[this.nextParent - 1];
 	}
+
 	public registerParentProcessed() {
 		this.nextParent++;
 	}
+
 	public isMerge() {
 		return this.parents.length > 1;
 	}
+
+
+	/* Branch */
 
 	public addToBranch(branch: Branch, x: number) {
 		if (this.onBranch === null) {
@@ -188,24 +222,28 @@ class Vertex {
 			this.x = x;
 		}
 	}
+
 	public isNotOnBranch() {
 		return this.onBranch === null;
 	}
+
 	public isOnThisBranch(branch: Branch) {
 		return this.onBranch === branch;
 	}
+
 	public getBranch() {
 		return this.onBranch;
 	}
 
+
+	/* Point */
+
 	public getPoint(): Point {
 		return { x: this.x, y: this.y };
 	}
+
 	public getNextPoint(): Point {
 		return { x: this.nextX, y: this.y };
-	}
-	public getIsCommitted() {
-		return this.isCommitted;
 	}
 
 	public getPointConnectingTo(vertex: VertexOrNull, onBranch: Branch) {
@@ -221,15 +259,28 @@ class Vertex {
 		}
 	}
 
+
+	/* Get / Set State */
+
 	public getColour() {
 		return this.onBranch !== null ? this.onBranch.getColour() : 0;
 	}
+
+	public getIsCommitted() {
+		return this.isCommitted;
+	}
+
 	public setNotCommited() {
 		this.isCommitted = false;
 	}
+
 	public setCurrent() {
 		this.isCurrent = true;
 	}
+
+
+	/* Rendering */
+
 	public draw(svg: SVGElement, config: Config, expandOffset: boolean) {
 		if (this.onBranch === null) return;
 
@@ -285,6 +336,9 @@ class Graph {
 		document.getElementById(id)!.appendChild(this.svg);
 	}
 
+
+	/* Graph Operations */
+
 	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
 		this.vertices = [];
 		this.branches = [];
@@ -297,8 +351,10 @@ class Graph {
 		}
 		for (i = 0; i < commits.length; i++) {
 			for (j = 0; j < commits[i].parentHashes.length; j++) {
-				if (typeof commitLookup[commits[i].parentHashes[j]] === 'number') {
-					this.vertices[i].addParent(this.vertices[commitLookup[commits[i].parentHashes[j]]]);
+				let parentHash = commits[i].parentHashes[j];
+				if (typeof commitLookup[parentHash] === 'number') {
+					this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
+					this.vertices[commitLookup[parentHash]].addChild(this.vertices[i]);
 				}
 			}
 		}
@@ -346,6 +402,9 @@ class Graph {
 		}
 	}
 
+
+	/* Get */
+
 	public getWidth() {
 		let x = 0, i, p;
 		for (i = 0; i < this.vertices.length; i++) {
@@ -375,6 +434,35 @@ class Graph {
 		return widths;
 	}
 
+
+	/* Graph Queries */
+
+	public dropCommitPossible(i: number) {
+		if (!this.vertices[i].hasParents()) {
+			return false; // No parents
+		}
+
+		const isPossible = (v: Vertex) => {
+			if (v.isMerge()) {
+				return false; // Merging
+			}
+
+			let children = v.getChildren();
+			if (children.length > 1) {
+				return false; // Branching
+			} else if (children.length === 1 && !isPossible(children[0])) {
+				return false; // Recursively Invalid
+			}
+
+			return true;
+		};
+
+		return isPossible(this.vertices[i]);
+	}
+
+
+	/* Width Adjustment Methods */
+
 	public limitMaxWidth(maxWidth: number) {
 		this.maxWidth = maxWidth;
 		this.applyMaxWidth(this.getWidth());
@@ -393,6 +481,9 @@ class Graph {
 		this.gradientStop1.setAttribute('offset', offset1.toString());
 		this.gradientStop2.setAttribute('offset', offset2.toString());
 	}
+
+
+	/* Graph Layout Methods */
 
 	private determinePath(startAt: number) {
 		let i = startAt;

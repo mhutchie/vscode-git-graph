@@ -204,6 +204,12 @@ export class GitGraphView {
 						error: await this.dataSource.deleteTag(msg.repo, msg.tagName, msg.deleteOnRemote)
 					});
 					break;
+				case 'dropCommit':
+					this.sendMessage({
+						command: 'dropCommit',
+						error: await this.dataSource.dropCommit(msg.repo, msg.commitHash)
+					});
+					break;
 				case 'editRemote':
 					this.sendMessage({
 						command: 'editRemote',

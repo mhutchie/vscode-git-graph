@@ -157,7 +157,7 @@ export class DataSource {
 					let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
 					return {
 						hash: commitInfo[0],
-						parents: commitInfo[1].split(' '),
+						parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
 						author: commitInfo[2],
 						email: commitInfo[3],
 						date: parseInt(commitInfo[4]),
@@ -494,6 +494,10 @@ export class DataSource {
 		let args = ['cherry-pick', commitHash];
 		if (parentIndex > 0) args.push('-m', parentIndex.toString());
 		return this.runGitCommand(args, repo);
+	}
+
+	public dropCommit(repo: string, commitHash: string) {
+		return this.runGitCommand(['rebase', '--onto', commitHash + '^', commitHash], repo);
 	}
 
 	public resetToCommit(repo: string, commitHash: string, resetMode: GitResetMode) {

@@ -646,7 +646,19 @@ class GitGraphView {
 								}, sourceElem);
 							}
 						}
-					},
+					}
+				];
+				if (this.graph.dropCommitPossible(this.commitLookup[hash])) {
+					menu.push({
+						title: 'Drop' + ELLIPSIS,
+						onClick: () => {
+							dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+								runAction({ command: 'dropCommit', repo: this.currentRepo, commitHash: hash }, 'Dropping Commit');
+							}, sourceElem);
+						}
+					});
+				}
+				menu.push(
 					null,
 					{
 						title: 'Merge into current branch' + ELLIPSIS,
@@ -675,7 +687,7 @@ class GitGraphView {
 							sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
 						}
 					}
-				];
+				);
 			}
 			contextMenu.show(<MouseEvent>e, menu, false, sourceElem);
 		});
@@ -1379,7 +1391,7 @@ class GitGraphView {
 					let commitDetails = expandedCommit.commitDetails!;
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">';
 					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
-					html += '<b>Parents: </b>' + commitDetails.parents.join(', ') + '<br>';
+					html += '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>';
 					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
 					html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
@@ -1792,6 +1804,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'deleteTag':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
+				break;
+			case 'dropCommit':
+				refreshOrDisplayError(msg.error, 'Unable to Drop Commit');
 				break;
 			case 'editRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');

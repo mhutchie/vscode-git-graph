@@ -397,6 +397,16 @@ export interface ResponseDeleteTag {
 	error: GitCommandError;
 }
 
+export interface RequestDropCommit {
+	command: 'dropCommit';
+	repo: string;
+	commitHash: string;
+}
+export interface ResponseDropCommit {
+	command: 'dropCommit';
+	error: GitCommandError;
+}
+
 export interface RequestEditRemote {
 	command: 'editRemote';
 	repo: string;
@@ -703,6 +713,7 @@ export type RequestMessage =
 	| RequestDeleteRemote
 	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
+	| RequestDropCommit
 	| RequestEditRemote
 	| RequestEndCodeReview
 	| RequestFetch
@@ -744,6 +755,7 @@ export type ResponseMessage =
 	| ResponseDeleteRemote
 	| ResponseDeleteRemoteBranch
 	| ResponseDeleteTag
+	| ResponseDropCommit
 	| ResponseEditRemote
 	| ResponseFetch
 	| ResponseFetchAvatar

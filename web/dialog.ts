@@ -122,7 +122,7 @@ class Dialog {
 		closeDialogAndContextMenu();
 
 		this.type = type;
-		createEventOverlay('dialogBacking', null, null);
+		eventOverlay.create('dialogBacking', null, null);
 		let dialog = document.createElement('div');
 		dialog.className = 'dialog';
 		dialog.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
@@ -140,7 +140,7 @@ class Dialog {
 	}
 
 	public close() {
-		removeEventOverlay();
+		eventOverlay.remove();
 		if (this.elem !== null) {
 			this.elem.remove();
 			this.elem = null;

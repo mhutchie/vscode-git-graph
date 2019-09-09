@@ -268,3 +268,46 @@ class ImageResizer {
 		image.src = dataUri;
 	}
 }
+
+/* Event Overlay (for blocking and/or capturing mouse events on the Git Graph View) */
+class EventOverlay {
+	private move: EventListener | null = null;
+	private stop: EventListener | null = null;
+
+	public create(className: string, move: EventListener | null, stop: EventListener | null) {
+		if (document.getElementById(ID_EVENT_CAPTURE_ELEM) !== null) this.remove();
+
+		let eventOverlayElem = document.createElement('div');
+		eventOverlayElem.id = ID_EVENT_CAPTURE_ELEM;
+		eventOverlayElem.className = className;
+
+		this.move = move;
+		this.stop = stop;
+		if (this.move !== null) {
+			eventOverlayElem.addEventListener('mousemove', this.move);
+		}
+		if (this.stop !== null) {
+			eventOverlayElem.addEventListener('mouseup', this.stop);
+			eventOverlayElem.addEventListener('mouseleave', this.stop);
+		}
+
+		document.body.appendChild(eventOverlayElem);
+	}
+
+	public remove() {
+		let eventOverlayElem = document.getElementById(ID_EVENT_CAPTURE_ELEM);
+		if (eventOverlayElem === null) return;
+
+		if (this.move !== null) {
+			eventOverlayElem.removeEventListener('mousemove', this.move);
+			this.move = null;
+		}
+		if (this.stop !== null) {
+			eventOverlayElem.removeEventListener('mouseup', this.stop);
+			eventOverlayElem.removeEventListener('mouseleave', this.stop);
+			this.stop = null;
+		}
+
+		document.body.removeChild(eventOverlayElem);
+	}
+}

@@ -1576,12 +1576,12 @@ class GitGraphView {
 			processHeightEvent(e);
 			this.saveRepoState();
 			prevY = -1;
-			removeEventOverlay();
+			eventOverlay.remove();
 		};
 
 		addListenerToClass('cdvHeightResize', 'mousedown', (e) => {
 			prevY = (<MouseEvent>e).pageY;
-			createEventOverlay('rowResize', processHeightEvent, stopResizingHeight);
+			eventOverlay.create('rowResize', processHeightEvent, stopResizingHeight);
 		});
 	}
 
@@ -1604,7 +1604,7 @@ class GitGraphView {
 			processDividerEvent(e);
 			this.saveRepoState();
 			minX = -1;
-			removeEventOverlay();
+			eventOverlay.remove();
 		};
 
 		document.getElementById('cdvDivider')!.addEventListener('mousedown', () => {
@@ -1614,7 +1614,7 @@ class GitGraphView {
 			let bounds = contentElem.getBoundingClientRect();
 			minX = bounds.left;
 			width = bounds.width;
-			createEventOverlay('colResize', processDividerEvent, stopMovingDivider);
+			eventOverlay.create('colResize', processDividerEvent, stopMovingDivider);
 		});
 	}
 
@@ -1697,7 +1697,7 @@ class GitGraphView {
 
 /* Main */
 
-const contextMenu = new ContextMenu(), dialog = new Dialog();
+const contextMenu = new ContextMenu(), dialog = new Dialog(), eventOverlay = new EventOverlay();
 let loaded = false;
 
 window.addEventListener('load', () => {
@@ -2157,46 +2157,4 @@ function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
 function closeDialogAndContextMenu() {
 	if (dialog.isOpen()) dialog.close();
 	if (contextMenu.isOpen()) contextMenu.close();
-}
-
-
-/* Event Overlay (for blocking and/or capturing mouse events on the Git Graph View) */
-
-let moveListener: EventListener | null = null, stopListener: EventListener | null = null;
-
-function createEventOverlay(className: string, move: EventListener | null, stop: EventListener | null) {
-	if (document.getElementById(ID_EVENT_CAPTURE_ELEM) !== null) removeEventOverlay();
-
-	let eventOverlayElem = document.createElement('div');
-	eventOverlayElem.id = ID_EVENT_CAPTURE_ELEM;
-	eventOverlayElem.className = className;
-
-	moveListener = move;
-	stopListener = stop;
-	if (moveListener !== null) {
-		eventOverlayElem.addEventListener('mousemove', moveListener);
-	}
-	if (stopListener !== null) {
-		eventOverlayElem.addEventListener('mouseup', stopListener);
-		eventOverlayElem.addEventListener('mouseleave', stopListener);
-	}
-
-	document.body.appendChild(eventOverlayElem);
-}
-
-function removeEventOverlay() {
-	let eventOverlayElem = document.getElementById(ID_EVENT_CAPTURE_ELEM);
-	if (eventOverlayElem === null) return;
-
-	if (moveListener !== null) {
-		eventOverlayElem.removeEventListener('mousemove', moveListener);
-		moveListener = null;
-	}
-	if (stopListener !== null) {
-		eventOverlayElem.removeEventListener('mouseup', stopListener);
-		eventOverlayElem.removeEventListener('mouseleave', stopListener);
-		stopListener = null;
-	}
-
-	document.body.removeChild(eventOverlayElem);
 }

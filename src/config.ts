@@ -9,11 +9,11 @@ class Config {
 	}
 
 	public autoCenterCommitDetailsView() {
-		return this.config.get('autoCenterCommitDetailsView', true);
+		return !!this.config.get('autoCenterCommitDetailsView', true);
 	}
 
 	public combineLocalAndRemoteBranchLabels() {
-		return this.config.get('combineLocalAndRemoteBranchLabels', true);
+		return !!this.config.get('combineLocalAndRemoteBranchLabels', true);
 	}
 
 	public commitDetailsViewLocation(): CommitDetailsViewLocation {
@@ -88,7 +88,7 @@ class Config {
 	}
 
 	public fetchAvatars() {
-		return this.config.get('fetchAvatars', false);
+		return !!this.config.get('fetchAvatars', false);
 	}
 
 	public fileEncoding(): string {
@@ -121,7 +121,7 @@ class Config {
 	}
 
 	public muteMergeCommits() {
-		return this.config.get('muteMergeCommits', true);
+		return !!this.config.get('muteMergeCommits', true);
 	}
 
 	public openDiffTabLocation() {
@@ -137,7 +137,7 @@ class Config {
 	}
 
 	public retainContextWhenHidden(): boolean {
-		return this.config.get('retainContextWhenHidden', false);
+		return !!this.config.get('retainContextWhenHidden', true);
 	}
 
 	public showCommitsOnlyReferencedByTags() {
@@ -145,15 +145,15 @@ class Config {
 	}
 
 	public showCurrentBranchByDefault() {
-		return this.config.get('showCurrentBranchByDefault', false);
+		return !!this.config.get('showCurrentBranchByDefault', false);
 	}
 
 	public showStatusBarItem() {
-		return this.config.get('showStatusBarItem', true);
+		return !!this.config.get('showStatusBarItem', true);
 	}
 
 	public showUncommittedChanges() {
-		return this.config.get('showUncommittedChanges', true);
+		return !!this.config.get('showUncommittedChanges', true);
 	}
 
 	public tabIconColourTheme(): TabIconColourTheme {
@@ -161,7 +161,7 @@ class Config {
 	}
 
 	public useMailmap() {
-		return this.config.get('useMailmap', false);
+		return !!this.config.get('useMailmap', false);
 	}
 
 	public gitPath(): string | null {

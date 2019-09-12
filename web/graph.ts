@@ -350,8 +350,8 @@ class Graph {
 			this.vertices.push(new Vertex(i));
 		}
 		for (i = 0; i < commits.length; i++) {
-			for (j = 0; j < commits[i].parentHashes.length; j++) {
-				let parentHash = commits[i].parentHashes[j];
+			for (j = 0; j < commits[i].parents.length; j++) {
+				let parentHash = commits[i].parents[j];
 				if (typeof commitLookup[parentHash] === 'number') {
 					this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
 					this.vertices[commitLookup[parentHash]].addChild(this.vertices[i]);

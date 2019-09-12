@@ -267,4 +267,30 @@ export function getGitExecutable(path: string): Promise<GitExecutable> {
 	});
 }
 
-/* End of Find Git Executable */
+
+/* Git Version */
+
+export function compareVersions(executable: GitExecutable, version: string) {
+	// 1 => <executable> newer than <version>, 0 => <executable> same as <version>, -1 => <executable> older than <version>
+	let v1 = parseVersion(executable.version), v2 = parseVersion(version);
+	if (v1.major > v2.major) return 1;
+	if (v1.major < v2.major) return -1;
+	if (v1.minor > v2.minor) return 1;
+	if (v1.minor < v2.minor) return -1;
+	if (v1.patch > v2.patch) return 1;
+	if (v1.patch < v2.patch) return -1;
+	return 0;
+}
+
+function parseVersion(version: string) {
+	let v = version.split(/[^0-9\.]+/)[0].split('.');
+	return {
+		major: v.length > 0 ? parseInt(v[0], 10) : 0,
+		minor: v.length > 1 ? parseInt(v[1], 10) : 0,
+		patch: v.length > 2 ? parseInt(v[2], 10) : 0
+	};
+}
+
+export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string) {
+	return 'A newer version of Git (>= ' + version + ') is required for this feature. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
+}

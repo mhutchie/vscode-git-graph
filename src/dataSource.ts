@@ -6,8 +6,8 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { BranchOrCommit, CommitOrdering, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitTagDetailsData, GitUnsavedChanges } from './types';
-import { abbrevCommit, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { BranchOrCommit, CommitOrdering, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitStash, GitTagDetailsData, GitUnsavedChanges } from './types';
+import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -16,10 +16,12 @@ const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 export class DataSource {
 	private readonly logger: Logger;
 	private gitExecutable: GitExecutable | null;
-	private gitLogFormat!: string;
-	private gitCommitDetailsFormat!: string;
 	private askpassManager: AskpassManager;
 	private askpassEnv: AskpassEnvironment;
+
+	private gitFormatCommitDetails!: string;
+	private gitFormatLog!: string;
+	private gitFormatStash!: string;
 
 	constructor(gitExecutable: GitExecutable | null, logger: Logger) {
 		this.gitExecutable = gitExecutable;
@@ -41,8 +43,9 @@ export class DataSource {
 		const config = getConfig();
 		let dateType = config.dateType() === 'Author Date' ? '%at' : '%ct';
 		let useMailmap = config.useMailmap();
-		this.gitLogFormat = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
-		this.gitCommitDetailsFormat = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
+		this.gitFormatCommitDetails = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
+		this.gitFormatLog = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
+		this.gitFormatStash = ['%H', '%P', '%gD', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
 	}
 
 	public dispose() {
@@ -87,9 +90,10 @@ export class DataSource {
 			Promise.all([
 				this.getLog(repo, branches, maxCommits + 1, showRemoteBranches, config.commitOrdering()),
 				this.getRefs(repo, showRemoteBranches).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
+				this.getStashes(repo),
 				this.getRemotes(repo)
 			]).then(async (results) => {
-				let commits = results[0], refData = results[1], i, unsavedChanges = null;
+				let commits: GitCommit[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], remotes: string[] = results[3], i, unsavedChanges = null;
 				let moreCommitsAvailable = commits.length === maxCommits + 1;
 				if (moreCommitsAvailable) commits.pop();
 
@@ -110,7 +114,7 @@ export class DataSource {
 						if (refData.head === commits[i].hash) {
 							unsavedChanges = config.showUncommittedChanges() ? await this.getUnsavedChanges(repo) : null;
 							if (unsavedChanges !== null) {
-								commits.unshift({ hash: UNCOMMITTED, parentHashes: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+								commits.unshift({ hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 							}
 							break;
 						}
@@ -122,23 +126,48 @@ export class DataSource {
 
 				for (i = 0; i < commits.length; i++) {
 					commitLookup[commits[i].hash] = i;
-					commitNodes.push({ hash: commits[i].hash, parentHashes: commits[i].parentHashes, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [] });
+					commitNodes.push({ hash: commits[i].hash, parents: commits[i].parents, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [], stash: null });
 				}
+
+				/* Insert Stashes */
+				let toAdd: { index: number, data: GitStash }[] = [];
+				for (i = 0; i < stashes.length; i++) {
+					if (typeof commitLookup[stashes[i].hash] === 'number') {
+						commitNodes[commitLookup[stashes[i].hash]].stash = stashes[i].selector;
+					} else if (typeof commitLookup[stashes[i].base] === 'number') {
+						toAdd.push({ index: commitLookup[stashes[i].base], data: stashes[i] });
+					}
+				}
+				toAdd.sort((a, b) => a.index !== b.index ? a.index - b.index : b.data.date - a.data.date);
+				for (i = toAdd.length - 1; i >= 0; i--) {
+					let stash = toAdd[i].data;
+					commitNodes.splice(toAdd[i].index, 0, { hash: stash.hash, parents: [stash.base], author: stash.author, email: stash.email, date: stash.date, message: stash.message, heads: [], tags: [], remotes: [], stash: stash.selector });
+				}
+				for (i = 0; i < commitNodes.length; i++) {
+					// Correct commit lookup after stashes have been spliced in
+					commitLookup[commitNodes[i].hash] = i;
+				}
+
+				/* Annotate Heads */
 				for (i = 0; i < refData.heads.length; i++) {
 					if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
 				}
+
+				/* Annotate Tags */
 				for (i = 0; i < refData.tags.length; i++) {
 					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
 				}
+
+				/* Annotate Remotes */
 				for (i = 0; i < refData.remotes.length; i++) {
 					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
 						let name = refData.remotes[i].name;
-						let remote = results[2].find(remote => name.startsWith(remote + '/'));
+						let remote = remotes.find(remote => name.startsWith(remote + '/'));
 						commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
 					}
 				}
 
-				resolve({ commits: commitNodes, head: refData.head, remotes: results[2], moreCommitsAvailable: moreCommitsAvailable, error: null });
+				resolve({ commits: commitNodes, head: refData.head, remotes: remotes, moreCommitsAvailable: moreCommitsAvailable, error: null });
 			}).catch((errorMessage) => {
 				resolve({ commits: [], head: null, remotes: [], moreCommitsAvailable: false, error: errorMessage });
 			});
@@ -148,10 +177,10 @@ export class DataSource {
 
 	/* Get Data Methods - Commit Details View */
 
-	public getCommitDetails(repo: string, commitHash: string) {
+	public getCommitDetails(repo: string, commitHash: string, baseHash: string | null) {
 		return new Promise<GitCommitDetails>(resolve => {
 			Promise.all([
-				this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitCommitDetailsFormat], repo, (stdout): GitCommitDetails => {
+				this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): GitCommitDetails => {
 					let lines = stdout.split(EOL_REGEX);
 					let lastLine = lines.length - 1;
 					while (lines.length > 0 && lines[lastLine] === '') lastLine--;
@@ -167,8 +196,8 @@ export class DataSource {
 						fileChanges: [], error: null
 					};
 				}),
-				this.getDiffTreeNameStatus(repo, commitHash, commitHash),
-				this.getDiffTreeNumStat(repo, commitHash, commitHash)
+				this.getDiffNameStatus(repo, baseHash !== null ? baseHash : commitHash, commitHash),
+				this.getDiffNumStat(repo, baseHash !== null ? baseHash : commitHash, commitHash)
 			]).then((results) => {
 				results[0].fileChanges = generateFileChanges(results[1], results[2], null);
 				resolve(results[0]);
@@ -180,8 +209,8 @@ export class DataSource {
 		return new Promise<GitCommitDetails>(resolve => {
 			let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: null };
 			Promise.all([
-				this.getDiffTreeNameStatus(repo, 'HEAD', ''),
-				this.getDiffTreeNumStat(repo, 'HEAD', ''),
+				this.getDiffNameStatus(repo, 'HEAD', ''),
+				this.getDiffNumStat(repo, 'HEAD', ''),
 				this.getStatus(repo)
 			]).then((results) => {
 				details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
@@ -196,8 +225,8 @@ export class DataSource {
 	public getCommitComparison(repo: string, fromHash: string, toHash: string) {
 		return new Promise<GitCommitComparisonData>(resolve => {
 			Promise.all([
-				this.getDiffTreeNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-				this.getDiffTreeNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
+				this.getDiffNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
+				this.getDiffNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
 				toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null)
 			]).then((results) => {
 				resolve({
@@ -546,22 +575,51 @@ export class DataSource {
 	}
 
 
+	/* Git Action Methods - Stash */
+
+	public applyStash(repo: string, selector: string) {
+		return this.runGitCommand(['stash', 'apply', selector], repo);
+	}
+
+	public branchFromStash(repo: string, selector: string, branchName: string) {
+		return this.runGitCommand(['stash', 'branch', branchName, selector], repo);
+	}
+
+	public dropStash(repo: string, selector: string) {
+		return this.runGitCommand(['stash', 'drop', selector], repo);
+	}
+
+	public saveStash(repo: string, message: string, includeUntracked: boolean): Promise<GitCommandError> {
+		if (this.gitExecutable === null) {
+			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
+		}
+		if (compareVersions(this.gitExecutable, '2.13.2') < 0) {
+			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.13.2'));
+		}
+
+		let args = ['stash', 'push'];
+		if (includeUntracked) args.push('-u');
+		if (message !== '') args.push('-m', message);
+		return this.runGitCommand(args, repo);
+	}
+
+
 	/* Private Data Providers */
 
 	private async getConfigList(repo: string, type: 'local' | 'global' | 'system') {
 		return this.spawnGit(['--no-pager', 'config', '--list', '--' + type], repo, (stdout) => stdout.split(EOL_REGEX));
 	}
 
-	private getDiffTreeNameStatus(repo: string, fromHash: string, toHash: string) {
-		return this.execDiffTree(repo, fromHash, toHash, '--name-status');
+	private getDiffNameStatus(repo: string, fromHash: string, toHash: string) {
+		return this.execDiff(repo, fromHash, toHash, '--name-status');
 	}
 
-	private getDiffTreeNumStat(repo: string, fromHash: string, toHash: string) {
-		return this.execDiffTree(repo, fromHash, toHash, '--numstat');
+	private getDiffNumStat(repo: string, fromHash: string, toHash: string) {
+		return this.execDiff(repo, fromHash, toHash, '--numstat');
 	}
 
 	private getLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean, order: CommitOrdering) {
-		let args = ['log', '--max-count=' + num, '--format=' + this.gitLogFormat, '--' + order + '-order'];
+		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
 				args.push(branches[i]);
@@ -580,7 +638,7 @@ export class DataSource {
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(GIT_LOG_SEPARATOR);
 				if (line.length !== 6) break;
-				gitCommits.push({ hash: line[0], parentHashes: line[1].split(' '), author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
+				gitCommits.push({ hash: line[0], parents: line[1] !== '' ? line[1].split(' ') : [], author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
 			}
 			return gitCommits;
 		});
@@ -614,6 +672,19 @@ export class DataSource {
 			}
 			return refData;
 		});
+	}
+
+	private getStashes(repo: string) {
+		return this.spawnGit(['reflog', '--format=' + this.gitFormatStash, 'refs/stash', '--'], repo, (stdout) => {
+			let lines = stdout.split(EOL_REGEX);
+			let stashes: GitStash[] = [];
+			for (let i = 0; i < lines.length - 1; i++) {
+				let line = lines[i].split(GIT_LOG_SEPARATOR);
+				if (line.length !== 7 || line[1] === '') continue;
+				stashes.push({ hash: line[0], base: line[1].split(' ')[0], selector: line[2], author: line[3], email: line[4], date: parseInt(line[5]), message: line[6] });
+			}
+			return stashes;
+		}).catch(() => <GitStash[]>[]);
 	}
 
 	private getRemotes(repo: string) {
@@ -653,7 +724,7 @@ export class DataSource {
 
 	/* Private Utils */
 
-	private execDiffTree(repo: string, fromHash: string, toHash: string, arg: '--numstat' | '--name-status') {
+	private execDiff(repo: string, fromHash: string, toHash: string, arg: '--numstat' | '--name-status') {
 		let args = ['-c', 'core.quotepath=false'];
 		if (fromHash === toHash) {
 			args.push('diff-tree', arg, '-r', '-m', '--root', '--find-renames', '--diff-filter=AMDR', fromHash);

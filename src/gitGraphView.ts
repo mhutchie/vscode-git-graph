@@ -112,6 +112,18 @@ export class GitGraphView {
 						error: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
 					});
 					break;
+				case 'applyStash':
+					this.sendMessage({
+						command: 'applyStash',
+						error: await this.dataSource.applyStash(msg.repo, msg.selector)
+					});
+					break;
+				case 'branchFromStash':
+					this.sendMessage({
+						command: 'branchFromStash',
+						error: await this.dataSource.branchFromStash(msg.repo, msg.selector, msg.branchName)
+					});
+					break;
 				case 'checkoutBranch':
 					this.sendMessage({
 						command: 'checkoutBranch',
@@ -141,7 +153,7 @@ export class GitGraphView {
 					break;
 				case 'commitDetails':
 					let data = await Promise.all([
-						msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash) : this.dataSource.getUncommittedDetails(msg.repo),
+						msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.baseHash) : this.dataSource.getUncommittedDetails(msg.repo),
 						msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
 					]);
 					this.sendMessage({
@@ -208,6 +220,12 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'dropCommit',
 						error: await this.dataSource.dropCommit(msg.repo, msg.commitHash)
+					});
+					break;
+				case 'dropStash':
+					this.sendMessage({
+						command: 'dropStash',
+						error: await this.dataSource.dropStash(msg.repo, msg.selector)
 					});
 					break;
 				case 'editRemote':
@@ -335,6 +353,12 @@ export class GitGraphView {
 					break;
 				case 'saveRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
+					break;
+				case 'saveStash':
+					this.sendMessage({
+						command: 'saveStash',
+						error: await this.dataSource.saveStash(msg.repo, msg.message, msg.includeUntracked)
+					});
 					break;
 				case 'startCodeReview':
 					this.sendMessage({

@@ -45,7 +45,7 @@ export interface GitRepoSettingsRemote {
 
 export interface GitCommitNode {
 	hash: string;
-	parentHashes: string[];
+	parents: string[];
 	author: string;
 	email: string;
 	date: number;
@@ -53,6 +53,7 @@ export interface GitCommitNode {
 	heads: string[];
 	tags: GitCommitTag[];
 	remotes: GitCommitRemote[];
+	stash: string | null; // null => not a stash, otherwise => stash selector
 }
 
 export interface GitCommitTag {
@@ -67,7 +68,7 @@ export interface GitCommitRemote {
 
 export interface GitCommit {
 	hash: string;
-	parentHashes: string[];
+	parents: string[];
 	author: string;
 	email: string;
 	date: number;
@@ -89,6 +90,16 @@ export interface GitCommitDetails {
 export interface GitRef {
 	hash: string;
 	name: string;
+}
+
+export interface GitStash {
+	hash: string;
+	base: string;
+	selector: string;
+	author: string;
+	email: string;
+	date: number;
+	message: string;
 }
 
 export interface GitTagRef {
@@ -238,6 +249,27 @@ export interface ResponseAddTag {
 	error: GitCommandError;
 }
 
+export interface RequestApplyStash {
+	command: 'applyStash';
+	repo: string;
+	selector: string;
+}
+export interface ResponseApplyStash {
+	command: 'applyStash';
+	error: GitCommandError;
+}
+
+export interface RequestBranchFromStash {
+	command: 'branchFromStash';
+	repo: string;
+	selector: string;
+	branchName: string;
+}
+export interface ResponseBranchFromStash {
+	command: 'branchFromStash';
+	error: GitCommandError;
+}
+
 export interface RequestCheckoutBranch {
 	command: 'checkoutBranch';
 	repo: string;
@@ -291,6 +323,7 @@ export interface RequestCommitDetails {
 	command: 'commitDetails';
 	repo: string;
 	commitHash: string;
+	baseHash: string | null; // string => diff between baseHash and commitHash (used by stashes), null => diff of commitHash
 	avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	refresh: boolean;
 }
@@ -404,6 +437,16 @@ export interface RequestDropCommit {
 }
 export interface ResponseDropCommit {
 	command: 'dropCommit';
+	error: GitCommandError;
+}
+
+export interface RequestDropStash {
+	command: 'dropStash';
+	repo: string;
+	selector: string;
+}
+export interface ResponseDropStash {
+	command: 'dropStash';
 	error: GitCommandError;
 }
 
@@ -639,6 +682,17 @@ export interface RequestSaveRepoState {
 	state: GitRepoState;
 }
 
+export interface RequestSaveStash {
+	command: 'saveStash';
+	repo: string;
+	message: string;
+	includeUntracked: boolean;
+}
+export interface ResponseSaveStash {
+	command: 'saveStash';
+	error: GitCommandError;
+}
+
 export interface RequestStartCodeReview {
 	command: 'startCodeReview';
 	repo: string;
@@ -699,6 +753,8 @@ export interface ResponseViewScm {
 export type RequestMessage =
 	RequestAddRemote
 	| RequestAddTag
+	| RequestApplyStash
+	| RequestBranchFromStash
 	| RequestCheckoutBranch
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
@@ -714,6 +770,7 @@ export type RequestMessage =
 	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
 	| RequestDropCommit
+	| RequestDropStash
 	| RequestEditRemote
 	| RequestEndCodeReview
 	| RequestFetch
@@ -734,6 +791,7 @@ export type RequestMessage =
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSaveRepoState
+	| RequestSaveStash
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff
@@ -742,6 +800,8 @@ export type RequestMessage =
 export type ResponseMessage =
 	ResponseAddRemote
 	| ResponseAddTag
+	| ResponseApplyStash
+	| ResponseBranchFromStash
 	| ResponseCheckoutBranch
 	| ResponseCheckoutCommit
 	| ResponseCherrypickCommit
@@ -756,6 +816,7 @@ export type ResponseMessage =
 	| ResponseDeleteRemoteBranch
 	| ResponseDeleteTag
 	| ResponseDropCommit
+	| ResponseDropStash
 	| ResponseEditRemote
 	| ResponseFetch
 	| ResponseFetchAvatar
@@ -775,6 +836,7 @@ export type ResponseMessage =
 	| ResponseResetToCommit
 	| ResponseRevertCommit
 	| ResponseStartCodeReview
+	| ResponseSaveStash
 	| ResponseTagDetails
 	| ResponseViewDiff
 	| ResponseViewScm;

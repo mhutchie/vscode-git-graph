@@ -88,7 +88,7 @@ export class DataSource {
 		const config = getConfig();
 		return new Promise<GitCommitData>(resolve => {
 			Promise.all([
-				this.getLog(repo, branches, maxCommits + 1, showRemoteBranches, config.commitOrdering()),
+				this.getLog(repo, branches, maxCommits + 1, config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering()),
 				this.getRefs(repo, showRemoteBranches).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 				this.getStashes(repo),
 				this.getRemotes(repo)
@@ -618,7 +618,7 @@ export class DataSource {
 		return this.execDiff(repo, fromHash, toHash, '--numstat');
 	}
 
-	private getLog(repo: string, branches: string[] | null, num: number, showRemoteBranches: boolean, order: CommitOrdering) {
+	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, order: CommitOrdering) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
@@ -626,8 +626,9 @@ export class DataSource {
 			}
 		} else {
 			// Show All
-			args.push('--branches', '--tags');
-			if (showRemoteBranches) args.push('--remotes');
+			args.push('--branches');
+			if (includeTags) args.push('--tags');
+			if (includeRemotes) args.push('--remotes');
 			args.push('HEAD');
 		}
 		args.push('--');

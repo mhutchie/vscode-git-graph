@@ -353,6 +353,11 @@
 					"default": true,
 					"description": "Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead."
 				},
+				"git-graph.showCommitsOnlyReferencedByTags": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show commits that are only referenced by tags in Git Graph."
+				},
 				"git-graph.showCurrentBranchByDefault": {
 					"type": "boolean",
 					"default": false,

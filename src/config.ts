@@ -140,6 +140,10 @@ class Config {
 		return this.config.get('retainContextWhenHidden', false);
 	}
 
+	public showCommitsOnlyReferencedByTags() {
+		return !!this.config.get('showCommitsOnlyReferencedByTags', true);
+	}
+
 	public showCurrentBranchByDefault() {
 		return this.config.get('showCurrentBranchByDefault', false);
 	}

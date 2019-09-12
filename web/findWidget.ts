@@ -167,7 +167,7 @@ class FindWidget {
 				this.widgetElem.setAttribute(ATTR_ERROR, e.message);
 			}
 			if (findPattern !== null && findGlobalPattern !== null) {
-				let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, zeroLengthMatch = false;
+				let commitElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, zeroLengthMatch = false;
 
 				// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
 				for (let i = 0; i < this.commits.length; i++) {
@@ -179,15 +179,17 @@ class FindWidget {
 						|| branchLabels.heads.some(head => findPattern!.test(head.name) || head.remotes.some(remote => findPattern!.test(remote)))
 						|| branchLabels.remotes.some(remote => findPattern!.test(remote.name))
 						|| commit.tags.some(tag => findPattern!.test(tag.name))
-						|| (colVisibility.date && findPattern.test(getCommitDate(commit.date).value)))) {
+						|| (colVisibility.date && findPattern.test(getCommitDate(commit.date).value))
+						|| (commit.stash !== null && findPattern.test(commit.stash)))) {
 
-						while (j < commits.length && commits[j].dataset.hash! !== commit.hash) j++;
-						if (j === commits.length) continue;
+						let idStr = i.toString();
+						while (j < commitElems.length && commitElems[j].dataset.id !== idStr) j++;
+						if (j === commitElems.length) continue;
 
-						this.matches.push({ hash: commit.hash, elem: commits[j] });
+						this.matches.push({ hash: commit.hash, elem: commitElems[j] });
 
 						// Highlight matches
-						let textElems = getChildNodesWithTextContent(commits[j]), textElem;
+						let textElems = getChildNodesWithTextContent(commitElems[j]), textElem;
 						for (let k = 0; k < textElems.length; k++) {
 							textElem = textElems[k];
 							let matchStart = 0, matchEnd = 0, text = textElem.textContent!, match: RegExpExecArray | null;

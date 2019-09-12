@@ -487,7 +487,7 @@ class GitGraphView {
 			}
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
-			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parents.length > 1 && commit.stash === null ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-hash="' + commit.hash + '" data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
+			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parents.length > 1 && commit.stash === null ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
 				(colVisibility.date ? '<td class="text" title="' + date.title + '">' + date.value + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
@@ -510,17 +510,11 @@ class GitGraphView {
 		}
 
 		if (this.expandedCommit !== null) {
-			let expandedCommit = this.expandedCommit, elem = null, compareWithElem = null, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
-			for (let i = 0; i < elems.length; i++) {
-				if (expandedCommit.hash === elems[i].dataset.hash || expandedCommit.compareWithHash === elems[i].dataset.hash) {
-					if (expandedCommit.hash === elems[i].dataset.hash) {
-						elem = elems[i];
-					} else {
-						compareWithElem = elems[i];
-					}
-					if (elem !== null && (expandedCommit.compareWithHash === null || compareWithElem !== null)) break;
-				}
-			}
+			let expandedCommit = this.expandedCommit, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+
+			let elem = this.findCommitElemWithId(elems, this.getCommitId(expandedCommit.hash));
+			let compareWithElem = expandedCommit.compareWithHash !== null ? this.findCommitElemWithId(elems, this.getCommitId(expandedCommit.compareWithHash)) : null;
+
 			if (elem === null || (expandedCommit.compareWithHash !== null && compareWithElem === null)) {
 				this.closeCommitDetails(false);
 				this.saveState();
@@ -552,7 +546,7 @@ class GitGraphView {
 		addListenerToClass('commit', 'contextmenu', (e: Event) => {
 			e.stopPropagation();
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
-			let commit = this.getElementsCommit(sourceElem);
+			let commit = this.getCommitOfElement(sourceElem);
 			if (commit === null) return;
 			let hash = commit.hash, menu: ContextMenuElement[];
 
@@ -716,10 +710,12 @@ class GitGraphView {
 		addListenerToClass('commit', 'click', (e: Event) => {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
 			if (this.expandedCommit !== null) {
-				if (this.expandedCommit.hash === sourceElem.dataset.hash!) {
+				let commit = this.getCommitOfElement(sourceElem);
+				if (commit === null) return;
+				if (this.expandedCommit.hash === commit.hash) {
 					this.closeCommitDetails(true);
 				} else if ((<MouseEvent>e).ctrlKey || (<MouseEvent>e).metaKey) {
-					if (this.expandedCommit.compareWithHash === sourceElem.dataset.hash!) {
+					if (this.expandedCommit.compareWithHash === commit.hash) {
 						this.closeCommitComparison(true);
 					} else {
 						this.loadCommitComparison(sourceElem);
@@ -734,11 +730,11 @@ class GitGraphView {
 		addListenerToClass('gitRef', 'contextmenu', (e: Event) => {
 			e.stopPropagation();
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!, menu: ContextMenuElement[];
+			let commitElem = <HTMLElement>sourceElem.closest('.commit')!;
+			const commit = this.getCommitOfElement(commitElem);
+			if (commit === null) return;
 
 			if (sourceElem.classList.contains(CLASS_REF_STASH)) {
-				let commitElem = <HTMLElement>sourceElem.closest('.commit')!;
-				let commit = this.getElementsCommit(commitElem);
-				if (commit === null) return;
 				menu = this.getStashContextMenu(commit.hash, commit.stash!, commitElem);
 			} else {
 				let refName = unescapeHtml(sourceElem.dataset.name!), copyType: string;
@@ -748,8 +744,7 @@ class GitGraphView {
 						menu.push({
 							title: 'View Details',
 							onClick: () => {
-								let commitElem = <HTMLElement>sourceElem.closest('.commit')!;
-								runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: refName, commitHash: commitElem.dataset.hash! }, 'Retrieving Tag Details');
+								runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: refName, commitHash: commit.hash }, 'Retrieving Tag Details');
 							}
 						});
 					}
@@ -976,9 +971,22 @@ class GitGraphView {
 		];
 	}
 
-	private getElementsCommit(elem: HTMLElement) {
+	private getCommitOfElement(elem: HTMLElement) {
 		let id = parseInt(elem.dataset.id!);
 		return id < this.commits.length ? this.commits[id] : null;
+	}
+
+	private findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number | null) {
+		if (id === null) return null;
+		let findIdStr = id.toString();
+		for (let i = 0; i < elems.length; i++) {
+			if (findIdStr === elems[i].dataset.id) return elems[i];
+		}
+		return null;
+	}
+
+	private getCommitId(hash: string) {
+		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
 	}
 
 	/* Actions */
@@ -1167,15 +1175,12 @@ class GitGraphView {
 	}
 
 	public scrollToCommit(hash: string, alwaysCenterCommit: boolean) {
-		let commits = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
-		for (let i = 0; i < commits.length; i++) {
-			if (commits[i].dataset.hash! === hash) {
-				let elemTop = this.controlsElem.clientHeight + commits[i].offsetTop;
-				if (alwaysCenterCommit || elemTop - 8 < this.viewElem.scrollTop || elemTop + 32 - this.viewElem.clientHeight > this.viewElem.scrollTop) {
-					this.viewElem.scroll(0, this.controlsElem.clientHeight + commits[i].offsetTop + 12 - this.viewElem.clientHeight / 2);
-				}
-				break;
-			}
+		let elem = this.findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.getCommitId(hash));
+		if (elem === null) return;
+
+		let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
+		if (alwaysCenterCommit || elemTop - 8 < this.viewElem.scrollTop || elemTop + 32 - this.viewElem.clientHeight > this.viewElem.scrollTop) {
+			this.viewElem.scroll(0, this.controlsElem.clientHeight + elem.offsetTop + 12 - this.viewElem.clientHeight / 2);
 		}
 	}
 
@@ -1263,13 +1268,8 @@ class GitGraphView {
 						}
 						if (newHashIndex > -1) {
 							e.preventDefault();
-							let hash = this.commits[newHashIndex].hash, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
-							for (let i = 0; i < elems.length; i++) {
-								if (hash === elems[i].dataset.hash) {
-									this.loadCommitDetails(elems[i]);
-									break;
-								}
-							}
+							let elem = this.findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), newHashIndex);
+							if (elem !== null) this.loadCommitDetails(elem);
 						}
 					}
 				}
@@ -1282,9 +1282,12 @@ class GitGraphView {
 
 	private loadCommitDetails(sourceElem: HTMLElement) {
 		this.closeCommitDetails(true);
+		let commit = this.getCommitOfElement(sourceElem);
+		if (commit === null) return;
+
 		this.expandedCommit = {
 			id: parseInt(sourceElem.dataset.id!),
-			hash: sourceElem.dataset.hash!,
+			hash: commit.hash,
 			srcElem: sourceElem,
 			commitDetails: null,
 			fileChanges: null,
@@ -1375,9 +1378,10 @@ class GitGraphView {
 
 	private loadCommitComparison(compareWithSrcElem: HTMLElement) {
 		let expandedCommit = this.expandedCommit;
-		if (expandedCommit !== null && expandedCommit.srcElem !== null) {
+		let commit = this.getCommitOfElement(compareWithSrcElem);
+		if (expandedCommit !== null && commit !== null && expandedCommit.srcElem !== null) {
 			this.closeCommitComparison(false);
-			expandedCommit.compareWithHash = compareWithSrcElem.dataset.hash!;
+			expandedCommit.compareWithHash = commit.hash;
 			expandedCommit.compareWithSrcElem = compareWithSrcElem;
 			expandedCommit.fileChanges = null;
 			expandedCommit.fileTree = null;

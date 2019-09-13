@@ -166,19 +166,19 @@ class Dropdown {
 	private selectOption(option: number) {
 		// Note: Show All is always the first option (0 index) when multiple selected items are allowed
 		let change = false;
-		if (this.doubleClickTimeout !== null) {
-			if (this.lastClicked === option) {
-				// Double click
-				if (this.multipleAllowed && option === 0) {
-					this.numSelected = 1;
-					for (let i = 1; i < this.optionsSelected.length; i++) {
-						this.optionsSelected[i] = !this.optionsSelected[i];
-						if (this.optionsSelected[i]) this.numSelected++;
-					}
-					change = true;
+		let doubleClick = this.doubleClickTimeout !== null && this.lastClicked === option;
+		if (this.doubleClickTimeout !== null) this.clearDoubleClickTimeout();
+
+		if (doubleClick) {
+			// Double click
+			if (this.multipleAllowed && option === 0) {
+				this.numSelected = 1;
+				for (let i = 1; i < this.optionsSelected.length; i++) {
+					this.optionsSelected[i] = !this.optionsSelected[i];
+					if (this.optionsSelected[i]) this.numSelected++;
 				}
+				change = true;
 			}
-			this.clearDoubleClickTimeout();
 		} else {
 			// Single Click
 			if (this.multipleAllowed) {

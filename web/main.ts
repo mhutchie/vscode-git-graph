@@ -929,7 +929,7 @@ class GitGraphView {
 			{
 				title: 'Apply Stash' + ELLIPSIS,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>', () => {
+					dialog.showConfirmation('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
 						runAction({ command: 'applyStash', repo: this.currentRepo, selector: selector }, 'Applying Stash');
 					}, commitElem);
 				}
@@ -945,7 +945,7 @@ class GitGraphView {
 			{
 				title: 'Drop Stash' + ELLIPSIS,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>', () => {
+					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
 						runAction({ command: 'dropStash', repo: this.currentRepo, selector: selector }, 'Dropping Stash');
 					}, commitElem);
 				}
@@ -1542,15 +1542,15 @@ class GitGraphView {
 				let sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile')!;
 				if (!sourceElem.classList.contains('gitDiffPossible')) return;
 				let commit = this.commits[this.commitLookup[expandedCommit.hash]], fromHash: string, toHash: string;
-				if (commit.stash !== null) {
-					// Stash Commit
-					fromHash = commit.parents[0];
-					toHash = expandedCommit.hash;
-				} else if (expandedCommit.compareWithHash !== null) {
+				if (expandedCommit.compareWithHash !== null) {
 					// Commit Comparison
 					let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash);
 					fromHash = commitOrder.from;
 					toHash = commitOrder.to;
+				} else if (commit.stash !== null) {
+					// Stash Commit
+					fromHash = commit.parents[0];
+					toHash = expandedCommit.hash;
 				} else {
 					// Single Commit
 					fromHash = expandedCommit.hash;

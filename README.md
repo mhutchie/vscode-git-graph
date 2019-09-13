@@ -12,13 +12,13 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Local Refs: Heads, Tags & Remotes
         * Uncommitted Changes
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
-        * Create, Checkout, Rename, Delete, Merge, Push, Pull & Rebase branches
-        * Add, Delete & Push tags
-        * Checkout, Cherry Pick, Merge & Revert commits
-        * Reset current branch to commit
-        * Reset & Clean uncommitted changes
+        * Create, Checkout, Rename, Delete, Merge, Push, Pull, Rebase & Reset Branches
+        * Add, Delete & Push Tags
+        * Checkout, Cherry Pick, Drop, Merge & Revert Commits
+        * Clean, Reset & Stash Uncommitted Changes
+        * Apply, Create Branch From & Drop Stashes
         * View annotated tag details (name, email, date and message)
-        * Copy commit hashes, tag names & branch names to the clipboard
+        * Copy commit hashes, and branch, stash & tag names to the clipboard
     * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
         * View the Visual Studio Code Diff of any file change by clicking on it.
         * Open the current version of any file that was affected in the commit.
@@ -82,6 +82,7 @@ A summary of the Git Graph extension settings are:
 * **Open To The Repo Of The Active Text Editor Document**: Open Git Graph to the repository containing the active Text Editor document. Default: false (disabled)
 * **Reference Label Alignment**: Specifies how branch and tag reference labels are aligned for each commit.
 * **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead. Default: true (enabled)
+* **Show Commits Only Referenced By Tags**: Show commits that are only referenced by tags in Git Graph. Default: true (enabled)
 * **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * **Show Status Bar Item**: Show a Status Bar item which opens Git Graph when clicked.
 * **Show Uncommitted Changes**: Show uncommitted changes (set to false to decrease load time on large repositories).

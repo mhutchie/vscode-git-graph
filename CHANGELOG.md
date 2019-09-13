@@ -1,5 +1,24 @@
 # Change Log
 
+## 1.15.0 - 2019-09-13
+* #48 Support for Stashes
+    * Show Stashes on the Git Graph View.
+    * Stash Context Menu:
+        * Apply Stash...
+        * Create Branch from Stash...
+        * Drop Stash...
+        * Copy Stash Name to Clipboard
+        * Copy Stash Hash to Clipboard
+    * New "Stash uncommitted changes..." action on the Uncommitted Changes Context Menu.
+    * Commit Details & Comparison View support for Stashes.
+* #172 Prevent Visual Studio Code automatically requesting package.json files from Git Graph in the background, when README.md file diffs are opened from the Commit Details & Comparison Views.
+* #173 Use .gitmodules (if configured) to automatically add Git submodules to Git Graph.
+* #174 New "Drop..." action on the commit context menu to drop a single commit. This is only available on commits without branching or merging in their children.
+* #175 Double clicking "Show All" in the Branches dropdown now selects/unselects all branches. This makes it faster to select all but one or two branches. Thanks [Thibault Matot (@thmatot)](https://github.com/thmatot)!
+* #177 Display path hints if necessary in the "Repo" dropdown to differentiate multiple repositories that have the same name.
+* #178 New setting `git-graph.showCommitsOnlyReferencedByTags` specifies whether commits that are only referenced by tags should be shown in Git Graph. Default: true (enabled)
+* Various code, performance, and UI improvments.
+
 ## 1.14.0 - 2019-09-02
 * Commit Details & Comparison View Enhancements:
     * #122 Code Review - Keep track of which files you have reviewed in the Commit Details & Comparison Views.

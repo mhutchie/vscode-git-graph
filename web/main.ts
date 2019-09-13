@@ -131,13 +131,8 @@ class GitGraphView {
 			newRepo = this.currentRepo;
 		}
 
-		let options = [], repoComps, i;
-		for (i = 0; i < repoPaths.length; i++) {
-			repoComps = repoPaths[i].split('/');
-			options.push({ name: repoComps[repoComps.length - 1], value: repoPaths[i] });
-		}
 		document.getElementById('repoControl')!.style.display = repoPaths.length > 1 ? 'inline' : 'none';
-		this.repoDropdown.setOptions(options, [newRepo]);
+		this.repoDropdown.setOptions(getRepoDropdownOptions(repoPaths), [newRepo]);
 
 		if (this.currentRepo !== newRepo) {
 			this.loadRepo(newRepo);
@@ -2235,6 +2230,90 @@ function haveFilesChanged(oldFiles: GG.GitFileChange[] | null, newFiles: GG.GitF
 
 function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
+}
+
+function getRepoDropdownOptions(repos: string[]) {
+	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
+	const resolveAmbiguous = (indexes: number[]) => {
+		// Find ambiguous names within indexes
+		let firstOccurance: { [name: string]: number } = {}, ambiguous: { [name: string]: number[] } = {};
+		for (let i = 0; i < indexes.length; i++) {
+			let name = distinctNames[indexes[i]];
+			if (typeof firstOccurance[name] === 'number') {
+				// name is ambiguous
+				if (typeof ambiguous[name] === 'undefined') {
+					// initalise ambiguous array with the first occurance
+					ambiguous[name] = [firstOccurance[name]];
+				}
+				ambiguous[name].push(indexes[i]); // append current ambiguous index
+			} else {
+				firstOccurance[name] = indexes[i]; // set the first occurance of the name
+			}
+		}
+
+		let ambiguousNames = Object.keys(ambiguous);
+		for (let i = 0; i < ambiguousNames.length; i++) {
+			// For each ambiguous name, resolve the ambiguous indexes
+			let ambiguousIndexes = ambiguous[ambiguousNames[i]], retestIndexes = [];
+			for (let j = 0; j < ambiguousIndexes.length; j++) {
+				let ambiguousIndex = ambiguousIndexes[j];
+				let nextSep = paths[ambiguousIndex].lastIndexOf('/', paths[ambiguousIndex].length - distinctNames[ambiguousIndex].length - 2);
+				if (firstSep[ambiguousIndex] < nextSep) {
+					// prepend the addition path and retest
+					distinctNames[ambiguousIndex] = paths[ambiguousIndex].substring(nextSep + 1);
+					retestIndexes.push(ambiguousIndex);
+				} else {
+					distinctNames[ambiguousIndex] = paths[ambiguousIndex];
+				}
+			}
+			if (retestIndexes.length > 1) {
+				// If there are 2 or more indexes that may be ambiguous
+				resolveAmbiguous(retestIndexes);
+			}
+		}
+	};
+
+	// Initialise recursion
+	let indexes = [];
+	for (let i = 0; i < repos.length; i++) {
+		firstSep.push(repos[i].indexOf('/'));
+		if (firstSep[i] === repos[i].length - 1 || firstSep[i] === -1) {
+			// Path has no slashes, or a single trailing slash ==> use the path as the name
+			paths.push(repos[i]);
+			names.push(repos[i]);
+			distinctNames.push(repos[i]);
+		} else {
+			paths.push(repos[i].endsWith('/') ? repos[i].substring(0, repos[i].length - 1) : repos[i]); // Remove trailing slash if it exists
+			let name = paths[i].substring(paths[i].lastIndexOf('/') + 1);
+			names.push(name);
+			distinctNames.push(name);
+			indexes.push(i);
+		}
+	}
+	resolveAmbiguous(indexes);
+
+	let options: DropdownOption[] = [];
+	for (let i = 0; i < repos.length; i++) {
+		let hint;
+		if (names[i] === distinctNames[i]) {
+			// Name is distinct, no hint needed
+			hint = '';
+		} else {
+			// Hint path is the prefix of the distintName before the common suffix with name
+			let hintPath = distinctNames[i].substring(0, distinctNames[i].length - names[i].length - 1);
+
+			// Keep two informative directories
+			let hintComps = hintPath.split('/');
+			let keepDirs = hintComps[0] !== '' ? 2 : 3;
+			if (hintComps.length > keepDirs) hintComps.splice(keepDirs, hintComps.length - keepDirs, '...');
+
+			// Construct the hint
+			hint = (distinctNames[i] !== paths[i] ? '.../' : '') + hintComps.join('/');
+		}
+		options.push({ name: names[i], value: repos[i], hint: hint });
+	}
+
+	return options;
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {

@@ -78,6 +78,10 @@
 	background-color:var(--vscode-menu-selectionBackground);
 	color:var(--vscode-menu-selectionForeground);
 }
+.dropdownOptionHint{
+	opacity:0.6;
+	margin-left:8px;
+}
 .dropdownOptionInfo{
 	position:absolute;
 	width:14px;

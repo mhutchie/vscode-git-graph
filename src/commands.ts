@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RepoManager } from './repoManager';
-import { getPathFromUri, GitExecutable, isPathInWorkspace, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { getPathFromUri, getRepoName, GitExecutable, isPathInWorkspace, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
 
 export function addGitRepository(gitExecutable: GitExecutable | null, repoManager: RepoManager) {
@@ -13,7 +13,7 @@ export function addGitRepository(gitExecutable: GitExecutable | null, repoManage
 		if (uris && uris.length > 0) {
 			let path = getPathFromUri(uris[0]);
 			if (isPathInWorkspace(path)) {
-				repoManager.registerRepo(path, false, false).then(status => {
+				repoManager.registerRepo(path, false).then(status => {
 					if (status.error === null) {
 						vscode.window.showInformationMessage('The repository "' + status.root! + '" was added to Git Graph.');
 					} else {
@@ -34,10 +34,7 @@ export function removeGitRepositoy(gitExecutable: GitExecutable | null, repoMana
 	}
 
 	let repoPaths = Object.keys(repoManager.getRepos());
-	let items: vscode.QuickPickItem[] = repoPaths.map(path => ({
-		label: path.substring(path.lastIndexOf('/') + 1),
-		description: path
-	}));
+	let items: vscode.QuickPickItem[] = repoPaths.map(path => ({ label: getRepoName(path), description: path }));
 
 	vscode.window.showQuickPick(items, { canPickMany: false, placeHolder: 'Select a repository to remove from Git Graph' }).then((item) => {
 		if (item && item.description !== undefined) {

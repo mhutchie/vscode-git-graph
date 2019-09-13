@@ -6,7 +6,7 @@ import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
-import { evalPromises, getPathFromUri } from './utils';
+import { evalPromises, getPathFromUri, pathWithTrailingSlash } from './utils';
 
 export class RepoManager {
 	private readonly dataSource: DataSource;
@@ -98,11 +98,12 @@ export class RepoManager {
 			for (let i = 0; i < workspaceFolders.length; i++) {
 				path = getPathFromUri(workspaceFolders[i].uri);
 				rootsExact.push(path);
-				rootsFolder.push(path + '/');
+				rootsFolder.push(pathWithTrailingSlash(path));
 			}
 		}
 		for (let i = 0; i < repoPaths.length; i++) {
-			if (rootsExact.indexOf(repoPaths[i]) === -1 && !rootsFolder.find(root => repoPaths[i].startsWith(root)) && !rootsExact.find(root => root.startsWith(repoPaths[i] + '/'))) {
+			let repoPathFolder = pathWithTrailingSlash(repoPaths[i]);
+			if (rootsExact.indexOf(repoPaths[i]) === -1 && !rootsFolder.find(root => repoPaths[i].startsWith(root)) && !rootsExact.find(root => root.startsWith(repoPathFolder))) {
 				this.removeRepo(repoPaths[i]);
 			}
 		}
@@ -111,7 +112,7 @@ export class RepoManager {
 	// path: the path of the repo being registered
 	// expandExistingRepos: if true, in the event that a known repo is within the repo being registered, remove it (excluding subrepos)
 	// loadRepo: if true and the Git Graph view is visible, force it to be loaded with the repo that is being registered
-	public registerRepo(path: string, expandExistingRepos: boolean, loadRepo: boolean) {
+	public registerRepo(path: string, loadRepo: boolean) {
 		return new Promise<{ root: string | null, error: string | null }>(async resolve => {
 			let root = await this.dataSource.repoRoot(path);
 			if (root === null) {
@@ -119,13 +120,6 @@ export class RepoManager {
 			} else if (typeof this.repos[root] !== 'undefined') {
 				resolve({ root: null, error: 'The folder "' + path + '" is contained within the known repository "' + root + '".' });
 			} else {
-				if (expandExistingRepos) {
-					let reposInFolder = this.getReposInFolder(root);
-					for (let i = 0; i < reposInFolder.length; i++) {
-						// Remove repos within the repo being registered, unless they are a subrepo of a currently known repo
-						if (reposInFolder.findIndex(knownRepo => reposInFolder[i].startsWith(knownRepo + '/')) === -1) this.removeRepo(reposInFolder[i]);
-					}
-				}
 				if (this.ignoredRepos.includes(root)) {
 					this.ignoredRepos.splice(this.ignoredRepos.indexOf(root), 1);
 					this.extensionState.setIgnoredRepos(this.ignoredRepos);
@@ -163,13 +157,13 @@ export class RepoManager {
 	public getRepoContainingFile(path: string) {
 		let repoPaths = Object.keys(this.repos), repo = null;
 		for (let i = 0; i < repoPaths.length; i++) {
-			if (path.startsWith(repoPaths[i] + '/') && (repo === null || repo.length < repoPaths[i].length)) repo = repoPaths[i];
+			if (path.startsWith(pathWithTrailingSlash(repoPaths[i])) && (repo === null || repo.length < repoPaths[i].length)) repo = repoPaths[i];
 		}
 		return repo;
 	}
 
 	public getReposInFolder(path: string) {
-		let pathFolder = path + '/', repoPaths = Object.keys(this.repos), reposInFolder: string[] = [];
+		let pathFolder = pathWithTrailingSlash(path), repoPaths = Object.keys(this.repos), reposInFolder: string[] = [];
 		for (let i = 0; i < repoPaths.length; i++) {
 			if (repoPaths[i] === path || repoPaths[i].startsWith(pathFolder)) reposInFolder.push(repoPaths[i]);
 		}
@@ -209,7 +203,7 @@ export class RepoManager {
 	private isDirectoryWithinRepos(path: string) {
 		let repoPaths = Object.keys(this.repos);
 		for (let i = 0; i < repoPaths.length; i++) {
-			if (path === repoPaths[i] || path.startsWith(repoPaths[i] + '/')) return true;
+			if (path === repoPaths[i] || path.startsWith(pathWithTrailingSlash(repoPaths[i]))) return true;
 		}
 		return false;
 	}

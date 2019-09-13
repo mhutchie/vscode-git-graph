@@ -42,7 +42,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				// If command is run from the SCP menu, load the specific repo
 				loadRepo = getPathFromUri(args.rootUri);
 				if (!repoManager.isKnownRepo(loadRepo)) {
-					repoManager.registerRepo(loadRepo, true, true).then(status => {
+					repoManager.registerRepo(loadRepo, true).then(status => {
 						GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, status.root);
 					});
 					return;

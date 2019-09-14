@@ -65,6 +65,9 @@ class Config {
 	}
 
 	public dialogDefaults(): DialogDefaults {
+		let resetCommitMode = this.config.get<string>('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
+		let resetUncommittedMode = this.config.get<string>('dialog.resetUncommittedChanges.mode', 'Mixed');
+
 		return {
 			addTag: {
 				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? 'lightweight' : 'annotated'
@@ -79,6 +82,15 @@ class Config {
 			rebase: {
 				ignoreDate: !!this.config.get('dialog.rebase.ignoreDate', true),
 				interactive: !!this.config.get('dialog.rebase.launchInteractiveRebase', false)
+			},
+			resetCommit: {
+				mode: resetCommitMode === 'Soft' ? 'soft' : (resetCommitMode === 'Hard' ? 'hard' : 'mixed')
+			},
+			resetUncommitted: {
+				mode: resetUncommittedMode === 'Hard' ? 'hard' : 'mixed'
+			},
+			stashUncommittedChanges: {
+				includeUntracked: !!this.config.get('dialog.stashUncommittedChanges.includeUntracked', true)
 			}
 		};
 	}

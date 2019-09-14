@@ -218,6 +218,15 @@ export interface DialogDefaults {
 		ignoreDate: boolean,
 		interactive: boolean
 	};
+	resetCommit: {
+		mode: 'soft' | 'mixed' | 'hard'
+	};
+	resetUncommitted: {
+		mode: 'mixed' | 'hard'
+	};
+	stashUncommittedChanges: {
+		includeUntracked: boolean
+	};
 }
 
 

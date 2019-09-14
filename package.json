@@ -238,6 +238,39 @@
 					"default": false,
 					"description": "Default state of the \"Launch Interactive Rebase in new Terminal\" checkbox."
 				},
+				"git-graph.dialog.resetCurrentBranchToCommit.mode": {
+					"type": "string",
+					"enum": [
+						"Soft",
+						"Mixed",
+						"Hard"
+					],
+					"enumDescriptions": [
+						"Soft - Keep all changes, but reset head",
+						"Mixed - Keep working tree, but reset index",
+						"Hard - Discard all changes"
+					],
+					"default": "Mixed",
+					"description": "Default mode to be used for the reset action."
+				},
+				"git-graph.dialog.resetUncommittedChanges.mode": {
+					"type": "string",
+					"enum": [
+						"Mixed",
+						"Hard"
+					],
+					"enumDescriptions": [
+						"Mixed - Keep working tree, but reset index",
+						"Hard - Discard all changes"
+					],
+					"default": "Mixed",
+					"description": "Default mode to be used for the reset action."
+				},
+				"git-graph.dialog.stashUncommittedChanges.includeUntracked": {
+					"type": "boolean",
+					"default": true,
+					"description": "Default state of the \"Include Untracked\" checkbox."
+				},
 				"git-graph.fetchAndPrune": {
 					"type": "boolean",
 					"default": false,

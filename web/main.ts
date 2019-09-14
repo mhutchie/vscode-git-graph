@@ -552,7 +552,7 @@ class GitGraphView {
 						onClick: () => {
 							dialog.showForm('Are you sure you want to stash the <b>uncommitted changes</b>?', [
 								{ type: 'text', name: 'Message', default: '', placeholder: 'Optional' },
-								{ type: 'checkbox', name: 'Include Untracked', value: true }
+								{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked }
 							], 'Yes, stash', (values) => {
 								runAction({ command: 'saveStash', repo: this.currentRepo, message: values[0], includeUntracked: values[1] === 'checked' }, 'Stashing uncommitted changes');
 							}, sourceElem);
@@ -562,7 +562,7 @@ class GitGraphView {
 					{
 						title: 'Reset uncommitted changes' + ELLIPSIS,
 						onClick: () => {
-							dialog.showSelect('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', 'mixed', [
+							dialog.showSelect('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', this.config.dialogDefaults.resetUncommitted.mode, [
 								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 								{ name: 'Hard - Discard all changes', value: 'hard' }
 							], 'Yes, reset', (mode) => {
@@ -682,7 +682,7 @@ class GitGraphView {
 					{
 						title: 'Reset current branch to this Commit' + ELLIPSIS,
 						onClick: () => {
-							dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'mixed', [
+							dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', this.config.dialogDefaults.resetCommit.mode, [
 								{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
 								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
 								{ name: 'Hard - Discard all changes', value: 'hard' }

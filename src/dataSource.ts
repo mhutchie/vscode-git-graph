@@ -589,6 +589,10 @@ export class DataSource {
 		return this.runGitCommand(['stash', 'drop', selector], repo);
 	}
 
+	public popStash(repo: string, selector: string) {
+		return this.runGitCommand(['stash', 'pop', selector], repo);
+	}
+
 	public saveStash(repo: string, message: string, includeUntracked: boolean): Promise<GitCommandError> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);

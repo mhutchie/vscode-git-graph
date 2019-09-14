@@ -943,6 +943,14 @@ class GitGraphView {
 				}
 			},
 			{
+				title: 'Pop Stash' + ELLIPSIS,
+				onClick: () => {
+					dialog.showConfirmation('Are you sure you want to pop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
+						runAction({ command: 'popStash', repo: this.currentRepo, selector: selector }, 'Popping Stash');
+					}, commitElem);
+				}
+			},
+			{
 				title: 'Drop Stash' + ELLIPSIS,
 				onClick: () => {
 					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
@@ -1947,6 +1955,9 @@ window.addEventListener('load', () => {
 				if (msg.error !== null) {
 					dialog.showError('Unable to Open File', msg.error, null, null, null);
 				}
+				break;
+			case 'popStash':
+				refreshOrDisplayError(msg.error, 'Unable to Pop Stash');
 				break;
 			case 'pruneRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Prune Remote');

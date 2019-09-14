@@ -573,6 +573,16 @@ export interface ResponseOpenFile {
 	error: GitCommandError;
 }
 
+export interface RequestPopStash {
+	command: 'popStash';
+	repo: string;
+	selector: string;
+}
+export interface ResponsePopStash {
+	command: 'popStash';
+	error: GitCommandError;
+}
+
 export interface RequestPruneRemote {
 	command: 'pruneRemote';
 	repo: string;
@@ -781,6 +791,7 @@ export type RequestMessage =
 	| RequestLoadRepos
 	| RequestMerge
 	| RequestOpenFile
+	| RequestPopStash
 	| RequestPruneRemote
 	| RequestPullBranch
 	| RequestPushBranch
@@ -826,6 +837,7 @@ export type ResponseMessage =
 	| ResponseLoadRepos
 	| ResponseMerge
 	| ResponseOpenFile
+	| ResponsePopStash
 	| ResponsePruneRemote
 	| ResponsePullBranch
 	| ResponsePushBranch

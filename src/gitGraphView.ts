@@ -298,6 +298,12 @@ export class GitGraphView {
 						error: await openFile(msg.repo, msg.filePath)
 					});
 					break;
+				case 'popStash':
+					this.sendMessage({
+						command: 'popStash',
+						error: await this.dataSource.popStash(msg.repo, msg.selector)
+					});
+					break;
 				case 'pruneRemote':
 					this.sendMessage({
 						command: 'pruneRemote',

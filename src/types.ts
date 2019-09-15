@@ -129,29 +129,6 @@ export interface GitUnsavedChanges {
 	changes: number;
 }
 
-export interface GitGraphViewState {
-	readonly autoCenterCommitDetailsView: boolean;
-	readonly combineLocalAndRemoteBranchLabels: boolean;
-	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
-	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
-	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
-	readonly dateFormat: DateFormat;
-	readonly defaultColumnVisibility: DefaultColumnVisibility;
-	readonly dialogDefaults: DialogDefaults;
-	readonly fetchAndPrune: boolean;
-	readonly fetchAvatars: boolean;
-	readonly graphColours: string[];
-	readonly graphStyle: GraphStyle;
-	readonly initialLoadCommits: number;
-	readonly lastActiveRepo: string | null;
-	readonly loadMoreCommits: number;
-	readonly loadRepo: string | null;
-	readonly muteMergeCommits: boolean;
-	readonly refLabelAlignment: RefLabelAlignment;
-	readonly repos: GitRepoSet;
-	readonly showCurrentBranchByDefault: boolean;
-}
-
 export interface GitFileChange {
 	oldFilePath: string;
 	newFilePath: string;
@@ -178,6 +155,38 @@ export type BranchOrCommit = 'Branch' | 'Commit';
 export type DiffSide = 'old' | 'new';
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
+
+
+/* Git Graph View Interfaces */
+
+export interface GitGraphViewInitialState {
+	readonly config: GitGraphViewConfig;
+	readonly lastActiveRepo: string | null;
+	readonly loadRepo: string | null;
+	readonly repos: GitRepoSet;
+}
+
+export interface GitGraphViewConfig {
+	readonly autoCenterCommitDetailsView: boolean;
+	readonly branchLabelsAlignedToGraph: boolean;
+	readonly combineLocalAndRemoteBranchLabels: boolean;
+	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
+	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
+	readonly dateFormat: DateFormat;
+	readonly defaultColumnVisibility: DefaultColumnVisibility;
+	readonly dialogDefaults: DialogDefaults;
+	readonly fetchAndPrune: boolean;
+	readonly fetchAvatars: boolean;
+	readonly graphColours: string[];
+	readonly graphStyle: GraphStyle;
+	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+	readonly initialLoadCommits: number;
+	readonly loadMoreCommits: number;
+	readonly muteMergeCommits: boolean;
+	readonly showCurrentBranchByDefault: boolean;
+	readonly tagLabelsOnRight: boolean;
+}
 
 
 /* Extension Settings Types */

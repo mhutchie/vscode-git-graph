@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { GitGraphViewState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
+import { GitGraphViewInitialState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -424,32 +424,37 @@ export class GitGraphView {
 
 	private getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
-		const viewState: GitGraphViewState = {
-			autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
-			combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
-			commitDetailsViewLocation: config.commitDetailsViewLocation(),
-			customBranchGlobPatterns: config.customBranchGlobPatterns(),
-			customEmojiShortcodeMappings: config.customEmojiShortcodeMappings(),
-			dateFormat: config.dateFormat(),
-			defaultColumnVisibility: config.defaultColumnVisibility(),
-			dialogDefaults: config.dialogDefaults(),
-			fetchAndPrune: config.fetchAndPrune(),
-			fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
-			graphColours: config.graphColours(),
-			graphStyle: config.graphStyle(),
-			initialLoadCommits: config.initialLoadCommits(),
+		const refLabelAlignment = config.refLabelAlignment();
+		const initialState: GitGraphViewInitialState = {
+			config: {
+				autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
+				branchLabelsAlignedToGraph: refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
+				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
+				commitDetailsViewLocation: config.commitDetailsViewLocation(),
+				customBranchGlobPatterns: config.customBranchGlobPatterns(),
+				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings(),
+				dateFormat: config.dateFormat(),
+				defaultColumnVisibility: config.defaultColumnVisibility(),
+				dialogDefaults: config.dialogDefaults(),
+				fetchAndPrune: config.fetchAndPrune(),
+				fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
+				graphColours: config.graphColours(),
+				graphStyle: config.graphStyle(),
+				grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
+				initialLoadCommits: config.initialLoadCommits(),
+				loadMoreCommits: config.loadMoreCommits(),
+				muteMergeCommits: config.muteMergeCommits(),
+				showCurrentBranchByDefault: config.showCurrentBranchByDefault(),
+				tagLabelsOnRight: refLabelAlignment !== 'Normal'
+			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
-			loadMoreCommits: config.loadMoreCommits(),
 			loadRepo: this.loadRepo,
-			muteMergeCommits: config.muteMergeCommits(),
-			refLabelAlignment: config.refLabelAlignment(),
-			repos: this.repoManager.getRepos(),
-			showCurrentBranchByDefault: config.showCurrentBranchByDefault()
+			repos: this.repoManager.getRepos()
 		};
 
-		let body, numRepos = Object.keys(viewState.repos).length, colorVars = '', colorParams = '';
-		for (let i = 0; i < viewState.graphColours.length; i++) {
-			colorVars += '--git-graph-color' + i + ':' + viewState.graphColours[i] + '; ';
+		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
+		for (let i = 0; i < initialState.config.graphColours.length; i++) {
+			colorVars += '--git-graph-color' + i + ':' + initialState.config.graphColours[i] + '; ';
 			colorParams += '[data-color="' + i + '"]{--git-graph-color:var(--git-graph-color' + i + ');} ';
 		}
 
@@ -477,7 +482,7 @@ export class GitGraphView {
 				<div id="footer"></div>
 			</div>
 			<div id="scrollShadow"></div>
-			<script nonce="${nonce}">var viewState = ${JSON.stringify(viewState)};</script>
+			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)};</script>
 			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {

@@ -13,29 +13,12 @@ declare global {
 
 	/* State Types */
 
-	var viewState: GG.GitGraphViewState;
+	type InitialState = GG.GitGraphViewInitialState;
+	type Config = GG.GitGraphViewConfig;
+
+	var initialState: InitialState;
 
 	type AvatarImageCollection = { [email: string]: string };
-
-	interface Config {
-		readonly autoCenterCommitDetailsView: boolean;
-		readonly branchLabelsAlignedToGraph: boolean;
-		readonly combineLocalAndRemoteBranchLabels: boolean;
-		readonly commitDetailsViewLocation: GG.CommitDetailsViewLocation;
-		readonly customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
-		readonly defaultColumnVisibility: GG.DefaultColumnVisibility;
-		readonly dialogDefaults: GG.DialogDefaults;
-		readonly fetchAndPrune: boolean;
-		readonly fetchAvatars: boolean;
-		readonly graphColours: string[];
-		readonly graphStyle: GG.GraphStyle;
-		readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
-		readonly initialLoadCommits: number;
-		readonly loadMoreCommits: number;
-		readonly muteMergeCommits: boolean;
-		readonly showCurrentBranchByDefault: boolean;
-		readonly tagLabelsOnRight: boolean;
-	}
 
 	interface ExpandedCommit {
 		id: number;

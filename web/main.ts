@@ -35,10 +35,10 @@ class GitGraphView {
 	private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-	constructor(viewElem: HTMLElement, repos: GG.GitRepoSet, lastActiveRepo: string | null, loadRepo: string | null, config: Config, prevState: WebViewState | null) {
-		this.gitRepos = repos;
-		this.config = config;
-		this.maxCommits = config.initialLoadCommits;
+	constructor(viewElem: HTMLElement, initialState: InitialState, prevState: WebViewState | null) {
+		this.gitRepos = initialState.repos;
+		this.config = initialState.config;
+		this.maxCommits = this.config.initialLoadCommits;
 		this.graph = new Graph('commitGraph', this.config);
 		this.viewElem = viewElem;
 
@@ -76,8 +76,8 @@ class GitGraphView {
 		this.findWidget = new FindWidget(this);
 		this.settingsWidget = new SettingsWidget(this);
 
-		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, config.branchLabelsAlignedToGraph);
-		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, config.tagLabelsOnRight);
+		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, this.config.branchLabelsAlignedToGraph);
+		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, this.config.tagLabelsOnRight);
 
 		this.observeWindowSizeChanges();
 		this.observeWebviewStyleChanges();
@@ -97,7 +97,7 @@ class GitGraphView {
 			this.settingsWidget.restoreState(prevState.settingsWidget);
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
-		if (!this.loadRepos(this.gitRepos, lastActiveRepo, loadRepo)) {
+		if (!this.loadRepos(this.gitRepos, initialState.lastActiveRepo, initialState.loadRepo)) {
 			if (prevState) {
 				this.scrollTop = prevState.scrollTop;
 				this.viewElem.scroll(0, this.scrollTop);
@@ -1816,31 +1816,12 @@ window.addEventListener('load', () => {
 	if (loaded) return;
 	loaded = true;
 
-	registerCustomEmojiMappings(viewState.customEmojiShortcodeMappings);
+	registerCustomEmojiMappings(initialState.config.customEmojiShortcodeMappings);
 
 	let viewElem = document.getElementById('view');
 	if (viewElem === null) return;
 
-	const gitGraph = new GitGraphView(viewElem, viewState.repos, viewState.lastActiveRepo, viewState.loadRepo, {
-		autoCenterCommitDetailsView: viewState.autoCenterCommitDetailsView,
-		branchLabelsAlignedToGraph: viewState.refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
-		combineLocalAndRemoteBranchLabels: viewState.combineLocalAndRemoteBranchLabels,
-		commitDetailsViewLocation: viewState.commitDetailsViewLocation,
-		customBranchGlobPatterns: viewState.customBranchGlobPatterns,
-		defaultColumnVisibility: viewState.defaultColumnVisibility,
-		dialogDefaults: viewState.dialogDefaults,
-		fetchAndPrune: viewState.fetchAndPrune,
-		fetchAvatars: viewState.fetchAvatars,
-		graphColours: viewState.graphColours,
-		graphStyle: viewState.graphStyle,
-		grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
-		initialLoadCommits: viewState.initialLoadCommits,
-		loadMoreCommits: viewState.loadMoreCommits,
-		muteMergeCommits: viewState.muteMergeCommits,
-		showCurrentBranchByDefault: viewState.showCurrentBranchByDefault,
-		tagLabelsOnRight: viewState.refLabelAlignment !== 'Normal'
-	}, VSCODE_API.getState());
-
+	const gitGraph = new GitGraphView(viewElem, initialState, VSCODE_API.getState());
 	const settingsWidget = gitGraph.getSettingsWidget();
 	const imageResizer = new ImageResizer();
 
@@ -2047,7 +2028,7 @@ function getCommitDate(dateVal: number) {
 	let dateStr = date.getDate() + ' ' + MONTHS[date.getMonth()] + ' ' + date.getFullYear();
 	let timeStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
 
-	switch (viewState.dateFormat) {
+	switch (initialState.config.dateFormat) {
 		case 'Date Only':
 			value = dateStr;
 			break;
@@ -2356,7 +2337,7 @@ function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
 		headLabels.push({ name: heads[i], remotes: [] });
 		headLookup[heads[i]] = i;
 	}
-	if (viewState.combineLocalAndRemoteBranchLabels) {
+	if (initialState.config.combineLocalAndRemoteBranchLabels) {
 		remoteLabels = [];
 		for (let i = 0; i < remotes.length; i++) {
 			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known

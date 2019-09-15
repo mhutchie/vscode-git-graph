@@ -1,13 +1,13 @@
 /* Types */
 
 interface Point {
-	x: number;
-	y: number;
+	readonly x: number;
+	readonly y: number;
 }
 interface Line {
-	p1: Point;
-	p2: Point;
-	lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+	readonly p1: Point;
+	readonly p2: Point;
+	readonly lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
 }
 
 interface Pixel {
@@ -15,15 +15,15 @@ interface Pixel {
 	y: number;
 }
 interface PlacedLine {
-	p1: Pixel;
-	p2: Pixel;
-	isCommitted: boolean;
-	lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+	readonly p1: Pixel;
+	readonly p2: Pixel;
+	readonly isCommitted: boolean;
+	readonly lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
 }
 
 interface UnavailablePoint {
-	connectsTo: VertexOrNull;
-	onBranch: Branch;
+	readonly connectsTo: VertexOrNull;
+	readonly onBranch: Branch;
 }
 
 type VertexOrNull = Vertex | null;
@@ -32,9 +32,9 @@ type VertexOrNull = Vertex | null;
 /* Branch Class */
 
 class Branch {
-	private lines: Line[] = [];
-	private colour: number;
+	private readonly colour: number;
 	private end: number = 0;
+	private lines: Line[] = [];
 	private numUncommitted: number = 0;
 
 	constructor(colour: number) {
@@ -158,8 +158,8 @@ class Branch {
 /* Vertex Class */
 
 class Vertex {
+	private readonly y: number;
 	private x: number = 0;
-	private y: number;
 	private children: Vertex[] = [];
 	private parents: Vertex[] = [];
 	private nextParent: number = 0;
@@ -302,17 +302,17 @@ class Vertex {
 /* Graph Class */
 
 class Graph {
-	private config: Config;
+	private readonly config: Config;
 	private vertices: Vertex[] = [];
 	private branches: Branch[] = [];
 	private availableColours: number[] = [];
 	private maxWidth: number = -1;
 
-	private svg: SVGElement;
+	private readonly svg: SVGElement;
+	private readonly maskRect: SVGRectElement;
+	private readonly gradientStop1: SVGStopElement;
+	private readonly gradientStop2: SVGStopElement;
 	private group: SVGGElement | null = null;
-	private maskRect: SVGRectElement;
-	private gradientStop1: SVGStopElement;
-	private gradientStop2: SVGStopElement;
 
 	constructor(id: string, config: Config) {
 		this.config = config;

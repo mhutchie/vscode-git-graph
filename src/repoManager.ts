@@ -162,7 +162,7 @@ export class RepoManager {
 		return repo;
 	}
 
-	public getReposInFolder(path: string) {
+	private getReposInFolder(path: string) {
 		let pathFolder = pathWithTrailingSlash(path), repoPaths = Object.keys(this.repos), reposInFolder: string[] = [];
 		for (let i = 0; i < repoPaths.length; i++) {
 			if (repoPaths[i] === path || repoPaths[i].startsWith(pathFolder)) reposInFolder.push(repoPaths[i]);

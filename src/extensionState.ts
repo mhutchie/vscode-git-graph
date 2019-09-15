@@ -26,9 +26,9 @@ export interface CodeReviewData {
 type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
 
 export class ExtensionState {
-	private globalState: Memento;
-	private workspaceState: Memento;
-	private globalStoragePath: string;
+	private readonly globalState: Memento;
+	private readonly workspaceState: Memento;
+	private readonly globalStoragePath: string;
 	private avatarStorageAvailable: boolean = false;
 
 	constructor(context: ExtensionContext) {

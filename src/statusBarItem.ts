@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 
 export class StatusBarItem {
-	private statusBarItem: vscode.StatusBarItem;
+	private readonly statusBarItem: vscode.StatusBarItem;
 	private numRepos: number = 0;
 
 	constructor() {

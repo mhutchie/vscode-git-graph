@@ -15,10 +15,10 @@ const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export class DataSource {
 	private readonly logger: Logger;
-	private gitExecutable: GitExecutable | null;
-	private askpassManager: AskpassManager;
-	private askpassEnv: AskpassEnvironment;
+	private readonly askpassManager: AskpassManager;
+	private readonly askpassEnv: AskpassEnvironment;
 
+	private gitExecutable: GitExecutable | null;
 	private gitFormatCommitDetails!: string;
 	private gitFormatLog!: string;
 	private gitFormatStash!: string;

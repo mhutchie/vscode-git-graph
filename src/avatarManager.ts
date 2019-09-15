@@ -14,6 +14,7 @@ export class AvatarManager {
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
 	private readonly avatarStorageFolder: string;
+
 	private view: GitGraphView | null = null;
 	private avatars: AvatarCache;
 	private queue: AvatarRequestQueue;

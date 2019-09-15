@@ -1,3 +1,9 @@
+interface DropdownOption {
+	readonly name: string;
+	readonly value: string;
+	readonly hint?: string;
+}
+
 class Dropdown {
 	private options: DropdownOption[] = [];
 	private optionsSelected: boolean[] = [];
@@ -10,12 +16,12 @@ class Dropdown {
 	private lastClicked: number = 0;
 	private doubleClickTimeout: NodeJS.Timer | null = null;
 
-	private elem: HTMLElement;
-	private currentValueElem: HTMLDivElement;
-	private menuElem: HTMLDivElement;
-	private optionsElem: HTMLDivElement;
-	private noResultsElem: HTMLDivElement;
-	private filterInput: HTMLInputElement;
+	private readonly elem: HTMLElement;
+	private readonly currentValueElem: HTMLDivElement;
+	private readonly menuElem: HTMLDivElement;
+	private readonly optionsElem: HTMLDivElement;
+	private readonly noResultsElem: HTMLDivElement;
+	private readonly filterInput: HTMLInputElement;
 
 	constructor(id: string, showInfo: boolean, multipleAllowed: boolean, dropdownType: string, changeCallback: { (values: string[]): void }) {
 		this.showInfo = showInfo;
@@ -247,10 +253,4 @@ class Dropdown {
 			this.doubleClickTimeout = null;
 		}
 	}
-}
-
-interface DropdownOption {
-	name: string;
-	value: string;
-	hint?: string;
 }

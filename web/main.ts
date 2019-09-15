@@ -10,25 +10,27 @@ class GitGraphView {
 	private currentBranches: string[] | null = null;
 	private currentRepo!: string;
 
-	private graph: Graph;
-	private config: Config;
+	private readonly graph: Graph;
+	private readonly config: Config;
+
 	private moreCommitsAvailable: boolean = false;
 	private expandedCommit: ExpandedCommit | null = null;
 	private maxCommits: number;
 	private scrollTop = 0;
 	private renderedGitBranchHead: string | null = null;
-	private findWidget: FindWidget;
-	private settingsWidget: SettingsWidget;
 
-	private viewElem: HTMLElement;
-	private controlsElem: HTMLElement;
-	private tableElem: HTMLElement;
-	private footerElem: HTMLElement;
-	private repoDropdown: Dropdown;
-	private branchDropdown: Dropdown;
-	private showRemoteBranchesElem: HTMLInputElement;
-	private refreshBtnElem: HTMLElement;
-	private scrollShadowElem: HTMLElement;
+	private readonly findWidget: FindWidget;
+	private readonly settingsWidget: SettingsWidget;
+	private readonly repoDropdown: Dropdown;
+	private readonly branchDropdown: Dropdown;
+
+	private readonly viewElem: HTMLElement;
+	private readonly controlsElem: HTMLElement;
+	private readonly tableElem: HTMLElement;
+	private readonly footerElem: HTMLElement;
+	private readonly showRemoteBranchesElem: HTMLInputElement;
+	private readonly refreshBtnElem: HTMLElement;
+	private readonly scrollShadowElem: HTMLElement;
 
 	private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export class Logger {
-	private channel: vscode.OutputChannel;
+	private readonly channel: vscode.OutputChannel;
 
 	constructor() {
 		this.channel = vscode.window.createOutputChannel('Git Graph');

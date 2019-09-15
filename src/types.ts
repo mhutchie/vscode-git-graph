@@ -130,26 +130,26 @@ export interface GitUnsavedChanges {
 }
 
 export interface GitGraphViewState {
-	autoCenterCommitDetailsView: boolean;
-	combineLocalAndRemoteBranchLabels: boolean;
-	commitDetailsViewLocation: CommitDetailsViewLocation;
-	customBranchGlobPatterns: CustomBranchGlobPattern[];
-	customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
-	dateFormat: DateFormat;
-	defaultColumnVisibility: DefaultColumnVisibility;
-	dialogDefaults: DialogDefaults;
-	fetchAndPrune: boolean;
-	fetchAvatars: boolean;
-	graphColours: string[];
-	graphStyle: GraphStyle;
-	initialLoadCommits: number;
-	lastActiveRepo: string | null;
-	loadMoreCommits: number;
-	loadRepo: string | null;
-	muteMergeCommits: boolean;
-	refLabelAlignment: RefLabelAlignment;
-	repos: GitRepoSet;
-	showCurrentBranchByDefault: boolean;
+	readonly autoCenterCommitDetailsView: boolean;
+	readonly combineLocalAndRemoteBranchLabels: boolean;
+	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
+	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
+	readonly dateFormat: DateFormat;
+	readonly defaultColumnVisibility: DefaultColumnVisibility;
+	readonly dialogDefaults: DialogDefaults;
+	readonly fetchAndPrune: boolean;
+	readonly fetchAvatars: boolean;
+	readonly graphColours: string[];
+	readonly graphStyle: GraphStyle;
+	readonly initialLoadCommits: number;
+	readonly lastActiveRepo: string | null;
+	readonly loadMoreCommits: number;
+	readonly loadRepo: string | null;
+	readonly muteMergeCommits: boolean;
+	readonly refLabelAlignment: RefLabelAlignment;
+	readonly repos: GitRepoSet;
+	readonly showCurrentBranchByDefault: boolean;
 }
 
 export interface GitFileChange {
@@ -174,6 +174,11 @@ export interface Avatar {
 }
 export type AvatarCache = { [email: string]: Avatar };
 
+export type BranchOrCommit = 'Branch' | 'Commit';
+export type DiffSide = 'old' | 'new';
+export type GitResetMode = 'soft' | 'mixed' | 'hard';
+export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
+
 
 /* Extension Settings Types */
 
@@ -184,47 +189,46 @@ export type DateType = 'Author Date' | 'Commit Date';
 export type GraphStyle = 'rounded' | 'angular';
 export type RefLabelAlignment = 'Normal' | 'Branches (on the left) & Tags (on the right)' | 'Branches (aligned to the graph) & Tags (on the right)';
 export type TabIconColourTheme = 'colour' | 'grey';
-export type GitResetMode = 'soft' | 'mixed' | 'hard';
-export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
-export type DiffSide = 'old' | 'new';
-export type BranchOrCommit = 'Branch' | 'Commit';
 
 export interface CustomBranchGlobPattern {
-	name: string;
-	glob: string;
+	readonly name: string;
+	readonly glob: string;
 }
+
 export interface CustomEmojiShortcodeMapping {
-	shortcode: string;
-	emoji: string;
+	readonly shortcode: string;
+	readonly emoji: string;
 }
+
 export interface DefaultColumnVisibility {
-	date: boolean;
-	author: boolean;
-	commit: boolean;
+	readonly date: boolean;
+	readonly author: boolean;
+	readonly commit: boolean;
 }
+
 export interface DialogDefaults {
-	addTag: {
-		type: 'annotated' | 'lightweight'
+	readonly addTag: {
+		readonly type: 'annotated' | 'lightweight'
 	};
-	createBranch: {
-		checkout: boolean
+	readonly createBranch: {
+		readonly checkout: boolean
 	};
-	merge: {
-		noFastForward: boolean,
-		squash: boolean
+	readonly merge: {
+		readonly noFastForward: boolean,
+		readonly squash: boolean
 	};
-	rebase: {
-		ignoreDate: boolean,
-		interactive: boolean
+	readonly rebase: {
+		readonly ignoreDate: boolean,
+		readonly interactive: boolean
 	};
-	resetCommit: {
-		mode: 'soft' | 'mixed' | 'hard'
+	readonly resetCommit: {
+		readonly mode: 'soft' | 'mixed' | 'hard'
 	};
-	resetUncommitted: {
-		mode: 'mixed' | 'hard'
+	readonly resetUncommitted: {
+		readonly mode: 'mixed' | 'hard'
 	};
-	stashUncommittedChanges: {
-		includeUntracked: boolean
+	readonly stashUncommittedChanges: {
+		readonly includeUntracked: boolean
 	};
 }
 

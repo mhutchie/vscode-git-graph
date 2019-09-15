@@ -18,23 +18,23 @@ declare global {
 	type AvatarImageCollection = { [email: string]: string };
 
 	interface Config {
-		autoCenterCommitDetailsView: boolean;
-		branchLabelsAlignedToGraph: boolean;
-		combineLocalAndRemoteBranchLabels: boolean;
-		commitDetailsViewLocation: GG.CommitDetailsViewLocation;
-		customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
-		defaultColumnVisibility: GG.DefaultColumnVisibility;
-		dialogDefaults: GG.DialogDefaults;
-		fetchAndPrune: boolean;
-		fetchAvatars: boolean;
-		graphColours: string[];
-		graphStyle: GG.GraphStyle;
-		grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
-		initialLoadCommits: number;
-		loadMoreCommits: number;
-		muteMergeCommits: boolean;
-		showCurrentBranchByDefault: boolean;
-		tagLabelsOnRight: boolean;
+		readonly autoCenterCommitDetailsView: boolean;
+		readonly branchLabelsAlignedToGraph: boolean;
+		readonly combineLocalAndRemoteBranchLabels: boolean;
+		readonly commitDetailsViewLocation: GG.CommitDetailsViewLocation;
+		readonly customBranchGlobPatterns: GG.CustomBranchGlobPattern[];
+		readonly defaultColumnVisibility: GG.DefaultColumnVisibility;
+		readonly dialogDefaults: GG.DialogDefaults;
+		readonly fetchAndPrune: boolean;
+		readonly fetchAvatars: boolean;
+		readonly graphColours: string[];
+		readonly graphStyle: GG.GraphStyle;
+		readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+		readonly initialLoadCommits: number;
+		readonly loadMoreCommits: number;
+		readonly muteMergeCommits: boolean;
+		readonly showCurrentBranchByDefault: boolean;
+		readonly tagLabelsOnRight: boolean;
 	}
 
 	interface ExpandedCommit {
@@ -54,30 +54,30 @@ declare global {
 	}
 
 	interface WebViewState {
-		gitRepos: GG.GitRepoSet;
-		gitBranches: string[];
-		gitBranchHead: string | null;
-		gitRemotes: string[];
-		commits: GG.GitCommitNode[];
-		commitHead: string | null;
-		avatars: AvatarImageCollection;
-		currentBranches: string[] | null;
-		currentRepo: string;
-		moreCommitsAvailable: boolean;
-		maxCommits: number;
-		expandedCommit: ExpandedCommit | null;
-		scrollTop: number;
-		findWidget: FindWidgetState;
-		settingsWidget: SettingsWidgetState;
+		readonly gitRepos: GG.GitRepoSet;
+		readonly gitBranches: string[];
+		readonly gitBranchHead: string | null;
+		readonly gitRemotes: string[];
+		readonly commits: GG.GitCommitNode[];
+		readonly commitHead: string | null;
+		readonly avatars: AvatarImageCollection;
+		readonly currentBranches: string[] | null;
+		readonly currentRepo: string;
+		readonly moreCommitsAvailable: boolean;
+		readonly maxCommits: number;
+		readonly expandedCommit: ExpandedCommit | null;
+		readonly scrollTop: number;
+		readonly findWidget: FindWidgetState;
+		readonly settingsWidget: SettingsWidgetState;
 	}
 
 
 	/* Context Menu Types */
 
 	interface ContextMenuItem {
-		title: string;
-		onClick: () => void;
-		checked?: boolean; // Required in checked context menus
+		readonly title: string;
+		readonly onClick: () => void;
+		readonly checked?: boolean; // Required in checked context menus
 	}
 
 	type ContextMenuElement = ContextMenuItem | null;
@@ -86,29 +86,29 @@ declare global {
 	/* Dialog Types */
 
 	interface DialogTextInput {
-		type: 'text';
-		name: string;
-		default: string;
-		placeholder: string | null;
+		readonly type: 'text';
+		readonly name: string;
+		readonly default: string;
+		readonly placeholder: string | null;
 	}
 
 	interface DialogTextRefInput {
-		type: 'text-ref';
-		name: string;
-		default: string;
+		readonly type: 'text-ref';
+		readonly name: string;
+		readonly default: string;
 	}
 
 	interface DialogSelectInput {
-		type: 'select';
-		name: string;
-		options: { name: string, value: string }[];
-		default: string;
+		readonly type: 'select';
+		readonly name: string;
+		readonly options: { name: string, value: string }[];
+		readonly default: string;
 	}
 
 	interface DialogCheckboxInput {
-		type: 'checkbox';
-		name: string;
-		value: boolean;
+		readonly type: 'checkbox';
+		readonly name: string;
+		readonly value: boolean;
 	}
 
 	type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
@@ -119,23 +119,23 @@ declare global {
 	/* Commit Details / Comparison View File Tree Types */
 
 	interface FileTreeFile {
-		type: 'file';
-		name: string;
-		index: number;
+		readonly type: 'file';
+		readonly name: string;
+		readonly index: number;
 		reviewed: boolean;
 	}
 
 	interface FileTreeRepo {
-		type: 'repo';
-		name: string;
-		path: string;
+		readonly type: 'repo';
+		readonly name: string;
+		readonly path: string;
 	}
 
 	interface FileTreeFolder {
-		type: 'folder';
-		name: string;
-		folderPath: string;
-		contents: FileTreeFolderContents;
+		readonly type: 'folder';
+		readonly name: string;
+		readonly folderPath: string;
+		readonly contents: FileTreeFolderContents;
 		open: boolean;
 		reviewed: boolean;
 	}

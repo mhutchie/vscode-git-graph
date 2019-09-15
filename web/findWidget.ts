@@ -2,15 +2,15 @@ const CLASS_FIND_CURRENT_COMMIT = 'findCurrentCommit';
 const CLASS_FIND_MATCH = 'findMatch';
 
 interface FindWidgetState {
-	text: string;
-	isCaseSensitive: boolean;
-	isRegex: boolean;
-	currentHash: string | null;
-	visible: boolean;
+	readonly text: string;
+	readonly isCaseSensitive: boolean;
+	readonly isRegex: boolean;
+	readonly currentHash: string | null;
+	readonly visible: boolean;
 }
 
 class FindWidget {
-	private view: GitGraphView;
+	private readonly view: GitGraphView;
 	private commits: GG.GitCommitNode[] = [];
 	private text: string = '';
 	private isCaseSensitive: boolean = false;
@@ -19,13 +19,13 @@ class FindWidget {
 	private position: number = -1;
 	private visible: boolean = false;
 
-	private widgetElem: HTMLElement;
-	private inputElem: HTMLInputElement;
-	private caseSensitiveElem: HTMLElement;
-	private regexElem: HTMLElement;
-	private positionElem: HTMLElement;
-	private prevElem: HTMLElement;
-	private nextElem: HTMLElement;
+	private readonly widgetElem: HTMLElement;
+	private readonly inputElem: HTMLInputElement;
+	private readonly caseSensitiveElem: HTMLElement;
+	private readonly regexElem: HTMLElement;
+	private readonly positionElem: HTMLElement;
+	private readonly prevElem: HTMLElement;
+	private readonly nextElem: HTMLElement;
 
 	constructor(view: GitGraphView) {
 		this.view = view;

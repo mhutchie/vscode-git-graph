@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
-	private config: vscode.WorkspaceConfiguration;
+	private readonly config: vscode.WorkspaceConfiguration;
 
 	constructor() {
 		this.config = vscode.workspace.getConfiguration('git-graph');

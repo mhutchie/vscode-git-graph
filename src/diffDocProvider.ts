@@ -6,18 +6,19 @@ import { getPathFromStr, UNCOMMITTED } from './utils';
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 	public static scheme = 'git-graph';
-	private dataSource: DataSource;
+	private readonly dataSource: DataSource;
+	private readonly docs = new Map<string, DiffDocument>();
+	private readonly closeDocSubscription: vscode.Disposable;
+
 	private onDidChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>();
-	private docs = new Map<string, DiffDocument>();
-	private subscriptions: vscode.Disposable;
 
 	constructor(dataSource: DataSource) {
 		this.dataSource = dataSource;
-		this.subscriptions = vscode.workspace.onDidCloseTextDocument((doc) => this.docs.delete(doc.uri.toString()));
+		this.closeDocSubscription = vscode.workspace.onDidCloseTextDocument((doc) => this.docs.delete(doc.uri.toString()));
 	}
 
 	public dispose() {
-		this.subscriptions.dispose();
+		this.closeDocSubscription.dispose();
 		this.docs.clear();
 		this.onDidChangeEventEmitter.dispose();
 	}
@@ -48,7 +49,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 }
 
 class DiffDocument {
-	private body: string;
+	private readonly body: string;
 
 	constructor(body: string) {
 		this.body = body;

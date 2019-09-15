@@ -1,19 +1,19 @@
 interface SettingsWidgetState {
-	visible: boolean;
-	repo: string | null;
-	settings: GG.GitRepoSettings | null;
+	readonly visible: boolean;
+	readonly repo: string | null;
+	readonly settings: GG.GitRepoSettings | null;
 }
 
 class SettingsWidget {
-	private view: GitGraphView;
+	private readonly view: GitGraphView;
 	private visible: boolean = false;
 	private loading: boolean = false;
 	private repo: string | null = null;
 	private settings: GG.GitRepoSettings | null = null;
 
-	private widgetElem: HTMLElement;
-	private contentsElem: HTMLElement;
-	private loadingElem: HTMLElement;
+	private readonly widgetElem: HTMLElement;
+	private readonly contentsElem: HTMLElement;
+	private readonly loadingElem: HTMLElement;
 
 	constructor(view: GitGraphView) {
 		this.view = view;

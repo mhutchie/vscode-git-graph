@@ -5,17 +5,15 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
-import { GitCommandError, GitFileChangeType } from './types';
-
-const FS_REGEX = /\\/g;
+import { ErrorInfo, GitFileChangeType } from './types';
 
 export const UNCOMMITTED = '*';
-
 export const UNABLE_TO_FIND_GIT_MSG = 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.';
 
-export function abbrevCommit(commitHash: string) {
-	return commitHash.substring(0, 8);
-}
+
+/* Path Manipulation */
+
+const FS_REGEX = /\\/g;
 
 export function getPathFromUri(uri: vscode.Uri) {
 	return uri.fsPath.replace(FS_REGEX, '/');
@@ -47,6 +45,13 @@ export function realpath(path: string) {
 	});
 }
 
+
+/* General Methods */
+
+export function abbrevCommit(commitHash: string) {
+	return commitHash.substring(0, 8);
+}
+
 export function getNonce() {
 	let text = '';
 	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -67,18 +72,21 @@ export function getRepoName(path: string) {
 }
 
 
-// Visual Studio Code Command Wrappers
+/* Visual Studio Code Command Wrappers */
 
 export function copyFilePathToClipboard(repo: string, filePath: string) {
-	return vscode.env.clipboard.writeText(path.join(repo, filePath)).then(() => true, () => false);
+	return copyToClipboard(path.join(repo, filePath));
 }
 
-export function copyToClipboard(text: string) {
-	return vscode.env.clipboard.writeText(text).then(() => true, () => false);
+export function copyToClipboard(text: string): Thenable<ErrorInfo> {
+	return vscode.env.clipboard.writeText(text).then(
+		() => null,
+		() => 'Visual Studio Code was unable to write to the Clipboard.'
+	);
 }
 
 export function openFile(repo: string, filePath: string) {
-	return new Promise<GitCommandError>(resolve => {
+	return new Promise<ErrorInfo>(resolve => {
 		let p = path.join(repo, filePath);
 		fs.exists(p, exists => {
 			if (exists) {
@@ -92,31 +100,30 @@ export function openFile(repo: string, filePath: string) {
 }
 
 export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileChangeType) {
-	return new Promise<boolean>(resolve => {
-		let options = { preview: true, viewColumn: getConfig().openDiffTabLocation() };
-		if (type !== 'U') {
-			let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = toHash !== UNCOMMITTED ? abbrevCommit(toHash) : 'Present', pathComponents = newFilePath.split('/');
-			let desc = fromHash === toHash
-				? fromHash === UNCOMMITTED
-					? 'Uncommitted'
-					: (type === 'A' ? 'Added in ' + abbrevToHash : type === 'D' ? 'Deleted in ' + abbrevToHash : abbrevFromHash + '^ ↔ ' + abbrevToHash)
-				: (type === 'A' ? 'Added between ' + abbrevFromHash + ' & ' + abbrevToHash : type === 'D' ? 'Deleted between ' + abbrevFromHash + ' & ' + abbrevToHash : abbrevFromHash + ' ↔ ' + abbrevToHash);
-			let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
-			if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
+	if (type !== 'U') {
+		let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = toHash !== UNCOMMITTED ? abbrevCommit(toHash) : 'Present', pathComponents = newFilePath.split('/');
+		let desc = fromHash === toHash
+			? fromHash === UNCOMMITTED
+				? 'Uncommitted'
+				: (type === 'A' ? 'Added in ' + abbrevToHash : type === 'D' ? 'Deleted in ' + abbrevToHash : abbrevFromHash + '^ ↔ ' + abbrevToHash)
+			: (type === 'A' ? 'Added between ' + abbrevFromHash + ' & ' + abbrevToHash : type === 'D' ? 'Deleted between ' + abbrevFromHash + ' & ' + abbrevToHash : abbrevFromHash + ' ↔ ' + abbrevToHash);
+		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
+		if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-			vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, newFilePath, toHash, type, 'new'), title, options)
-				.then(() => resolve(true), () => resolve(false));
-		} else {
-			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path.join(repo, newFilePath)), options)
-				.then(() => resolve(true), () => resolve(false));
-		}
-	});
+		return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, 'old'), encodeDiffDocUri(repo, newFilePath, toHash, type, 'new'), title, { preview: true, viewColumn: getConfig().openDiffTabLocation() }).then(
+			() => null,
+			() => 'Visual Studio Code was unable load the diff editor for ' + newFilePath + '.'
+		);
+	} else {
+		return openFile(repo, newFilePath);
+	}
 }
 
-export function viewScm() {
-	return new Promise<boolean>(resolve => {
-		vscode.commands.executeCommand('workbench.view.scm').then(() => resolve(true), () => resolve(false));
-	});
+export function viewScm(): Thenable<ErrorInfo> {
+	return vscode.commands.executeCommand('workbench.view.scm').then(
+		() => null,
+		() => 'Visual Studio Code was unable to open the Source Control View.'
+	);
 }
 
 export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command: string, name: string) {
@@ -136,6 +143,9 @@ export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command
 function isWindows() {
 	return process.platform === 'win32' || process.env.OSTYPE === 'cygwin' || process.env.OSTYPE === 'msys';
 }
+
+
+/* Promise Methods */
 
 // Evaluate promises in parallel, with at most maxParallel running at any time
 export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise: (val: X) => Promise<Y>) {
@@ -282,7 +292,7 @@ export function getGitExecutable(path: string): Promise<GitExecutable> {
 }
 
 
-/* Git Version */
+/* Git Version Handling */
 
 export function compareVersions(executable: GitExecutable, version: string) {
 	// 1 => <executable> newer than <version>, 0 => <executable> same as <version>, -1 => <executable> older than <version>

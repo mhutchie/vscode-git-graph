@@ -6,7 +6,7 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { BranchOrCommit, CommitOrdering, GitBranchData, GitCommandError, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitStash, GitTagDetailsData, GitUnsavedChanges } from './types';
+import { BranchOrCommit, CommitOrdering, ErrorInfo, GitBranchData, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitStash, GitTagDetailsData, GitUnsavedChanges } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -525,7 +525,7 @@ export class DataSource {
 
 	public rebase(repo: string, obj: string, type: BranchOrCommit, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
-			return new Promise<GitCommandError>(resolve => {
+			return new Promise<ErrorInfo>(resolve => {
 				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
 
 				runGitCommandInNewTerminal(repo, this.gitExecutable.path,
@@ -593,7 +593,7 @@ export class DataSource {
 		return this.runGitCommand(['stash', 'pop', selector], repo);
 	}
 
-	public saveStash(repo: string, message: string, includeUntracked: boolean): Promise<GitCommandError> {
+	public saveStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
 		}
@@ -745,7 +745,7 @@ export class DataSource {
 		});
 	}
 
-	private runGitCommand(args: string[], repo: string): Promise<GitCommandError> {
+	private runGitCommand(args: string[], repo: string): Promise<ErrorInfo> {
 		return this._spawnGit(args, repo, () => null).catch((errorMessage: string) => errorMessage);
 	}
 

@@ -1888,10 +1888,10 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'copyFilePath':
-				showErrorIfNotSuccess(msg.success, 'Unable to Copy File Path to the Clipboard');
+				finishOrDisplayError(msg.error, 'Unable to Copy File Path to the Clipboard');
 				break;
 			case 'copyToClipboard':
-				showErrorIfNotSuccess(msg.success, 'Unable to Copy ' + msg.type + ' to Clipboard');
+				finishOrDisplayError(msg.error, 'Unable to Copy ' + msg.type + ' to Clipboard');
 				break;
 			case 'createBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Create Branch');
@@ -1941,8 +1941,10 @@ window.addEventListener('load', () => {
 				if (msg.error === null) {
 					gitGraph.loadCommits(msg.commits, msg.head, msg.remotes, msg.moreCommitsAvailable, msg.hard);
 				} else {
-					if (gitGraph.getNumBranches() === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1) msg.error = 'There are no commits in this repository.';
-					gitGraph.loadDataError('Unable to load commits', msg.error);
+					let error = gitGraph.getNumBranches() === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
+						? 'There are no commits in this repository.'
+						: msg.error;
+					gitGraph.loadDataError('Unable to load commits', error);
 				}
 				break;
 			case 'loadRepos':
@@ -1998,7 +2000,11 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
 				break;
 			case 'startCodeReview':
-				gitGraph.startCodeReview(msg.commitHash, msg.compareWithHash, msg.codeReview);
+				if (msg.error === null) {
+					gitGraph.startCodeReview(msg.commitHash, msg.compareWithHash, msg.codeReview);
+				} else {
+					dialog.showError('Unable to Start Code Review', msg.error, null, null, null);
+				}
 				break;
 			case 'tagDetails':
 				if (msg.error === null) {
@@ -2008,25 +2014,25 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'viewDiff':
-				showErrorIfNotSuccess(msg.success, 'Unable to View Diff of File');
+				finishOrDisplayError(msg.error, 'Unable to View Diff of File');
 				break;
 			case 'viewScm':
-				showErrorIfNotSuccess(msg.success, 'Unable to open the Source Control View');
+				finishOrDisplayError(msg.error, 'Unable to open the Source Control View');
 				break;
 		}
 	});
-	function refreshOrDisplayError(error: GG.GitCommandError, errorMessage: string) {
+	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
 		if (error === null) {
 			gitGraph.refresh(false);
 		} else {
 			dialog.showError(errorMessage, error, null, null, null);
 		}
 	}
-	function showErrorIfNotSuccess(success: boolean, errorMessage: string) {
-		if (success) {
+	function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
+		if (error === null) {
 			dialog.closeActionRunning();
 		} else {
-			dialog.showError(errorMessage, null, null, null, null);
+			dialog.showError(errorMessage, error, null, null, null);
 		}
 	}
 });

@@ -176,14 +176,14 @@ export class GitGraphView {
 				case 'copyFilePath':
 					this.sendMessage({
 						command: 'copyFilePath',
-						success: await copyFilePathToClipboard(msg.repo, msg.filePath)
+						error: await copyFilePathToClipboard(msg.repo, msg.filePath)
 					});
 					break;
 				case 'copyToClipboard':
 					this.sendMessage({
 						command: 'copyToClipboard',
 						type: msg.type,
-						success: await copyToClipboard(msg.data)
+						error: await copyToClipboard(msg.data)
 					});
 					break;
 				case 'createBranch':
@@ -369,10 +369,9 @@ export class GitGraphView {
 				case 'startCodeReview':
 					this.sendMessage({
 						command: 'startCodeReview',
-						codeReview: this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile),
 						commitHash: msg.commitHash,
 						compareWithHash: msg.compareWithHash,
-						success: true
+						... await this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile)
 					});
 					break;
 				case 'tagDetails':
@@ -386,13 +385,13 @@ export class GitGraphView {
 				case 'viewDiff':
 					this.sendMessage({
 						command: 'viewDiff',
-						success: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+						error: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
 					});
 					break;
 				case 'viewScm':
 					this.sendMessage({
 						command: 'viewScm',
-						success: await viewScm()
+						error: await viewScm()
 					});
 					break;
 			}

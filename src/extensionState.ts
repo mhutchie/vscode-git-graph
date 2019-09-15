@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
-import { Avatar, AvatarCache, CodeReview, GitRepoSet, GitRepoState } from './types';
+import { Avatar, AvatarCache, CodeReview, ErrorInfo, GitRepoSet, GitRepoState } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
@@ -156,8 +156,10 @@ export class ExtensionState {
 		let reviews = this.getCodeReviews();
 		if (typeof reviews[repo] === 'undefined') reviews[repo] = {};
 		reviews[repo][id] = { lastActive: (new Date()).getTime(), lastViewedFile: lastViewedFile, remainingFiles: files };
-		this.setCodeReviews(reviews);
-		return <CodeReview>Object.assign({ id: id }, reviews[repo][id]);
+		return this.setCodeReviews(reviews).then((err) => ({
+			codeReview: <CodeReview>Object.assign({ id: id }, reviews[repo][id]),
+			error: err
+		}));
 	}
 
 	public endCodeReview(repo: string, id: string) {
@@ -214,8 +216,11 @@ export class ExtensionState {
 		return this.workspaceState.get<CodeReviews>(CODE_REVIEWS, {});
 	}
 
-	private setCodeReviews(reviews: CodeReviews) {
-		this.workspaceState.update(CODE_REVIEWS, reviews);
+	private setCodeReviews(reviews: CodeReviews): Thenable<ErrorInfo> {
+		return this.workspaceState.update(CODE_REVIEWS, reviews).then(
+			() => null,
+			() => 'Visual Studio Code was unable to update the Workspace State.'
+		);
 	}
 }
 

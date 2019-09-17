@@ -1,3 +1,5 @@
+const CLASS_GRAPH_VERTEX_ACTIVE = 'graphVertexActive';
+
 /* Types */
 
 interface Point {
@@ -281,10 +283,11 @@ class Vertex {
 
 	/* Rendering */
 
-	public draw(svg: SVGElement, config: Config, expandOffset: boolean) {
+	public draw(svg: SVGElement, config: Config, expandOffset: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
 		if (this.onBranch === null) return;
 
 		let circle = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'circle'));
+		circle.dataset.id = this.y.toString();
 		let colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
 		circle.setAttribute('cx', (this.x * config.grid.x + config.grid.offsetX).toString());
 		circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString());
@@ -295,6 +298,8 @@ class Vertex {
 		} else {
 			circle.setAttribute('fill', colour);
 		}
+		circle.addEventListener('mouseover', overListener);
+		circle.addEventListener('mouseout', outListener);
 	}
 }
 
@@ -308,15 +313,29 @@ class Graph {
 	private availableColours: number[] = [];
 	private maxWidth: number = -1;
 
+	private commits: GG.GitCommitNode[] = [];
+	private commitHead: string | null = null;
+	private expandedCommitId: number = -1;
+
+	private readonly viewElem: HTMLElement;
+	private readonly contentElem: HTMLElement;
 	private readonly svg: SVGElement;
 	private readonly maskRect: SVGRectElement;
 	private readonly gradientStop1: SVGStopElement;
 	private readonly gradientStop2: SVGStopElement;
 	private group: SVGGElement | null = null;
 
-	constructor(id: string, config: Config) {
+	private tooltipId: number = -1;
+	private tooltipElem: HTMLElement | null = null;
+	private tooltipTimeout: NodeJS.Timer | null = null;
+	private tooltipVertex: HTMLElement | null = null;
+
+	constructor(id: string, viewElem: HTMLElement, config: Config) {
+		this.viewElem = viewElem;
 		this.config = config;
 
+		const elem = document.getElementById(id)!;
+		this.contentElem = elem.parentElement!;
 		this.svg = document.createElementNS(SVG_NAMESPACE, 'svg');
 		let defs = this.svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'defs'));
 
@@ -333,13 +352,15 @@ class Graph {
 		this.maskRect.setAttribute('fill', 'url(#GraphGradient)');
 
 		this.setDimensions(0, 0);
-		document.getElementById(id)!.appendChild(this.svg);
+		elem.appendChild(this.svg);
 	}
 
 
 	/* Graph Operations */
 
 	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
+		this.commits = commits;
+		this.commitHead = commitHead;
 		this.vertices = [];
 		this.branches = [];
 		this.availableColours = [];
@@ -359,7 +380,7 @@ class Graph {
 			}
 		}
 
-		if (commits[0].hash === '*') {
+		if (commits[0].hash === UNCOMMITTED) {
 			this.vertices[0].setCurrent();
 			this.vertices[0].setNotCommited();
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
@@ -377,21 +398,25 @@ class Graph {
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
-		let group = document.createElementNS(SVG_NAMESPACE, 'g'), i, width = this.getWidth();
+		this.expandedCommitId = expandedCommit !== null ? expandedCommit.id : -1;
+		let group = document.createElementNS(SVG_NAMESPACE, 'g'), i, contentWidth = this.getContentWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
 		for (i = 0; i < this.branches.length; i++) {
-			this.branches[i].draw(group, this.config, expandedCommit !== null ? expandedCommit.id : -1);
+			this.branches[i].draw(group, this.config, this.expandedCommitId);
 		}
+
+		const overListener = (e: MouseEvent) => this.vertexOver(e), outListener = (e: MouseEvent) => this.vertexOut(e);
 		for (i = 0; i < this.vertices.length; i++) {
-			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.id);
+			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.id, overListener, outListener);
 		}
 
 		if (this.group !== null) this.svg.removeChild(this.group);
 		this.svg.appendChild(group);
 		this.group = group;
-		this.setDimensions(width, this.getHeight(expandedCommit));
-		this.applyMaxWidth(width);
+		this.setDimensions(contentWidth, this.getHeight(expandedCommit));
+		this.applyMaxWidth(contentWidth);
+		this.closeTooltip();
 	}
 
 	public clear() {
@@ -405,13 +430,13 @@ class Graph {
 
 	/* Get */
 
-	public getWidth() {
+	public getContentWidth() {
 		let x = 0, i, p;
 		for (i = 0; i < this.vertices.length; i++) {
 			p = this.vertices[i].getNextPoint();
 			if (p.x > x) x = p.x;
 		}
-		return x * this.config.grid.x;
+		return 2 * this.config.grid.offsetX + (x - 1) * this.config.grid.x;
 	}
 
 	public getHeight(expandedCommit: ExpandedCommit | null) {
@@ -460,26 +485,47 @@ class Graph {
 		return isPossible(this.vertices[i]);
 	}
 
+	private getAllChildren(i: number) {
+		let visited: { [id: string]: number } = {};
+		const rec = (vertex: Vertex) => {
+			let point = vertex.getPoint();
+			let id = point.y.toString();
+			if (typeof visited[id] !== 'undefined') return;
+
+			visited[id] = point.y;
+			let children = vertex.getChildren();
+			for (let i = 0; i < children.length; i++) rec(children[i]);
+		};
+		rec(this.vertices[i]);
+		return Object.keys(visited).map((key) => visited[key]).sort((a, b) => a - b);
+	}
+
 
 	/* Width Adjustment Methods */
 
 	public limitMaxWidth(maxWidth: number) {
 		this.maxWidth = maxWidth;
-		this.applyMaxWidth(this.getWidth());
+		this.applyMaxWidth(this.getContentWidth());
 	}
 
-	private setDimensions(width: number, height: number) {
-		this.svg.setAttribute('width', width.toString());
+	private setDimensions(contentWidth: number, height: number) {
+		this.setSvgWidth(contentWidth);
 		this.svg.setAttribute('height', height.toString());
-		this.maskRect.setAttribute('width', width.toString());
+		this.maskRect.setAttribute('width', contentWidth.toString());
 		this.maskRect.setAttribute('height', height.toString());
 	}
 
-	private applyMaxWidth(width: number) {
-		let offset1 = this.maxWidth > -1 ? (this.maxWidth - 12) / width : 1;
-		let offset2 = this.maxWidth > -1 ? this.maxWidth / width : 1;
+	private applyMaxWidth(contentWidth: number) {
+		this.setSvgWidth(contentWidth);
+		let offset1 = this.maxWidth > -1 ? (this.maxWidth - 12) / contentWidth : 1;
+		let offset2 = this.maxWidth > -1 ? this.maxWidth / contentWidth : 1;
 		this.gradientStop1.setAttribute('offset', offset1.toString());
 		this.gradientStop2.setAttribute('offset', offset2.toString());
+	}
+
+	private setSvgWidth(contentWidth: number) {
+		let width = this.maxWidth > -1 ? Math.min(contentWidth, this.maxWidth) : contentWidth;
+		this.svg.setAttribute('width', width.toString());
 	}
 
 
@@ -545,5 +591,140 @@ class Graph {
 		}
 		this.availableColours.push(0);
 		return this.availableColours.length - 1;
+	}
+
+
+	/* Vertex Info */
+
+	private vertexOver(event: MouseEvent) {
+		if (event.target === null) return;
+		this.closeTooltip();
+
+		const vertexElem = <HTMLElement>event.target;
+		const id = parseInt(vertexElem.dataset.id!);
+		this.tooltipId = id;
+		const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), id);
+		if (commitElem !== null) commitElem.classList.add(CLASS_GRAPH_VERTEX_ACTIVE);
+
+		if (id < this.commits.length && this.commits[id].hash !== UNCOMMITTED) { // Only show tooltip for commits (not the uncommitted changes)
+			this.tooltipTimeout = setTimeout(() => {
+				this.tooltipTimeout = null;
+				let vertexScreenY = vertexElem.getBoundingClientRect().top + 4; // Get center of the circle
+				if (vertexScreenY >= 5 && vertexScreenY <= this.viewElem.clientHeight - 5) {
+					// Vertex is completely visible on the screen (not partially off)
+					this.tooltipVertex = vertexElem;
+					this.showTooltip(id, vertexScreenY);
+				}
+			}, 100);
+		}
+	}
+
+	private vertexOut(event: MouseEvent) {
+		if (event.target === null) return;
+		this.closeTooltip();
+	}
+
+	private showTooltip(id: number, vertexScreenY: number) {
+		if (this.tooltipVertex !== null) {
+			this.tooltipVertex.setAttribute('r', '5');
+		}
+
+		const children = this.getAllChildren(id);
+		let heads: string[] = [], remotes: GG.GitCommitRemote[] = [], stashes: string[] = [], tags: string[] = [], childrenIncludesHead = false;
+		for (let i = 0; i < children.length; i++) {
+			let commit = this.commits[children[i]];
+			for (let j = 0; j < commit.heads.length; j++) heads.push(commit.heads[j]);
+			for (let j = 0; j < commit.remotes.length; j++) remotes.push(commit.remotes[j]);
+			for (let j = 0; j < commit.tags.length; j++) tags.push(commit.tags[j].name);
+			if (commit.stash !== null) stashes.push(commit.stash.substring(5));
+			if (commit.hash === this.commitHead) childrenIncludesHead = true;
+		}
+
+		const getLimitedRefs = (htmlRefs: string[]) => {
+			if (htmlRefs.length > 10) htmlRefs.splice(5, htmlRefs.length - 10, ' ' + ELLIPSIS + ' ');
+			return htmlRefs.join('');
+		};
+
+		let html = '<div class="graphTooltipTitle">Commit ' + abbrevCommit(this.commits[id].hash) + '</div><div class="graphTooltipSection">This commit is ' + (childrenIncludesHead ? '' : '<b><i>not</i></b> ') + 'included in <span class="graphTooltipRef">HEAD</span></div>';
+		if (heads.length > 0 || remotes.length > 0) {
+			let branchLabels = getBranchLabels(heads, remotes), htmlRefs: string[] = [];
+			branchLabels.heads.forEach((head) => {
+				let html = head.remotes.reduce((prev, remote) => prev + '<span class="graphTooltipCombinedRef">' + escapeHtml(remote) + '</span>', '');
+				htmlRefs.push('<span class="graphTooltipRef">' + escapeHtml(head.name) + html + '</span>');
+			});
+			branchLabels.remotes.forEach((remote) => htmlRefs.push('<span class="graphTooltipRef">' + escapeHtml(remote.name) + '</span>'));
+			html += '<div class="graphTooltipSection">Branches: ' + getLimitedRefs(htmlRefs) + '</div>';
+		}
+		if (tags.length > 0) {
+			let htmlRefs = tags.map((tag) => '<span class="graphTooltipRef">' + escapeHtml(tag) + '</span>');
+			html += '<div class="graphTooltipSection">Tags: ' + getLimitedRefs(htmlRefs) + '</div>';
+		}
+		if (stashes.length > 0) {
+			let htmlRefs = stashes.map((stash) => '<span class="graphTooltipRef">' + escapeHtml(stash) + '</span>');
+			html += '<div class="graphTooltipSection">Stashes: ' + getLimitedRefs(htmlRefs) + '</div>';
+		}
+
+		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + this.vertices[id].getColour() + ')';
+		const anchor = document.createElement('div'), pointer = document.createElement('div'), content = document.createElement('div'), shadow = document.createElement('div');
+		const pixel: Pixel = {
+			x: point.x * this.config.grid.x + this.config.grid.offsetX,
+			y: point.y * this.config.grid.y + this.config.grid.offsetY + (this.expandedCommitId > -1 && id > this.expandedCommitId ? this.config.grid.expandY : 0)
+		};
+
+		anchor.setAttribute('id', 'graphTooltip');
+		anchor.style.opacity = '0';
+		pointer.setAttribute('id', 'graphTooltipPointer');
+		pointer.style.backgroundColor = color;
+		content.setAttribute('id', 'graphTooltipContent');
+		content.style.borderColor = color;
+		content.innerHTML = html;
+		content.style.maxWidth = Math.min(this.contentElem.getBoundingClientRect().width - pixel.x - 35, 600) + 'px'; // Tooltip Offset [23px] + Tooltip Border [2 * 2px] + Right Page Margin [8px] = 35px
+		shadow.setAttribute('id', 'graphTooltipShadow');
+		anchor.appendChild(shadow);
+		anchor.appendChild(pointer);
+		anchor.appendChild(content);
+		anchor.style.left = pixel.x + 'px';
+		anchor.style.top = pixel.y + 'px';
+		this.contentElem.appendChild(anchor);
+		this.tooltipElem = anchor;
+
+		let tooltipRect = content.getBoundingClientRect();
+		let relativeOffset = -tooltipRect.height / 2; // Center the tooltip vertically on the vertex
+		if (vertexScreenY + relativeOffset + tooltipRect.height > this.viewElem.clientHeight - 4) {
+			// Not enough height below the vertex to fit the vertex, shift it up.
+			relativeOffset = (this.viewElem.clientHeight - vertexScreenY - 4) - tooltipRect.height;
+		}
+		if (vertexScreenY + relativeOffset < 4) {
+			// Not enough height above the vertex to fit the tooltip, shift it down.
+			relativeOffset = -vertexScreenY + 4;
+		}
+		pointer.style.top = (-relativeOffset) + 'px';
+		anchor.style.top = (pixel.y + relativeOffset) + 'px';
+		shadow.style.width = tooltipRect.width + 'px';
+		shadow.style.height = tooltipRect.height + 'px';
+		anchor.style.opacity = '1';
+	}
+
+	private closeTooltip() {
+		if (this.tooltipId > -1) {
+			const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.tooltipId);
+			if (commitElem !== null) commitElem.classList.remove(CLASS_GRAPH_VERTEX_ACTIVE);
+			this.tooltipId = -1;
+		}
+
+		if (this.tooltipElem !== null) {
+			this.tooltipElem.remove();
+			this.tooltipElem = null;
+		}
+
+		if (this.tooltipTimeout !== null) {
+			clearTimeout(this.tooltipTimeout);
+			this.tooltipTimeout = null;
+		}
+
+		if (this.tooltipVertex !== null) {
+			this.tooltipVertex.setAttribute('r', '4');
+			this.tooltipVertex = null;
+		}
 	}
 }

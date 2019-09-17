@@ -440,7 +440,7 @@ export class GitGraphView {
 				fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
 				graphColours: config.graphColours(),
 				graphStyle: config.graphStyle(),
-				grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 250 },
+				grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },
 				initialLoadCommits: config.initialLoadCommits(),
 				loadMoreCommits: config.loadMoreCommits(),
 				muteMergeCommits: config.muteMergeCommits(),

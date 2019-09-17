@@ -1,4 +1,5 @@
 /* Body */
+
 body{
 	margin:0;
 	padding:0;
@@ -21,12 +22,16 @@ body #view{
 	overflow-y:auto;
 }
 
+
 /* Content */
+
 #content{
 	position:relative;
 }
 
+
 /* Overlays */
+
 #eventCaptureElem{
 	display:block;
 	position:fixed;
@@ -42,6 +47,7 @@ body #view{
 #eventCaptureElem.colResize{
 	cursor:col-resize;
 }
+
 #scrollShadow.active{
 	position:fixed;
 	top:0px;
@@ -52,13 +58,19 @@ body #view{
 	z-index:20;
 }
 
+
 /* Commit Graph */
+
 #commitGraph{
 	display:block;
 	position:absolute;
-	left:8px;
-	top:0px;
-	z-index:-1;
+	left:0;
+	top:0;
+	z-index:2;
+	pointer-events:none;
+}
+#commitGraph circle{
+	pointer-events:all;
 }
 #commitGraph circle.current{
 	fill:var(--vscode-editor-background);
@@ -80,7 +92,82 @@ body #view{
 	stroke-width:2;
 }
 
+#graphTooltip{
+	display:block;
+	position:absolute;
+	pointer-events:none;
+}
+#graphTooltipPointer{
+	position:absolute;
+	display:block;
+	width:30px;
+	height:2px;
+	left:4px;
+	top:0;
+	margin-top:-1px;
+	z-index:4;
+}
+#graphTooltipContent{
+	position:relative;
+	left:23px;
+	top:0;
+	background-color:var(--vscode-menu-background);
+	border-width:2px;
+	border-style:solid;
+	border-radius:5px;
+	color:var(--vscode-menu-foreground);
+	font-size:13px;
+	line-height:22px;
+	white-space:normal;
+	z-index:5;
+}
+#graphTooltipShadow{
+	position:absolute;
+	left:23px;
+	top:0;
+	border-radius:5px;
+	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
+	z-index:3;
+}
+
+.graphTooltipTitle, .graphTooltipSection{
+	padding:3px 10px;
+}
+.graphTooltipTitle{
+	text-align:center;
+	font-weight:700;
+}
+.graphTooltipSection{
+	border-top:1px solid rgba(128,128,128,0.5);
+}
+.graphTooltipRef, .graphTooltipCombinedRef{
+	display:inline-block;
+	height:18px;
+	line-height:18px;
+}
+.graphTooltipRef{
+	margin:2px;
+	padding:0 5px;
+	background-color:rgba(128,128,128,0.15);
+	border-radius:5px;
+	border:1px solid rgba(128,128,128,0.75);
+	vertical-align:top;
+	font-size:12px;
+	cursor:default;
+}
+.graphTooltipCombinedRef{
+	margin-left:5px;
+	padding-left:5px;
+	border-left:1px solid rgba(128,128,128,0.45);
+	font-style:italic;
+}
+
+
 /* Commit Table */
+
+#commitTable{
+	z-index:1;
+}
 #commitTable table{
 	width:100%;
 	border-collapse:collapse;
@@ -105,7 +192,7 @@ body #view{
 	line-height:18px;
 	padding:6px 12px;
 }
-#commitTable tr.commit:hover td{
+#commitTable tr.commit td{
 	cursor:pointer;
 }
 #commitTable tr.commit.current td span.text{
@@ -147,7 +234,9 @@ body #view{
 	right:0px;
 }
 
+
 /* Commit Details View */
+
 #cdv.inline{
 	vertical-align:top;
 }
@@ -227,6 +316,7 @@ body #view{
 	text-overflow:ellipsis;
 	user-select:text;
 }
+
 .cdvSummaryTop{
 	display:inline-table;
 	width:100%;
@@ -253,6 +343,7 @@ body #view{
 	width:54px;
 	border-radius:4px;
 }
+
 #cdvFiles{
 	left:50%;
 	right:0;
@@ -275,6 +366,7 @@ body #view{
 	text-overflow:ellipsis;
 	overflow-x:hidden;
 }
+
 #cdvLoading{
 	left:0;
 	right:0;
@@ -294,6 +386,7 @@ body #view{
 	fill:var(--vscode-editor-foreground);
 	animation:loadingIconAnimation 2s linear infinite;
 }
+
 .cdvHeightResize{
 	position:absolute;
 	left:0;
@@ -340,7 +433,9 @@ body #view{
 	border-top:2px solid rgba(128,128,128,0.2);
 }
 
+
 /* File Tree */
+
 .fileTreeFileIcon, .fileTreeFolderIcon, .fileTreeRepoIcon, .fileTreeFileAction, #cdvLastFileViewed{
 	position:relative;
 	display:inline-block;
@@ -431,7 +526,9 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	margin-right:4px;
 }
 
+
 /* Commit Emphasis */
+
 .commitHeadDot{
 	width:6px;
 	height:6px;
@@ -442,13 +539,13 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	vertical-align:top;
 	margin-top:7px;
 }
-#commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.findCurrentCommit:hover, #commitTable tr.commit.dialogActive{
+#commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.findCurrentCommit:hover, #commitTable tr.commit.graphVertexActive, #commitTable tr.commit.dialogActive{
 	background-color:rgba(128,128,128,0.15);
 }
 #commitTable tr.commit.commitDetailsOpen{
 	background-color:rgba(128,128,128,0.25);
 }
-#commitTable tr.commit.commitDetailsOpen:hover, #commitTable tr.commit.commitDetailsOpen.contextMenuActive, #commitTable tr.commit.commitDetailsOpen.dialogActive{
+#commitTable tr.commit.commitDetailsOpen:hover, #commitTable tr.commit.commitDetailsOpen.contextMenuActive, #commitTable tr.commit.commitDetailsOpen.dialogActive, #commitTable tr.commit.commitDetailsOpen.graphVertexActive{
 	background-color:rgba(128,128,128,0.35);
 }
 #commitTable tr.commit.findCurrentCommit {
@@ -458,7 +555,9 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	opacity:1;
 }
 
+
 /* Ref labels */
+
 .gitRef {
 	display:inline-block;
 	height:18px;
@@ -511,7 +610,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	margin-right:0;
 }
 
+
 /* Loader */
+
 #loadingHeader{
 	text-align:center;
 	line-height:32px;
@@ -531,7 +632,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	100%{ transform:rotate(360deg); opacity:0.7; }
 }
 
+
 /* Controls */
+
 #controls{
 	display:block;
 	position:relative;
@@ -639,7 +742,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	cursor:pointer;
 }
 
+
 /* Buttons */
+
 #loadMoreCommitsBtn, #rescanForReposBtn{
 	height:28px;
 	margin:10px auto;
@@ -665,7 +770,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	background-color:rgba(128,128,128,0.2);
 }
 
+
 /* General */
+
 #commitGraph, #commitTable th, #commitTable td, .gitRef, #loadingHeader, .unselectable, .roundedBtn, #controls label{
 	user-select:none;
 }

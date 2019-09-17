@@ -39,7 +39,7 @@ class GitGraphView {
 		this.gitRepos = initialState.repos;
 		this.config = initialState.config;
 		this.maxCommits = this.config.initialLoadCommits;
-		this.graph = new Graph('commitGraph', this.config);
+		this.graph = new Graph('commitGraph', viewElem, this.config);
 		this.viewElem = viewElem;
 
 		this.controlsElem = document.getElementById('controls')!;
@@ -509,8 +509,8 @@ class GitGraphView {
 		if (this.expandedCommit !== null) {
 			let expandedCommit = this.expandedCommit, elems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
 
-			let elem = this.findCommitElemWithId(elems, this.getCommitId(expandedCommit.hash));
-			let compareWithElem = expandedCommit.compareWithHash !== null ? this.findCommitElemWithId(elems, this.getCommitId(expandedCommit.compareWithHash)) : null;
+			let elem = findCommitElemWithId(elems, this.getCommitId(expandedCommit.hash));
+			let compareWithElem = expandedCommit.compareWithHash !== null ? findCommitElemWithId(elems, this.getCommitId(expandedCommit.compareWithHash)) : null;
 
 			if (elem === null || (expandedCommit.compareWithHash !== null && compareWithElem === null)) {
 				this.closeCommitDetails(false);
@@ -981,15 +981,6 @@ class GitGraphView {
 		return id < this.commits.length ? this.commits[id] : null;
 	}
 
-	private findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number | null) {
-		if (id === null) return null;
-		let findIdStr = id.toString();
-		for (let i = 0; i < elems.length; i++) {
-			if (findIdStr === elems[i].dataset.id) return elems[i];
-		}
-		return null;
-	}
-
 	private getCommitId(hash: string) {
 		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
 	}
@@ -1051,7 +1042,7 @@ class GitGraphView {
 				cols[i].style.width = columnWidths[parseInt(cols[i].dataset.col!)] + 'px';
 			}
 			this.tableElem.className = 'fixedLayout';
-			this.graph.limitMaxWidth(columnWidths[0] + 16);
+			this.graph.limitMaxWidth(columnWidths[0] + COLUMN_LEFT_RIGHT_PADDING);
 		};
 
 		for (let i = 0; i < cols.length; i++) {
@@ -1075,7 +1066,7 @@ class GitGraphView {
 			// Table should have automatic layout
 			this.tableElem.className = 'autoLayout';
 			this.graph.limitMaxWidth(-1);
-			cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getWidth() + 16, 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
+			cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getContentWidth(), 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
 		}
 
 		addListenerToClass('resizeCol', 'mousedown', (e) => {
@@ -1102,7 +1093,7 @@ class GitGraphView {
 					if (cols[1].clientWidth - COLUMN_LEFT_RIGHT_PADDING - mouseDeltaX < COLUMN_MIN_WIDTH) mouseDeltaX = cols[1].clientWidth - COLUMN_LEFT_RIGHT_PADDING - COLUMN_MIN_WIDTH;
 					columnWidths[0] += mouseDeltaX;
 					cols[0].style.width = columnWidths[0] + 'px';
-					this.graph.limitMaxWidth(columnWidths[0] + 16);
+					this.graph.limitMaxWidth(columnWidths[0] + COLUMN_LEFT_RIGHT_PADDING);
 				} else {
 					let colWidth = col !== 1 ? columnWidths[col] : cols[1].clientWidth - COLUMN_LEFT_RIGHT_PADDING;
 					let nextCol = col + 1;
@@ -1180,7 +1171,7 @@ class GitGraphView {
 	}
 
 	public scrollToCommit(hash: string, alwaysCenterCommit: boolean) {
-		let elem = this.findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.getCommitId(hash));
+		let elem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.getCommitId(hash));
 		if (elem === null) return;
 
 		let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
@@ -1273,7 +1264,7 @@ class GitGraphView {
 						}
 						if (newHashIndex > -1) {
 							e.preventDefault();
-							let elem = this.findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), newHashIndex);
+							let elem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), newHashIndex);
 							if (elem !== null) this.loadCommitDetails(elem);
 						}
 					}
@@ -2353,6 +2344,15 @@ function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
 		remoteLabels = remotes;
 	}
 	return { heads: headLabels, remotes: remoteLabels };
+}
+
+function findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number | null) {
+	if (id === null) return null;
+	let findIdStr = id.toString();
+	for (let i = 0; i < elems.length; i++) {
+		if (findIdStr === elems[i].dataset.id) return elems[i];
+	}
+	return null;
 }
 
 function closeDialogAndContextMenu() {

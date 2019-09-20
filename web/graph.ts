@@ -175,6 +175,10 @@ class Vertex {
 		this.y = y;
 	}
 
+	public getId() {
+		return this.y;
+	}
+
 
 	/* Children */
 
@@ -366,6 +370,7 @@ class Graph {
 		this.availableColours = [];
 		if (commits.length === 0) return;
 
+		const nullVertex = new Vertex(-1);
 		let i: number, j: number;
 		for (i = 0; i < commits.length; i++) {
 			this.vertices.push(new Vertex(i));
@@ -374,8 +379,12 @@ class Graph {
 			for (j = 0; j < commits[i].parents.length; j++) {
 				let parentHash = commits[i].parents[j];
 				if (typeof commitLookup[parentHash] === 'number') {
+					// Parent is the <commitLookup[parentHash]>th vertex
 					this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
 					this.vertices[commitLookup[parentHash]].addChild(this.vertices[i]);
+				} else {
+					// Parent is not one of the vertices of the graph
+					this.vertices[i].addParent(nullVertex);
 				}
 			}
 		}
@@ -488,11 +497,11 @@ class Graph {
 	private getAllChildren(i: number) {
 		let visited: { [id: string]: number } = {};
 		const rec = (vertex: Vertex) => {
-			let point = vertex.getPoint();
-			let id = point.y.toString();
-			if (typeof visited[id] !== 'undefined') return;
+			let id = vertex.getId();
+			let idStr = id.toString();
+			if (typeof visited[idStr] !== 'undefined') return;
 
-			visited[id] = point.y;
+			visited[idStr] = id;
 			let children = vertex.getChildren();
 			for (let i = 0; i < children.length; i++) rec(children[i]);
 		};
@@ -536,7 +545,7 @@ class Graph {
 		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent(), curVertex;
 		let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint(), curPoint;
 
-		if (parentVertex !== null && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
+		if (parentVertex !== null && parentVertex.getId() > -1 && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
 			// Branch is a merge between two vertices already on branches
 			let foundPointToParent = false, parentBranch = parentVertex.getBranch()!;
 			for (i = startAt + 1; i < this.vertices.length; i++) {
@@ -569,13 +578,21 @@ class Graph {
 				lastPoint = curPoint;
 
 				if (parentVertex === curVertex) {
+					// The parent of <vertex> has been reached, progress <vertex> and <parentVertex> to continue building the branch
 					vertex.registerParentProcessed();
 					let parentVertexOnBranch = !parentVertex.isNotOnBranch();
 					parentVertex.addToBranch(branch, curPoint.x);
 					vertex = parentVertex;
 					parentVertex = vertex.getNextParent();
-					if (parentVertexOnBranch) break;
+					if (parentVertex === null || parentVertexOnBranch) {
+						// There are no more parent vertices, or the parent was already on a branch
+						break;
+					}
 				}
+			}
+			if (i === this.vertices.length && parentVertex !== null && parentVertex.getId() === -1) {
+				// Vertex is the last in the graph, so no more branch can be formed to the parent
+				vertex.registerParentProcessed();
 			}
 			branch.setEnd(i);
 			this.branches.push(branch);
@@ -664,7 +681,7 @@ class Graph {
 			html += '<div class="graphTooltipSection">Stashes: ' + getLimitedRefs(htmlRefs) + '</div>';
 		}
 
-		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + this.vertices[id].getColour() + ')';
+		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + (this.vertices[id].getColour() % this.config.graphColours.length) + ')';
 		const anchor = document.createElement('div'), pointer = document.createElement('div'), content = document.createElement('div'), shadow = document.createElement('div');
 		const pixel: Pixel = {
 			x: point.x * this.config.grid.x + this.config.grid.offsetX,

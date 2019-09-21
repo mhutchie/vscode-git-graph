@@ -256,6 +256,10 @@ export interface ResponseWithErrorInfo extends BaseMessage {
 	readonly error: ErrorInfo;
 }
 
+export interface ResponseWithMultiErrorInfo extends BaseMessage {
+	readonly errors: ErrorInfo[];
+}
+
 export type ErrorInfo = string | null; // null => no error, otherwise => error message
 
 
@@ -404,8 +408,9 @@ export interface RequestDeleteBranch extends RepoRequest {
 	readonly command: 'deleteBranch';
 	readonly branchName: string;
 	readonly forceDelete: boolean;
+	readonly deleteOnRemotes: string[];
 }
-export interface ResponseDeleteBranch extends ResponseWithErrorInfo {
+export interface ResponseDeleteBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'deleteBranch';
 }
 

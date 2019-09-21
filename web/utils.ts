@@ -169,6 +169,14 @@ function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[])
 	}
 }
 
+function formatCommaSeparatedList(items: string[]) {
+	let str = '';
+	for (let i = 0; i < items.length; i++) {
+		str += (i > 0 ? (i < items.length - 1 ? ', ' : ' & ') : '') + items[i];
+	}
+	return str;
+}
+
 /* DOM Helpers */
 function addListenerToClass(className: string, event: string, eventListener: EventListener) {
 	let elems = document.getElementsByClassName(className), i;

@@ -1,6 +1,6 @@
 const CLASS_DIALOG_ACTIVE = 'dialogActive';
 const CLASS_DIALOG_INPUT_INVALID = 'inputInvalid';
-const CLASS_DIALOG_NO_INPUT= 'noInput';
+const CLASS_DIALOG_NO_INPUT = 'noInput';
 
 class Dialog {
 	private elem: HTMLElement | null = null;
@@ -111,11 +111,11 @@ class Dialog {
 	}
 
 	public showError(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-		this.show(MESSAGE_DIALOG, SVG_ICONS.alert + 'Error: ' + message + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
+		this.show(MESSAGE_DIALOG, '<span class="dialogAlert">' + SVG_ICONS.alert + 'Error: ' + message + '</span>' + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
 	}
 
 	public showActionRunning(action: string) {
-		this.show(ACTION_RUNNING_DIALOG, '<span id="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
+		this.show(ACTION_RUNNING_DIALOG, '<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
 	}
 
 	private show(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, sourceElem: HTMLElement | null) {

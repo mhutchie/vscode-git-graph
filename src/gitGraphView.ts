@@ -193,10 +193,11 @@ export class GitGraphView {
 					});
 					break;
 				case 'deleteBranch':
-					this.sendMessage({
-						command: 'deleteBranch',
-						error: await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)
-					});
+					let errorInfos = [await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)];
+					for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
+						errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
+					}
+					this.sendMessage({ command: 'deleteBranch', errors: errorInfos });
 					break;
 				case 'deleteRemote':
 					this.sendMessage({

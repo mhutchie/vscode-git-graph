@@ -118,22 +118,34 @@
 	display:inline;
 	fill:var(--vscode-menu-foreground);
 	opacity:0.75;
-	margin-right:3px;
-	line-height:20px;
 	vertical-align:sub;
 }
 
-#actionRunning{
+.dialog .dialogAlert, .dialog .actionRunning{
 	margin:0 16px;
+}
+.dialog .dialogAlert svg, .dialog .actionRunning svg{
+	margin-right:8px;
+}
+
+.dialog .dialogInfo{
+	cursor:help;
+}
+.dialog .dialogInfo svg{
+	width:14px !important;
+	height:14px !important;
+	margin-left:5px;
+}
+
+.dialog .actionRunning{
 	line-height:24px;
 }
 
-#actionRunning svg{
+.dialog .actionRunning svg{
 	display:inline-block;
 	width:15px !important;
 	height:20px !important;
 	margin-top:2px;
-	margin-right:8px;
 	vertical-align:top;
 	animation:loadingIconAnimation 2s linear infinite;
 }

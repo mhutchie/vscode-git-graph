@@ -810,8 +810,17 @@ class GitGraphView {
 							menu.push({
 								title: 'Delete Branch' + ELLIPSIS,
 								onClick: () => {
-									dialog.showCheckbox('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Force Delete', false, 'Delete Branch', (forceDelete) => {
-										runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: forceDelete }, 'Deleting Branch');
+									let remotesWithBranch = this.gitRemotes.filter(remote => this.gitBranches.includes('remotes/' + remote + '/' + refName));
+									let inputs: DialogInput[] = [{ type: 'checkbox', name: 'Force Delete', value: false }];
+									if (remotesWithBranch.length > 0) {
+										inputs.push({
+											type: 'checkbox',
+											name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : '') + '<span class="dialogInfo" title="This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map(remote => escapeHtml('"' + remote + '"'))) + '">' + SVG_ICONS.info + '</span>',
+											value: false
+										});
+									}
+									dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Delete Branch', (values) => {
+										runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: values[0] === 'checked', deleteOnRemotes: remotesWithBranch.length > 0 && values[1] === 'checked' ? remotesWithBranch : [] }, 'Deleting Branch');
 									}, null);
 								}
 							}, {
@@ -1871,7 +1880,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Create Branch');
 				break;
 			case 'deleteBranch':
-				refreshOrDisplayError(msg.error, 'Unable to Delete Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Delete Branch');
 				break;
 			case 'deleteRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
@@ -2000,6 +2009,22 @@ window.addEventListener('load', () => {
 			gitGraph.refresh(false);
 		} else {
 			dialog.showError(errorMessage, error, null, null, null);
+		}
+	}
+	function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string) {
+		let error: GG.ErrorInfo = null, partialOrCompleteSuccess = false;
+		for (let i = 0; i < errors.length; i++) {
+			if (errors[i] !== null) {
+				error = error !== null ? error + '\n\n' + errors[i] : errors[i];
+			} else {
+				partialOrCompleteSuccess = true;
+			}
+		}
+		if (error !== null) {
+			dialog.showError(errorMessage, error, null, null, null);
+		}
+		if (partialOrCompleteSuccess) {
+			gitGraph.refresh(false);
 		}
 	}
 	function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {

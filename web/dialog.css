@@ -121,9 +121,6 @@
 	vertical-align:sub;
 }
 
-.dialog .dialogAlert, .dialog .actionRunning{
-	margin:0 16px;
-}
 .dialog .dialogAlert svg, .dialog .actionRunning svg{
 	margin-right:8px;
 }
@@ -138,6 +135,7 @@
 }
 
 .dialog .actionRunning{
+	margin:0 16px;
 	line-height:24px;
 }
 

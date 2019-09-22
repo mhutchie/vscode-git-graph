@@ -16,7 +16,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Add, Delete & Push Tags
         * Checkout, Cherry Pick, Drop, Merge & Revert Commits
         * Clean, Reset & Stash Uncommitted Changes
-        * Apply, Create Branch From & Drop Stashes
+        * Apply, Create Branch From, Drop & Pop Stashes
         * View annotated tag details (name, email, date and message)
         * Copy commit hashes, and branch, stash & tag names to the clipboard
     * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
@@ -33,6 +33,9 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * When a Code Review is started, all files needing to be reviewed are bolded. When you view the diff / open a file, it will then be un-bolded.
         * Code Reviews persist across Visual Studio Code sessions. They are automatically closed after 90 days of inactivity.
     * View uncommitted changes, and compare the uncommitted changes with any commit.
+    * Hover over any commit vertex on the graph to see a tooltip indicating:
+        * Whether the commit is included in the HEAD.
+        * Which branches, tags and stashes include the commit. 
     * Filter the branches shown in Git Graph using the 'Branches' dropdown menu. The options for filtering the branches are:
         * Show All branches
         * Select one or more branches to be viewed
@@ -67,7 +70,7 @@ A summary of the Git Graph extension settings are:
 * **Date Format**: Specifies the date format to be used in the date column of the graph.
 * **Date Type**: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
-* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Create Branch, Merge, and Rebase
+* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Create Branch, Merge, Rebase, Reset, and Stash Uncommitted Changes
 * **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
 * **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8

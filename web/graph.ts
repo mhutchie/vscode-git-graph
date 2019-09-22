@@ -463,7 +463,7 @@ class Graph {
 	public getWidthsAtVertices() {
 		let widths = [], i;
 		for (i = 0; i < this.vertices.length; i++) {
-			widths[i] = (this.vertices[i].getNextPoint().x + 1) * this.config.grid.x - 2;
+			widths[i] = this.config.grid.offsetX + this.vertices[i].getNextPoint().x * this.config.grid.x - 2;
 		}
 		return widths;
 	}
@@ -630,6 +630,7 @@ class Graph {
 				if (vertexScreenY >= 5 && vertexScreenY <= this.viewElem.clientHeight - 5) {
 					// Vertex is completely visible on the screen (not partially off)
 					this.tooltipVertex = vertexElem;
+					closeDialogAndContextMenu();
 					this.showTooltip(id, vertexScreenY);
 				}
 			}, 100);

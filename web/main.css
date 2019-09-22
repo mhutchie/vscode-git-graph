@@ -257,6 +257,7 @@ body #view{
 	font-size:13px;
 	line-height:18px;
 	white-space:normal;
+	cursor:default;
 }
 #cdvContent{
 	position:absolute;

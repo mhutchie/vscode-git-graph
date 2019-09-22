@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.16.0 - 2019-09-22
+* #156 Hover over any commit vertex on the graph to see a tooltip indicating:
+    * Whether the commit is included in the HEAD.
+    * Which branches, tags and stashes include the commit.
+* #161 New option on the "Delete Branch" dialog to also delete the branch on the remote(s). This only appears if one or more remotes contain a branch with the same name as the branch being deleted.
+* #180 New "Pop..." action on the Stash Context Menu.
+* #181 Added new extension settings to set the default options on the following dialogs: Reset Current Branch To Commit, Reset Uncommitted Changes, and Stash Uncommitted Changes.
+* #183 Graph construction, representation, and layout improvements, that produce a better visualisation, and enable topological analysis for exciting new and upcoming features.
+* Various code and UI improvements.
+
 ## 1.15.0 - 2019-09-13
 * #48 Support for Stashes
     * Show Stashes on the Git Graph View.
@@ -17,7 +27,7 @@
 * #175 Double clicking "Show All" in the Branches dropdown now selects/unselects all branches. This makes it faster to select all but one or two branches. Thanks [Thibault Matot (@thmatot)](https://github.com/thmatot)!
 * #177 Display path hints if necessary in the "Repo" dropdown to differentiate multiple repositories that have the same name.
 * #178 New setting `git-graph.showCommitsOnlyReferencedByTags` specifies whether commits that are only referenced by tags should be shown in Git Graph. Default: true (enabled)
-* Various code, performance, and UI improvments.
+* Various code, performance, and UI improvements.
 
 ## 1.14.0 - 2019-09-02
 * Commit Details & Comparison View Enhancements:

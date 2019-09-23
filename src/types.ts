@@ -495,6 +495,16 @@ export interface ResponseFetchAvatar extends BaseMessage {
 	readonly image: string;
 }
 
+export interface RequestFetchIntoLocalBranch extends RepoRequest {
+	readonly command: 'fetchIntoLocalBranch';
+	readonly remote: string;
+	readonly remoteBranch: string;
+	readonly localBranch: string;
+}
+export interface ResponseFetchIntoLocalBranch extends ResponseWithErrorInfo {
+	readonly command: 'fetchIntoLocalBranch';
+}
+
 export interface RequestGetSettings extends RepoRequest {
 	readonly command: 'getSettings';
 }
@@ -747,6 +757,7 @@ export type RequestMessage =
 	| RequestEndCodeReview
 	| RequestFetch
 	| RequestFetchAvatar
+	| RequestFetchIntoLocalBranch
 	| RequestGetSettings
 	| RequestLoadBranches
 	| RequestLoadCommits
@@ -793,6 +804,7 @@ export type ResponseMessage =
 	| ResponseEditRemote
 	| ResponseFetch
 	| ResponseFetchAvatar
+	| ResponseFetchIntoLocalBranch
 	| ResponseGetSettings
 	| ResponseLoadBranches
 	| ResponseLoadCommits

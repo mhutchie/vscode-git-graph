@@ -860,28 +860,39 @@ class GitGraphView {
 							title: 'Checkout Branch' + ELLIPSIS,
 							onClick: () => this.checkoutBranchAction(refName, remote, null)
 						});
-						if (remote !== '') { // If the remote of the remote branch ref is known
-							menu.push(
-								{
-									title: 'Delete Remote Branch' + ELLIPSIS,
-									onClick: () => {
-										dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-											runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote }, 'Deleting Remote Branch');
-										}, null);
-									}
-								},
-								{
-									title: 'Pull into current branch' + ELLIPSIS,
-									onClick: () => {
-										dialog.showForm('Are you sure you want to pull branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
-											{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
-											{ type: 'checkbox', name: 'Squash commits', value: false }
-										], 'Yes, pull', values => {
-											runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: refName.substr(remote.length + 1), remote: remote, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Pulling Branch');
-										}, null);
-									}
+						if (remote !== '') {
+							// The remote is known
+							let branchName = refName.substring(remote.length + 1);
+							menu.push({
+								title: 'Delete Remote Branch' + ELLIPSIS,
+								onClick: () => {
+									dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+										runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: branchName, remote: remote }, 'Deleting Remote Branch');
+									}, null);
 								}
-							);
+							});
+							if (this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName) {
+								// A local branch has the same name as the remote branch, and it is not checked out
+								menu.push({
+									title: 'Fetch into local branch' + ELLIPSIS,
+									onClick: () => {
+										dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', () => {
+											runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
+										}, null);
+									}
+								});
+							}
+							menu.push({
+								title: 'Pull into current branch' + ELLIPSIS,
+								onClick: () => {
+									dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
+										{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
+										{ type: 'checkbox', name: 'Squash commits', value: false }
+									], 'Yes, pull', values => {
+										runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Pulling Branch');
+									}, null);
+								}
+							});
 						}
 					}
 					copyType = 'Branch Name';
@@ -998,7 +1009,7 @@ class GitGraphView {
 
 	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null) {
 		if (remote !== null) {
-			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substr(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
+			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substring(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
 				if (this.gitBranches.includes(newBranch)) {
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch);
@@ -1909,6 +1920,9 @@ window.addEventListener('load', () => {
 				imageResizer.resize(msg.image, (resizedImage) => {
 					gitGraph.loadAvatar(msg.email, resizedImage);
 				});
+				break;
+			case 'fetchIntoLocalBranch':
+				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');
 				break;
 			case 'getSettings':
 				settingsWidget.loadSettings(msg.settings, msg.error);

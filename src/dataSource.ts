@@ -488,6 +488,10 @@ export class DataSource {
 		return remoteStatus;
 	}
 
+	public fetchIntoLocalBranch(repo: string, remote: string, remoteBranch: string, localBranch: string) {
+		return this.runGitCommand(['fetch', remote, remoteBranch + ':' + localBranch], repo);
+	}
+
 	public async pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
 		let args = ['pull', remote, branchName];
 		if (squash) args.push('--squash');

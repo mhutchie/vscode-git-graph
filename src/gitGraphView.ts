@@ -244,6 +244,12 @@ export class GitGraphView {
 				case 'fetchAvatar':
 					this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
 					break;
+				case 'fetchIntoLocalBranch':
+					this.sendMessage({
+						command: 'fetchIntoLocalBranch',
+						error: await this.dataSource.fetchIntoLocalBranch(msg.repo, msg.remote, msg.remoteBranch, msg.localBranch)
+					});
+					break;
 				case 'endCodeReview':
 					this.extensionState.endCodeReview(msg.repo, msg.id);
 					break;

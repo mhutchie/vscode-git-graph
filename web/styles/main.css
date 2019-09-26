@@ -50,10 +50,10 @@ body #view{
 
 #scrollShadow.active{
 	position:fixed;
-	top:0px;
-	left:0px;
-	width:100%;
-	height:0px;
+	top:0;
+	left:0;
+	right:0;
+	height:0;
 	box-shadow:0 -6px 6px 6px var(--vscode-scrollbar-shadow);
 	z-index:20;
 }
@@ -212,26 +212,23 @@ body #view{
 #commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
 	max-width:124px;
 }
-#tableColHeaders.resizing th{
-	cursor:col-resize;
-}
 .tableColHeader{
 	position:relative;
 }
 .resizeCol{
 	position:absolute;
-	top:0px;
+	top:0;
 	height:100%;
 	display:block;
 	width:6px;
 	cursor:col-resize;
 }
 .resizeCol.left{
-	left:0px;
+	left:0;
 	border-left:1px solid rgba(128,128,128,0.25);
 }
 .resizeCol.right{
-	right:0px;
+	right:0;
 }
 
 

@@ -2,7 +2,7 @@ const cp = require('child_process');
 const fs = require('fs');
 
 const MEDIA_DIRECTORY = './media/';
-const WEB_DIRECTORY = './web/';
+const STYLES_DIRECTORY = './web/styles/';
 
 const MAIN_CSS_FILE = 'main.css';
 const MAIN_JS_FILE = 'main.js';
@@ -23,9 +23,9 @@ fs.readdirSync(MEDIA_DIRECTORY).forEach(filename => {
 packageJsFiles.push(MEDIA_DIRECTORY + MAIN_JS_FILE);
 
 // Determine the CSS files to be packaged. The order is: main.css, and then *.css
-let packageCssFiles = [WEB_DIRECTORY + MAIN_CSS_FILE];
-fs.readdirSync(WEB_DIRECTORY).forEach(filename => {
-	if (filename.endsWith('.css') && filename !== MAIN_CSS_FILE) packageCssFiles.push(WEB_DIRECTORY + filename);
+let packageCssFiles = [STYLES_DIRECTORY + MAIN_CSS_FILE];
+fs.readdirSync(STYLES_DIRECTORY).forEach(filename => {
+	if (filename.endsWith('.css') && filename !== MAIN_CSS_FILE) packageCssFiles.push(STYLES_DIRECTORY + filename);
 });
 
 // Log packaging information
@@ -69,7 +69,7 @@ packageCssFiles.forEach(filename => {
 	} else {
 		let lines = contents.split(/\r\n|\r|\n/g);
 		for (let j = 0; j < lines.length; j++) {
-			if (lines[j].startsWith('\t')) lines[j] = lines[j].substr(1);
+			if (lines[j].startsWith('\t')) lines[j] = lines[j].substring(1);
 		}
 		let j = 0;
 		while (j < lines.length) {

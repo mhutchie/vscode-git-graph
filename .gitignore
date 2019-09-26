@@ -1,5 +1,4 @@
-media/*.js
-media/*.css
+media
 node_modules
 out
 *.vsix

@@ -164,7 +164,7 @@ function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[])
 	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
 	for (let i = 0; i < mappings.length; i++) {
 		if (validShortcodeRegex.test(mappings[i].shortcode)) {
-			EMOJI_MAPPINGS[mappings[i].shortcode.substr(1, mappings[i].shortcode.length - 2)] = mappings[i].emoji;
+			EMOJI_MAPPINGS[mappings[i].shortcode.substring(1, mappings[i].shortcode.length - 1)] = mappings[i].emoji;
 		}
 	}
 }

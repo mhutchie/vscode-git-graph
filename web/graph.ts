@@ -143,7 +143,9 @@ class Branch {
 			}
 		}
 
-		this.drawPath(svg, curPath, curColour); // Draw the remaining path
+		if (curPath !== '') {
+			this.drawPath(svg, curPath, curColour); // Draw the remaining path
+		}
 	}
 
 	private drawPath(svg: SVGElement, path: string, colour: string) {

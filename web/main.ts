@@ -1089,21 +1089,7 @@ class GitGraphView {
 			cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getContentWidth(), 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
 		}
 
-		addListenerToClass('resizeCol', 'mousedown', (e) => {
-			col = parseInt((<HTMLElement>e.target).dataset.col!);
-			while (columnWidths[col] === COLUMN_HIDDEN) col--;
-			mouseX = (<MouseEvent>e).clientX;
-
-			let isAuto = columnWidths[0] === COLUMN_AUTO;
-			for (let i = 0; i < cols.length; i++) {
-				let curCol = parseInt(cols[i].dataset.col!);
-				if (isAuto && curCol !== 1) columnWidths[curCol] = cols[i].clientWidth - COLUMN_LEFT_RIGHT_PADDING;
-				if (curCol === col) colIndex = i;
-			}
-			if (isAuto) makeTableFixedLayout();
-			colHeadersElem.classList.add('resizing');
-		});
-		colHeadersElem.addEventListener('mousemove', (e) => {
+		const processResizingColumn: EventListener = (e) => {
 			if (col > -1) {
 				let mouseEvent = <MouseEvent>e;
 				let mouseDeltaX = mouseEvent.clientX - mouseX;
@@ -1130,18 +1116,32 @@ class GitGraphView {
 				}
 				mouseX = mouseEvent.clientX;
 			}
-		});
-		const stopResizing = () => {
+		};
+		const stopResizingColumn: EventListener = () => {
 			if (col > -1) {
 				col = -1;
 				colIndex = -1;
 				mouseX = -1;
-				colHeadersElem.classList.remove('resizing');
+				eventOverlay.remove();
 				this.saveColumnWidths(columnWidths);
 			}
 		};
-		colHeadersElem.addEventListener('mouseup', stopResizing);
-		colHeadersElem.addEventListener('mouseleave', stopResizing);
+
+		addListenerToClass('resizeCol', 'mousedown', (e) => {
+			col = parseInt((<HTMLElement>e.target).dataset.col!);
+			while (columnWidths[col] === COLUMN_HIDDEN) col--;
+			mouseX = (<MouseEvent>e).clientX;
+
+			let isAuto = columnWidths[0] === COLUMN_AUTO;
+			for (let i = 0; i < cols.length; i++) {
+				let curCol = parseInt(cols[i].dataset.col!);
+				if (isAuto && curCol !== 1) columnWidths[curCol] = cols[i].clientWidth - COLUMN_LEFT_RIGHT_PADDING;
+				if (curCol === col) colIndex = i;
+			}
+			if (isAuto) makeTableFixedLayout();
+			eventOverlay.create('colResize', processResizingColumn, stopResizingColumn);
+		});
+
 		colHeadersElem.addEventListener('contextmenu', (e: MouseEvent) => {
 			e.stopPropagation();
 			const toggleColumnState = (col: number, defaultWidth: number) => {
@@ -1678,7 +1678,7 @@ class GitGraphView {
 	private makeCdvResizable() {
 		let prevY = -1;
 
-		const processHeightEvent: EventListener = (e) => {
+		const processResizingCdvHeight: EventListener = (e) => {
 			if (prevY < 0) return;
 			let delta = (<MouseEvent>e).pageY - prevY, isDocked = this.isCdvDocked(), windowHeight = window.innerHeight;
 			prevY = (<MouseEvent>e).pageY;
@@ -1694,9 +1694,9 @@ class GitGraphView {
 				if (!isDocked) this.renderGraph();
 			}
 		};
-		const stopResizingHeight: EventListener = (e) => {
+		const stopResizingCdvHeight: EventListener = (e) => {
 			if (prevY < 0) return;
-			processHeightEvent(e);
+			processResizingCdvHeight(e);
 			this.saveRepoState();
 			prevY = -1;
 			eventOverlay.remove();
@@ -1704,14 +1704,14 @@ class GitGraphView {
 
 		addListenerToClass('cdvHeightResize', 'mousedown', (e) => {
 			prevY = (<MouseEvent>e).pageY;
-			eventOverlay.create('rowResize', processHeightEvent, stopResizingHeight);
+			eventOverlay.create('rowResize', processResizingCdvHeight, stopResizingCdvHeight);
 		});
 	}
 
 	private makeCdvDividerDraggable() {
 		let minX = -1, width = -1;
 
-		const processDividerEvent: EventListener = (e) => {
+		const processDraggingCdvDivider: EventListener = (e) => {
 			if (minX < 0) return;
 			let percent = ((<MouseEvent>e).clientX - minX) / width;
 			if (percent < 0.2) percent = 0.2;
@@ -1722,9 +1722,9 @@ class GitGraphView {
 				this.setCdvDivider();
 			}
 		};
-		const stopMovingDivider: EventListener = (e) => {
+		const stopDraggingCdvDivider: EventListener = (e) => {
 			if (minX < 0) return;
-			processDividerEvent(e);
+			processDraggingCdvDivider(e);
 			this.saveRepoState();
 			minX = -1;
 			eventOverlay.remove();
@@ -1737,7 +1737,7 @@ class GitGraphView {
 			let bounds = contentElem.getBoundingClientRect();
 			minX = bounds.left;
 			width = bounds.width;
-			eventOverlay.create('colResize', processDividerEvent, stopMovingDivider);
+			eventOverlay.create('colResize', processDraggingCdvDivider, stopDraggingCdvDivider);
 		});
 	}
 
@@ -2371,7 +2371,7 @@ function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
 		remoteLabels = [];
 		for (let i = 0; i < remotes.length; i++) {
 			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known
-				let branchName = remotes[i].name.substr(remotes[i].remote!.length + 1);
+				let branchName = remotes[i].name.substring(remotes[i].remote!.length + 1);
 				if (typeof headLookup[branchName] === 'number') {
 					headLabels[headLookup[branchName]].remotes.push(remotes[i].remote!);
 					continue;

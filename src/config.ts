@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateFormatConfigOptions, DateFormatType, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
@@ -48,7 +48,14 @@ class Config {
 	}
 
 	public dateFormat(): DateFormat {
-		return this.config.get('dateFormat', 'Date & Time');
+		let configValue = this.config.get<DateFormatConfigOptions>('dateFormat', 'Date & Time'), type: DateFormatType = 'date-time', iso = false;
+		if (configValue === 'Relative') {
+			type = 'relative';
+		} else {
+			if (configValue.endsWith('Date Only')) type = 'date';
+			if (configValue.startsWith('ISO')) iso = true;
+		}
+		return { type: type, iso: iso };
 	}
 
 	public dateType(): DateType {

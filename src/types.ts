@@ -193,7 +193,8 @@ export interface GitGraphViewConfig {
 
 export type CommitDetailsViewLocation = 'Inline' | 'Docked to Bottom';
 export type CommitOrdering = 'date' | 'author-date' | 'topo';
-export type DateFormat = 'Date & Time' | 'Date Only' | 'Relative';
+export type DateFormatConfigOptions = 'Date & Time' | 'Date Only' | 'ISO Date & Time' | 'ISO Date Only' | 'Relative';
+export type DateFormatType = 'date-time' | 'date' | 'relative';
 export type DateType = 'Author Date' | 'Commit Date';
 export type GraphStyle = 'rounded' | 'angular';
 export type RefLabelAlignment = 'Normal' | 'Branches (on the left) & Tags (on the right)' | 'Branches (aligned to the graph) & Tags (on the right)';
@@ -207,6 +208,11 @@ export interface CustomBranchGlobPattern {
 export interface CustomEmojiShortcodeMapping {
 	readonly shortcode: string;
 	readonly emoji: string;
+}
+
+export interface DateFormat {
+	readonly type: DateFormatType;
+	readonly iso: boolean;
 }
 
 export interface DefaultColumnVisibility {

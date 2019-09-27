@@ -458,7 +458,7 @@ class GitGraphView {
 
 		for (let i = 0; i < this.commits.length; i++) {
 			commit = this.commits[i];
-			let refBranches = '', refTags = '', message = escapeHtml(substituteEmojis(commit.message)), date = getCommitDate(commit.date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(commit.heads, commit.remotes);
+			let refBranches = '', refTags = '', message = escapeHtml(substituteEmojis(commit.message)), date = formatShortDate(commit.date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(commit.heads, commit.remotes);
 
 			for (j = 0; j < branchLabels.heads.length; j++) {
 				refName = escapeHtml(branchLabels.heads[j].name);
@@ -485,7 +485,7 @@ class GitGraphView {
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parents.length > 1 && commit.stash === null ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
-				(colVisibility.date ? '<td class="text" title="' + date.title + '">' + date.value + '</td>' : '') +
+				(colVisibility.date ? '<td class="text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
 				'</tr>';
@@ -923,9 +923,9 @@ class GitGraphView {
 	}
 
 	private renderUncommittedChanges() {
-		let colVisibility = this.getColumnVisibility(), date = getCommitDate(this.commits[0].date);
+		const colVisibility = this.getColumnVisibility(), date = formatShortDate(this.commits[0].date);
 		document.getElementById('uncommittedChanges')!.innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td>' +
-			(colVisibility.date ? '<td title="' + date.title + '">' + date.value + '</td>' : '') +
+			(colVisibility.date ? '<td title="' + date.title + '">' + date.formatted + '</td>' : '') +
 			(colVisibility.author ? '<td title="* <>">*</td>' : '') +
 			(colVisibility.commit ? '<td title="*">*</td>' : '');
 	}
@@ -1489,7 +1489,7 @@ class GitGraphView {
 					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
 					html += '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>';
 					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
-					html += '<b>Date: </b>' + (new Date(commitDetails.date * 1000)).toString() + '<br>';
+					html += '<b>Date: </b>' + formatLongDate(commitDetails.date) + '<br>';
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
 					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';
 					html += '</span></span><br><br>';
@@ -2051,50 +2051,6 @@ window.addEventListener('load', () => {
 });
 
 
-/* Date Methods */
-
-function getCommitDate(dateVal: number) {
-	let date = new Date(dateVal * 1000), value;
-	let dateStr = date.getDate() + ' ' + MONTHS[date.getMonth()] + ' ' + date.getFullYear();
-	let timeStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
-
-	switch (initialState.config.dateFormat) {
-		case 'Date Only':
-			value = dateStr;
-			break;
-		case 'Relative':
-			let diff = Math.round((new Date()).getTime() / 1000) - dateVal, unit;
-			if (diff < 60) {
-				unit = 'second';
-			} else if (diff < 3600) {
-				unit = 'minute';
-				diff /= 60;
-			} else if (diff < 86400) {
-				unit = 'hour';
-				diff /= 3600;
-			} else if (diff < 604800) {
-				unit = 'day';
-				diff /= 86400;
-			} else if (diff < 2629800) {
-				unit = 'week';
-				diff /= 604800;
-			} else if (diff < 31557600) {
-				unit = 'month';
-				diff /= 2629800;
-			} else {
-				unit = 'year';
-				diff /= 31557600;
-			}
-			diff = Math.round(diff);
-			value = diff + ' ' + unit + (diff !== 1 ? 's' : '') + ' ago';
-			break;
-		default:
-			value = dateStr + ' ' + timeStr;
-	}
-	return { title: dateStr + ' ' + timeStr, value: value };
-}
-
-
 /* File Tree Methods (for the Commit Details & Comparison Views) */
 
 function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
@@ -2356,7 +2312,7 @@ function showTagDetailsDialog(tagName: string, tagHash: string, commitHash: stri
 	html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 	html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
 	html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
-	html += '<b>Date: </b>' + (new Date(date * 1000)).toString() + '<br><br>';
+	html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
 	html += formatText(message).replace(/\n/g, '<br>') + '</span>';
 	dialog.showMessage(html);
 }

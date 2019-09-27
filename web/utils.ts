@@ -83,6 +83,7 @@ const MESSAGE_DIALOG = 'message';
 
 
 /* General Helpers */
+
 function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
@@ -90,6 +91,7 @@ function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) 
 	}
 	return true;
 }
+
 function arraysStrictlyEqual<T>(a: T[], b: T[]) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
@@ -121,15 +123,20 @@ function modifyColourOpacity(colour: string, opacity: number) {
 	return fadedCol;
 }
 
+
 /* HTML Escape / Unescape */
+
 function escapeHtml(str: string) {
 	return str.replace(HTML_ESCAPER_REGEX, (match) => HTML_ESCAPES[match]);
 }
+
 function unescapeHtml(str: string) {
 	return str.replace(HTML_UNESCAPER_REGEX, (match) => HTML_UNESCAPES[match]);
 }
 
+
 /* Formatters */
+
 function formatText(str: string) {
 	let urlRegexp = /https?:\/\/\S+[^,.?!'":;\s]/gu, match: RegExpExecArray | null, matchEnd = 0, outStr = '';
 	while (match = urlRegexp.exec(str)) {
@@ -160,6 +167,7 @@ function formatText(str: string) {
 function substituteEmojis(str: string) {
 	return str.replace(EMOJI_SHORTCODE_REGEX, (match, shortcode) => typeof EMOJI_MAPPINGS[shortcode] === 'string' ? EMOJI_MAPPINGS[shortcode] : match);
 }
+
 function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[]) {
 	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
 	for (let i = 0; i < mappings.length; i++) {
@@ -177,16 +185,76 @@ function formatCommaSeparatedList(items: string[]) {
 	return str;
 }
 
+function formatShortDate(unixTimestamp: number) {
+	const date = new Date(unixTimestamp * 1000), format = initialState.config.dateFormat;
+	let dateStr = format.iso
+		? date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate())
+		: date.getDate() + ' ' + MONTHS[date.getMonth()] + ' ' + date.getFullYear();
+	let hourMinsStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
+	let formatted;
+
+	if (format.type === 'date-time') {
+		formatted = dateStr + ' ' + hourMinsStr;
+	} else if (format.type === 'date') {
+		formatted = dateStr;
+	} else {
+		let diff = Math.round((new Date()).getTime() / 1000) - unixTimestamp, unit;
+		if (diff < 60) {
+			unit = 'second';
+		} else if (diff < 3600) {
+			unit = 'minute';
+			diff /= 60;
+		} else if (diff < 86400) {
+			unit = 'hour';
+			diff /= 3600;
+		} else if (diff < 604800) {
+			unit = 'day';
+			diff /= 86400;
+		} else if (diff < 2629800) {
+			unit = 'week';
+			diff /= 604800;
+		} else if (diff < 31557600) {
+			unit = 'month';
+			diff /= 2629800;
+		} else {
+			unit = 'year';
+			diff /= 31557600;
+		}
+		diff = Math.round(diff);
+		formatted = diff + ' ' + unit + (diff !== 1 ? 's' : '') + ' ago';
+	}
+	return {
+		title: dateStr + ' ' + hourMinsStr + ':' + pad2(date.getSeconds()),
+		formatted: formatted
+	};
+}
+
+function formatLongDate(unixTimestamp: number) {
+	const date = new Date(unixTimestamp * 1000);
+	if (initialState.config.dateFormat.iso) {
+		let timezoneOffset = date.getTimezoneOffset();
+		let absoluteTimezoneOffset = Math.abs(timezoneOffset);
+		let timezone = timezoneOffset === 0 ? 'Z' : ' ' + (timezoneOffset < 0 ? '+' : '-') + pad2(Math.floor(absoluteTimezoneOffset / 60)) + pad2(absoluteTimezoneOffset % 60);
+		return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) + ' ' + pad2(date.getHours()) + ':' + pad2(date.getMinutes()) + ':' + pad2(date.getSeconds()) + timezone;
+	} else {
+		return date.toString();
+	}
+}
+
+
 /* DOM Helpers */
+
 function addListenerToClass(className: string, event: string, eventListener: EventListener) {
 	let elems = document.getElementsByClassName(className), i;
 	for (i = 0; i < elems.length; i++) {
 		elems[i].addEventListener(event, eventListener);
 	}
 }
+
 function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
 	referenceNode.parentNode!.insertBefore(newNode, referenceNode.nextSibling);
 }
+
 function insertBeforeFirstChildWithClass(newChild: HTMLElement, parent: HTMLElement, className: string) {
 	let referenceNode: Node | null = null;
 	for (let i = 0; i < parent.children.length; i++) {
@@ -197,6 +265,7 @@ function insertBeforeFirstChildWithClass(newChild: HTMLElement, parent: HTMLElem
 	}
 	parent.insertBefore(newChild, referenceNode);
 }
+
 function alterClass(elem: HTMLElement, className: string, state: boolean) {
 	if (elem.classList.contains(className) !== state) {
 		if (state) {
@@ -208,6 +277,7 @@ function alterClass(elem: HTMLElement, className: string, state: boolean) {
 	}
 	return false;
 }
+
 function getChildNodesWithTextContent(elem: Node) {
 	let textChildren: Node[] = [];
 	for (let i = 0; i < elem.childNodes.length; i++) {
@@ -219,6 +289,7 @@ function getChildNodesWithTextContent(elem: Node) {
 	}
 	return textChildren;
 }
+
 function getChildrenWithClassName(elem: Element, className: string) {
 	let children: Element[] = [];
 	for (let i = 0; i < elem.children.length; i++) {
@@ -242,15 +313,18 @@ function getChildUl(elem: HTMLElement) {
 
 
 /* VSCode Helpers */
+
 function sendMessage(msg: GG.RequestMessage) {
 	VSCODE_API.postMessage(msg);
 }
+
 function getVSCodeStyle(name: string) {
 	return document.documentElement.style.getPropertyValue(name);
 }
 
 
 /* Image Resizing for Avatars */
+
 class ImageResizer {
 	private canvas: HTMLCanvasElement | null = null;
 	private context: CanvasRenderingContext2D | null = null;
@@ -282,7 +356,9 @@ class ImageResizer {
 	}
 }
 
+
 /* Event Overlay (for blocking and/or capturing mouse events on the Git Graph View) */
+
 class EventOverlay {
 	private move: EventListener | null = null;
 	private stop: EventListener | null = null;

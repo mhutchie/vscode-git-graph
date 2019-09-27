@@ -179,7 +179,7 @@ class FindWidget {
 						|| branchLabels.heads.some(head => findPattern!.test(head.name) || head.remotes.some(remote => findPattern!.test(remote)))
 						|| branchLabels.remotes.some(remote => findPattern!.test(remote.name))
 						|| commit.tags.some(tag => findPattern!.test(tag.name))
-						|| (colVisibility.date && findPattern.test(getCommitDate(commit.date).value))
+						|| (colVisibility.date && findPattern.test(formatShortDate(commit.date).formatted))
 						|| (commit.stash !== null && findPattern.test(commit.stash)))) {
 
 						let idStr = i.toString();

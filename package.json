@@ -158,11 +158,15 @@
 					"enum": [
 						"Date & Time",
 						"Date Only",
+						"ISO Date & Time",
+						"ISO Date Only",
 						"Relative"
 					],
 					"enumDescriptions": [
-						"Show the date and time, for example \"19 Mar 2019 21:34\"",
-						"Show the date only, for example \"19 Mar 2019\"",
+						"Show the date and time, for example \"24 Mar 2019 21:34\"",
+						"Show the date only, for example \"24 Mar 2019\"",
+						"Show the ISO date and time, for example \"2019-03-24 21:34\"",
+						"Show the ISO date only, for example \"2019-03-24\"",
 						"Show relative times, for example \"5 minutes ago\""
 					],
 					"default": "Date & Time",

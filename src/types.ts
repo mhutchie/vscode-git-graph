@@ -333,8 +333,9 @@ export interface RequestCherrypickCommit extends RepoRequest {
 	readonly command: 'cherrypickCommit';
 	readonly commitHash: string;
 	readonly parentIndex: number;
+	readonly noCommit: boolean;
 }
-export interface ResponseCherrypickCommit extends ResponseWithErrorInfo {
+export interface ResponseCherrypickCommit extends ResponseWithMultiErrorInfo {
 	readonly command: 'cherrypickCommit';
 }
 

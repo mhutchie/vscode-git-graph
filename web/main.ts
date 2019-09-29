@@ -654,19 +654,21 @@ class GitGraphView {
 					{
 						title: 'Cherry Pick' + ELLIPSIS,
 						onClick: () => {
-							if (this.commits[this.commitLookup[hash]].parents.length > 1) {
+							const isMerge = this.commits[this.commitLookup[hash]].parents.length > 1;
+							let inputs: DialogInput[] = [];
+							if (isMerge) {
 								let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
 									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 									value: (index + 1).toString()
 								}));
-								dialog.showSelect('Are you sure you want to cherry pick merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to cherry pick the commit relative to:', '1', options, 'Yes, cherry pick', (parentIndex) => {
-									runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) }, 'Cherry picking Commit');
-								}, sourceElem);
-							} else {
-								dialog.showConfirmation('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-									runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 }, 'Cherry picking Commit');
-								}, sourceElem);
+								inputs.push({ type: 'select', name: 'Parent Hash', options: options, default: '1', info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.' });
 							}
+							inputs.push({ type: 'checkbox', name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
+
+							dialog.showForm('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', inputs, 'Yes, cherry pick', (values) => {
+								let parentIndex = isMerge ? parseInt(values.shift()!) : 0;
+								runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parentIndex, noCommit: values[0] === 'checked' }, 'Cherry picking Commit');
+							}, sourceElem);
 						}
 					},
 					{
@@ -1887,7 +1889,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Checkout Commit');
 				break;
 			case 'cherrypickCommit':
-				refreshOrDisplayError(msg.error, 'Unable to Cherry Pick Commit');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Cherry Pick Commit');
 				break;
 			case 'cleanUntrackedFiles':
 				refreshOrDisplayError(msg.error, 'Unable to Clean Untracked Files');

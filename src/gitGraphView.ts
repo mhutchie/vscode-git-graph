@@ -140,10 +140,11 @@ export class GitGraphView {
 					});
 					break;
 				case 'cherrypickCommit':
-					this.sendMessage({
-						command: 'cherrypickCommit',
-						error: await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex)
-					});
+					errorInfos = [await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex, msg.noCommit)];
+					if (errorInfos[0] === null && msg.noCommit) {
+						errorInfos.push(await viewScm());
+					}
+					this.sendMessage({ command: 'cherrypickCommit', errors: errorInfos });
 					break;
 				case 'cleanUntrackedFiles':
 					this.sendMessage({

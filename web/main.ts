@@ -595,12 +595,39 @@ class GitGraphView {
 					{
 						title: 'Add Tag' + ELLIPSIS,
 						onClick: () => {
-							dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+							const dialogConfig = this.config.dialogDefaults.addTag;
+							let inputs: DialogInput[] = [
 								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
-								{ type: 'select' as 'select', name: 'Type', default: this.config.dialogDefaults.addTag.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+								{ type: 'select' as 'select', name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
 								{ type: 'text' as 'text', name: 'Message', default: '', placeholder: 'Optional' }
-							], 'Add Tag', values => {
-								runAction({ command: 'addTag', repo: this.currentRepo, tagName: values[0], commitHash: hash, lightweight: values[1] === 'lightweight', message: values[2] }, 'Adding Tag');
+							];
+							if (this.gitRemotes.length > 1) {
+								let options = [{ name: 'Don\'t push', value: '-1' }];
+								this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
+								let defaultOption = dialogConfig.pushToRemote
+									? this.gitRemotes.includes('origin')
+										? this.gitRemotes.indexOf('origin')
+										: 0
+									: -1;
+								inputs.push({ type: 'select', name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
+							} else if (this.gitRemotes.length === 1) {
+								inputs.push({ type: 'checkbox', name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
+							}
+							dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', values => {
+								let pushToRemote = this.gitRemotes.length > 1 && values[3] !== '-1'
+									? this.gitRemotes[parseInt(values[3])]
+									: this.gitRemotes.length === 1 && values[3] === 'checked'
+										? this.gitRemotes[0]
+										: null;
+								runAction({
+									command: 'addTag',
+									repo: this.currentRepo,
+									tagName: values[0],
+									commitHash: hash,
+									lightweight: values[1] === 'lightweight',
+									message: values[2],
+									pushToRemote: pushToRemote
+								}, 'Adding Tag');
 							}, sourceElem);
 						}
 					},
@@ -1845,7 +1872,7 @@ window.addEventListener('load', () => {
 				if (settingsWidget.isVisible()) settingsWidget.refresh();
 				break;
 			case 'addTag':
-				refreshOrDisplayError(msg.error, 'Unable to Add Tag');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Add Tag');
 				break;
 			case 'applyStash':
 				refreshOrDisplayError(msg.error, 'Unable to Apply Stash');

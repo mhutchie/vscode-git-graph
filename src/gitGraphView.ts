@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { GitGraphViewInitialState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
+import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -99,6 +99,8 @@ export class GitGraphView {
 		this.panel.webview.onDidReceiveMessage(async (msg: RequestMessage) => {
 			if (this.dataSource === null) return;
 			this.repoFileWatcher.mute();
+			let errorInfos: ErrorInfo[];
+
 			switch (msg.command) {
 				case 'addRemote':
 					this.sendMessage({
@@ -107,10 +109,11 @@ export class GitGraphView {
 					});
 					break;
 				case 'addTag':
-					this.sendMessage({
-						command: 'addTag',
-						error: await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)
-					});
+					errorInfos = [await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)];
+					if (errorInfos[0] === null && msg.pushToRemote !== null) {
+						errorInfos.push(await this.dataSource.pushTag(msg.repo, msg.tagName, msg.pushToRemote));
+					}
+					this.sendMessage({ command: 'addTag', errors: errorInfos });
 					break;
 				case 'applyStash':
 					this.sendMessage({
@@ -193,7 +196,7 @@ export class GitGraphView {
 					});
 					break;
 				case 'deleteBranch':
-					let errorInfos = [await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)];
+					errorInfos = [await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)];
 					for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
 						errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
 					}
@@ -402,6 +405,7 @@ export class GitGraphView {
 					});
 					break;
 			}
+
 			this.repoFileWatcher.unmute();
 		}, null, this.disposables);
 

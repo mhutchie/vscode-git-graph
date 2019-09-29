@@ -223,6 +223,7 @@ export interface DefaultColumnVisibility {
 
 export interface DialogDefaults {
 	readonly addTag: {
+		readonly pushToRemote: boolean,
 		readonly type: 'annotated' | 'lightweight'
 	};
 	readonly createBranch: {
@@ -288,8 +289,9 @@ export interface RequestAddTag extends RepoRequest {
 	readonly tagName: string;
 	readonly lightweight: boolean;
 	readonly message: string;
+	readonly pushToRemote: string | null; // string => name of the remote to push the tag to, null => don't push to a remote
 }
-export interface ResponseAddTag extends ResponseWithErrorInfo {
+export interface ResponseAddTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'addTag';
 }
 

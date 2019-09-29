@@ -28,7 +28,7 @@
 	white-space:nowrap;	
 }
 
-.dialog > table.dialogForm td:last-child{
+.dialog > table.dialogForm td.inputCol{
 	width:100%;
 }
 
@@ -36,17 +36,13 @@
 	padding-right:5px;
 }
 
-.dialog > table.dialogForm.single select{
+.dialog > table.dialogForm input[type=text], .dialog > table.dialogForm select{
 	width:100%;
 }
 
 .dialog > table.dialogForm.single .dialogFormCheckbox{
 	display:inline-block;
 	text-align:center;
-	width:100%;
-}
-
-.dialog > table.dialogForm input[type=text]{
 	width:100%;
 }
 

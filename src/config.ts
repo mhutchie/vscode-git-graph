@@ -77,6 +77,7 @@ class Config {
 
 		return {
 			addTag: {
+				pushToRemote: !!this.config.get('dialog.addTag.pushToRemote', false),
 				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? 'lightweight' : 'annotated'
 			},
 			createBranch: {

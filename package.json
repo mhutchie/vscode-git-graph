@@ -208,6 +208,11 @@
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},
+				"git-graph.dialog.addTag.pushToRemote": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the field indicating whether the tag should be pushed to a remote once it is added."
+				},
 				"git-graph.dialog.addTag.type": {
 					"type": "string",
 					"enum": [

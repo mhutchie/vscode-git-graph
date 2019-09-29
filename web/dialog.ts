@@ -33,13 +33,13 @@ class Dialog {
 		this.showForm(message, [{ type: 'checkbox', name: checkboxLabel, value: checkboxValue }], actionName, values => actioned(values[0] === 'checked'), sourceElem);
 	}
 
-	public showSelect(message: string, defaultValue: string, options: { name: string, value: string }[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
+	public showSelect(message: string, defaultValue: string, options: DialogSelectInputOption[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
 		this.showForm(message, [{ type: 'select', name: '', options: options, default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
 	}
 
 	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: string[]) => void, sourceElem: HTMLElement | null) {
 		let textRefInput = -1, multiElement = inputs.length > 1;
-		let multiCheckbox = multiElement;
+		let multiCheckbox = multiElement, infoColumn = false;
 
 		if (multiElement) { // If has multiple elements, then check if they are all checkboxes. If so, then the form is a checkbox multi
 			for (let i = 0; i < inputs.length; i++) {
@@ -49,24 +49,30 @@ class Dialog {
 				}
 			}
 		}
+		for (let i = 0; i < inputs.length; i++) {
+			if (inputs[i].info && inputs[i].type !== 'checkbox') {
+				infoColumn = true;
+				break;
+			}
+		}
 
 		let html = message + '<br><table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">';
 		for (let i = 0; i < inputs.length; i++) {
-			let input = inputs[i];
-			html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '') + '<td>';
+			const input = inputs[i], infoHtml = input.info ? '<span class="dialogInfo" title="' + escapeHtml(input.info) + '">' + SVG_ICONS.info + '</span>' : '';
+			html += '<tr>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '');
 			if (input.type === 'select') {
-				html += '<select id="dialogInput' + i + '">';
+				html += '<td class="inputCol"><select id="dialogInput' + i + '">';
 				for (let j = 0; j < input.options.length; j++) {
 					html += '<option value="' + escapeHtml(input.options[j].value) + '"' + (input.options[j].value === input.default ? ' selected' : '') + '>' + escapeHtml(input.options[j].name) + '</option>';
 				}
-				html += '</select>';
+				html += '</select></td>' + (infoColumn ? '<td>' + infoHtml + '</td>' : '');
 			} else if (input.type === 'checkbox') {
-				html += '<span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElement && !multiCheckbox ? '' : input.name) + '</label></span>';
+				html += '<td class="inputCol"' + (infoColumn ? ' colspan="2"' : '') + '><span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElement && !multiCheckbox ? '' : input.name) + infoHtml + '</label></span></td>';
 			} else {
-				html += '<input id="dialogInput' + i + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + '/>';
+				html += '<td class="inputCol"><input id="dialogInput' + i + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + '/></td>' + (infoColumn ? '<td>' + infoHtml + '</td>' : '');
 				if (input.type === 'text-ref') textRefInput = i;
 			}
-			html += '</td></tr>';
+			html += '</tr>';
 		}
 		html += '</table>';
 

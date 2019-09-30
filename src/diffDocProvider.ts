@@ -1,8 +1,13 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
-import { DiffSide, GitFileChangeType } from './types';
+import { GitFileChangeType } from './types';
 import { getPathFromStr, UNCOMMITTED } from './utils';
+
+export const enum DiffSide {
+	Old,
+	New
+}
 
 export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 	public static scheme = 'git-graph';
@@ -75,7 +80,7 @@ export function encodeDiffDocUri(repo: string, filePath: string, commit: string,
 	}
 
 	let data: DiffDocUriData, extension: string;
-	if ((diffSide === 'old' && type === 'A') || (diffSide === 'new' && type === 'D')) {
+	if ((diffSide === DiffSide.Old && type === 'A') || (diffSide === DiffSide.New && type === 'D')) {
 		data = null;
 		extension = '';
 	} else {

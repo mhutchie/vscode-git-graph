@@ -357,8 +357,8 @@ class GitGraphView {
 		this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
 			if (isRepo) {
 				this.requestLoadCommits(hard, (commitChanges: boolean) => {
-					let dialogType = dialog.getType();
-					if ((!hard && (branchChanges || commitChanges) && dialogType !== MESSAGE_DIALOG) || dialogType === ACTION_RUNNING_DIALOG) {
+					const dialogType = dialog.getType();
+					if ((!hard && (branchChanges || commitChanges) && dialogType !== DialogType.Message) || dialogType === DialogType.ActionRunning) {
 						closeDialogAndContextMenu();
 					}
 					this.renderRefreshButton(true);
@@ -1800,7 +1800,7 @@ class GitGraphView {
 	}
 
 	private isCdvDocked() {
-		return this.config.commitDetailsViewLocation !== 'Inline';
+		return this.config.commitDetailsViewLocation === GG.CommitDetailsViewLocation.DockedToBottom;
 	}
 
 	private getCommitOrder(hash1: string, hash2: string) {

@@ -105,7 +105,6 @@ declare global {
 
 	type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
 	type DialogInputValue = string | boolean;
-	type DialogType = 'form' | 'action-running' | 'message' | null;
 
 
 	/* Commit Details / Comparison View File Tree Types */

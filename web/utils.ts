@@ -77,10 +77,6 @@ const CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND = '--vscode-editor-findMatchHighl
 
 const ATTR_ERROR = 'data-error';
 
-const ACTION_RUNNING_DIALOG = 'action-running';
-const FORM_DIALOG = 'form';
-const MESSAGE_DIALOG = 'message';
-
 
 /* General Helpers */
 
@@ -193,9 +189,9 @@ function formatShortDate(unixTimestamp: number) {
 	let hourMinsStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
 	let formatted;
 
-	if (format.type === 'date-time') {
+	if (format.type === GG.DateFormatType.DateAndTime) {
 		formatted = dateStr + ' ' + hourMinsStr;
-	} else if (format.type === 'date') {
+	} else if (format.type === GG.DateFormatType.DateOnly) {
 		formatted = dateStr;
 	} else {
 		let diff = Math.round((new Date()).getTime() / 1000) - unixTimestamp, unit;

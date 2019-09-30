@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RequestMessage, ResponseMessage } from './types';
+import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -63,7 +63,7 @@ export class GitGraphView {
 			localResourceRoots: [vscode.Uri.file(path.join(extensionPath, 'media'))],
 			retainContextWhenHidden: getConfig().retainContextWhenHidden()
 		});
-		this.panel.iconPath = getConfig().tabIconColourTheme() === 'colour'
+		this.panel.iconPath = getConfig().tabIconColourTheme() === TabIconColourTheme.Colour
 			? this.getUri('resources', 'webview-icon.svg')
 			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
 
@@ -440,7 +440,7 @@ export class GitGraphView {
 		const initialState: GitGraphViewInitialState = {
 			config: {
 				autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
-				branchLabelsAlignedToGraph: refLabelAlignment === 'Branches (aligned to the graph) & Tags (on the right)',
+				branchLabelsAlignedToGraph: refLabelAlignment === RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight,
 				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
 				commitDetailsViewLocation: config.commitDetailsViewLocation(),
 				customBranchGlobPatterns: config.customBranchGlobPatterns(),
@@ -457,7 +457,7 @@ export class GitGraphView {
 				loadMoreCommits: config.loadMoreCommits(),
 				muteMergeCommits: config.muteMergeCommits(),
 				showCurrentBranchByDefault: config.showCurrentBranchByDefault(),
-				tagLabelsOnRight: refLabelAlignment !== 'Normal'
+				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadRepo: this.loadRepo,

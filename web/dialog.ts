@@ -2,21 +2,27 @@ const CLASS_DIALOG_ACTIVE = 'dialogActive';
 const CLASS_DIALOG_INPUT_INVALID = 'inputInvalid';
 const CLASS_DIALOG_NO_INPUT = 'noInput';
 
+const enum DialogType {
+	Form,
+	ActionRunning,
+	Message
+}
+
 class Dialog {
 	private elem: HTMLElement | null = null;
 	private source: HTMLElement | null = null;
 	private actioned: (() => void) | null = null;
-	private type: DialogType = null;
+	private type: DialogType | null = null;
 
 	public showConfirmation(message: string, confirmed: () => void, sourceElem: HTMLElement | null) {
-		this.show(FORM_DIALOG, message, 'Yes', 'No', () => {
+		this.show(DialogType.Form, message, 'Yes', 'No', () => {
 			this.close();
 			confirmed();
 		}, null, sourceElem);
 	}
 
 	public showTwoButtons(message: string, buttonLabel1: string, buttonAction1: () => void, buttonLabel2: string, buttonAction2: () => void, sourceElem: HTMLElement | null) {
-		this.show(FORM_DIALOG, message, buttonLabel1, buttonLabel2, () => {
+		this.show(DialogType.Form, message, buttonLabel1, buttonLabel2, () => {
 			this.close();
 			buttonAction1();
 		}, () => {
@@ -76,7 +82,7 @@ class Dialog {
 		}
 		html += '</table>';
 
-		this.show(FORM_DIALOG, html, actionName, 'Cancel', () => {
+		this.show(DialogType.Form, html, actionName, 'Cancel', () => {
 			if (this.elem === null || this.elem.classList.contains(CLASS_DIALOG_NO_INPUT) || this.elem.classList.contains(CLASS_DIALOG_INPUT_INVALID)) return;
 			let values = [];
 			for (let i = 0; i < inputs.length; i++) {
@@ -113,15 +119,15 @@ class Dialog {
 	}
 
 	public showMessage(html: string) {
-		this.show(MESSAGE_DIALOG, html, null, 'Close', null, null, null);
+		this.show(DialogType.Message, html, null, 'Close', null, null, null);
 	}
 
 	public showError(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
-		this.show(MESSAGE_DIALOG, '<span class="dialogAlert">' + SVG_ICONS.alert + 'Error: ' + message + '</span>' + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
+		this.show(DialogType.Message, '<span class="dialogAlert">' + SVG_ICONS.alert + 'Error: ' + message + '</span>' + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', actioned, null, sourceElem);
 	}
 
 	public showActionRunning(action: string) {
-		this.show(ACTION_RUNNING_DIALOG, '<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
+		this.show(DialogType.ActionRunning, '<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
 	}
 
 	private show(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, sourceElem: HTMLElement | null) {
@@ -160,7 +166,7 @@ class Dialog {
 	}
 
 	public closeActionRunning() {
-		if (this.type === ACTION_RUNNING_DIALOG) this.close();
+		if (this.type === DialogType.ActionRunning) this.close();
 	}
 
 	public submit() {

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateFormatConfigOptions, DateFormatType, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateFormatType, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
@@ -16,13 +16,19 @@ class Config {
 		return !!this.config.get('combineLocalAndRemoteBranchLabels', true);
 	}
 
-	public commitDetailsViewLocation(): CommitDetailsViewLocation {
-		return this.config.get('commitDetailsViewLocation', 'Inline');
+	public commitDetailsViewLocation() {
+		return this.config.get<string>('commitDetailsViewLocation', 'Inline') === 'Docked to Bottom'
+			? CommitDetailsViewLocation.DockedToBottom
+			: CommitDetailsViewLocation.Inline;
 	}
 
-	public commitOrdering(): CommitOrdering {
-		const ordering = this.config.get('commitOrdering', 'date');
-		return ordering === 'date' || ordering === 'author-date' || ordering === 'topo' ? ordering : 'date';
+	public commitOrdering() {
+		const ordering = this.config.get<string>('commitOrdering', 'date');
+		return ordering === 'author-date'
+			? CommitOrdering.AuthorDate
+			: ordering === 'topo'
+				? CommitOrdering.Topological
+				: CommitOrdering.Date;
 	}
 
 	public customBranchGlobPatterns(): CustomBranchGlobPattern[] {
@@ -48,18 +54,20 @@ class Config {
 	}
 
 	public dateFormat(): DateFormat {
-		let configValue = this.config.get<DateFormatConfigOptions>('dateFormat', 'Date & Time'), type: DateFormatType = 'date-time', iso = false;
+		let configValue = this.config.get<string>('dateFormat', 'Date & Time'), type = DateFormatType.DateAndTime, iso = false;
 		if (configValue === 'Relative') {
-			type = 'relative';
+			type = DateFormatType.Relative;
 		} else {
-			if (configValue.endsWith('Date Only')) type = 'date';
+			if (configValue.endsWith('Date Only')) type = DateFormatType.DateOnly;
 			if (configValue.startsWith('ISO')) iso = true;
 		}
 		return { type: type, iso: iso };
 	}
 
-	public dateType(): DateType {
-		return this.config.get('dateType', 'Author Date');
+	public dateType() {
+		return this.config.get<string>('dateType', 'Author Date') === 'Commit Date'
+			? DateType.Commit
+			: DateType.Author;
 	}
 
 	public defaultColumnVisibility(): DefaultColumnVisibility {
@@ -120,8 +128,10 @@ class Config {
 			.filter((v) => v.match(/^\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgb[a]?\s*\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))\s*$/) !== null);
 	}
 
-	public graphStyle(): GraphStyle {
-		return this.config.get('graphStyle', 'rounded');
+	public graphStyle() {
+		return this.config.get<string>('graphStyle', 'rounded') === 'angular'
+			? GraphStyle.Angular
+			: GraphStyle.Rounded;
 	}
 
 	public initialLoadCommits() {
@@ -152,11 +162,16 @@ class Config {
 		return this.config.get('openToTheRepoOfTheActiveTextEditorDocument', false);
 	}
 
-	public refLabelAlignment(): RefLabelAlignment {
-		return this.config.get('referenceLabelAlignment', 'Normal');
+	public refLabelAlignment() {
+		let configValue = this.config.get<string>('referenceLabelAlignment', 'Normal');
+		return configValue === 'Branches (on the left) & Tags (on the right)'
+			? RefLabelAlignment.BranchesOnLeftAndTagsOnRight
+			: configValue === 'Branches (aligned to the graph) & Tags (on the right)'
+				? RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight
+				: RefLabelAlignment.Normal;
 	}
 
-	public retainContextWhenHidden(): boolean {
+	public retainContextWhenHidden() {
 		return !!this.config.get('retainContextWhenHidden', true);
 	}
 
@@ -176,8 +191,10 @@ class Config {
 		return !!this.config.get('showUncommittedChanges', true);
 	}
 
-	public tabIconColourTheme(): TabIconColourTheme {
-		return this.config.get('tabIconColourTheme', 'colour');
+	public tabIconColourTheme() {
+		return this.config.get<string>('tabIconColourTheme', 'colour') === 'grey'
+			? TabIconColourTheme.Grey
+			: TabIconColourTheme.Colour;
 	}
 
 	public useMailmap() {

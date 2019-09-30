@@ -71,7 +71,7 @@ class Branch {
 	/* Rendering */
 
 	public draw(svg: SVGElement, config: Config, expandAt: number) {
-		let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.graphStyle === 'angular' ? 0.38 : 0.8), line, nextLine;
+		let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.graphStyle === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
 
 		// Convert branch lines into pixel coordinates, respecting expanded commit extensions
 		for (i = 0; i < this.lines.length; i++) {
@@ -135,7 +135,7 @@ class Branch {
 			if (x1 === x2) { // If the path is vertical, draw a straight line
 				curPath += 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
 			} else { // If the path moves horizontal, draw the appropriate transition
-				if (config.graphStyle === 'angular') {
+				if (config.graphStyle === GG.GraphStyle.Angular) {
 					curPath += 'L' + (line.lockedFirst ? (x2.toFixed(0) + ',' + (y2 - d).toFixed(1)) : (x1.toFixed(0) + ',' + (y1 + d).toFixed(1))) + 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
 				} else {
 					curPath += 'C' + x1.toFixed(0) + ',' + (y1 + d).toFixed(1) + ' ' + x2.toFixed(0) + ',' + (y2 - d).toFixed(1) + ' ' + x2.toFixed(0) + ',' + y2.toFixed(1);

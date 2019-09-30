@@ -152,7 +152,6 @@ export interface Avatar {
 export type AvatarCache = { [email: string]: Avatar };
 
 export type BranchOrCommit = 'Branch' | 'Commit';
-export type DiffSide = 'old' | 'new';
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
 
@@ -191,14 +190,16 @@ export interface GitGraphViewConfig {
 
 /* Extension Settings Types */
 
-export type CommitDetailsViewLocation = 'Inline' | 'Docked to Bottom';
-export type CommitOrdering = 'date' | 'author-date' | 'topo';
-export type DateFormatConfigOptions = 'Date & Time' | 'Date Only' | 'ISO Date & Time' | 'ISO Date Only' | 'Relative';
-export type DateFormatType = 'date-time' | 'date' | 'relative';
-export type DateType = 'Author Date' | 'Commit Date';
-export type GraphStyle = 'rounded' | 'angular';
-export type RefLabelAlignment = 'Normal' | 'Branches (on the left) & Tags (on the right)' | 'Branches (aligned to the graph) & Tags (on the right)';
-export type TabIconColourTheme = 'colour' | 'grey';
+export const enum CommitDetailsViewLocation {
+	Inline,
+	DockedToBottom
+}
+
+export const enum CommitOrdering {
+	Date = 'date',
+	AuthorDate = 'author-date',
+	Topological = 'topo'
+}
 
 export interface CustomBranchGlobPattern {
 	readonly name: string;
@@ -213,6 +214,17 @@ export interface CustomEmojiShortcodeMapping {
 export interface DateFormat {
 	readonly type: DateFormatType;
 	readonly iso: boolean;
+}
+
+export const enum DateFormatType {
+	DateAndTime,
+	DateOnly,
+	Relative
+}
+
+export const enum DateType {
+	Author,
+	Commit
 }
 
 export interface DefaultColumnVisibility {
@@ -246,6 +258,22 @@ export interface DialogDefaults {
 	readonly stashUncommittedChanges: {
 		readonly includeUntracked: boolean
 	};
+}
+
+export const enum GraphStyle {
+	Rounded,
+	Angular
+}
+
+export const enum RefLabelAlignment {
+	Normal,
+	BranchesOnLeftAndTagsOnRight,
+	BranchesAlignedToGraphAndTagsOnRight
+}
+
+export const enum TabIconColourTheme {
+	Colour,
+	Grey
 }
 
 

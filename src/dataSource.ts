@@ -9,9 +9,24 @@ import { Logger } from './logger';
 import { BranchOrCommit, CommitOrdering, DateType, ErrorInfo, GitBranchData, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitStash, GitTagDetailsData, GitUnsavedChanges } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
+
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
+
+
+interface DiffNameStatusRecord {
+	type: GitFileChangeType;
+	oldFilePath: string;
+	newFilePath: string;
+}
+
+interface DiffNumStatRecord {
+	filePath: string;
+	additions: number;
+	deletions: number;
+}
+
 
 export class DataSource {
 	private readonly logger: Logger;
@@ -621,11 +636,45 @@ export class DataSource {
 	}
 
 	private getDiffNameStatus(repo: string, fromHash: string, toHash: string) {
-		return this.execDiff(repo, fromHash, toHash, '--name-status');
+		return this.execDiff(repo, fromHash, toHash, '--name-status').then((output) => {
+			let records: DiffNameStatusRecord[] = [], i = 0;
+			while (i < output.length && output[i] !== '') {
+				let type = <GitFileChangeType>output[i][0];
+				if (type === 'A' || type === 'D' || type === 'M') {
+					// Add, Modify, or Delete
+					let p = getPathFromStr(output[i + 1]);
+					records.push({ type: type, oldFilePath: p, newFilePath: p });
+					i += 2;
+				} else if (type === 'R') {
+					// Rename
+					records.push({ type: type, oldFilePath: getPathFromStr(output[i + 1]), newFilePath: getPathFromStr(output[i + 2]) });
+					i += 3;
+				} else {
+					break;
+				}
+			}
+			return records;
+		});
 	}
 
 	private getDiffNumStat(repo: string, fromHash: string, toHash: string) {
-		return this.execDiff(repo, fromHash, toHash, '--numstat');
+		return this.execDiff(repo, fromHash, toHash, '--numstat').then((output) => {
+			let records: DiffNumStatRecord[] = [], i = 0;
+			while (i < output.length && output[i] !== '') {
+				let fields = output[i].split('\t');
+				if (fields.length !== 3) break;
+				if (fields[2] !== '') {
+					// Add, Modify, or Delete
+					records.push({ filePath: getPathFromStr(fields[2]), additions: parseInt(fields[0]), deletions: parseInt(fields[1]) });
+					i += 1;
+				} else {
+					// Rename
+					records.push({ filePath: getPathFromStr(output[i + 2]), additions: parseInt(fields[0]), deletions: parseInt(fields[1]) });
+					i += 3;
+				}
+			}
+			return records;
+		});
 	}
 
 	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, order: CommitOrdering) {
@@ -716,17 +765,24 @@ export class DataSource {
 	}
 
 	private getStatus(repo: string) {
-		return this.spawnGit(['-c', 'core.quotepath=false', 'status', '-s', '--untracked-files', '--porcelain'], repo, (stdout) => {
-			let lines = stdout.split(EOL_REGEX);
+		return this.spawnGit(['status', '-s', '--untracked-files', '--porcelain', '-z'], repo, (stdout) => {
+			let output = stdout.split('\0'), i = 0;
 			let status: GitFileStatus = { deleted: [], untracked: [] };
 			let path = '', c1 = '', c2 = '';
-			for (let i = 0; i < lines.length; i++) {
-				if (lines[i].length < 4) continue;
-				path = lines[i].substring(3);
-				c1 = lines[i].substring(0, 1);
-				c2 = lines[i].substring(1, 2);
+			while (i < output.length && output[i] !== '') {
+				if (output[i].length < 4) break;
+				path = output[i].substring(3);
+				c1 = output[i].substring(0, 1);
+				c2 = output[i].substring(1, 2);
 				if (c1 === 'D' || c2 === 'D') status.deleted.push(path);
 				else if (c1 === '?' || c2 === '?') status.untracked.push(path);
+
+				if (c1 === 'R' || c2 === 'R' || c1 === 'C' || c2 === 'C') {
+					// Renames or copies
+					i += 2;
+				} else {
+					i += 1;
+				}
 			}
 			return status;
 		});
@@ -736,16 +792,16 @@ export class DataSource {
 	/* Private Utils */
 
 	private execDiff(repo: string, fromHash: string, toHash: string, arg: '--numstat' | '--name-status') {
-		let args = ['-c', 'core.quotepath=false'];
+		let args: string[];
 		if (fromHash === toHash) {
-			args.push('diff-tree', arg, '-r', '-m', '--root', '--find-renames', '--diff-filter=AMDR', fromHash);
+			args = ['diff-tree', arg, '-r', '-m', '--root', '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
 		} else {
-			args.push('diff', arg, '-m', '--find-renames', '--diff-filter=AMDR', fromHash);
+			args = ['diff', arg, '-m', '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
 			if (toHash !== '') args.push(toHash);
 		}
 
 		return this.spawnGit(args, repo, (stdout) => {
-			let lines = stdout.split(EOL_REGEX);
+			let lines = stdout.split('\0');
 			if (fromHash === toHash) lines.shift();
 			return lines;
 		});
@@ -809,15 +865,12 @@ export class DataSource {
 
 
 // Generates a list of file changes from each diff-tree output
-function generateFileChanges(nameStatusResults: string[], numStatResults: string[], status: GitFileStatus | null) {
+function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatRecords: DiffNumStatRecord[], status: GitFileStatus | null) {
 	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {}, i = 0;
 
-	for (i = 0; i < nameStatusResults.length - 1; i++) {
-		let line = nameStatusResults[i].split('\t');
-		if (line.length < 2) continue;
-		let oldFilePath = getPathFromStr(line[1]), newFilePath = getPathFromStr(line[line.length - 1]);
-		fileLookup[newFilePath] = fileChanges.length;
-		fileChanges.push({ oldFilePath: oldFilePath, newFilePath: newFilePath, type: <GitFileChangeType>line[0][0], additions: null, deletions: null });
+	for (i = 0; i < nameStatusRecords.length; i++) {
+		fileLookup[nameStatusRecords[i].newFilePath] = fileChanges.length;
+		fileChanges.push({ oldFilePath: nameStatusRecords[i].oldFilePath, newFilePath: nameStatusRecords[i].newFilePath, type: nameStatusRecords[i].type, additions: null, deletions: null });
 	}
 
 	if (status !== null) {
@@ -836,13 +889,10 @@ function generateFileChanges(nameStatusResults: string[], numStatResults: string
 		}
 	}
 
-	for (i = 0; i < numStatResults.length - 1; i++) {
-		let line = numStatResults[i].split('\t');
-		if (line.length !== 3) continue;
-		let fileName = line[2].replace(/(.*){.* => (.*)}/, '$1$2').replace(/.* => (.*)/, '$1');
-		if (typeof fileLookup[fileName] === 'number') {
-			fileChanges[fileLookup[fileName]].additions = parseInt(line[0]);
-			fileChanges[fileLookup[fileName]].deletions = parseInt(line[1]);
+	for (i = 0; i < numStatRecords.length; i++) {
+		if (typeof fileLookup[numStatRecords[i].filePath] === 'number') {
+			fileChanges[fileLookup[numStatRecords[i].filePath]].additions = numStatRecords[i].additions;
+			fileChanges[fileLookup[numStatRecords[i].filePath]].deletions = numStatRecords[i].deletions;
 		}
 	}
 

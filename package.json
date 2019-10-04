@@ -471,17 +471,16 @@
 		"compile-web": "tsc -p ./web && node ./.vscode/package-web.js",
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",
 		"package": "npm run clean && vsce package",
-		"package-and-install": "npm run clean && vsce package && node ./.vscode/install-package.js",
-		"postinstall": "node ./node_modules/vscode/bin/install"
+		"package-and-install": "npm run clean && vsce package && node ./.vscode/install-package.js"
 	},
 	"dependencies": {
 		"iconv-lite": "0.5.0"
 	},
 	"devDependencies": {
 		"@types/node": "^8.10.25",
+		"@types/vscode": "1.31.0",
 		"tslint": "^5.12.1",
 		"typescript": "^3.3.1",
-		"uglify-js": "^3.4.9",
-		"vscode": "^1.1.28"
+		"uglify-js": "^3.4.9"
 	}
 }

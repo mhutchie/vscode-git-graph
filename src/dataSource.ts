@@ -6,26 +6,13 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { BranchOrCommit, CommitOrdering, DateType, ErrorInfo, GitBranchData, GitCommit, GitCommitComparisonData, GitCommitData, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettingsData, GitResetMode, GitStash, GitTagDetailsData, GitUnsavedChanges } from './types';
+import { BranchOrCommit, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettings, GitResetMode, GitStash, GitUnsavedChanges } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
-
-
-interface DiffNameStatusRecord {
-	type: GitFileChangeType;
-	oldFilePath: string;
-	newFilePath: string;
-}
-
-interface DiffNumStatRecord {
-	filePath: string;
-	additions: number;
-	deletions: number;
-}
 
 
 export class DataSource {
@@ -70,45 +57,26 @@ export class DataSource {
 
 	/* Get Data Methods - Core */
 
-	public getBranches(repo: string, showRemoteBranches: boolean) {
-		return new Promise<GitBranchData>((resolve) => {
-			let args = ['branch'];
-			if (showRemoteBranches) args.push('-a');
-			args.push('--no-color');
-
-			this.spawnGit(args, repo, (stdout) => {
-				let branchData: GitBranchData = { branches: [], head: null, error: null };
-				let lines = stdout.split(EOL_REGEX);
-				for (let i = 0; i < lines.length - 1; i++) {
-					let name = lines[i].substring(2).split(' -> ')[0];
-					if (INVALID_BRANCH_REGEX.test(name)) continue;
-
-					if (lines[i][0] === '*') {
-						branchData.head = name;
-						branchData.branches.unshift(name);
-					} else {
-						branchData.branches.push(name);
-					}
-				}
-				return branchData;
-			}).then((data) => {
-				resolve(data);
-			}).catch((errorMessage) => {
-				resolve({ branches: [], head: null, error: errorMessage });
-			});
+	public getRepoInfo(repo: string, showRemoteBranches: boolean, hideRemotes: string[]): Promise<GitRepoInfo> {
+		return Promise.all([
+			this.getBranches(repo, showRemoteBranches, hideRemotes),
+			this.getRemotes(repo)
+		]).then((results) => {
+			return { branches: results[0].branches, head: results[0].head, remotes: results[1], error: null };
+		}).catch((errorMessage) => {
+			return { branches: [], head: null, remotes: [], error: errorMessage };
 		});
 	}
 
-	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean) {
+	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, remotes: string[], hideRemotes: string[]) {
 		const config = getConfig();
 		return new Promise<GitCommitData>(resolve => {
 			Promise.all([
-				this.getLog(repo, branches, maxCommits + 1, config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering()),
-				this.getRefs(repo, showRemoteBranches).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
-				this.getStashes(repo),
-				this.getRemotes(repo)
+				this.getLog(repo, branches, maxCommits + 1, config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering(), remotes, hideRemotes),
+				this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
+				this.getStashes(repo)
 			]).then(async (results) => {
-				let commits: GitCommit[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], remotes: string[] = results[3], i, unsavedChanges = null;
+				let commits: GitCommit[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i, unsavedChanges = null;
 				let moreCommitsAvailable = commits.length === maxCommits + 1;
 				if (moreCommitsAvailable) commits.pop();
 
@@ -182,9 +150,9 @@ export class DataSource {
 					}
 				}
 
-				resolve({ commits: commitNodes, head: refData.head, remotes: remotes, moreCommitsAvailable: moreCommitsAvailable, error: null });
+				resolve({ commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable, error: null });
 			}).catch((errorMessage) => {
-				resolve({ commits: [], head: null, remotes: [], moreCommitsAvailable: false, error: errorMessage });
+				resolve({ commits: [], head: null, moreCommitsAvailable: false, error: errorMessage });
 			});
 		});
 	}
@@ -631,6 +599,31 @@ export class DataSource {
 
 	/* Private Data Providers */
 
+	private getBranches(repo: string, showRemoteBranches: boolean, hideRemotes: string[]) {
+		let args = ['branch'];
+		if (showRemoteBranches) args.push('-a');
+		args.push('--no-color');
+
+		let hideRemotePatterns = hideRemotes.map((remote) => 'remotes/' + remote + '/');
+
+		return this.spawnGit(args, repo, (stdout) => {
+			let branchData: GitBranchData = { branches: [], head: null, error: null };
+			let lines = stdout.split(EOL_REGEX);
+			for (let i = 0; i < lines.length - 1; i++) {
+				let name = lines[i].substring(2).split(' -> ')[0];
+				if (INVALID_BRANCH_REGEX.test(name) || hideRemotePatterns.some((pattern) => name.startsWith(pattern))) continue;
+
+				if (lines[i][0] === '*') {
+					branchData.head = name;
+					branchData.branches.unshift(name);
+				} else {
+					branchData.branches.push(name);
+				}
+			}
+			return branchData;
+		});
+	}
+
 	private async getConfigList(repo: string, type: 'local' | 'global' | 'system') {
 		return this.spawnGit(['--no-pager', 'config', '--list', '--' + type], repo, (stdout) => stdout.split(EOL_REGEX));
 	}
@@ -677,7 +670,7 @@ export class DataSource {
 		});
 	}
 
-	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, order: CommitOrdering) {
+	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, order: CommitOrdering, remotes: string[], hideRemotes: string[]) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
@@ -687,7 +680,15 @@ export class DataSource {
 			// Show All
 			args.push('--branches');
 			if (includeTags) args.push('--tags');
-			if (includeRemotes) args.push('--remotes');
+			if (includeRemotes) {
+				if (hideRemotes.length === 0) {
+					args.push('--remotes');
+				} else {
+					remotes.filter((remote) => !hideRemotes.includes(remote)).forEach((remote) => {
+						args.push('--glob=refs/remotes/' + remote);
+					});
+				}
+			}
 			args.push('HEAD');
 		}
 		args.push('--');
@@ -704,10 +705,12 @@ export class DataSource {
 		});
 	}
 
-	private getRefs(repo: string, showRemoteBranches: boolean) {
+	private getRefs(repo: string, showRemoteBranches: boolean, hideRemotes: string[]) {
 		let args = ['show-ref'];
 		if (!showRemoteBranches) args.push('--heads', '--tags');
 		args.push('-d', '--head');
+
+		let hideRemotePatterns = hideRemotes.map((remote) => 'refs/remotes/' + remote + '/');
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
@@ -725,7 +728,9 @@ export class DataSource {
 					let annotated = ref.endsWith('^{}');
 					refData.tags.push({ hash: hash, name: (annotated ? ref.substring(10, ref.length - 3) : ref.substring(10)), annotated: annotated });
 				} else if (ref.startsWith('refs/remotes/')) {
-					refData.remotes.push({ hash: hash, name: ref.substring(13) });
+					if (!hideRemotePatterns.some((pattern) => ref.startsWith(pattern))) {
+						refData.remotes.push({ hash: hash, name: ref.substring(13) });
+					}
 				} else if (ref === 'HEAD') {
 					refData.head = hash;
 				}
@@ -933,7 +938,55 @@ function getErrorMessage(error: Error | null, stdoutBuffer: Buffer, stderr: stri
 
 // Types
 
+interface DiffNameStatusRecord {
+	type: GitFileChangeType;
+	oldFilePath: string;
+	newFilePath: string;
+}
+
+interface DiffNumStatRecord {
+	filePath: string;
+	additions: number;
+	deletions: number;
+}
+
+interface GitBranchData {
+	branches: string[];
+	head: string | null;
+	error: ErrorInfo;
+}
+
+interface GitCommitData {
+	commits: GitCommitNode[];
+	head: string | null;
+	moreCommitsAvailable: boolean;
+	error: ErrorInfo;
+}
+
+interface GitCommitComparisonData {
+	fileChanges: GitFileChange[];
+	error: ErrorInfo;
+}
+
 interface GitFileStatus {
 	deleted: string[];
 	untracked: string[];
+}
+
+interface GitRepoInfo extends GitBranchData {
+	remotes: string[];
+}
+
+interface GitTagDetailsData {
+	tagHash: string;
+	name: string;
+	email: string;
+	date: number;
+	message: string;
+	error: ErrorInfo;
+}
+
+interface GitRepoSettingsData {
+	settings: GitRepoSettings | null;
+	error: ErrorInfo;
 }

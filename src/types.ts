@@ -1,38 +1,5 @@
 /* Git Interfaces / Types */
 
-export interface GitBranchData {
-	branches: string[];
-	head: string | null;
-	error: ErrorInfo;
-}
-
-export interface GitCommitData {
-	commits: GitCommitNode[];
-	head: string | null;
-	remotes: string[];
-	moreCommitsAvailable: boolean;
-	error: ErrorInfo;
-}
-
-export interface GitCommitComparisonData {
-	fileChanges: GitFileChange[];
-	error: ErrorInfo;
-}
-
-export interface GitTagDetailsData {
-	tagHash: string;
-	name: string;
-	email: string;
-	date: number;
-	message: string;
-	error: ErrorInfo;
-}
-
-export interface GitRepoSettingsData {
-	settings: GitRepoSettings | null;
-	error: ErrorInfo;
-}
-
 export interface GitRepoSettings {
 	remotes: GitRepoSettingsRemote[];
 }
@@ -121,6 +88,7 @@ export interface GitRepoState {
 	cdvDivider: number;
 	cdvHeight: number;
 	showRemoteBranches: boolean;
+	hideRemotes: string[];
 }
 export type ColumnWidth = number;
 
@@ -550,15 +518,17 @@ export interface ResponseGetSettings extends ResponseWithErrorInfo {
 	readonly settings: GitRepoSettings | null;
 }
 
-export interface RequestLoadBranches extends RepoRequest {
-	readonly command: 'loadBranches';
+export interface RequestLoadRepoInfo extends RepoRequest {
+	readonly command: 'loadRepoInfo';
 	readonly showRemoteBranches: boolean;
+	readonly hideRemotes: string[];
 	readonly hard: boolean;
 }
-export interface ResponseLoadBranches extends ResponseWithErrorInfo {
-	readonly command: 'loadBranches';
+export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
+	readonly command: 'loadRepoInfo';
 	readonly branches: string[];
 	readonly head: string | null;
+	readonly remotes: string[];
 	readonly hard: boolean;
 	readonly isRepo: boolean;
 }
@@ -568,13 +538,14 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly branches: string[] | null; // null => Show All
 	readonly maxCommits: number;
 	readonly showRemoteBranches: boolean;
+	readonly remotes: string[];
+	readonly hideRemotes: string[];
 	readonly hard: boolean;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';
 	readonly commits: GitCommitNode[];
 	readonly head: string | null;
-	readonly remotes: string[];
 	readonly moreCommitsAvailable: boolean;
 	readonly hard: boolean;
 }
@@ -796,8 +767,8 @@ export type RequestMessage =
 	| RequestFetchAvatar
 	| RequestFetchIntoLocalBranch
 	| RequestGetSettings
-	| RequestLoadBranches
 	| RequestLoadCommits
+	| RequestLoadRepoInfo
 	| RequestLoadRepos
 	| RequestMerge
 	| RequestOpenFile
@@ -843,8 +814,8 @@ export type ResponseMessage =
 	| ResponseFetchAvatar
 	| ResponseFetchIntoLocalBranch
 	| ResponseGetSettings
-	| ResponseLoadBranches
 	| ResponseLoadCommits
+	| ResponseLoadRepoInfo
 	| ResponseLoadRepos
 	| ResponseMerge
 	| ResponseOpenFile

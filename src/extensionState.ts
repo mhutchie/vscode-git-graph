@@ -15,7 +15,8 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	columnWidths: null,
 	cdvDivider: 0.5,
 	cdvHeight: 250,
-	showRemoteBranches: true
+	showRemoteBranches: true,
+	hideRemotes: []
 };
 
 export interface CodeReviewData {

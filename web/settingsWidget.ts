@@ -9,6 +9,7 @@ class SettingsWidget {
 	private visible: boolean = false;
 	private loading: boolean = false;
 	private repo: string | null = null;
+	private hideRemotes: string[] | null = null;
 	private settings: GG.GitRepoSettings | null = null;
 
 	private readonly widgetElem: HTMLElement;
@@ -30,11 +31,12 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
-	public show(repo: string, transition: boolean) {
+	public show(repo: string, hideRemotes: string[], transition: boolean) {
 		if (this.visible) return;
 		this.visible = true;
 		this.loading = true;
 		this.repo = repo;
+		this.hideRemotes = hideRemotes;
 		alterClass(this.widgetElem, CLASS_TRANSITION, transition);
 		this.widgetElem.classList.add(CLASS_ACTIVE);
 		this.requestSettings();
@@ -52,6 +54,7 @@ class SettingsWidget {
 		this.visible = false;
 		this.loading = false;
 		this.repo = null;
+		this.hideRemotes = null;
 		this.settings = null;
 		this.widgetElem.classList.add(CLASS_TRANSITION);
 		this.widgetElem.classList.remove(CLASS_ACTIVE);
@@ -69,14 +72,20 @@ class SettingsWidget {
 			settings: this.settings
 		};
 	}
-	public restoreState(state: SettingsWidgetState) {
+	public restoreState(state: SettingsWidgetState, hideRemotes: string[]) {
 		if (!state.visible || state.repo === null) return;
 		this.settings = state.settings;
-		this.show(state.repo, false);
+		this.show(state.repo, hideRemotes, false);
 	}
 
 	public isVisible() {
 		return this.visible;
+	}
+
+	public updateHiddenRemotes(repo: string, hideRemotes: string[]) {
+		if (!this.visible || this.repo !== repo) return;
+		this.hideRemotes = hideRemotes;
+		this.render();
 	}
 
 	public loadSettings(settings: GG.GitRepoSettings | null, error: string | null) {
@@ -97,10 +106,15 @@ class SettingsWidget {
 
 	private render() {
 		if (this.settings !== null) {
-			let html = '<h3>Remote Configuration</h3><table><tr><th>Name</th><th>Remote URL</th><th>Type</th><th>Action</th></tr>', pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
+			let html = '<h3>Remote Configuration</h3><table><tr><th>Remote</th><th>URL</th><th>Type</th><th>Action</th></tr>', pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
 			if (this.settings.remotes.length > 0) {
 				this.settings.remotes.forEach((remote, i) => {
-					html += '<tr class="lineAbove"><td rowspan="2">' + escapeHtml(remote.name) + '</td><td class="remoteUrl">' + escapeHtml(remote.url || 'Not Set') + '</td><td>Fetch</td><td class="remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td></tr><tr><td class="remoteUrl">' + escapeHtml(remote.pushUrl || remote.url || 'Not Set') + '</td><td>Push</td></tr>';
+					let hidden = this.hideRemotes !== null && this.hideRemotes.includes(remote.name);
+					html += '<tr class="lineAbove">' +
+						'<td class="remoteName" rowspan="2"><span class="hideRemoteBtn" data-index="' + i + '" title="Click to ' + (hidden ? 'show' : 'hide') + ' branches of this remote.">' + (hidden ? SVG_ICONS.eyeClosed : SVG_ICONS.eyeOpen) + '</span>' + escapeHtml(remote.name) + '</td>' +
+						'<td class="remoteUrl">' + escapeHtml(remote.url || 'Not Set') + '</td><td>Fetch</td>' +
+						'<td class="remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+						'</tr><tr><td class="remoteUrl">' + escapeHtml(remote.pushUrl || remote.url || 'Not Set') + '</td><td>Push</td></tr>';
 				});
 			} else {
 				html += '<tr class="lineAbove"><td colspan="4">There are no remotes configured for this repository.</td></tr>';
@@ -142,6 +156,21 @@ class SettingsWidget {
 				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
 					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
 				}, null);
+			});
+			addListenerToClass('hideRemoteBtn', 'click', (e) => {
+				if (this.repo === null || this.hideRemotes === null) return;
+				let source = <HTMLElement>(<Element>e.target).closest('.hideRemoteBtn')!;
+				let remote = this.settings!.remotes[parseInt(source.dataset.index!)].name;
+				let hideRemote = !this.hideRemotes.includes(remote);
+				source.title = 'Click to ' + (hideRemote ? 'show' : 'hide') + ' branches of this remote.';
+				source.innerHTML = hideRemote ? SVG_ICONS.eyeClosed : SVG_ICONS.eyeOpen;
+				if (hideRemote) {
+					this.hideRemotes.push(remote);
+				} else {
+					this.hideRemotes.splice(this.hideRemotes.indexOf(remote), 1);
+				}
+				this.view.saveHiddenRemotes(this.repo, this.hideRemotes);
+				this.view.refresh(true);
 			});
 		}
 		alterClass(this.widgetElem, CLASS_LOADING, this.loading);

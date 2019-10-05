@@ -69,6 +69,9 @@
 .settingsWidget table tr.lineAbove td{
 	padding-top:3px;
 }
+.settingsWidget table td.remoteName{
+	text-align:left;
+}
 .settingsWidget table td.remoteUrl{
 	width:100%;
 	max-width:0;
@@ -76,6 +79,22 @@
 	text-overflow:ellipsis;
 	text-align:left;
 }
+
+.settingsWidget .hideRemoteBtn{
+	position:relative;
+	display:inline-block;
+	width:13px;
+	height:13px;
+	margin-right:5px;
+	vertical-align:middle;
+	cursor:pointer;
+}
+.settingsWidget .hideRemoteBtn svg{
+	position:absolute;
+	top:0;
+	left:0;
+}
+
 .settingsWidget .remoteBtns div{
 	display:inline-block;
 	position:relative;
@@ -98,6 +117,7 @@
 	width:16px !important;
 	height:16px !important;
 }
+
 #settingsAddRemote{
 	line-height:24px;
 	cursor:pointer;
@@ -155,7 +175,7 @@
 	height:16px !important;
 }
 
-#settingsAddRemote:hover svg, .settingsWidget .remoteBtns div:hover svg, #settingsClose:hover{
+#settingsAddRemote:hover svg, .settingsWidget .hideRemoteBtn:hover svg, .settingsWidget .remoteBtns div:hover svg, #settingsClose:hover{
 	fill-opacity:1;
 }
 .settingsWidget.loading #settingsContent{

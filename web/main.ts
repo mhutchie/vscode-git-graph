@@ -32,7 +32,7 @@ class GitGraphView {
 	private readonly refreshBtnElem: HTMLElement;
 	private readonly scrollShadowElem: HTMLElement;
 
-	private loadBranchesCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
+	private loadRepoInfoCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
 	constructor(viewElem: HTMLElement, initialState: InitialState, prevState: WebViewState | null) {
@@ -91,10 +91,12 @@ class GitGraphView {
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
-			this.loadBranches(prevState.gitBranches, prevState.gitBranchHead, true, true);
-			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitRemotes, prevState.moreCommitsAvailable, true);
+			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, true, true);
+			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
 			this.findWidget.restoreState(prevState.findWidget);
-			this.settingsWidget.restoreState(prevState.settingsWidget);
+			if (this.currentRepo === prevState.settingsWidget.repo) {
+				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes);
+			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
 		if (!this.loadRepos(this.gitRepos, initialState.lastActiveRepo, initialState.loadRepo)) {
@@ -102,7 +104,7 @@ class GitGraphView {
 				this.scrollTop = prevState.scrollTop;
 				this.viewElem.scroll(0, this.scrollTop);
 			}
-			this.requestLoadBranchesAndCommits(false);
+			this.requestLoadRepoInfoAndCommits(false);
 		}
 
 		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!;
@@ -114,7 +116,9 @@ class GitGraphView {
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
-		settingsBtn.addEventListener('click', () => this.settingsWidget.show(this.currentRepo, true));
+		settingsBtn.addEventListener('click', () => {
+			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo].hideRemotes, true);
+		});
 	}
 
 
@@ -157,14 +161,17 @@ class GitGraphView {
 		this.refresh(true);
 	}
 
-	public loadBranches(branchOptions: string[], branchHead: string | null, hard: boolean, isRepo: boolean) {
-		if (!isRepo || (!hard && arraysStrictlyEqual(this.gitBranches, branchOptions) && this.gitBranchHead === branchHead)) {
-			this.triggerLoadBranchesCallback(false, isRepo);
+	public loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], hard: boolean, isRepo: boolean) {
+		if (!isRepo || (!hard && arraysStrictlyEqual(this.gitBranches, branchOptions) && this.gitBranchHead === branchHead && arraysStrictlyEqual(this.gitRemotes, remotes))) {
+			this.triggerLoadRepoInfoCallback(false, isRepo);
 			return;
 		}
 
 		this.gitBranches = branchOptions;
 		this.gitBranchHead = branchHead;
+		this.gitRemotes = remotes;
+
+		// Configure current branches
 
 		let globPatterns = [];
 		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
@@ -189,6 +196,7 @@ class GitGraphView {
 
 		this.saveState();
 
+		// Set up branch dropdown options
 		let options: DropdownOption[] = [{ name: 'Show All', value: SHOW_ALL_BRANCHES }];
 		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
 			options.push({ name: 'Glob: ' + escapeHtml(this.config.customBranchGlobPatterns[i].name), value: this.config.customBranchGlobPatterns[i].glob });
@@ -198,17 +206,28 @@ class GitGraphView {
 		}
 		this.branchDropdown.setOptions(options, this.currentBranches);
 
-		this.triggerLoadBranchesCallback(true, isRepo);
+		// Remove hidden remotes that no longer exist
+		let hiddenRemotes = this.gitRepos[this.currentRepo].hideRemotes;
+		let hideRemotes = hiddenRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
+		if (hiddenRemotes.length !== hideRemotes.length) {
+			this.saveHiddenRemotes(this.currentRepo, hideRemotes);
+			if (this.settingsWidget.isVisible()) {
+				this.settingsWidget.updateHiddenRemotes(this.currentRepo, hideRemotes);
+			}
+		}
+
+		// Trigger Callback
+		this.triggerLoadRepoInfoCallback(true, isRepo);
 	}
-	private triggerLoadBranchesCallback(changes: boolean, isRepo: boolean) {
-		if (this.loadBranchesCallback !== null) {
-			this.loadBranchesCallback(changes, isRepo);
-			this.loadBranchesCallback = null;
+	private triggerLoadRepoInfoCallback(changes: boolean, isRepo: boolean) {
+		if (this.loadRepoInfoCallback !== null) {
+			this.loadRepoInfoCallback(changes, isRepo);
+			this.loadRepoInfoCallback = null;
 		}
 	}
 
-	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, remotes: string[], moreAvailable: boolean, hard: boolean) {
-		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parents, b.parents) && a.stash === b.stash) && arraysStrictlyEqual(this.gitRemotes, remotes) && this.renderedGitBranchHead === this.gitBranchHead) {
+	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
+		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parents, b.parents) && a.stash === b.stash) && this.renderedGitBranchHead === this.gitBranchHead) {
 			if (this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED) {
 				this.commits[0] = commits[0];
 				this.saveState();
@@ -234,7 +253,6 @@ class GitGraphView {
 		this.moreCommitsAvailable = moreAvailable;
 		this.commits = commits;
 		this.commitHead = commitHead;
-		this.gitRemotes = remotes;
 		this.commitLookup = {};
 		this.saveState();
 
@@ -280,7 +298,7 @@ class GitGraphView {
 		this.graph.clear();
 		this.tableElem.innerHTML = '';
 		this.footerElem.innerHTML = '';
-		this.loadBranchesCallback = null;
+		this.loadRepoInfoCallback = null;
 		this.loadCommitsCallback = null;
 		this.renderRefreshButton(true);
 		this.findWidget.update([]);
@@ -322,19 +340,20 @@ class GitGraphView {
 			}
 			this.renderShowLoading();
 		}
-		this.requestLoadBranchesAndCommits(hard);
+		this.requestLoadRepoInfoAndCommits(hard);
 	}
 
 
 	/* Requests */
 
-	private requestLoadBranches(hard: boolean, loadedCallback: (changes: boolean, isRepo: boolean) => void) {
-		if (this.loadBranchesCallback !== null) return;
-		this.loadBranchesCallback = loadedCallback;
+	private requestLoadRepoInfo(hard: boolean, loadedCallback: (changes: boolean, isRepo: boolean) => void) {
+		if (this.loadRepoInfoCallback !== null) return;
+		this.loadRepoInfoCallback = loadedCallback;
 		sendMessage({
-			command: 'loadBranches',
+			command: 'loadRepoInfo',
 			repo: this.currentRepo,
 			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
+			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
 			hard: hard
 		});
 	}
@@ -348,17 +367,19 @@ class GitGraphView {
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
+			remotes: this.gitRemotes,
+			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
 			hard: hard
 		});
 	}
 
-	private requestLoadBranchesAndCommits(hard: boolean) {
+	private requestLoadRepoInfoAndCommits(hard: boolean) {
 		this.renderRefreshButton(false);
-		this.requestLoadBranches(hard, (branchChanges: boolean, isRepo: boolean) => {
+		this.requestLoadRepoInfo(hard, (repoInfoChanges: boolean, isRepo: boolean) => {
 			if (isRepo) {
 				this.requestLoadCommits(hard, (commitChanges: boolean) => {
 					const dialogType = dialog.getType();
-					if ((!hard && (branchChanges || commitChanges) && dialogType !== DialogType.Message) || dialogType === DialogType.ActionRunning) {
+					if ((!hard && (repoInfoChanges || commitChanges) && dialogType !== DialogType.Message) || dialogType === DialogType.ActionRunning) {
 						closeDialogAndContextMenu();
 					}
 					this.renderRefreshButton(true);
@@ -426,6 +447,18 @@ class GitGraphView {
 
 	public saveRepoState() {
 		sendMessage({ command: 'saveRepoState', repo: this.currentRepo, state: this.gitRepos[this.currentRepo] });
+	}
+
+	private saveColumnWidths(columnWidths: GG.ColumnWidth[]) {
+		this.gitRepos[this.currentRepo].columnWidths = [columnWidths[0], columnWidths[2], columnWidths[3], columnWidths[4]];
+		this.saveRepoState();
+	}
+
+	public saveHiddenRemotes(repo: string, hideRemotes: string[]) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].hideRemotes = hideRemotes;
+			this.saveRepoState();
+		}
 	}
 
 
@@ -1199,11 +1232,6 @@ class GitGraphView {
 		});
 	}
 
-	private saveColumnWidths(columnWidths: GG.ColumnWidth[]) {
-		this.gitRepos[this.currentRepo].columnWidths = [columnWidths[0], columnWidths[2], columnWidths[3], columnWidths[4]];
-		this.saveRepoState();
-	}
-
 	public getColumnVisibility() {
 		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (colWidths !== null) {
@@ -1780,7 +1808,7 @@ class GitGraphView {
 		lastViewedElem = document.createElement('span');
 		lastViewedElem.id = 'cdvLastFileViewed';
 		lastViewedElem.title = 'Last File Viewed';
-		lastViewedElem.innerHTML = SVG_ICONS.eye;
+		lastViewedElem.innerHTML = SVG_ICONS.eyeOpen;
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 
 		if (expandedCommit.codeReview !== null) {
@@ -1956,21 +1984,21 @@ window.addEventListener('load', () => {
 			case 'getSettings':
 				settingsWidget.loadSettings(msg.settings, msg.error);
 				break;
-			case 'loadBranches':
-				if (msg.error === null) {
-					gitGraph.loadBranches(msg.branches, msg.head, msg.hard, msg.isRepo);
-				} else {
-					gitGraph.loadDataError('Unable to load branches', msg.error);
-				}
-				break;
 			case 'loadCommits':
 				if (msg.error === null) {
-					gitGraph.loadCommits(msg.commits, msg.head, msg.remotes, msg.moreCommitsAvailable, msg.hard);
+					gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
 				} else {
 					let error = gitGraph.getNumBranches() === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
 						? 'There are no commits in this repository.'
 						: msg.error;
-					gitGraph.loadDataError('Unable to load commits', error);
+					gitGraph.loadDataError('Unable to load Commits', error);
+				}
+				break;
+			case 'loadRepoInfo':
+				if (msg.error === null) {
+					gitGraph.loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.hard, msg.isRepo);
+				} else {
+					gitGraph.loadDataError('Unable to load Repository Info', msg.error);
 				}
 				break;
 			case 'loadRepos':
@@ -2095,7 +2123,7 @@ function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange
 			let diffPossible = fileTreeFile.type === 'U' || textFile;
 			html += '<li data-name="' + name + '"><span class="fileTreeFileRecord"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + ((<FileTreeFile>cur).reviewed ? '' : ' pendingReview') + '" data-oldfilepath="' + encodeURIComponent(fileTreeFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '" data-type="' + fileTreeFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== 'D' ? ' (this is a binary file)' : '')) + ' • ' + GIT_FILE_CHANGE_TYPES[fileTreeFile.type] + (fileTreeFile.type === 'R' ? ' (' + escapeHtml(fileTreeFile.oldFilePath) + ' → ' + escapeHtml(fileTreeFile.newFilePath) + ')' : '') + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapeHtml(folder.contents[keys[i]].name) + '</span></span>' +
 				(fileTreeFile.type !== 'A' && fileTreeFile.type !== 'U' && fileTreeFile.type !== 'D' && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
-				(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eye + '</span>' : '') +
+				(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
 				'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.copy + '</span>' +
 				(fileTreeFile.type !== 'D' ? '<span class="openGitFile fileTreeFileAction" title="Click to Open File" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
 		} else {

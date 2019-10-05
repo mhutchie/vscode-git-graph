@@ -263,33 +263,31 @@ export class GitGraphView {
 						... await this.dataSource.getRepoSettings(msg.repo)
 					});
 					break;
-				case 'loadBranches':
-					let branchData = await this.dataSource.getBranches(msg.repo, msg.showRemoteBranches), isRepo = true;
-					if (branchData.error) {
+				case 'loadCommits':
+					this.sendMessage({
+						command: 'loadCommits',
+						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.remotes, msg.hideRemotes),
+						hard: msg.hard
+					});
+					break;
+				case 'loadRepoInfo':
+					let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.hideRemotes), isRepo = true;
+					if (repoInfo.error) {
 						// If an error occurred, check to make sure the repo still exists
 						isRepo = (await this.dataSource.repoRoot(msg.repo)) !== null;
-						if (!isRepo) branchData.error = null; // If the error is caused by the repo no longer existing, clear the error message
+						if (!isRepo) repoInfo.error = null; // If the error is caused by the repo no longer existing, clear the error message
 					}
 					this.sendMessage({
-						command: 'loadBranches',
-						branches: branchData.branches,
-						head: branchData.head,
+						command: 'loadRepoInfo',
+						... repoInfo,
 						hard: msg.hard,
-						isRepo: isRepo,
-						error: branchData.error
+						isRepo: isRepo
 					});
 					if (msg.repo !== this.currentRepo) {
 						this.currentRepo = msg.repo;
 						this.extensionState.setLastActiveRepo(msg.repo);
 						this.repoFileWatcher.start(msg.repo);
 					}
-					break;
-				case 'loadCommits':
-					this.sendMessage({
-						command: 'loadCommits',
-						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches),
-						hard: msg.hard
-					});
 					break;
 				case 'loadRepos':
 					if (!msg.check || !await this.repoManager.checkReposExist()) {

@@ -82,15 +82,16 @@ class SettingsWidget {
 		return this.visible;
 	}
 
-	public updateHiddenRemotes(repo: string, hideRemotes: string[]) {
-		if (!this.visible || this.repo !== repo) return;
-		this.hideRemotes = hideRemotes;
-		this.render();
-	}
-
 	public loadSettings(settings: GG.GitRepoSettings | null, error: string | null) {
 		if (!this.visible) return;
 		this.settings = settings;
+
+		if (this.settings !== null && this.hideRemotes !== null) {
+			// Remove hidden remotes that no longer exist
+			let remotes = this.settings.remotes.map((remote) => remote.name);
+			this.hideRemotes = this.hideRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
+		}
+
 		if (error === null) {
 			this.loading = false;
 			this.render();

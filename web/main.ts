@@ -211,9 +211,6 @@ class GitGraphView {
 		let hideRemotes = hiddenRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
 		if (hiddenRemotes.length !== hideRemotes.length) {
 			this.saveHiddenRemotes(this.currentRepo, hideRemotes);
-			if (this.settingsWidget.isVisible()) {
-				this.settingsWidget.updateHiddenRemotes(this.currentRepo, hideRemotes);
-			}
 		}
 
 		// Trigger Callback

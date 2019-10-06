@@ -68,157 +68,151 @@ export class DataSource {
 		});
 	}
 
-	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, remotes: string[], hideRemotes: string[]) {
+	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, remotes: string[], hideRemotes: string[]): Promise<GitCommitData> {
 		const config = getConfig();
-		return new Promise<GitCommitData>(resolve => {
-			Promise.all([
-				this.getLog(repo, branches, maxCommits + 1, config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering(), remotes, hideRemotes),
-				this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
-				this.getStashes(repo)
-			]).then(async (results) => {
-				let commits: GitCommit[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i, unsavedChanges = null;
-				let moreCommitsAvailable = commits.length === maxCommits + 1;
-				if (moreCommitsAvailable) commits.pop();
+		return Promise.all([
+			this.getLog(repo, branches, maxCommits + 1, config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering(), remotes, hideRemotes),
+			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
+			this.getStashes(repo)
+		]).then(async (results) => {
+			let commits: GitCommit[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i, unsavedChanges = null;
+			let moreCommitsAvailable = commits.length === maxCommits + 1;
+			if (moreCommitsAvailable) commits.pop();
 
-				// It doesn't matter if getRefs() was rejected if no commits exist
-				if (typeof refData === 'string') {
-					// getRefs() returned an error message (string)
-					if (commits.length > 0) {
-						// Commits exist, throw the error
-						throw refData;
-					} else {
-						// No commits exist, so getRefs() will always return an error. Set refData to the default value
-						refData = { head: null, heads: [], tags: [], remotes: [] };
-					}
+			// It doesn't matter if getRefs() was rejected if no commits exist
+			if (typeof refData === 'string') {
+				// getRefs() returned an error message (string)
+				if (commits.length > 0) {
+					// Commits exist, throw the error
+					throw refData;
+				} else {
+					// No commits exist, so getRefs() will always return an error. Set refData to the default value
+					refData = { head: null, heads: [], tags: [], remotes: [] };
 				}
+			}
 
-				if (refData.head !== null) {
-					for (i = 0; i < commits.length; i++) {
-						if (refData.head === commits[i].hash) {
-							unsavedChanges = config.showUncommittedChanges() ? await this.getUnsavedChanges(repo) : null;
-							if (unsavedChanges !== null) {
-								commits.unshift({ hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
-							}
-							break;
-						}
-					}
-				}
-
-				let commitNodes: GitCommitNode[] = [];
-				let commitLookup: { [hash: string]: number } = {};
-
+			if (refData.head !== null) {
 				for (i = 0; i < commits.length; i++) {
-					commitLookup[commits[i].hash] = i;
-					commitNodes.push({ hash: commits[i].hash, parents: commits[i].parents, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [], stash: null });
-				}
-
-				/* Insert Stashes */
-				let toAdd: { index: number, data: GitStash }[] = [];
-				for (i = 0; i < stashes.length; i++) {
-					if (typeof commitLookup[stashes[i].hash] === 'number') {
-						commitNodes[commitLookup[stashes[i].hash]].stash = stashes[i].selector;
-					} else if (typeof commitLookup[stashes[i].base] === 'number') {
-						toAdd.push({ index: commitLookup[stashes[i].base], data: stashes[i] });
+					if (refData.head === commits[i].hash) {
+						unsavedChanges = config.showUncommittedChanges() ? await this.getUnsavedChanges(repo) : null;
+						if (unsavedChanges !== null) {
+							commits.unshift({ hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+						}
+						break;
 					}
 				}
-				toAdd.sort((a, b) => a.index !== b.index ? a.index - b.index : b.data.date - a.data.date);
-				for (i = toAdd.length - 1; i >= 0; i--) {
-					let stash = toAdd[i].data;
-					commitNodes.splice(toAdd[i].index, 0, { hash: stash.hash, parents: [stash.base], author: stash.author, email: stash.email, date: stash.date, message: stash.message, heads: [], tags: [], remotes: [], stash: stash.selector });
-				}
-				for (i = 0; i < commitNodes.length; i++) {
-					// Correct commit lookup after stashes have been spliced in
-					commitLookup[commitNodes[i].hash] = i;
-				}
+			}
 
-				/* Annotate Heads */
-				for (i = 0; i < refData.heads.length; i++) {
-					if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
-				}
+			let commitNodes: GitCommitNode[] = [];
+			let commitLookup: { [hash: string]: number } = {};
 
-				/* Annotate Tags */
-				for (i = 0; i < refData.tags.length; i++) {
-					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
-				}
+			for (i = 0; i < commits.length; i++) {
+				commitLookup[commits[i].hash] = i;
+				commitNodes.push({ hash: commits[i].hash, parents: commits[i].parents, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [], stash: null });
+			}
 
-				/* Annotate Remotes */
-				for (i = 0; i < refData.remotes.length; i++) {
-					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
-						let name = refData.remotes[i].name;
-						let remote = remotes.find(remote => name.startsWith(remote + '/'));
-						commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
-					}
+			/* Insert Stashes */
+			let toAdd: { index: number, data: GitStash }[] = [];
+			for (i = 0; i < stashes.length; i++) {
+				if (typeof commitLookup[stashes[i].hash] === 'number') {
+					commitNodes[commitLookup[stashes[i].hash]].stash = stashes[i].selector;
+				} else if (typeof commitLookup[stashes[i].base] === 'number') {
+					toAdd.push({ index: commitLookup[stashes[i].base], data: stashes[i] });
 				}
+			}
+			toAdd.sort((a, b) => a.index !== b.index ? a.index - b.index : b.data.date - a.data.date);
+			for (i = toAdd.length - 1; i >= 0; i--) {
+				let stash = toAdd[i].data;
+				commitNodes.splice(toAdd[i].index, 0, { hash: stash.hash, parents: [stash.base], author: stash.author, email: stash.email, date: stash.date, message: stash.message, heads: [], tags: [], remotes: [], stash: stash.selector });
+			}
+			for (i = 0; i < commitNodes.length; i++) {
+				// Correct commit lookup after stashes have been spliced in
+				commitLookup[commitNodes[i].hash] = i;
+			}
 
-				resolve({ commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable, error: null });
-			}).catch((errorMessage) => {
-				resolve({ commits: [], head: null, moreCommitsAvailable: false, error: errorMessage });
-			});
+			/* Annotate Heads */
+			for (i = 0; i < refData.heads.length; i++) {
+				if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
+			}
+
+			/* Annotate Tags */
+			for (i = 0; i < refData.tags.length; i++) {
+				if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
+			}
+
+			/* Annotate Remotes */
+			for (i = 0; i < refData.remotes.length; i++) {
+				if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
+					let name = refData.remotes[i].name;
+					let remote = remotes.find(remote => name.startsWith(remote + '/'));
+					commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
+				}
+			}
+
+			return { commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable, error: null };
+		}).catch((errorMessage) => {
+			return { commits: [], head: null, moreCommitsAvailable: false, error: errorMessage };
 		});
 	}
 
 
 	/* Get Data Methods - Commit Details View */
 
-	public getCommitDetails(repo: string, commitHash: string, baseHash: string | null) {
-		return new Promise<GitCommitDetails>(resolve => {
-			Promise.all([
-				this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): GitCommitDetails => {
-					let lines = stdout.split(EOL_REGEX);
-					let lastLine = lines.length - 1;
-					while (lines.length > 0 && lines[lastLine] === '') lastLine--;
-					let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
-					return {
-						hash: commitInfo[0],
-						parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
-						author: commitInfo[2],
-						email: commitInfo[3],
-						date: parseInt(commitInfo[4]),
-						committer: commitInfo[5],
-						body: lines.slice(1, lastLine + 1).join('\n'),
-						fileChanges: [], error: null
-					};
-				}),
-				this.getDiffNameStatus(repo, baseHash !== null ? baseHash : commitHash, commitHash),
-				this.getDiffNumStat(repo, baseHash !== null ? baseHash : commitHash, commitHash)
-			]).then((results) => {
-				results[0].fileChanges = generateFileChanges(results[1], results[2], null);
-				resolve(results[0]);
-			}).catch((errorMessage) => resolve({ hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage }));
+	public getCommitDetails(repo: string, commitHash: string, baseHash: string | null): Promise<GitCommitDetails> {
+		return Promise.all([
+			this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): GitCommitDetails => {
+				let lines = stdout.split(EOL_REGEX);
+				let lastLine = lines.length - 1;
+				while (lines.length > 0 && lines[lastLine] === '') lastLine--;
+				let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
+				return {
+					hash: commitInfo[0],
+					parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
+					author: commitInfo[2],
+					email: commitInfo[3],
+					date: parseInt(commitInfo[4]),
+					committer: commitInfo[5],
+					body: lines.slice(1, lastLine + 1).join('\n'),
+					fileChanges: [], error: null
+				};
+			}),
+			this.getDiffNameStatus(repo, baseHash !== null ? baseHash : commitHash, commitHash),
+			this.getDiffNumStat(repo, baseHash !== null ? baseHash : commitHash, commitHash)
+		]).then((results) => {
+			results[0].fileChanges = generateFileChanges(results[1], results[2], null);
+			return results[0];
+		}).catch((errorMessage) => {
+			return { hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage };
 		});
 	}
 
-	public getUncommittedDetails(repo: string) {
-		return new Promise<GitCommitDetails>(resolve => {
-			let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: null };
-			Promise.all([
-				this.getDiffNameStatus(repo, 'HEAD', ''),
-				this.getDiffNumStat(repo, 'HEAD', ''),
-				this.getStatus(repo)
-			]).then((results) => {
-				details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
-				resolve(details);
-			}).catch((errorMessage) => {
-				details.error = errorMessage;
-				resolve(details);
-			});
+	public getUncommittedDetails(repo: string): Promise<GitCommitDetails> {
+		let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: null };
+		return Promise.all([
+			this.getDiffNameStatus(repo, 'HEAD', ''),
+			this.getDiffNumStat(repo, 'HEAD', ''),
+			this.getStatus(repo)
+		]).then((results) => {
+			details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
+			return details;
+		}).catch((errorMessage) => {
+			details.error = errorMessage;
+			return details;
 		});
 	}
 
-	public getCommitComparison(repo: string, fromHash: string, toHash: string) {
-		return new Promise<GitCommitComparisonData>(resolve => {
-			Promise.all([
-				this.getDiffNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-				this.getDiffNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-				toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null)
-			]).then((results) => {
-				resolve({
-					fileChanges: generateFileChanges(results[0], results[1], results[2]),
-					error: null
-				});
-			}).catch((errorMessage) => {
-				resolve({ fileChanges: [], error: errorMessage });
-			});
+	public getCommitComparison(repo: string, fromHash: string, toHash: string): Promise<GitCommitComparisonData> {
+		return Promise.all([
+			this.getDiffNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
+			this.getDiffNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
+			toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null)
+		]).then((results) => {
+			return {
+				fileChanges: generateFileChanges(results[0], results[1], results[2]),
+				error: null
+			};
+		}).catch((errorMessage) => {
+			return { fileChanges: [], error: errorMessage };
 		});
 	}
 
@@ -232,58 +226,52 @@ export class DataSource {
 
 	/* Get Data Methods - General */
 
-	public async getRemoteUrl(repo: string, remote: string) {
-		return new Promise<string | null>(resolve => {
-			this.spawnGit(['config', '--get', 'remote.' + remote + '.url'], repo, stdout => stdout.split(EOL_REGEX)[0])
-				.then(value => resolve(value))
-				.catch(() => resolve(null));
+	public async getRemoteUrl(repo: string, remote: string): Promise<string | null> {
+		return this.spawnGit(['config', '--get', 'remote.' + remote + '.url'], repo, (stdout) => {
+			return stdout.split(EOL_REGEX)[0];
+		}).then((url) => url, () => null);
+	}
+
+	public async getRepoSettings(repo: string): Promise<GitRepoSettingsData> {
+		return Promise.all([
+			this.getConfigList(repo, 'local'),
+			this.getRemotes(repo)
+		]).then((results) => {
+			let configNames: string[] = [];
+			results[1].forEach(remote => {
+				configNames.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
+			});
+			let configs = getConfigs(results[0], configNames);
+			return {
+				settings: {
+					remotes: results[1].map(remote => ({
+						name: remote,
+						url: configs['remote.' + remote + '.url'],
+						pushUrl: configs['remote.' + remote + '.pushurl']
+					}))
+				},
+				error: null
+			};
+		}).catch((errorMessage) => {
+			return { settings: null, error: errorMessage };
 		});
 	}
 
-	public async getRepoSettings(repo: string) {
-		return new Promise<GitRepoSettingsData>(resolve => {
-			Promise.all([
-				this.getConfigList(repo, 'local'),
-				this.getRemotes(repo)
-			]).then((results) => {
-				let configNames: string[] = [];
-				results[1].forEach(remote => {
-					configNames.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
-				});
-				let configs = getConfigs(results[0], configNames);
-				resolve({
-					settings: {
-						remotes: results[1].map(remote => ({
-							name: remote,
-							url: configs['remote.' + remote + '.url'],
-							pushUrl: configs['remote.' + remote + '.pushurl']
-						}))
-					},
-					error: null
-				});
-			}).catch((errorMessage) => {
-				resolve({ settings: null, error: errorMessage });
-			});
-		});
-	}
-
-	public getTagDetails(repo: string, tagName: string) {
-		return new Promise<GitTagDetailsData>(resolve => {
-			this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout => {
-				let data = stdout.split(GIT_LOG_SEPARATOR);
-				return {
-					tagHash: data[0],
-					name: data[1],
-					email: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
-					date: parseInt(data[3]),
-					message: data[4].trim().split(EOL_REGEX).join('\n'),
-					error: null
-				};
-			})).then((data) => {
-				resolve(data);
-			}).catch((errorMessage) => {
-				resolve({ tagHash: '', name: '', email: '', date: 0, message: '', error: errorMessage });
-			});
+	public getTagDetails(repo: string, tagName: string): Promise<GitTagDetailsData> {
+		return this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout) => {
+			let data = stdout.split(GIT_LOG_SEPARATOR);
+			return {
+				tagHash: data[0],
+				name: data[1],
+				email: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
+				date: parseInt(data[3]),
+				message: data[4].trim().split(EOL_REGEX).join('\n'),
+				error: null
+			};
+		}).then((data) => {
+			return data;
+		}).catch((errorMessage) => {
+			return { tagHash: '', name: '', email: '', date: 0, message: '', error: errorMessage };
 		});
 	}
 

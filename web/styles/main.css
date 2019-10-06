@@ -646,6 +646,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	font-weight:700;
 	font-size:13px;
 }
+
 #repoControl, #branchControl, #showRemoteBranchesControl{
 	white-space:nowrap;
 	margin:0 10px;
@@ -653,10 +654,10 @@ body.tagLabelsRightAligned .gitRef.tag{
 #repoSelect, #branchSelect{
 	margin-left:3px;
 }
-#showRemoteBranchesCheckbox{
-	width:14px;
-	vertical-align:text-top;
+#showRemoteBranchesControl > .customCheckbox{
+	margin-right:6px;
 }
+
 #findBtn, #settingsBtn, #fetchBtn, #refreshBtn{
 	position:absolute;
 	top:50%;
@@ -733,7 +734,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	display:block;
 }
 
-#controls select:focus, #controls input:focus{
+#controls input:focus{
 	outline:none;
 }
 #controls label{
@@ -766,6 +767,49 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 .roundedBtn:hover{
 	background-color:rgba(128,128,128,0.2);
+}
+
+
+/* Checkboxes */
+
+input[type=checkbox]{
+	position:absolute;
+	width:0;
+	height:0;
+	opacity:0;
+	cursor:pointer;
+}
+
+.customCheckbox{
+	display:inline-block;
+	width:15px;
+	height:15px;
+	background-color:rgba(128,128,128,0.1);
+	border:1px solid rgba(128,128,128,0.5);
+	border-radius:3px;
+	vertical-align:middle;
+	margin-top:-3px;
+}
+
+label:hover > .customCheckbox{
+	background-color:rgba(128,128,128,0.2);
+}
+
+.customCheckbox:after{
+	content:"";
+	display:none;
+}
+
+label > input[type=checkbox]:checked ~ .customCheckbox:after{
+	position:relative;
+	display:block;
+	left:5px;
+	top:2px;
+	width:3px;
+	height:7px;
+	border:solid var(--vscode-editor-foreground);
+	border-width:0 2px 2px 0;
+	transform:rotate(45deg);
 }
 
 

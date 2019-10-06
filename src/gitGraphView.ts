@@ -479,7 +479,7 @@ export class GitGraphView {
 				<div id="controls">
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoSelect" class="dropdown"></div></span>
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchSelect" class="dropdown"></div></span>
-					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox">Show Remote Branches</label>
+					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox"><span class="customCheckbox"></span>Show Remote Branches</label>
 					<div id="findBtn" title="Find"></div>
 					<div id="settingsBtn" title="Repository Settings"></div>
 					<div id="fetchBtn"></div>

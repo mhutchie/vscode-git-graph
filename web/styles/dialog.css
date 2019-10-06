@@ -10,6 +10,8 @@
 	border:1px solid rgba(128,128,128,0.5);
 	border-radius:5px;
 	text-align:center;
+	font-size:13px;
+	line-height:17px;
 	max-width:360px;
 	max-height:80%;
 	z-index:41;
@@ -36,30 +38,29 @@
 	padding-right:5px;
 }
 
-.dialog > table.dialogForm input[type=text], .dialog > table.dialogForm select{
-	width:100%;
-}
-
 .dialog > table.dialogForm.single .dialogFormCheckbox{
 	display:inline-block;
 	text-align:center;
 	width:100%;
 }
 
-.dialog > table.dialogForm input[type=checkbox]{
-	vertical-align:text-top;
-	outline-style:none;
+.dialog .dialogFormCheckbox > label{
+	user-select:none;
+	cursor:pointer;
 }
 
-.dialog > table.dialogForm.multi input[type=checkbox]{
-	margin-left:0;
+.dialog .customCheckbox{
+	border-color:rgba(128,128,128,0.3);
 }
-
-.dialog > table.dialogForm.single input[type=checkbox], .dialog > table.dialogForm.multiCheckbox input[type=checkbox]{
-	margin-right:5px;
+.dialog > table.dialogForm.single .customCheckbox, .dialog > table.dialogForm.multiCheckbox .customCheckbox{
+	margin-right:6px;
+}
+.dialog .dialogFormCheckbox > label > input[type=checkbox]:checked ~ .customCheckbox:after{
+	border-color:var(--vscode-menu-foreground);
 }
 
 .dialog > table.dialogForm input[type=text], .dialog > table.dialogForm select{
+	width:100%;
 	padding:4px;
 	box-sizing:border-box;
 	border:1px solid rgba(128,128,128,0.3);
@@ -125,9 +126,11 @@
 	cursor:help;
 }
 .dialog .dialogInfo svg{
-	width:14px !important;
-	height:14px !important;
+	width:15px !important;
+	height:15px !important;
 	margin-left:5px;
+	margin-top:-2px;
+	vertical-align:middle;
 }
 
 .dialog .actionRunning{

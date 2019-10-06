@@ -73,7 +73,7 @@ class Dialog {
 				}
 				html += '</select></td>' + (infoColumn ? '<td>' + infoHtml + '</td>' : '');
 			} else if (input.type === 'checkbox') {
-				html += '<td class="inputCol"' + (infoColumn ? ' colspan="2"' : '') + '><span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/>' + (multiElement && !multiCheckbox ? '' : input.name) + infoHtml + '</label></span></td>';
+				html += '<td class="inputCol"' + (infoColumn ? ' colspan="2"' : '') + '><span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + '/><span class="customCheckbox"></span>' + (multiElement && !multiCheckbox ? '' : input.name) + infoHtml + '</label></span></td>';
 			} else {
 				html += '<td class="inputCol"><input id="dialogInput' + i + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + '/></td>' + (infoColumn ? '<td>' + infoHtml + '</td>' : '');
 				if (input.type === 'text-ref') textRefInput = i;

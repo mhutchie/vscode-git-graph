@@ -92,7 +92,7 @@ export function encodeDiffDocUri(repo: string, filePath: string, commit: string,
 		let extIndex = data.filePath.indexOf('.', data.filePath.lastIndexOf('/') + 1);
 		extension = extIndex > -1 ? data.filePath.substring(extIndex) : '';
 	}
-	return vscode.Uri.parse(DiffDocProvider.scheme + ':file' + extension + '?' + Buffer.from(JSON.stringify(data)).toString('base64'));
+	return vscode.Uri.parse(DiffDocProvider.scheme + ':file' + extension).with({query:Buffer.from(JSON.stringify(data)).toString('base64')});
 }
 
 export function decodeDiffDocUri(uri: vscode.Uri): DiffDocUriData {

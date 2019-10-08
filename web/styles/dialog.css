@@ -49,9 +49,6 @@
 	cursor:pointer;
 }
 
-.dialog .customCheckbox{
-	border-color:rgba(128,128,128,0.3);
-}
 .dialog > table.dialogForm.single .customCheckbox, .dialog > table.dialogForm.multiCheckbox .customCheckbox{
 	margin-right:6px;
 }

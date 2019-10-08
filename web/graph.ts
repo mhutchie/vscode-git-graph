@@ -46,7 +46,7 @@ class Branch {
 	public addLine(p1: Point, p2: Point, isCommitted: boolean, lockedFirst: boolean) {
 		this.lines.push({ p1: p1, p2: p2, lockedFirst: lockedFirst });
 		if (isCommitted) {
-			if (p2.y < this.numUncommitted) this.numUncommitted = p2.y;
+			if (p2.x === 0 && p2.y < this.numUncommitted) this.numUncommitted = p2.y;
 		} else {
 			this.numUncommitted++;
 		}

@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.17.0 - 2019-10-08
+* #128 New "Fetch into local branch..." action on the remote branch context menu. This only appears if a local branch shares the same name as the branch being fetched, and the local branch is not checked out.
+* #185 Added two new date format options, "ISO Date & Time" and "ISO Date Only", to the Extension Setting `git-graph.dateFormat`.
+* #186 Added a new field to the "Add Tag" dialog that enables the extension to push the tag to a remote once it is added. Default: false (can be configured with the new setting `git-graph.dialog.addTag.pushToRemote`)
+* #188 Added a new "No Commit" checkbox to the "Cherry Pick Commit" dialog that enables a commits changes to be staged but not committed. This allows you to select and commit specific parts of the cherry picked commit.
+* #189 Fixed the handling of filenames containing double quotes in the Commit Details View.
+* #190 Show / hide branches of individual remotes from the Repository Settings Widget.
+* #192 Fixed the handling of filenames containing URI fragment and query string separators when opening the Diff view.
+* Various code, performance, and UI improvements (including #191).
+
 ## 1.16.0 - 2019-09-22
 * #156 Hover over any commit vertex on the graph to see a tooltip indicating:
     * Whether the commit is included in the HEAD.

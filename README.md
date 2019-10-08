@@ -12,7 +12,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Local Refs: Heads, Tags & Remotes
         * Uncommitted Changes
     * Perform Git Actions (available by right clicking on a commit / branch / tag):
-        * Create, Checkout, Rename, Delete, Merge, Push, Pull, Rebase & Reset Branches
+        * Create, Checkout, Delete, Fetch, Merge, Pull, Push, Rebase, Rename & Reset Branches
         * Add, Delete & Push Tags
         * Checkout, Cherry Pick, Drop, Merge & Revert Commits
         * Clean, Reset & Stash Uncommitted Changes

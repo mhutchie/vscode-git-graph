@@ -788,7 +788,7 @@ input[type=checkbox]{
 	border:1px solid rgba(128,128,128,0.5);
 	border-radius:3px;
 	vertical-align:middle;
-	margin-top:-3px;
+	margin-top:-2px;
 }
 
 label:hover > .customCheckbox{

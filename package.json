@@ -111,11 +111,196 @@
 					"default": "Inline",
 					"description": "Specifies where the Commit Details View is rendered in the Git Graph view."
 				},
+				"git-graph.contextMenuActionsVisibility": {
+					"type": "object",
+					"default": {},
+					"properties": {
+						"branch": {
+							"type": "object",
+							"properties": {
+								"checkout": {
+									"type": "boolean",
+									"title": "Checkout Branch"
+								},
+								"rename": {
+									"type": "boolean",
+									"title": "Rename Branch..."
+								},
+								"delete": {
+									"type": "boolean",
+									"title": "Delete Branch..."
+								},
+								"merge": {
+									"type": "boolean",
+									"title": "Merge into current branch..."
+								},
+								"rebase": {
+									"type": "boolean",
+									"title": "Rebase current branch on Branch..."
+								},
+								"push": {
+									"type": "boolean",
+									"title": "Push Branch..."
+								},
+								"copyName": {
+									"type": "boolean",
+									"title": "Copy Branch Name to Clipboard"
+								}
+							}
+						},
+						"commit": {
+							"type": "object",
+							"properties": {
+								"addTag": {
+									"type": "boolean",
+									"title": "Add Tag..."
+								},
+								"createBranch": {
+									"type": "boolean",
+									"title": "Create Branch..."
+								},
+								"checkout": {
+									"type": "boolean",
+									"title": "Checkout..."
+								},
+								"cherrypick": {
+									"type": "boolean",
+									"title": "Cherry Pick..."
+								},
+								"revert": {
+									"type": "boolean",
+									"title": "Revert..."
+								},
+								"drop": {
+									"type": "boolean",
+									"title": "Drop..."
+								},
+								"merge": {
+									"type": "boolean",
+									"title": "Merge into current branch..."
+								},
+								"rebase": {
+									"type": "boolean",
+									"title": "Rebase current branch on this Commit..."
+								},
+								"reset": {
+									"type": "boolean",
+									"title": "Reset current branch to this Commit..."
+								},
+								"copyHash": {
+									"type": "boolean",
+									"title": "Copy Commit Hash to Clipboard"
+								}
+							}
+						},
+						"remoteBranch": {
+							"type": "object",
+							"properties": {
+								"checkout": {
+									"type": "boolean",
+									"title": "Checkout Branch..."
+								},
+								"delete": {
+									"type": "boolean",
+									"title": "Delete Remote Branch..."
+								},
+								"fetch": {
+									"type": "boolean",
+									"title": "Fetch into local branch..."
+								},
+								"pull": {
+									"type": "boolean",
+									"title": "Pull into current branch..."
+								},
+								"copyName": {
+									"type": "boolean",
+									"title": "Copy Branch Name to Clipboard"
+								}
+							}
+						},
+						"stash": {
+							"type": "object",
+							"properties": {
+								"apply": {
+									"type": "boolean",
+									"title": "Apply Stash..."
+								},
+								"createBranch": {
+									"type": "boolean",
+									"title": "Create Branch from Stash..."
+								},
+								"pop": {
+									"type": "boolean",
+									"title": "Pop Stash..."
+								},
+								"drop": {
+									"type": "boolean",
+									"title": "Drop Stash..."
+								},
+								"copyName": {
+									"type": "boolean",
+									"title": "Copy Stash Name to Clipboard"
+								},
+								"copyHash": {
+									"type": "boolean",
+									"title": "Copy Stash Hash to Clipboard"
+								}
+							}
+						},
+						"tag": {
+							"type": "object",
+							"properties": {
+								"viewDetails": {
+									"type": "boolean",
+									"title": "View Details"
+								},
+								"delete": {
+									"type": "boolean",
+									"title": "Delete Tag..."
+								},
+								"push": {
+									"type": "boolean",
+									"title": "Push Tag..."
+								},
+								"copyName": {
+									"type": "boolean",
+									"title": "Copy Tag Name to Clipboard"
+								}
+							}
+						},
+						"uncommittedChanges": {
+							"type": "object",
+							"properties": {
+								"stash": {
+									"type": "boolean",
+									"title": "Stash uncommitted changes..."
+								},
+								"reset": {
+									"type": "boolean",
+									"title": "Reset uncommitted changes..."
+								},
+								"clean": {
+									"type": "boolean",
+									"title": "Clean untracked files..."
+								},
+								"openSourceControlView": {
+									"type": "boolean",
+									"title": "Open Source Control View"
+								}
+							}
+						}
+					},
+					"markdownDescription": "Customise which context menu actions are visible. For example, if you want to hide the rebase action from the branch context menu, a suitable value for this setting is `{ \"branch\": { \"rebase\": false } }`. For more information of how to configure this setting, view the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility)."
+				},
 				"git-graph.customBranchGlobPatterns": {
 					"type": "array",
 					"items": {
 						"type": "object",
 						"title": "Branch Glob Pattern",
+						"required": [
+							"name",
+							"glob"
+						],
 						"properties": {
 							"name": {
 								"type": "string",
@@ -137,6 +322,10 @@
 					"items": {
 						"type": "object",
 						"title": "Custom Emoji Shortcode Mapping",
+						"required": [
+							"shortcode",
+							"emoji"
+						],
 						"properties": {
 							"shortcode": {
 								"type": "string",

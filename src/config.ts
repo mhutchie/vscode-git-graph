@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CommitOrdering, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateFormatType, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import { CommitDetailsViewLocation, CommitOrdering, ContextMenuActionsVisibility, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateFormatType, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
 
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
@@ -29,6 +29,20 @@ class Config {
 			: ordering === 'topo'
 				? CommitOrdering.Topological
 				: CommitOrdering.Date;
+	}
+
+	public contextMenuActionsVisibility(): ContextMenuActionsVisibility {
+		let userConfig = this.config.get('contextMenuActionsVisibility', {});
+		let config = {
+			branch: { checkout: true, rename: true, delete: true, merge: true, rebase: true, push: true, copyName: true },
+			commit: { addTag: true, createBranch: true, checkout: true, cherrypick: true, revert: true, drop: true, merge: true, rebase: true, reset: true, copyHash: true },
+			remoteBranch: { checkout: true, delete: true, fetch: true, pull: true, copyName: true },
+			stash: { apply: true, createBranch: true, pop: true, drop: true, copyName: true, copyHash: true },
+			tag: { viewDetails: true, delete: true, push: true, copyName: true },
+			uncommittedChanges: { stash: true, reset: true, clean: true, openSourceControlView: true }
+		};
+		mergeConfigObjects(config, userConfig);
+		return config;
 	}
 
 	public customBranchGlobPatterns(): CustomBranchGlobPattern[] {
@@ -208,4 +222,17 @@ class Config {
 
 export function getConfig() {
 	return new Config();
+}
+
+function mergeConfigObjects(base: { [key: string]: any }, user: { [key: string]: any }) {
+	let keys = Object.keys(base);
+	for (let i = 0; i < keys.length; i++) {
+		if (typeof base[keys[i]] === 'object') {
+			if (typeof user[keys[i]] === 'object') {
+				mergeConfigObjects(base[keys[i]], user[keys[i]]);
+			}
+		} else if (typeof user[keys[i]] === typeof base[keys[i]]) {
+			base[keys[i]] = user[keys[i]];
+		}
+	}
 }

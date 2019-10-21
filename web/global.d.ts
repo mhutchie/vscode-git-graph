@@ -55,17 +55,6 @@ declare global {
 	}
 
 
-	/* Context Menu Types */
-
-	interface ContextMenuItem {
-		readonly title: string;
-		readonly onClick: () => void;
-		readonly checked?: boolean; // Required in checked context menus
-	}
-
-	type ContextMenuElement = ContextMenuItem | null;
-
-
 	/* Dialog Types */
 
 	interface DialogTextInput {

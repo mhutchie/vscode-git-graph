@@ -138,6 +138,7 @@ export interface GitGraphViewConfig {
 	readonly branchLabelsAlignedToGraph: boolean;
 	readonly combineLocalAndRemoteBranchLabels: boolean;
 	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
 	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
 	readonly dateFormat: DateFormat;
@@ -167,6 +168,57 @@ export const enum CommitOrdering {
 	Date = 'date',
 	AuthorDate = 'author-date',
 	Topological = 'topo'
+}
+
+export interface ContextMenuActionsVisibility {
+	readonly branch: {
+		readonly checkout: boolean;
+		readonly rename: boolean;
+		readonly delete: boolean;
+		readonly merge: boolean;
+		readonly rebase: boolean;
+		readonly push: boolean;
+		readonly copyName: boolean;
+	};
+	readonly commit: {
+		readonly addTag: boolean;
+		readonly createBranch: boolean;
+		readonly checkout: boolean;
+		readonly cherrypick: boolean;
+		readonly revert: boolean;
+		readonly drop: boolean;
+		readonly merge: boolean;
+		readonly rebase: boolean;
+		readonly reset: boolean;
+		readonly copyHash: boolean;
+	};
+	readonly remoteBranch: {
+		readonly checkout: boolean;
+		readonly delete: boolean;
+		readonly fetch: boolean;
+		readonly pull: boolean;
+		readonly copyName: boolean;
+	};
+	readonly stash: {
+		readonly apply: boolean;
+		readonly createBranch: boolean;
+		readonly pop: boolean;
+		readonly drop: boolean;
+		readonly copyName: boolean;
+		readonly copyHash: boolean;
+	};
+	readonly tag: {
+		readonly viewDetails: boolean;
+		readonly delete: boolean;
+		readonly push: boolean;
+		readonly copyName: boolean;
+	};
+	readonly uncommittedChanges: {
+		readonly stash: boolean;
+		readonly reset: boolean;
+		readonly clean: boolean;
+		readonly openSourceControlView: boolean;
+	};
 }
 
 export interface CustomBranchGlobPattern {

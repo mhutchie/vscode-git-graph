@@ -1,5 +1,14 @@
 const CLASS_CONTEXT_MENU_ACTIVE = 'contextMenuActive';
 
+interface ContextMenuAction {
+	readonly title: string;
+	readonly visible: boolean;
+	readonly onClick: () => void;
+	readonly checked?: boolean; // Required in checked context menus
+}
+
+type ContextMenuActions = ContextMenuAction[][];
+
 class ContextMenu {
 	private elem: HTMLElement | null = null;
 	private source: HTMLElement | null = null;
@@ -10,16 +19,27 @@ class ContextMenu {
 		document.addEventListener('contextmenu', listener);
 	}
 
-	public show(event: MouseEvent, items: ContextMenuElement[], checked: boolean, sourceElem: HTMLElement | null) {
-		let viewElem = document.getElementById('view'), html = '';
+	public show(event: MouseEvent, actions: ContextMenuActions, checked: boolean, sourceElem: HTMLElement | null) {
+		let viewElem = document.getElementById('view'), html = '', handlers: (() => void)[] = [], handlerId = 0;
 		if (viewElem === null) return;
 		this.close();
 
-		for (let i = 0; i < items.length; i++) {
-			html += items[i] !== null
-				? '<li class="contextMenuItem" data-index="' + i + '">' + (checked ? '<span class="contextMenuItemCheck">' + (items[i]!.checked ? SVG_ICONS.check : '') + '</span>' : '') + items[i]!.title + '</li>'
-				: '<li class="contextMenuDivider"></li>';
+		for (let i = 0; i < actions.length; i++) {
+			let groupHtml = '';
+			for (let j = 0; j < actions[i].length; j++) {
+				if (actions[i][j].visible) {
+					groupHtml += '<li class="contextMenuItem" data-index="' + handlerId++ + '">' + (checked ? '<span class="contextMenuItemCheck">' + (actions[i][j].checked ? SVG_ICONS.check : '') + '</span>' : '') + actions[i][j].title + '</li>';
+					handlers.push(actions[i][j].onClick);
+				}
+			}
+
+			if (groupHtml !== '') {
+				if (html !== '') html += '<li class="contextMenuDivider"></li>';
+				html += groupHtml;
+			}
 		}
+
+		if (handlers.length === 0) return; // No context menu actions are visible
 
 		let menu = document.createElement('ul');
 		menu.className = 'contextMenu' + (checked ? ' checked' : '');
@@ -44,7 +64,7 @@ class ContextMenu {
 		addListenerToClass('contextMenuItem', 'click', (e) => {
 			e.stopPropagation();
 			this.close();
-			items[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]!.onClick();
+			handlers[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]();
 		});
 
 		if (sourceElem !== null) sourceElem.classList.add(CLASS_CONTEXT_MENU_ACTIVE);

@@ -575,191 +575,14 @@ class GitGraphView {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
 			let commit = this.getCommitOfElement(sourceElem);
 			if (commit === null) return;
-			let hash = commit.hash, menu: ContextMenuElement[];
 
-			if (hash === UNCOMMITTED) {
-				menu = [
-					{
-						title: 'Stash uncommitted changes' + ELLIPSIS,
-						onClick: () => {
-							dialog.showForm('Are you sure you want to stash the <b>uncommitted changes</b>?', [
-								{ type: 'text', name: 'Message', default: '', placeholder: 'Optional' },
-								{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked }
-							], 'Yes, stash', (values) => {
-								runAction({ command: 'saveStash', repo: this.currentRepo, message: values[0], includeUntracked: values[1] === 'checked' }, 'Stashing uncommitted changes');
-							}, sourceElem);
-						}
-					},
-					null,
-					{
-						title: 'Reset uncommitted changes' + ELLIPSIS,
-						onClick: () => {
-							dialog.showSelect('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', this.config.dialogDefaults.resetUncommitted.mode, [
-								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
-								{ name: 'Hard - Discard all changes', value: 'hard' }
-							], 'Yes, reset', (mode) => {
-								runAction({ command: 'resetToCommit', repo: this.currentRepo, commitHash: 'HEAD', resetMode: <GG.GitResetMode>mode }, 'Resetting uncommitted changes');
-							}, sourceElem);
-						}
-					},
-					{
-						title: 'Clean untracked files' + ELLIPSIS,
-						onClick: () => {
-							dialog.showCheckbox('Are you sure you want to clean all untracked files?', 'Clean untracked directories', true, 'Yes, clean', directories => {
-								runAction({ command: 'cleanUntrackedFiles', repo: this.currentRepo, directories: directories }, 'Cleaning untracked files');
-							}, sourceElem);
-						}
-					},
-					null,
-					{
-						title: 'Open Source Control View',
-						onClick: () => {
-							sendMessage({ command: 'viewScm' });
-						}
-					}
-				];
+			let menu: ContextMenuActions;
+			if (commit.hash === UNCOMMITTED) {
+				menu = this.getUncommittedChangesContextMenuActions(sourceElem);
 			} else if (commit.stash !== null) {
-				menu = this.getStashContextMenu(commit.hash, commit.stash, sourceElem);
+				menu = this.getStashContextMenuActions(commit.hash, commit.stash, sourceElem);
 			} else {
-				menu = [
-					{
-						title: 'Add Tag' + ELLIPSIS,
-						onClick: () => {
-							const dialogConfig = this.config.dialogDefaults.addTag;
-							let inputs: DialogInput[] = [
-								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
-								{ type: 'select' as 'select', name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
-								{ type: 'text' as 'text', name: 'Message', default: '', placeholder: 'Optional' }
-							];
-							if (this.gitRemotes.length > 1) {
-								let options = [{ name: 'Don\'t push', value: '-1' }];
-								this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
-								let defaultOption = dialogConfig.pushToRemote
-									? this.gitRemotes.includes('origin')
-										? this.gitRemotes.indexOf('origin')
-										: 0
-									: -1;
-								inputs.push({ type: 'select', name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
-							} else if (this.gitRemotes.length === 1) {
-								inputs.push({ type: 'checkbox', name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
-							}
-							dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', values => {
-								let pushToRemote = this.gitRemotes.length > 1 && values[3] !== '-1'
-									? this.gitRemotes[parseInt(values[3])]
-									: this.gitRemotes.length === 1 && values[3] === 'checked'
-										? this.gitRemotes[0]
-										: null;
-								runAction({
-									command: 'addTag',
-									repo: this.currentRepo,
-									tagName: values[0],
-									commitHash: hash,
-									lightweight: values[1] === 'lightweight',
-									message: values[2],
-									pushToRemote: pushToRemote
-								}, 'Adding Tag');
-							}, sourceElem);
-						}
-					},
-					{
-						title: 'Create Branch' + ELLIPSIS,
-						onClick: () => {
-							dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-								{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
-								{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
-							], 'Create Branch', values => {
-								runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');
-							}, sourceElem);
-						}
-					},
-					null,
-					{
-						title: 'Checkout' + ELLIPSIS,
-						onClick: () => {
-							dialog.showConfirmation('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
-								runAction({ command: 'checkoutCommit', repo: this.currentRepo, commitHash: hash }, 'Checking out Commit');
-							}, sourceElem);
-						}
-					},
-					{
-						title: 'Cherry Pick' + ELLIPSIS,
-						onClick: () => {
-							const isMerge = this.commits[this.commitLookup[hash]].parents.length > 1;
-							let inputs: DialogInput[] = [];
-							if (isMerge) {
-								let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
-									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
-									value: (index + 1).toString()
-								}));
-								inputs.push({ type: 'select', name: 'Parent Hash', options: options, default: '1', info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.' });
-							}
-							inputs.push({ type: 'checkbox', name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
-
-							dialog.showForm('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', inputs, 'Yes, cherry pick', (values) => {
-								let parentIndex = isMerge ? parseInt(values.shift()!) : 0;
-								runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parentIndex, noCommit: values[0] === 'checked' }, 'Cherry picking Commit');
-							}, sourceElem);
-						}
-					},
-					{
-						title: 'Revert' + ELLIPSIS,
-						onClick: () => {
-							if (this.commits[this.commitLookup[hash]].parents.length > 1) {
-								let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
-									name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
-									value: (index + 1).toString()
-								}));
-								dialog.showSelect('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert', (parentIndex) => {
-									runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) }, 'Reverting Commit');
-								}, sourceElem);
-							} else {
-								dialog.showConfirmation('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-									runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 }, 'Reverting Commit');
-								}, sourceElem);
-							}
-						}
-					}
-				];
-				if (this.graph.dropCommitPossible(this.commitLookup[hash])) {
-					menu.push({
-						title: 'Drop' + ELLIPSIS,
-						onClick: () => {
-							dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
-								runAction({ command: 'dropCommit', repo: this.currentRepo, commitHash: hash }, 'Dropping Commit');
-							}, sourceElem);
-						}
-					});
-				}
-				menu.push(
-					null,
-					{
-						title: 'Merge into current branch' + ELLIPSIS,
-						onClick: () => this.mergeAction(hash, abbrevCommit(hash), 'Commit', sourceElem)
-					},
-					{
-						title: 'Rebase current branch on this Commit' + ELLIPSIS,
-						onClick: () => this.rebaseAction(hash, abbrevCommit(hash), 'Commit', sourceElem)
-					},
-					{
-						title: 'Reset current branch to this Commit' + ELLIPSIS,
-						onClick: () => {
-							dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', this.config.dialogDefaults.resetCommit.mode, [
-								{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
-								{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
-								{ name: 'Hard - Discard all changes', value: 'hard' }
-							], 'Yes, reset', (mode) => {
-								runAction({ command: 'resetToCommit', repo: this.currentRepo, commitHash: hash, resetMode: <GG.GitResetMode>mode }, 'Resetting to Commit');
-							}, sourceElem);
-						}
-					},
-					null,
-					{
-						title: 'Copy Commit Hash to Clipboard',
-						onClick: () => {
-							sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
-						}
-					}
-				);
+				menu = this.getCommitContextMenuActions(commit.hash, sourceElem);
 			}
 			contextMenu.show(<MouseEvent>e, menu, false, sourceElem);
 		});
@@ -785,183 +608,30 @@ class GitGraphView {
 		});
 		addListenerToClass('gitRef', 'contextmenu', (e: Event) => {
 			e.stopPropagation();
-			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!, menu: ContextMenuElement[];
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!, menu: ContextMenuActions;
 			let commitElem = <HTMLElement>sourceElem.closest('.commit')!;
 			const commit = this.getCommitOfElement(commitElem);
 			if (commit === null) return;
 
 			if (sourceElem.classList.contains(CLASS_REF_STASH)) {
-				menu = this.getStashContextMenu(commit.hash, commit.stash!, commitElem);
+				menu = this.getStashContextMenuActions(commit.hash, commit.stash!, commitElem);
 			} else {
-				let refName = unescapeHtml(sourceElem.dataset.name!), copyType: string;
+				let refName = unescapeHtml(sourceElem.dataset.name!);
 				if (sourceElem.classList.contains(CLASS_REF_TAG)) {
-					menu = [];
-					if (sourceElem.dataset.tagtype === 'annotated') {
-						menu.push({
-							title: 'View Details',
-							onClick: () => {
-								runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: refName, commitHash: commit.hash }, 'Retrieving Tag Details');
-							}
-						});
-					}
-					menu.push({
-						title: 'Delete Tag' + ELLIPSIS,
-						onClick: () => {
-							let message = 'Are you sure you want to delete the tag <b><i>' + escapeHtml(refName) + '</i></b>?';
-							if (this.gitRemotes.length > 1) {
-								let options = [{ name: 'Don\'t delete on any remote', value: '-1' }];
-								this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
-								dialog.showSelect(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
-									this.deleteTagAction(refName, remoteIndex !== '-1' ? this.gitRemotes[parseInt(remoteIndex)] : null);
-								}, null);
-							} else if (this.gitRemotes.length === 1) {
-								dialog.showCheckbox(message, 'Also delete on remote', false, 'Yes, delete', deleteOnRemote => {
-									this.deleteTagAction(refName, deleteOnRemote ? this.gitRemotes[0] : null);
-								}, null);
-							} else {
-								dialog.showConfirmation(message, () => {
-									this.deleteTagAction(refName, null);
-								}, null);
-							}
-						}
-					});
-					if (this.gitRemotes.length > 0) {
-						menu.push({
-							title: 'Push Tag' + ELLIPSIS,
-							onClick: () => {
-								if (this.gitRemotes.length === 1) {
-									dialog.showConfirmation('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', () => {
-										runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[0] }, 'Pushing Tag');
-									}, null);
-								} else if (this.gitRemotes.length > 1) {
-									let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
-									dialog.showSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(refName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
-										runAction({ command: 'pushTag', repo: this.currentRepo, tagName: refName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
-									}, null);
-								}
-							}
-						});
-					}
-					copyType = 'Tag Name';
+					menu = this.getTagContextMenuActions(commit.hash, refName, sourceElem);
 				} else {
 					let isHead = sourceElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';
 					if (isHead && isRemoteCombinedWithHead) {
 						refName = unescapeHtml((<HTMLElement>e.target).dataset.remote!) + '/' + refName;
 						isHead = false;
 					}
-					menu = [];
 					if (isHead) {
-						if (this.gitBranchHead !== refName) {
-							menu.push({
-								title: 'Checkout Branch',
-								onClick: () => this.checkoutBranchAction(refName, null, null)
-							});
-						}
-						menu.push({
-							title: 'Rename Branch' + ELLIPSIS,
-							onClick: () => {
-								dialog.showRefInput('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
-									runAction({ command: 'renameBranch', repo: this.currentRepo, oldName: refName, newName: newName }, 'Renaming Branch');
-								}, null);
-							}
-						});
-						if (this.gitBranchHead !== refName) {
-							menu.push({
-								title: 'Delete Branch' + ELLIPSIS,
-								onClick: () => {
-									let remotesWithBranch = this.gitRemotes.filter(remote => this.gitBranches.includes('remotes/' + remote + '/' + refName));
-									let inputs: DialogInput[] = [{ type: 'checkbox', name: 'Force Delete', value: false }];
-									if (remotesWithBranch.length > 0) {
-										inputs.push({
-											type: 'checkbox',
-											name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : '') + '<span class="dialogInfo" title="This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map(remote => escapeHtml('"' + remote + '"'))) + '">' + SVG_ICONS.info + '</span>',
-											value: false
-										});
-									}
-									dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Delete Branch', (values) => {
-										runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: values[0] === 'checked', deleteOnRemotes: remotesWithBranch.length > 0 && values[1] === 'checked' ? remotesWithBranch : [] }, 'Deleting Branch');
-									}, null);
-								}
-							}, {
-								title: 'Merge into current branch' + ELLIPSIS,
-								onClick: () => this.mergeAction(refName, refName, 'Branch', null)
-							}, {
-								title: 'Rebase current branch on Branch' + ELLIPSIS,
-								onClick: () => this.rebaseAction(refName, refName, 'Branch', null)
-							});
-						}
-						if (this.gitRemotes.length > 0) {
-							menu.push({
-								title: 'Push Branch' + ELLIPSIS,
-								onClick: () => {
-									let multipleRemotes = this.gitRemotes.length > 1, inputs: DialogInput[] = [
-										{ type: 'checkbox', name: 'Set Upstream', value: true },
-										{ type: 'checkbox', name: 'Force Push', value: false }
-									];
-
-									if (multipleRemotes) {
-										inputs.unshift({
-											type: 'select', name: 'Push to Remote', default: '0',
-											options: this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }))
-										});
-									}
-
-									dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
-										let remote = this.gitRemotes[multipleRemotes ? parseInt(values.shift()!) : 0];
-										runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
-									}, null);
-								}
-							});
-						}
+						menu = this.getBranchContextMenuActions(refName);
 					} else {
-						let remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!);
-						menu.push({
-							title: 'Checkout Branch' + ELLIPSIS,
-							onClick: () => this.checkoutBranchAction(refName, remote, null)
-						});
-						if (remote !== '') {
-							// The remote is known
-							let branchName = refName.substring(remote.length + 1);
-							menu.push({
-								title: 'Delete Remote Branch' + ELLIPSIS,
-								onClick: () => {
-									dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
-										runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: branchName, remote: remote }, 'Deleting Remote Branch');
-									}, null);
-								}
-							});
-							if (this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName) {
-								// A local branch has the same name as the remote branch, and it is not checked out
-								menu.push({
-									title: 'Fetch into local branch' + ELLIPSIS,
-									onClick: () => {
-										dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', () => {
-											runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
-										}, null);
-									}
-								});
-							}
-							menu.push({
-								title: 'Pull into current branch' + ELLIPSIS,
-								onClick: () => {
-									dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
-										{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
-										{ type: 'checkbox', name: 'Squash commits', value: false }
-									], 'Yes, pull', values => {
-										runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Pulling Branch');
-									}, null);
-								}
-							});
-						}
+						const remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : sourceElem).dataset.remote!);
+						menu = this.getRemoteBranchContextMenuActions(remote, refName);
 					}
-					copyType = 'Branch Name';
 				}
-				menu.push(null, {
-					title: 'Copy ' + copyType + ' to Clipboard',
-					onClick: () => {
-						sendMessage({ command: 'copyToClipboard', type: copyType, data: refName });
-					}
-				});
 			}
 			contextMenu.show(<MouseEvent>e, menu, false, sourceElem);
 		});
@@ -1005,54 +675,425 @@ class GitGraphView {
 
 
 	/* Context Menu Generation */
-	private getStashContextMenu(hash: string, selector: string, commitElem: HTMLElement): ContextMenuElement[] {
-		return [
+
+	private getBranchContextMenuActions(refName: string): ContextMenuActions {
+		const visibility = this.config.contextMenuActionsVisibility.branch;
+		return [[
+			{
+				title: 'Checkout Branch',
+				visible: visibility.checkout && this.gitBranchHead !== refName,
+				onClick: () => this.checkoutBranchAction(refName, null, null)
+			}, {
+				title: 'Rename Branch' + ELLIPSIS,
+				visible: visibility.rename,
+				onClick: () => {
+					dialog.showRefInput('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+						runAction({ command: 'renameBranch', repo: this.currentRepo, oldName: refName, newName: newName }, 'Renaming Branch');
+					}, null);
+				}
+			}, {
+				title: 'Delete Branch' + ELLIPSIS,
+				visible: visibility.delete && this.gitBranchHead !== refName,
+				onClick: () => {
+					let remotesWithBranch = this.gitRemotes.filter(remote => this.gitBranches.includes('remotes/' + remote + '/' + refName));
+					let inputs: DialogInput[] = [{ type: 'checkbox', name: 'Force Delete', value: false }];
+					if (remotesWithBranch.length > 0) {
+						inputs.push({
+							type: 'checkbox',
+							name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : '') + '<span class="dialogInfo" title="This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map(remote => escapeHtml('"' + remote + '"'))) + '">' + SVG_ICONS.info + '</span>',
+							value: false
+						});
+					}
+					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Delete Branch', (values) => {
+						runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: values[0] === 'checked', deleteOnRemotes: remotesWithBranch.length > 0 && values[1] === 'checked' ? remotesWithBranch : [] }, 'Deleting Branch');
+					}, null);
+				}
+			}, {
+				title: 'Merge into current branch' + ELLIPSIS,
+				visible: visibility.merge && this.gitBranchHead !== refName,
+				onClick: () => this.mergeAction(refName, refName, 'Branch', null)
+			}, {
+				title: 'Rebase current branch on Branch' + ELLIPSIS,
+				visible: visibility.rebase && this.gitBranchHead !== refName,
+				onClick: () => this.rebaseAction(refName, refName, 'Branch', null)
+			}, {
+				title: 'Push Branch' + ELLIPSIS,
+				visible: visibility.push && this.gitRemotes.length > 0,
+				onClick: () => {
+					let multipleRemotes = this.gitRemotes.length > 1, inputs: DialogInput[] = [
+						{ type: 'checkbox', name: 'Set Upstream', value: true },
+						{ type: 'checkbox', name: 'Force Push', value: false }
+					];
+
+					if (multipleRemotes) {
+						inputs.unshift({
+							type: 'select', name: 'Push to Remote', default: '0',
+							options: this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }))
+						});
+					}
+
+					dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
+						let remote = this.gitRemotes[multipleRemotes ? parseInt(values.shift()!) : 0];
+						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
+					}, null);
+				}
+			}
+		], [
+			{
+				title: 'Copy Branch Name to Clipboard',
+				visible: visibility.copyName,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Branch Name', data: refName });
+				}
+			}
+		]];
+	}
+
+	private getCommitContextMenuActions(hash: string, commitElem: HTMLElement): ContextMenuActions {
+		const visibility = this.config.contextMenuActionsVisibility.commit;
+		return [[
+			{
+				title: 'Add Tag' + ELLIPSIS,
+				visible: visibility.addTag,
+				onClick: () => {
+					const dialogConfig = this.config.dialogDefaults.addTag;
+					let inputs: DialogInput[] = [
+						{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
+						{ type: 'select' as 'select', name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+						{ type: 'text' as 'text', name: 'Message', default: '', placeholder: 'Optional' }
+					];
+					if (this.gitRemotes.length > 1) {
+						let options = [{ name: 'Don\'t push', value: '-1' }];
+						this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
+						let defaultOption = dialogConfig.pushToRemote
+							? this.gitRemotes.includes('origin')
+								? this.gitRemotes.indexOf('origin')
+								: 0
+							: -1;
+						inputs.push({ type: 'select', name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
+					} else if (this.gitRemotes.length === 1) {
+						inputs.push({ type: 'checkbox', name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
+					}
+					dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', values => {
+						let pushToRemote = this.gitRemotes.length > 1 && values[3] !== '-1'
+							? this.gitRemotes[parseInt(values[3])]
+							: this.gitRemotes.length === 1 && values[3] === 'checked'
+								? this.gitRemotes[0]
+								: null;
+						runAction({
+							command: 'addTag',
+							repo: this.currentRepo,
+							tagName: values[0],
+							commitHash: hash,
+							lightweight: values[1] === 'lightweight',
+							message: values[2],
+							pushToRemote: pushToRemote
+						}, 'Adding Tag');
+					}, commitElem);
+				}
+			}, {
+				title: 'Create Branch' + ELLIPSIS,
+				visible: visibility.createBranch,
+				onClick: () => {
+					dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+						{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
+						{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
+					], 'Create Branch', values => {
+						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');
+					}, commitElem);
+				}
+			}
+		], [
+			{
+				title: 'Checkout' + ELLIPSIS,
+				visible: visibility.checkout,
+				onClick: () => {
+					dialog.showConfirmation('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
+						runAction({ command: 'checkoutCommit', repo: this.currentRepo, commitHash: hash }, 'Checking out Commit');
+					}, commitElem);
+				}
+			}, {
+				title: 'Cherry Pick' + ELLIPSIS,
+				visible: visibility.cherrypick,
+				onClick: () => {
+					const isMerge = this.commits[this.commitLookup[hash]].parents.length > 1;
+					let inputs: DialogInput[] = [];
+					if (isMerge) {
+						let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
+							name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
+							value: (index + 1).toString()
+						}));
+						inputs.push({ type: 'select', name: 'Parent Hash', options: options, default: '1', info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.' });
+					}
+					inputs.push({ type: 'checkbox', name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
+
+					dialog.showForm('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', inputs, 'Yes, cherry pick', (values) => {
+						let parentIndex = isMerge ? parseInt(values.shift()!) : 0;
+						runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parentIndex, noCommit: values[0] === 'checked' }, 'Cherry picking Commit');
+					}, commitElem);
+				}
+			}, {
+				title: 'Revert' + ELLIPSIS,
+				visible: visibility.revert,
+				onClick: () => {
+					if (this.commits[this.commitLookup[hash]].parents.length > 1) {
+						let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
+							name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
+							value: (index + 1).toString()
+						}));
+						dialog.showSelect('Are you sure you want to revert merge commit <b><i>' + abbrevCommit(hash) + '</i></b>? Choose the parent hash on the main branch, to revert the commit relative to:', '1', options, 'Yes, revert', (parentIndex) => {
+							runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) }, 'Reverting Commit');
+						}, commitElem);
+					} else {
+						dialog.showConfirmation('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+							runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 }, 'Reverting Commit');
+						}, commitElem);
+					}
+				}
+			}, {
+				title: 'Drop' + ELLIPSIS,
+				visible: visibility.drop && this.graph.dropCommitPossible(this.commitLookup[hash]),
+				onClick: () => {
+					dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+						runAction({ command: 'dropCommit', repo: this.currentRepo, commitHash: hash }, 'Dropping Commit');
+					}, commitElem);
+				}
+			}
+		], [
+			{
+				title: 'Merge into current branch' + ELLIPSIS,
+				visible: visibility.merge,
+				onClick: () => this.mergeAction(hash, abbrevCommit(hash), 'Commit', commitElem)
+			}, {
+				title: 'Rebase current branch on this Commit' + ELLIPSIS,
+				visible: visibility.rebase,
+				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), 'Commit', commitElem)
+			}, {
+				title: 'Reset current branch to this Commit' + ELLIPSIS,
+				visible: visibility.reset,
+				onClick: () => {
+					dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', this.config.dialogDefaults.resetCommit.mode, [
+						{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
+						{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
+						{ name: 'Hard - Discard all changes', value: 'hard' }
+					], 'Yes, reset', (mode) => {
+						runAction({ command: 'resetToCommit', repo: this.currentRepo, commitHash: hash, resetMode: <GG.GitResetMode>mode }, 'Resetting to Commit');
+					}, commitElem);
+				}
+			}
+		], [
+			{
+				title: 'Copy Commit Hash to Clipboard',
+				visible: visibility.copyHash,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
+				}
+			}
+		]];
+	}
+
+	private getRemoteBranchContextMenuActions(remote: string, refName: string): ContextMenuActions {
+		const visibility = this.config.contextMenuActionsVisibility.remoteBranch;
+		const branchName = remote !== '' ? refName.substring(remote.length + 1) : '';
+		return [[
+			{
+				title: 'Checkout Branch' + ELLIPSIS,
+				visible: visibility.checkout,
+				onClick: () => this.checkoutBranchAction(refName, remote, null)
+			}, {
+				title: 'Delete Remote Branch' + ELLIPSIS,
+				visible: visibility.delete && remote !== '',
+				onClick: () => {
+					dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+						runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: branchName, remote: remote }, 'Deleting Remote Branch');
+					}, null);
+				}
+			}, {
+				title: 'Fetch into local branch' + ELLIPSIS,
+				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
+				onClick: () => {
+					dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', () => {
+						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
+					}, null);
+				}
+			}, {
+				title: 'Pull into current branch' + ELLIPSIS,
+				visible: visibility.pull && remote !== '',
+				onClick: () => {
+					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
+						{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
+						{ type: 'checkbox', name: 'Squash commits', value: false }
+					], 'Yes, pull', values => {
+						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Pulling Branch');
+					}, null);
+				}
+			}
+		], [
+			{
+				title: 'Copy Branch Name to Clipboard',
+				visible: visibility.copyName,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Branch Name', data: refName });
+				}
+			}
+		]];
+	}
+
+	private getStashContextMenuActions(hash: string, selector: string, commitElem: HTMLElement): ContextMenuActions {
+		const visibility = this.config.contextMenuActionsVisibility.stash;
+		return [[
 			{
 				title: 'Apply Stash' + ELLIPSIS,
+				visible: visibility.apply,
 				onClick: () => {
 					dialog.showConfirmation('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
 						runAction({ command: 'applyStash', repo: this.currentRepo, selector: selector }, 'Applying Stash');
 					}, commitElem);
 				}
-			},
-			{
+			}, {
 				title: 'Create Branch from Stash' + ELLIPSIS,
+				visible: visibility.createBranch,
 				onClick: () => {
 					dialog.showRefInput('Create a branch from stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b> with the name:', '', 'Create Branch', (branchName) => {
 						runAction({ command: 'branchFromStash', repo: this.currentRepo, selector: selector, branchName: branchName }, 'Creating Branch');
 					}, commitElem);
 				}
-			},
-			{
+			}, {
 				title: 'Pop Stash' + ELLIPSIS,
+				visible: visibility.pop,
 				onClick: () => {
 					dialog.showConfirmation('Are you sure you want to pop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
 						runAction({ command: 'popStash', repo: this.currentRepo, selector: selector }, 'Popping Stash');
 					}, commitElem);
 				}
-			},
-			{
+			}, {
 				title: 'Drop Stash' + ELLIPSIS,
+				visible: visibility.drop,
 				onClick: () => {
 					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
 						runAction({ command: 'dropStash', repo: this.currentRepo, selector: selector }, 'Dropping Stash');
 					}, commitElem);
 				}
-			},
-			null,
+			}
+		], [
 			{
 				title: 'Copy Stash Name to Clipboard',
+				visible: visibility.copyName,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Stash Name', data: selector });
 				}
-			},
-			{
+			}, {
 				title: 'Copy Stash Hash to Clipboard',
+				visible: visibility.copyHash,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Stash Hash', data: hash });
 				}
 			}
-		];
+		]];
+	}
+
+	private getTagContextMenuActions(hash: string, tagName: string, sourceElem: HTMLElement): ContextMenuActions {
+		const visibility = this.config.contextMenuActionsVisibility.tag;
+		return [[
+			{
+				title: 'View Details',
+				visible: visibility.viewDetails && sourceElem.dataset.tagtype === 'annotated',
+				onClick: () => {
+					runAction({ command: 'tagDetails', repo: this.currentRepo, tagName: tagName, commitHash: hash }, 'Retrieving Tag Details');
+				}
+			}, {
+				title: 'Delete Tag' + ELLIPSIS,
+				visible: visibility.delete,
+				onClick: () => {
+					let message = 'Are you sure you want to delete the tag <b><i>' + escapeHtml(tagName) + '</i></b>?';
+					if (this.gitRemotes.length > 1) {
+						let options = [{ name: 'Don\'t delete on any remote', value: '-1' }];
+						this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
+						dialog.showSelect(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
+							this.deleteTagAction(tagName, remoteIndex !== '-1' ? this.gitRemotes[parseInt(remoteIndex)] : null);
+						}, null);
+					} else if (this.gitRemotes.length === 1) {
+						dialog.showCheckbox(message, 'Also delete on remote', false, 'Yes, delete', deleteOnRemote => {
+							this.deleteTagAction(tagName, deleteOnRemote ? this.gitRemotes[0] : null);
+						}, null);
+					} else {
+						dialog.showConfirmation(message, () => {
+							this.deleteTagAction(tagName, null);
+						}, null);
+					}
+				}
+			}, {
+				title: 'Push Tag' + ELLIPSIS,
+				visible: visibility.push && this.gitRemotes.length > 0,
+				onClick: () => {
+					if (this.gitRemotes.length === 1) {
+						dialog.showConfirmation('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', () => {
+							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[0] }, 'Pushing Tag');
+						}, null);
+					} else if (this.gitRemotes.length > 1) {
+						let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
+						dialog.showSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
+							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
+						}, null);
+					}
+				}
+			}
+		], [
+			{
+				title: 'Copy Tag Name to Clipboard',
+				visible: visibility.copyName,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Tag Name', data: tagName });
+				}
+			}
+		]];
+	}
+
+	private getUncommittedChangesContextMenuActions(commitElem: HTMLElement): ContextMenuActions {
+		let visibility = this.config.contextMenuActionsVisibility.uncommittedChanges;
+		return [[
+			{
+				title: 'Stash uncommitted changes' + ELLIPSIS,
+				visible: visibility.stash,
+				onClick: () => {
+					dialog.showForm('Are you sure you want to stash the <b>uncommitted changes</b>?', [
+						{ type: 'text', name: 'Message', default: '', placeholder: 'Optional' },
+						{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked }
+					], 'Yes, stash', (values) => {
+						runAction({ command: 'saveStash', repo: this.currentRepo, message: values[0], includeUntracked: values[1] === 'checked' }, 'Stashing uncommitted changes');
+					}, commitElem);
+				}
+			}
+		], [
+			{
+				title: 'Reset uncommitted changes' + ELLIPSIS,
+				visible: visibility.reset,
+				onClick: () => {
+					dialog.showSelect('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', this.config.dialogDefaults.resetUncommitted.mode, [
+						{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
+						{ name: 'Hard - Discard all changes', value: 'hard' }
+					], 'Yes, reset', (mode) => {
+						runAction({ command: 'resetToCommit', repo: this.currentRepo, commitHash: 'HEAD', resetMode: <GG.GitResetMode>mode }, 'Resetting uncommitted changes');
+					}, commitElem);
+				}
+			}, {
+				title: 'Clean untracked files' + ELLIPSIS,
+				visible: visibility.clean,
+				onClick: () => {
+					dialog.showCheckbox('Are you sure you want to clean all untracked files?', 'Clean untracked directories', true, 'Yes, clean', directories => {
+						runAction({ command: 'cleanUntrackedFiles', repo: this.currentRepo, directories: directories }, 'Cleaning untracked files');
+					}, commitElem);
+				}
+			}
+		], [
+			{
+				title: 'Open Source Control View',
+				visible: visibility.openSourceControlView,
+				onClick: () => {
+					sendMessage({ command: 'viewScm' });
+				}
+			}
+		]];
 	}
 
 	private getCommitOfElement(elem: HTMLElement) {
@@ -1063,6 +1104,7 @@ class GitGraphView {
 	private getCommitId(hash: string) {
 		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
 	}
+
 
 	/* Actions */
 
@@ -1209,23 +1251,26 @@ class GitGraphView {
 				contextMenu.close();
 				this.render();
 			};
-			contextMenu.show(e, [
+			contextMenu.show(e, [[
 				{
 					title: 'Date',
+					visible: true,
 					checked: columnWidths[2] !== COLUMN_HIDDEN,
 					onClick: () => toggleColumnState(2, 128)
 				},
 				{
 					title: 'Author',
+					visible: true,
 					checked: columnWidths[3] !== COLUMN_HIDDEN,
 					onClick: () => toggleColumnState(3, 128)
 				},
 				{
 					title: 'Commit',
+					visible: true,
 					checked: columnWidths[4] !== COLUMN_HIDDEN,
 					onClick: () => toggleColumnState(4, 80)
 				}
-			], true, null);
+			]], true, null);
 		});
 	}
 

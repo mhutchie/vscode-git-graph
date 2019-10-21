@@ -441,6 +441,7 @@ export class GitGraphView {
 				branchLabelsAlignedToGraph: refLabelAlignment === RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight,
 				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
 				commitDetailsViewLocation: config.commitDetailsViewLocation(),
+				contextMenuActionsVisibility: config.contextMenuActionsVisibility(),
 				customBranchGlobPatterns: config.customBranchGlobPatterns(),
 				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings(),
 				dateFormat: config.dateFormat(),

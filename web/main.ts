@@ -481,7 +481,7 @@ class GitGraphView {
 	private renderTable() {
 		let commit, colVisibility = this.getColumnVisibility(), currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
-			(colVisibility.date ? '<th class="tableColHeader" data-col="2">Date</th>' : '') +
+			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
 			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
 			'</tr>';
@@ -515,7 +515,7 @@ class GitGraphView {
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parents.length > 1 && commit.stash === null ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
-				(colVisibility.date ? '<td class="text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
+				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
 				'</tr>';
@@ -1186,8 +1186,16 @@ class GitGraphView {
 		} else {
 			// Table should have automatic layout
 			this.tableElem.className = 'autoLayout';
-			this.graph.limitMaxWidth(-1);
-			cols[0].style.padding = '0 ' + Math.round((Math.max(this.graph.getContentWidth(), 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
+
+			let maxGraphWidth = Math.round(this.viewElem.clientWidth * 0.333), graphWidth = this.graph.getContentWidth();
+			if (graphWidth > maxGraphWidth) {
+				this.graph.limitMaxWidth(maxGraphWidth);
+				graphWidth = maxGraphWidth;
+			} else {
+				this.graph.limitMaxWidth(-1);
+			}
+
+			cols[0].style.padding = '0 ' + Math.round((Math.max(graphWidth, 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
 		}
 
 		const processResizingColumn: EventListener = (e) => {

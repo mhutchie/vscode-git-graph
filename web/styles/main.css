@@ -212,6 +212,22 @@ body #view{
 #commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
 	max-width:124px;
 }
+@media screen and (min-width: 775px) and (max-width: 850px) {
+	#commitTable.autoLayout td.dateCol, #commitTable.autoLayout th.dateCol, #commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
+		max-width:100px;
+	}
+}
+@media screen and (min-width: 700px) and (max-width: 775px) {
+	#commitTable.autoLayout td.dateCol, #commitTable.autoLayout th.dateCol, #commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
+		max-width:90px;
+	}
+}
+@media screen and (max-width: 700px) {
+	#commitTable.autoLayout td.dateCol, #commitTable.autoLayout th.dateCol, #commitTable.autoLayout td.authorCol, #commitTable.autoLayout th.authorCol{
+		max-width:80px;
+	}
+}
+
 .tableColHeader{
 	position:relative;
 }

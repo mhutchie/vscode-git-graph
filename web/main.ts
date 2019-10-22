@@ -514,7 +514,7 @@ class GitGraphView {
 			}
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
-			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parents.length > 1 && commit.stash === null ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td style="padding-left:' + widthsAtVertices[i] + 'px">' + refBranches + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
+			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (this.config.muteMergeCommits && commit.parents.length > 1 && commit.stash === null ? ' merge' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' + (this.config.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td>' + commitDot : '<td></td><td>' + commitDot + refBranches) + '<span class="gitRefTags">' + refTags + '</span><span class="text">' + message + '</span></td>' +
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
@@ -1163,6 +1163,7 @@ class GitGraphView {
 				cols[i].style.width = columnWidths[parseInt(cols[i].dataset.col!)] + 'px';
 			}
 			this.tableElem.className = 'fixedLayout';
+			this.tableElem.style.cssText = '';
 			this.graph.limitMaxWidth(columnWidths[0] + COLUMN_LEFT_RIGHT_PADDING);
 		};
 
@@ -1187,15 +1188,21 @@ class GitGraphView {
 			// Table should have automatic layout
 			this.tableElem.className = 'autoLayout';
 
-			let maxGraphWidth = Math.round(this.viewElem.clientWidth * 0.333), graphWidth = this.graph.getContentWidth();
-			if (graphWidth > maxGraphWidth) {
-				this.graph.limitMaxWidth(maxGraphWidth);
-				graphWidth = maxGraphWidth;
+			let colWidth = cols[0].offsetWidth, graphWidth = this.graph.getContentWidth();
+			let maxWidth = Math.round(this.viewElem.clientWidth * 0.333);
+			if (Math.max(graphWidth, colWidth) > maxWidth) {
+				this.graph.limitMaxWidth(maxWidth);
+				graphWidth = maxWidth;
+				this.tableElem.className += ' limitGraphWidth';
+				this.tableElem.style.cssText = '--limitGraphWidth:' + maxWidth + 'px;';
 			} else {
 				this.graph.limitMaxWidth(-1);
+				this.tableElem.style.cssText = '';
 			}
 
-			cols[0].style.padding = '0 ' + Math.round((Math.max(graphWidth, 64) - (cols[0].offsetWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
+			if (colWidth < Math.max(graphWidth, 64)) {
+				cols[0].style.padding = '6px ' + Math.floor((Math.max(graphWidth, 64) - (colWidth - COLUMN_LEFT_RIGHT_PADDING)) / 2) + 'px';
+			}
 		}
 
 		const processResizingColumn: EventListener = (e) => {

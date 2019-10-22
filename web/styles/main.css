@@ -205,6 +205,10 @@ body #view{
 #commitTable.fixedLayout table{
 	table-layout:fixed;
 }
+#commitTable.autoLayout.limitGraphWidth td:first-child, #commitTable.autoLayout.limitGraphWidth th:first-child{
+	max-width:var(--limitGraphWidth);
+	box-sizing:border-box;
+}
 #commitTable.autoLayout td:nth-child(2), #commitTable.autoLayout th:nth-child(2){
 	width:100%;
 	max-width:0;

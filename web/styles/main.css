@@ -576,7 +576,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 
 /* Ref labels */
 
-.gitRef {
+.gitRef{
 	display:inline-block;
 	height:18px;
 	line-height:18px;
@@ -588,6 +588,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	vertical-align:top;
 	font-size:12px;
 	cursor:default;
+	overflow:hidden;
 }
 .gitRef.active{
 	border-color:var(--git-graph-color);
@@ -601,22 +602,28 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	width:14px;
 	height:14px;
 	padding:2px;
-	margin-right:5px;
-	border-radius:4px 0 0 4px;
 	vertical-align:top;
 }
-.gitRefName{
-	padding-right:5px;
-}
-.gitRefHeadRemote{
+
+.gitRefName, .gitRefHeadRemote{
 	display:inline-block;
 	height:18px;
-	padding-left:5px;
-	padding-right:5px;
-	border-left:1px solid rgba(128,128,128,0.45);
 	line-height:18px;
+	padding:0 5px;
+}
+.gitRefHeadRemote{
+	border-left:1px solid rgba(128,128,128,0.45);
 	font-style:italic;
 }
+
+#commitTable tr.commit.commitDetailsOpen:hover .gitRef, #commitTable tr.commit.commitDetailsOpen.contextMenuActive .gitRef, #commitTable tr.commit.commitDetailsOpen.dialogActive .gitRef, #commitTable tr.commit.commitDetailsOpen.graphVertexActive .gitRef{
+	background-color:rgba(128,128,128,0.05);
+}
+
+.gitRef .contextMenuActive, .gitRef .dialogActive, .gitRef .gitRefName:hover, .gitRef .gitRefHeadRemote:hover{
+	background-color:rgba(128,128,128,0.1);
+}
+
 body.branchLabelsAlignedToGraph tr.commit td:first-child .gitRef:last-child{
 	margin-right:0;
 }

@@ -1,5 +1,21 @@
 import * as vscode from 'vscode';
-import { CommitDetailsViewLocation, CommitOrdering, ContextMenuActionsVisibility, CustomBranchGlobPattern, CustomEmojiShortcodeMapping, DateFormat, DateFormatType, DateType, DefaultColumnVisibility, DialogDefaults, GraphStyle, RefLabelAlignment, TabIconColourTheme } from './types';
+import {
+	CommitDetailsViewLocation,
+	CommitOrdering,
+	ContextMenuActionsVisibility,
+	CustomBranchGlobPattern,
+	CustomEmojiShortcodeMapping,
+	DateFormat,
+	DateFormatType,
+	DateType,
+	DefaultColumnVisibility,
+	DialogDefaults,
+	FileViewType,
+	GraphStyle,
+	RefLabelAlignment,
+	TabIconColourTheme
+} from './types';
+
 
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
@@ -91,6 +107,12 @@ class Config {
 		} else {
 			return { author: true, commit: true, date: true };
 		}
+	}
+
+	public defaultFileViewType(): FileViewType {
+		return this.config.get<string>('defaultFileViewType', 'File Tree') === 'File List'
+			? FileViewType.List
+			: FileViewType.Tree;
 	}
 
 	public dialogDefaults(): DialogDefaults {

@@ -397,6 +397,19 @@
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},
+				"git-graph.defaultFileViewType": {
+					"type": "string",
+					"enum": [
+						"File Tree",
+						"File List"
+					],
+					"enumDescriptions": [
+						"Display files in a tree structure",
+						"Display files in a list (useful for repositories with deep folder structures)"
+					],
+					"default": "File Tree",
+					"description": "Sets the default type of File View used in the Commit Details / Comparison Views. This can be overridden per repository using the controls on the right side of the Commit Details / Comparison Views."
+				},
 				"git-graph.dialog.addTag.pushToRemote": {
 					"type": "boolean",
 					"default": false,

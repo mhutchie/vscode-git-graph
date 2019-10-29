@@ -120,7 +120,8 @@ declare global {
 		reviewed: boolean;
 	}
 
-	type FileTreeNode = FileTreeFolder | FileTreeFile | FileTreeRepo;
+	type FileTreeLeaf = FileTreeFile | FileTreeRepo;
+	type FileTreeNode = FileTreeFolder | FileTreeLeaf;
 	type FileTreeFolderContents = { [name: string]: FileTreeNode };
 
 }

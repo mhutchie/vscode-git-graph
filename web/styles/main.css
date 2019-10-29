@@ -281,17 +281,44 @@ body #view{
 	left:0;
 	right:32px;
 }
-#cdvClose, #cdvCodeReview{
+
+#cdvControls{
 	position:absolute;
-	right:4px;
+	right:0;
+	width:32px;
+}
+
+.cdvControlBtn{
+	position:relative;
+	margin:4px;
 	width:24px;
 	height:24px;
 	cursor:pointer;
 }
+.cdvControlBtn.active{
+	background-color:rgba(128,128,128,0.25);
+}
+.cdvControlBtn.active:hover{
+	background-color:rgba(128,128,128,0.35);
+}
+
 #cdvCodeReview{
 	border-radius:4px;
 }
-#cdvClose svg, #cdvCodeReview svg{
+
+#cdvFileViewTypeTree{
+	border-radius:4px 4px 0 0;
+	margin-bottom:0;
+}
+#cdvFileViewTypeList{
+	border-radius:0 0 4px 4px;
+	margin-top:0;
+}
+.cdvFileViewTypeBtn{
+	background-color:rgba(128,128,128,0.125);
+}
+
+.cdvControlBtn svg{
 	position:absolute;
 	width:20px;
 	height:20px;
@@ -300,18 +327,13 @@ body #view{
 	fill:var(--vscode-editor-foreground);
 	fill-opacity:0.6;
 }
-#cdvCodeReview.active{
-	background-color:rgba(128,128,128,0.25);
+.cdvControlBtn:hover svg, .cdvControlBtn.active svg{
+	fill-opacity:0.75;
 }
-#cdvCodeReview.active:hover{
-	background-color:rgba(128,128,128,0.35);
+.cdvControlBtn.active:hover svg{
+	fill-opacity:0.9;
 }
-#cdvClose:hover svg, #cdvCodeReview:hover svg, #cdvCodeReview.active svg{
-	fill-opacity:0.8;
-}
-#cdvCodeReview.active:hover svg{
-	fill-opacity:1;
-}
+
 #cdvSummary, #cdvFiles, #cdvLoading{
 	position:absolute;
 	top:0;
@@ -413,16 +435,12 @@ body #view{
 	cursor:row-resize;
 }
 
-#cdv.inline #cdvContent{
+#cdv.inline #cdvContent, #cdv.inline #cdvControls{
 	top:0;
 	bottom:2px;
+}
+#cdv.inline #cdvContent{
 	border-left:1px solid rgba(128,128,128,0.2);
-}
-#cdv.inline #cdvClose{
-	top:4px;
-}
-#cdv.inline #cdvCodeReview{
-	top:32px;
 }
 #cdv.inline #cdvDivider{
 	top:0;
@@ -432,15 +450,10 @@ body #view{
 	bottom:0;
 	border-bottom:2px solid rgba(128,128,128,0.2);
 }
-#cdv.docked #cdvContent{
+
+#cdv.docked #cdvContent, #cdv.docked #cdvControls{
 	top:2px;
 	bottom:0;
-}
-#cdv.docked #cdvClose{
-	top:6px;
-}
-#cdv.docked #cdvCodeReview{
-	top:34px;
 }
 #cdv.docked #cdvDivider{
 	top:6px;

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
-import { Avatar, AvatarCache, CodeReview, ErrorInfo, GitRepoSet, GitRepoState } from './types';
+import { Avatar, AvatarCache, CodeReview, ErrorInfo, FileViewType, GitRepoSet, GitRepoState } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
@@ -15,6 +15,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	columnWidths: null,
 	cdvDivider: 0.5,
 	cdvHeight: 250,
+	fileViewType: FileViewType.Default,
 	showRemoteBranches: true,
 	hideRemotes: []
 };

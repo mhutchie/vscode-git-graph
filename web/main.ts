@@ -1630,9 +1630,12 @@ class GitGraphView {
 				// Commit comparision should be shown
 				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.';
 			}
-			html += '</div><div id="cdvFiles">' + generateFileTreeHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile) + '</div><div id="cdvDivider"></div>';
+			html += '</div><div id="cdvFiles">' + generateFileViewHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile, this.getFileViewType()) + '</div><div id="cdvDivider"></div>';
 		}
-		html += '</div><div id="cdvClose" title="Close">' + SVG_ICONS.close + '</div>' + (codeReviewPossible ? '<div id="cdvCodeReview">' + SVG_ICONS.review + '</div>' : '') + '<div class="cdvHeightResize"></div>';
+		html += '</div><div id="cdvControls"><div id="cdvClose" class="cdvControlBtn" title="Close">' + SVG_ICONS.close + '</div>' +
+			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
+			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
+			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
 		if (!expandedCommit.loading) this.setCdvDivider();
@@ -1671,73 +1674,8 @@ class GitGraphView {
 		});
 
 		if (!expandedCommit.loading) {
-			addListenerToClass('fileTreeFolder', 'click', (e) => {
-				let expandedCommit = this.expandedCommit;
-				if (expandedCommit === null || expandedCommit.fileTree === null) return;
-
-				let sourceElem = <HTMLElement>(<Element>e.target!).closest('.fileTreeFolder');
-				let parent = sourceElem.parentElement!;
-				parent.classList.toggle('closed');
-				let isOpen = !parent.classList.contains('closed');
-				parent.children[0].children[0].innerHTML = isOpen ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder;
-				parent.children[1].classList.toggle('hidden');
-				alterFileTreeFolderOpen(expandedCommit.fileTree, decodeURIComponent(sourceElem.dataset.folderpath!), isOpen);
-				this.saveState();
-			});
-			addListenerToClass('fileTreeFile', 'click', (e) => {
-				let expandedCommit = this.expandedCommit;
-				if (expandedCommit === null) return;
-
-				let sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile')!;
-				if (!sourceElem.classList.contains('gitDiffPossible')) return;
-				let commit = this.commits[this.commitLookup[expandedCommit.hash]], fromHash: string, toHash: string;
-				if (expandedCommit.compareWithHash !== null) {
-					// Commit Comparison
-					let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash);
-					fromHash = commitOrder.from;
-					toHash = commitOrder.to;
-				} else if (commit.stash !== null) {
-					// Stash Commit
-					fromHash = commit.parents[0];
-					toHash = expandedCommit.hash;
-				} else {
-					// Single Commit
-					fromHash = expandedCommit.hash;
-					toHash = expandedCommit.hash;
-				}
-
-				let newFilePath = decodeURIComponent(sourceElem.dataset.newfilepath!);
-
-				this.cdvFileViewed(newFilePath, sourceElem);
-				sendMessage({
-					command: 'viewDiff',
-					repo: this.currentRepo,
-					fromHash: fromHash,
-					toHash: toHash,
-					oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!),
-					newFilePath: newFilePath,
-					type: <GG.GitFileChangeType>sourceElem.dataset.type
-				});
-			});
-			addListenerToClass('fileTreeRepo', 'click', (e) => {
-				this.loadRepos(this.gitRepos, null, decodeURIComponent((<HTMLElement>(<Element>e.target!).closest('.fileTreeRepo')).dataset.path!));
-			});
-
-			addListenerToClass('copyGitFile', 'click', (e) => {
-				let sourceElem = <HTMLElement>(<Element>e.target).closest('.copyGitFile')!;
-				sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: decodeURIComponent(sourceElem.dataset.filepath!) });
-			});
-			addListenerToClass('openGitFile', 'click', (e) => {
-				let expandedCommit = this.expandedCommit;
-				if (expandedCommit === null) return;
-
-				let sourceElem = <HTMLElement>(<Element>e.target).closest('.openGitFile')!;
-				let filePath = decodeURIComponent(sourceElem.dataset.filepath!);
-
-				this.cdvFileViewed(filePath, sourceElem);
-				sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: filePath });
-			});
-
+			this.makeCdvFileViewInteractive();
+			this.renderCdvFileViewTypeBtns();
 			this.makeCdvDividerDraggable();
 
 			let filesElem = document.getElementById('cdvFiles')!, timeout: NodeJS.Timer | null = null;
@@ -1751,6 +1689,14 @@ class GitGraphView {
 					this.saveState();
 					timeout = null;
 				}, 250);
+			});
+
+			document.getElementById('cdvFileViewTypeTree')!.addEventListener('click', () => {
+				this.changeFileViewType(GG.FileViewType.Tree);
+			});
+
+			document.getElementById('cdvFileViewTypeList')!.addEventListener('click', () => {
+				this.changeFileViewType(GG.FileViewType.List);
 			});
 
 			if (codeReviewPossible) {
@@ -1908,6 +1854,108 @@ class GitGraphView {
 		} else {
 			return { from: hash2, to: hash1 };
 		}
+	}
+
+	private getFileViewType() {
+		return this.gitRepos[this.currentRepo].fileViewType === GG.FileViewType.Default
+			? this.config.defaultFileViewType
+			: this.gitRepos[this.currentRepo].fileViewType;
+	}
+
+	private setFileViewType(type: GG.FileViewType) {
+		this.gitRepos[this.currentRepo].fileViewType = type;
+		this.saveRepoState();
+	}
+
+	private changeFileViewType(type: GG.FileViewType) {
+		let expandedCommit = this.expandedCommit;
+		if (expandedCommit === null || expandedCommit.fileTree === null || expandedCommit.fileChanges === null) return;
+		this.setFileViewType(type);
+		document.getElementById('cdvFiles')!.innerHTML = generateFileViewHtml(expandedCommit.fileTree, expandedCommit.fileChanges, expandedCommit.lastViewedFile, type);
+		this.makeCdvFileViewInteractive();
+		this.renderCdvFileViewTypeBtns();
+	}
+
+	private makeCdvFileViewInteractive() {
+		addListenerToClass('fileTreeFolder', 'click', (e) => {
+			let expandedCommit = this.expandedCommit;
+			if (expandedCommit === null || expandedCommit.fileTree === null) return;
+
+			let sourceElem = <HTMLElement>(<Element>e.target!).closest('.fileTreeFolder');
+			let parent = sourceElem.parentElement!;
+			parent.classList.toggle('closed');
+			let isOpen = !parent.classList.contains('closed');
+			parent.children[0].children[0].innerHTML = isOpen ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder;
+			parent.children[1].classList.toggle('hidden');
+			alterFileTreeFolderOpen(expandedCommit.fileTree, decodeURIComponent(sourceElem.dataset.folderpath!), isOpen);
+			this.saveState();
+		});
+
+		addListenerToClass('fileTreeFile', 'click', (e) => {
+			let expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile')!;
+			if (!sourceElem.classList.contains('gitDiffPossible')) return;
+			let commit = this.commits[this.commitLookup[expandedCommit.hash]], fromHash: string, toHash: string;
+			if (expandedCommit.compareWithHash !== null) {
+				// Commit Comparison
+				let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash);
+				fromHash = commitOrder.from;
+				toHash = commitOrder.to;
+			} else if (commit.stash !== null) {
+				// Stash Commit
+				fromHash = commit.parents[0];
+				toHash = expandedCommit.hash;
+			} else {
+				// Single Commit
+				fromHash = expandedCommit.hash;
+				toHash = expandedCommit.hash;
+			}
+
+			let newFilePath = decodeURIComponent(sourceElem.dataset.newfilepath!);
+
+			this.cdvFileViewed(newFilePath, sourceElem);
+			sendMessage({
+				command: 'viewDiff',
+				repo: this.currentRepo,
+				fromHash: fromHash,
+				toHash: toHash,
+				oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!),
+				newFilePath: newFilePath,
+				type: <GG.GitFileChangeType>sourceElem.dataset.type
+			});
+		});
+
+		addListenerToClass('fileTreeRepo', 'click', (e) => {
+			this.loadRepos(this.gitRepos, null, decodeURIComponent((<HTMLElement>(<Element>e.target!).closest('.fileTreeRepo')).dataset.path!));
+		});
+
+		addListenerToClass('copyGitFile', 'click', (e) => {
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.copyGitFile')!;
+			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: decodeURIComponent(sourceElem.dataset.filepath!) });
+		});
+
+		addListenerToClass('openGitFile', 'click', (e) => {
+			let expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.openGitFile')!;
+			let filePath = decodeURIComponent(sourceElem.dataset.filepath!);
+
+			this.cdvFileViewed(filePath, sourceElem);
+			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: filePath });
+		});
+	}
+
+	private renderCdvFileViewTypeBtns() {
+		if (this.expandedCommit === null) return;
+		let treeBtnElem = document.getElementById('cdvFileViewTypeTree'), listBtnElem = document.getElementById('cdvFileViewTypeList');
+		if (treeBtnElem === null || listBtnElem === null) return;
+
+		let listView = this.getFileViewType() === GG.FileViewType.List;
+		alterClass(treeBtnElem, CLASS_ACTIVE, !listView);
+		alterClass(listBtnElem, CLASS_ACTIVE, listView);
 	}
 
 
@@ -2181,27 +2229,63 @@ window.addEventListener('load', () => {
 
 /* File Tree Methods (for the Commit Details & Comparison Views) */
 
+function generateFileViewHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null, type: GG.FileViewType) {
+	return type === GG.FileViewType.List
+		? generateFileListHtml(folder, gitFiles, lastViewedFile)
+		: generateFileTreeHtml(folder, gitFiles, lastViewedFile);
+}
+
 function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
-	let html = (folder.name !== '' ? '<span class="fileTreeFolder' + (folder.reviewed ? '' : ' pendingReview') + '" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(folder.name) + '</span></span>' : '') + '<ul class="fileTreeFolderContents' + (!folder.open ? ' hidden' : '') + '">', keys = Object.keys(folder.contents);
-	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
+	let html = (folder.name !== '' ? '<span class="fileTreeFolder' + (folder.reviewed ? '' : ' pendingReview') + '" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(folder.name) + '</span></span>' : '') + '<ul class="fileTreeFolderContents' + (!folder.open ? ' hidden' : '') + '">';
+	let keys = sortFolderKeys(folder);
 	for (let i = 0; i < keys.length; i++) {
-		let cur = folder.contents[keys[i]], name = encodeURIComponent(cur.name);
+		let cur = folder.contents[keys[i]];
 		if (cur.type === 'folder') {
-			html += '<li' + (cur.open ? '' : ' class="closed"') + ' data-name="' + name + '">' + generateFileTreeHtml(cur, gitFiles, lastViewedFile) + '</li>';
-		} else if (cur.type === 'file') {
-			let fileTreeFile = gitFiles[(<FileTreeFile>cur).index];
-			let textFile = fileTreeFile.additions !== null && fileTreeFile.deletions !== null;
-			let diffPossible = fileTreeFile.type === 'U' || textFile;
-			html += '<li data-name="' + name + '"><span class="fileTreeFileRecord"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + ((<FileTreeFile>cur).reviewed ? '' : ' pendingReview') + '" data-oldfilepath="' + encodeURIComponent(fileTreeFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '" data-type="' + fileTreeFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== 'D' ? ' (this is a binary file)' : '')) + ' • ' + GIT_FILE_CHANGE_TYPES[fileTreeFile.type] + (fileTreeFile.type === 'R' ? ' (' + escapeHtml(fileTreeFile.oldFilePath) + ' → ' + escapeHtml(fileTreeFile.newFilePath) + ')' : '') + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapeHtml(folder.contents[keys[i]].name) + '</span></span>' +
-				(fileTreeFile.type !== 'A' && fileTreeFile.type !== 'U' && fileTreeFile.type !== 'D' && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
-				(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
-				'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.copy + '</span>' +
-				(fileTreeFile.type !== 'D' ? '<span class="openGitFile fileTreeFileAction" title="Click to Open File" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
+			html += '<li' + (cur.open ? '' : ' class="closed"') + ' data-pathseg="' + encodeURIComponent(cur.name) + '">' + generateFileTreeHtml(cur, gitFiles, lastViewedFile) + '</li>';
 		} else {
-			html += '<li data-name="' + name + '"><span class="fileTreeRepo" data-path="' + encodeURIComponent(cur.path) + '" title="Click to View Repository"><span class="fileTreeRepoIcon">' + SVG_ICONS.closedFolder + '</span>' + escapeHtml(cur.name) + '</span></li>';
+			html += generateFileTreeLeafHtml(cur.name, cur, gitFiles, lastViewedFile);
 		}
 	}
 	return html + '</ul>';
+}
+
+function generateFileListHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
+	const sortLeaves = (folder: FileTreeFolder, folderPath: string) => {
+		let keys = sortFolderKeys(folder);
+		let items: { relPath: string, leaf: FileTreeLeaf }[] = [];
+		for (let i = 0; i < keys.length; i++) {
+			let cur = folder.contents[keys[i]];
+			let relPath = (folderPath !== '' ? folderPath + '/' : '') + cur.name;
+			if (cur.type === 'folder') {
+				items = items.concat(sortLeaves(cur, relPath));
+			} else {
+				items.push({ relPath: relPath, leaf: cur });
+			}
+		}
+		return items;
+	};
+	let sortedLeaves = sortLeaves(folder, '');
+	let html = '';
+	for (let i = 0; i < sortedLeaves.length; i++) {
+		html += generateFileTreeLeafHtml(sortedLeaves[i].relPath, sortedLeaves[i].leaf, gitFiles, lastViewedFile);
+	}
+	return '<ul class="fileTreeFolderContents">' + html + '</ul>';
+}
+
+function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
+	let encodedName = encodeURIComponent(name), escapedName = escapeHtml(name);
+	if (leaf.type === 'file') {
+		let fileTreeFile = gitFiles[leaf.index];
+		let textFile = fileTreeFile.additions !== null && fileTreeFile.deletions !== null;
+		let diffPossible = fileTreeFile.type === 'U' || textFile;
+		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeFileRecord"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + (leaf.reviewed ? '' : ' pendingReview') + '" data-oldfilepath="' + encodeURIComponent(fileTreeFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '" data-type="' + fileTreeFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== 'D' ? ' (this is a binary file)' : '')) + ' • ' + GIT_FILE_CHANGE_TYPES[fileTreeFile.type] + (fileTreeFile.type === 'R' ? ' (' + escapeHtml(fileTreeFile.oldFilePath) + ' → ' + escapeHtml(fileTreeFile.newFilePath) + ')' : '') + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapedName + '</span></span>' +
+			(fileTreeFile.type !== 'A' && fileTreeFile.type !== 'U' && fileTreeFile.type !== 'D' && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
+			(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
+			'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.copy + '</span>' +
+			(fileTreeFile.type !== 'D' ? '<span class="openGitFile fileTreeFileAction" title="Click to Open File" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
+	} else {
+		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeRepo" data-path="' + encodeURIComponent(leaf.path) + '" title="Click to View Repository"><span class="fileTreeRepoIcon">' + SVG_ICONS.closedFolder + '</span>' + escapedName + '</span></li>';
+	}
 }
 
 function alterFileTreeFolderOpen(folder: FileTreeFolder, folderPath: string, open: boolean) {
@@ -2276,8 +2360,8 @@ function updateFileTreeHtml(elem: HTMLElement, folder: FileTreeFolder) {
 
 	for (let i = 0; i < ul.children.length; i++) {
 		let li = <HTMLLIElement>ul.children[i];
-		let name = decodeURIComponent(li.dataset.name!);
-		let child = folder.contents[name];
+		let pathSeg = decodeURIComponent(li.dataset.pathseg!);
+		let child = getChildByPathSegment(folder, pathSeg);
 		if (child.type === 'folder') {
 			alterClass(<HTMLSpanElement>li.children[0], CLASS_PENDING_REVIEW, !child.reviewed);
 			updateFileTreeHtml(li, child);
@@ -2288,19 +2372,19 @@ function updateFileTreeHtml(elem: HTMLElement, folder: FileTreeFolder) {
 }
 
 function updateFileTreeHtmlFileReviewed(elem: HTMLElement, folder: FileTreeFolder, filePath: string) {
-	let path = filePath.split('/');
+	let path = filePath;
 	const update = (elem: HTMLElement, folder: FileTreeFolder) => {
 		let ul = getChildUl(elem);
 		if (ul === null) return;
 
 		for (let i = 0; i < ul.children.length; i++) {
 			let li = <HTMLLIElement>ul.children[i];
-			let name = decodeURIComponent(li.dataset.name!);
-			if (name === path[0]) {
-				let child = folder.contents[name];
+			let pathSeg = decodeURIComponent(li.dataset.pathseg!);
+			if (path === pathSeg || path.startsWith(pathSeg + '/')) {
+				let child = getChildByPathSegment(folder, pathSeg);
 				if (child.type === 'folder') {
 					alterClass(<HTMLSpanElement>li.children[0], CLASS_PENDING_REVIEW, !child.reviewed);
-					path.shift();
+					path = path.substring(pathSeg.length + 1);
 					update(li, child);
 				} else if (child.type === 'file') {
 					alterClass(<HTMLSpanElement>li.children[0].children[0], CLASS_PENDING_REVIEW, !child.reviewed);
@@ -2327,6 +2411,20 @@ function getFilesInTree(folder: FileTreeFolder, gitFiles: GG.GitFileChange[]) {
 	};
 	scanFolder(folder);
 	return files;
+}
+
+function sortFolderKeys(folder: FileTreeFolder) {
+	let keys = Object.keys(folder.contents);
+	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
+	return keys;
+}
+
+function getChildByPathSegment(folder: FileTreeFolder, pathSeg: string) {
+	let cur: FileTreeNode = folder, comps = pathSeg.split('/');
+	for (let i = 0; i < comps.length; i++) {
+		cur = (<FileTreeFolder>cur).contents[comps[i]];
+	}
+	return cur;
 }
 
 

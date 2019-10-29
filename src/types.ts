@@ -87,6 +87,7 @@ export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
+	fileViewType: FileViewType;
 	showRemoteBranches: boolean;
 	hideRemotes: string[];
 }
@@ -143,6 +144,7 @@ export interface GitGraphViewConfig {
 	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
+	readonly defaultFileViewType: FileViewType;
 	readonly dialogDefaults: DialogDefaults;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
@@ -278,6 +280,12 @@ export interface DialogDefaults {
 	readonly stashUncommittedChanges: {
 		readonly includeUntracked: boolean
 	};
+}
+
+export const enum FileViewType {
+	Default,
+	Tree,
+	List
 }
 
 export const enum GraphStyle {

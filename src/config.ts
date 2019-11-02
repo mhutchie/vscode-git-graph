@@ -124,12 +124,18 @@ class Config {
 				pushToRemote: !!this.config.get('dialog.addTag.pushToRemote', false),
 				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? 'lightweight' : 'annotated'
 			},
+			applyStash: {
+				reinstateIndex: !!this.config.get('dialog.applyStash.reinstateIndex', false)
+			},
 			createBranch: {
 				checkout: !!this.config.get('dialog.createBranch.checkOut', false)
 			},
 			merge: {
 				noFastForward: !!this.config.get('dialog.merge.noFastForward', true),
 				squash: !!this.config.get('dialog.merge.squashCommits', false)
+			},
+			popStash: {
+				reinstateIndex: !!this.config.get('dialog.popStash.reinstateIndex', false)
 			},
 			rebase: {
 				ignoreDate: !!this.config.get('dialog.rebase.ignoreDate', true),

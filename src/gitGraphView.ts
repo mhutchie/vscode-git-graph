@@ -118,7 +118,7 @@ export class GitGraphView {
 				case 'applyStash':
 					this.sendMessage({
 						command: 'applyStash',
-						error: await this.dataSource.applyStash(msg.repo, msg.selector)
+						error: await this.dataSource.applyStash(msg.repo, msg.selector, msg.reinstateIndex)
 					});
 					break;
 				case 'branchFromStash':
@@ -310,7 +310,7 @@ export class GitGraphView {
 				case 'popStash':
 					this.sendMessage({
 						command: 'popStash',
-						error: await this.dataSource.popStash(msg.repo, msg.selector)
+						error: await this.dataSource.popStash(msg.repo, msg.selector, msg.reinstateIndex)
 					});
 					break;
 				case 'pruneRemote':
@@ -329,6 +329,12 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'pushBranch',
 						error: await this.dataSource.pushBranch(msg.repo, msg.branchName, msg.remote, msg.setUpstream, msg.force)
+					});
+					break;
+				case 'pushStash':
+					this.sendMessage({
+						command: 'pushStash',
+						error: await this.dataSource.pushStash(msg.repo, msg.message, msg.includeUntracked)
 					});
 					break;
 				case 'pushTag':
@@ -368,12 +374,6 @@ export class GitGraphView {
 					break;
 				case 'saveRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
-					break;
-				case 'saveStash':
-					this.sendMessage({
-						command: 'saveStash',
-						error: await this.dataSource.saveStash(msg.repo, msg.message, msg.includeUntracked)
-					});
 					break;
 				case 'startCodeReview':
 					this.sendMessage({

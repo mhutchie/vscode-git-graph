@@ -958,8 +958,13 @@ class GitGraphView {
 				title: 'Apply Stash' + ELLIPSIS,
 				visible: visibility.apply,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
-						runAction({ command: 'applyStash', repo: this.currentRepo, selector: selector }, 'Applying Stash');
+					dialog.showForm('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', [{
+						type: 'checkbox',
+						name: 'Reinstate Index',
+						value: this.config.dialogDefaults.applyStash.reinstateIndex,
+						info: 'Attempt to reinstate the indexed changes, in addition to the working tree\'s changes.'
+					}], 'Yes, apply stash', (values) => {
+						runAction({ command: 'applyStash', repo: this.currentRepo, selector: selector, reinstateIndex: values[0] === 'checked' }, 'Applying Stash');
 					}, sourceElem);
 				}
 			}, {
@@ -974,8 +979,13 @@ class GitGraphView {
 				title: 'Pop Stash' + ELLIPSIS,
 				visible: visibility.pop,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to pop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
-						runAction({ command: 'popStash', repo: this.currentRepo, selector: selector }, 'Popping Stash');
+					dialog.showForm('Are you sure you want to pop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', [{
+						type: 'checkbox',
+						name: 'Reinstate Index',
+						value: this.config.dialogDefaults.popStash.reinstateIndex,
+						info: 'Attempt to reinstate the indexed changes, in addition to the working tree\'s changes.'
+					}], 'Yes, pop stash', (values) => {
+						runAction({ command: 'popStash', repo: this.currentRepo, selector: selector, reinstateIndex: values[0] === 'checked' }, 'Popping Stash');
 					}, sourceElem);
 				}
 			}, {
@@ -1070,9 +1080,9 @@ class GitGraphView {
 				onClick: () => {
 					dialog.showForm('Are you sure you want to stash the <b>uncommitted changes</b>?', [
 						{ type: 'text', name: 'Message', default: '', placeholder: 'Optional' },
-						{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked }
+						{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked, info: 'Include all untracked files in the stash, and then clean them from the working directory.' }
 					], 'Yes, stash', (values) => {
-						runAction({ command: 'saveStash', repo: this.currentRepo, message: values[0], includeUntracked: values[1] === 'checked' }, 'Stashing uncommitted changes');
+						runAction({ command: 'pushStash', repo: this.currentRepo, message: values[0], includeUntracked: values[1] === 'checked' }, 'Stashing uncommitted changes');
 					}, commitElem);
 				}
 			}
@@ -2143,6 +2153,9 @@ window.addEventListener('load', () => {
 			case 'pushBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Push Branch');
 				break;
+			case 'pushStash':
+				refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
+				break;
 			case 'pushTag':
 				refreshOrDisplayError(msg.error, 'Unable to Push Tag');
 				break;
@@ -2168,9 +2181,6 @@ window.addEventListener('load', () => {
 				break;
 			case 'revertCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
-				break;
-			case 'saveStash':
-				refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
 				break;
 			case 'startCodeReview':
 				if (msg.error === null) {

@@ -554,8 +554,12 @@ export class DataSource {
 
 	/* Git Action Methods - Stash */
 
-	public applyStash(repo: string, selector: string) {
-		return this.runGitCommand(['stash', 'apply', selector], repo);
+	public applyStash(repo: string, selector: string, reinstateIndex: boolean) {
+		let args = ['stash', 'apply'];
+		if (reinstateIndex) args.push('--index');
+		args.push(selector);
+
+		return this.runGitCommand(args, repo);
 	}
 
 	public branchFromStash(repo: string, selector: string, branchName: string) {
@@ -566,11 +570,15 @@ export class DataSource {
 		return this.runGitCommand(['stash', 'drop', selector], repo);
 	}
 
-	public popStash(repo: string, selector: string) {
-		return this.runGitCommand(['stash', 'pop', selector], repo);
+	public popStash(repo: string, selector: string, reinstateIndex: boolean) {
+		let args = ['stash', 'pop'];
+		if (reinstateIndex) args.push('--index');
+		args.push(selector);
+
+		return this.runGitCommand(args, repo);
 	}
 
-	public saveStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
+	public pushStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
 		}
@@ -579,8 +587,8 @@ export class DataSource {
 		}
 
 		let args = ['stash', 'push'];
-		if (includeUntracked) args.push('-u');
-		if (message !== '') args.push('-m', message);
+		if (includeUntracked) args.push('--include-untracked');
+		if (message !== '') args.push('--message', message);
 		return this.runGitCommand(args, repo);
 	}
 

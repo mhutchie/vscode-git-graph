@@ -424,6 +424,11 @@
 					"default": "Annotated",
 					"description": "Default type of the tag being added."
 				},
+				"git-graph.dialog.applyStash.reinstateIndex": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Reinstate Index\" checkbox."
+				},
 				"git-graph.dialog.createBranch.checkOut": {
 					"type": "boolean",
 					"default": false,
@@ -438,6 +443,11 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Default state of the \"Squash commits\" checkbox."
+				},
+				"git-graph.dialog.popStash.reinstateIndex": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Reinstate Index\" checkbox."
 				},
 				"git-graph.dialog.rebase.ignoreDate": {
 					"type": "boolean",

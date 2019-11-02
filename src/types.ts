@@ -260,12 +260,18 @@ export interface DialogDefaults {
 		readonly pushToRemote: boolean,
 		readonly type: 'annotated' | 'lightweight'
 	};
+	readonly applyStash: {
+		readonly reinstateIndex: boolean
+	};
 	readonly createBranch: {
 		readonly checkout: boolean
 	};
 	readonly merge: {
 		readonly noFastForward: boolean,
 		readonly squash: boolean
+	};
+	readonly popStash: {
+		readonly reinstateIndex: boolean
 	};
 	readonly rebase: {
 		readonly ignoreDate: boolean,
@@ -354,6 +360,7 @@ export interface ResponseAddTag extends ResponseWithMultiErrorInfo {
 export interface RequestApplyStash extends RepoRequest {
 	readonly command: 'applyStash';
 	readonly selector: string;
+	readonly reinstateIndex: boolean;
 }
 export interface ResponseApplyStash extends ResponseWithErrorInfo {
 	readonly command: 'applyStash';
@@ -644,6 +651,7 @@ export interface ResponseOpenFile extends ResponseWithErrorInfo {
 export interface RequestPopStash extends RepoRequest {
 	readonly command: 'popStash';
 	readonly selector: string;
+	readonly reinstateIndex: boolean;
 }
 export interface ResponsePopStash extends ResponseWithErrorInfo {
 	readonly command: 'popStash';
@@ -677,6 +685,15 @@ export interface RequestPushBranch extends RepoRequest {
 }
 export interface ResponsePushBranch extends ResponseWithErrorInfo {
 	readonly command: 'pushBranch';
+}
+
+export interface RequestPushStash extends RepoRequest {
+	readonly command: 'pushStash';
+	readonly message: string;
+	readonly includeUntracked: boolean;
+}
+export interface ResponsePushStash extends ResponseWithErrorInfo {
+	readonly command: 'pushStash';
 }
 
 export interface RequestPushTag extends RepoRequest {
@@ -739,15 +756,6 @@ export interface ResponseRevertCommit extends ResponseWithErrorInfo {
 export interface RequestSaveRepoState extends RepoRequest {
 	readonly command: 'saveRepoState';
 	readonly state: GitRepoState;
-}
-
-export interface RequestSaveStash extends RepoRequest {
-	readonly command: 'saveStash';
-	readonly message: string;
-	readonly includeUntracked: boolean;
-}
-export interface ResponseSaveStash extends ResponseWithErrorInfo {
-	readonly command: 'saveStash';
 }
 
 export interface RequestStartCodeReview extends RepoRequest {
@@ -836,6 +844,7 @@ export type RequestMessage =
 	| RequestPruneRemote
 	| RequestPullBranch
 	| RequestPushBranch
+	| RequestPushStash
 	| RequestPushTag
 	| RequestRebase
 	| RequestRenameBranch
@@ -843,7 +852,6 @@ export type RequestMessage =
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSaveRepoState
-	| RequestSaveStash
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff
@@ -883,6 +891,7 @@ export type ResponseMessage =
 	| ResponsePruneRemote
 	| ResponsePullBranch
 	| ResponsePushBranch
+	| ResponsePushStash
 	| ResponsePushTag
 	| ResponseRebase
 	| ResponseRefresh
@@ -890,7 +899,6 @@ export type ResponseMessage =
 	| ResponseResetToCommit
 	| ResponseRevertCommit
 	| ResponseStartCodeReview
-	| ResponseSaveStash
 	| ResponseTagDetails
 	| ResponseViewDiff
 	| ResponseViewScm;

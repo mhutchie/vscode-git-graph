@@ -3,73 +3,90 @@
 	position:fixed;
 	background-color:var(--vscode-menu-background);
 	color:var(--vscode-menu-foreground);
-	padding:10px;
 	left:50%;
-	top:50%;
-	transform:translateX(-50%) translateY(-50%);
+	transform:translateX(-50%);
 	border:1px solid rgba(128,128,128,0.5);
 	border-radius:5px;
 	text-align:center;
 	font-size:13px;
 	line-height:17px;
-	max-width:360px;
-	max-height:80%;
 	z-index:41;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
-	overflow-y:auto;
 }
 
-.dialog > table.dialogForm{
+.dialogContent{
+	display:block;
+	overflow-y:auto;
+	padding:10px;
+	max-width:360px;
+}
+
+.dialogContent > table.dialogForm{
 	display:inline-table;
 	width:360px;
 }
 
-.dialog > table.dialogForm td{
-	padding-top:10px;
+.dialogContent > table.dialogForm td{
+	padding-top:8px;
 	text-align:left;
-	white-space:nowrap;	
+	white-space:nowrap;
+	user-select:none;
 }
 
-.dialog > table.dialogForm td.inputCol{
+.dialogContent > table.dialogForm tr.largeField td{
+	line-height:25px;
+}
+
+.dialogContent > table.dialogForm td.inputCol{
 	width:100%;
 }
 
-.dialog > table.dialogForm.multi td:nth-child(1){
+.dialogContent > table.dialogForm.multi td:nth-child(1){
 	padding-right:5px;
 }
 
-.dialog > table.dialogForm.single .dialogFormCheckbox{
+.dialogContent > table.dialogForm.single .dialogFormCheckbox{
 	display:inline-block;
 	text-align:center;
 	width:100%;
 }
 
-.dialog .dialogFormCheckbox > label{
+.dialogContent .dialogFormCheckbox > label{
 	user-select:none;
 	cursor:pointer;
 }
 
-.dialog > table.dialogForm.single .customCheckbox, .dialog > table.dialogForm.multiCheckbox .customCheckbox{
+.dialogContent > table.dialogForm.single .customCheckbox, .dialogContent > table.dialogForm.multiCheckbox .customCheckbox{
 	margin-right:6px;
 }
-.dialog .dialogFormCheckbox > label > input[type=checkbox]:checked ~ .customCheckbox:after{
+.dialogContent .dialogFormCheckbox > label > input[type=checkbox]:checked ~ .customCheckbox:after{
 	border-color:var(--vscode-menu-foreground);
 }
 
-.dialog > table.dialogForm input[type=text], .dialog > table.dialogForm select{
+.dialogContent > table.dialogForm input[type=text]{
 	width:100%;
-	padding:4px;
+	padding:4px 6px;
 	box-sizing:border-box;
-	border:1px solid rgba(128,128,128,0.3);
 	outline-style:none;
+	background-color:rgba(128,128,128,0.1);
+	border:1px solid rgba(128,128,128,0.5);
+	border-radius:4px;
+	color:var(--vscode-menu-foreground);
+	font-family:var(--vscode-font-family);
+}
+.dialogContent > table.dialogForm input[type=text]:focus, .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:focus ~ .customCheckbox{
+	border-color:var(--vscode-focusBorder);
+}
+.dialogContent > table.dialogForm input[type=text]::placeholder{
+	color:var(--vscode-menu-foreground);
+	opacity:0.4;
 }
 
 .dialog .roundedBtn{
 	display:inline-block;
-	line-height:20px;
+	line-height:22px;
 	padding:0 15px;
 	margin:10px 6px 0 6px;
-	height:22px;
 	border-radius:11px;
 }
 
@@ -142,4 +159,88 @@
 	margin-top:2px;
 	vertical-align:top;
 	animation:loadingIconAnimation 2s linear infinite;
+}
+
+
+/* Custom Select Input */
+
+.customSelectContainer{
+	display:inline-block;
+	position:relative;
+	width:100%;
+	height:25px;
+	vertical-align:middle;
+}
+
+.customSelectCurrent{
+	position:absolute;
+	left:0;
+	right:0;
+	top:0;
+	bottom:0;
+	padding:4px 22px 4px 6px;
+	box-sizing:border-box;
+	background-color:rgba(128,128,128,0.1);
+	border:1px solid rgba(128,128,128,0.5);
+	border-radius:4px;
+	outline-style:none;
+	color:var(--vscode-menu-foreground);
+	line-height:15px;
+	text-overflow:ellipsis;
+	white-space:nowrap;
+	overflow:hidden;
+	user-select:none;
+	cursor:pointer;
+}
+
+.customSelectCurrent:after{
+	position:absolute;
+	content:"";
+	top:10px;
+	right:7px;
+	width:0;
+	height:0;
+	border:4px solid transparent;
+	border-color:var(--vscode-menu-foreground) transparent transparent transparent;
+}
+
+.customSelectCurrent:focus, .customSelectContainer.open .customSelectCurrent{
+	border-color:var(--vscode-focusBorder);
+}
+.customSelectContainer.open .customSelectCurrent{
+	border-radius:4px 4px 0 0;
+}
+.customSelectContainer.open .customSelectCurrent:after{
+	border-color:transparent transparent var(--vscode-menu-foreground) transparent;
+	top:5px;
+}
+
+.customSelectOptions{
+	display:block;
+	position:absolute;
+	box-sizing:border-box;
+	background-color:var(--vscode-menu-background);
+	border:1px solid var(--vscode-focusBorder);
+	border-radius:0 0 4px 4px;
+	z-index:42;
+	text-align:left;
+}
+
+.customSelectOption{
+	padding:5px 6px;
+	max-height:51px;
+	background-color:rgba(127,127,127,0.05);
+	overflow:hidden;
+	user-select:none;
+	cursor:pointer;
+}
+
+.customSelectOptions .customSelectOption.selected{
+	background-color:rgba(127,127,127,0.2);
+}
+.customSelectOptions:hover .customSelectOption{
+	background-color:rgba(127,127,127,0.05);
+}
+.customSelectOptions .customSelectOption:hover{
+	background-color:rgba(127,127,127,0.2);
 }

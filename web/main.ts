@@ -770,9 +770,9 @@ class GitGraphView {
 				onClick: () => {
 					const dialogConfig = this.config.dialogDefaults.addTag;
 					let inputs: DialogInput[] = [
-						{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
-						{ type: 'select' as 'select', name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
-						{ type: 'text' as 'text', name: 'Message', default: '', placeholder: 'Optional' }
+						{ type: 'text-ref', name: 'Name', default: '' },
+						{ type: 'select', name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+						{ type: 'text', name: 'Message', default: '', placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
 					];
 					if (this.gitRemotes.length > 1) {
 						let options = [{ name: 'Don\'t push', value: '-1' }];
@@ -808,7 +808,7 @@ class GitGraphView {
 				visible: visibility.createBranch,
 				onClick: () => {
 					dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-						{ type: 'text-ref' as 'text-ref', name: 'Name', default: '' },
+						{ type: 'text-ref', name: 'Name', default: '' },
 						{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
 					], 'Create Branch', values => {
 						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');

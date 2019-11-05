@@ -253,6 +253,8 @@ export function getConfig() {
 }
 
 function mergeConfigObjects(base: { [key: string]: any }, user: { [key: string]: any }) {
+	if (typeof base !== typeof user) return;
+
 	let keys = Object.keys(base);
 	for (let i = 0; i < keys.length; i++) {
 		if (typeof base[keys[i]] === 'object') {

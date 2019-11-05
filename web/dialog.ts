@@ -84,13 +84,11 @@ class Dialog {
 			if (this.elem === null || this.elem.classList.contains(CLASS_DIALOG_NO_INPUT) || this.elem.classList.contains(CLASS_DIALOG_INPUT_INVALID)) return;
 			let values = [];
 			for (let i = 0; i < inputs.length; i++) {
-				let input = inputs[i], elem = document.getElementById('dialogInput' + i);
-				if (input.type === 'select') {
-					values.push((<HTMLSelectElement>elem).value);
-				} else if (input.type === 'checkbox') {
-					values.push((<HTMLInputElement>elem).checked ? 'checked' : 'unchecked');
+				let input = inputs[i], elem = <HTMLInputElement>document.getElementById('dialogInput' + i);
+				if (input.type === 'checkbox') {
+					values.push(elem.checked ? 'checked' : 'unchecked');
 				} else {
-					values.push((<HTMLInputElement>elem).value);
+					values.push(elem.value);
 				}
 			}
 			this.close();

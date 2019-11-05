@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.18.0 - 2019-11-05
+* #202 New File List View in the Commit Details / Comparison Views, as an alternative to the existing File Tree View. The default File View Type can be specified using the setting `git-graph.defaultFileViewType`. This can be overridden per repository using the new controls on the right side of the Commit Details / Comparison Views.
+* #197 Improved the default column widths when the table is being automatically laid out on narrow width views.
+* #198 Customise which context menu actions are visible with the new extension setting `git-graph.contextMenuActionsVisibility`. For more information, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
+* #204 Added a new option to reinstate indexed changes on both the apply and pop stash actions.
+* #205 Dialogs now use custom input controls to create a more seamless experience, that respects the active Visual Studio Code Color Theme.
+* Various code and UI improvements.
+
 ## 1.17.0 - 2019-10-08
 * #128 New "Fetch into local branch..." action on the remote branch context menu. This only appears if a local branch shares the same name as the branch being fetched, and the local branch is not checked out.
 * #185 Added two new date format options, "ISO Date & Time" and "ISO Date Only", to the Extension Setting `git-graph.dateFormat`.

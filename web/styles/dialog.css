@@ -34,7 +34,7 @@
 }
 
 .dialogContent > table.dialogForm tr.largeField td{
-	line-height:25px;
+	line-height:27px;
 }
 
 .dialogContent > table.dialogForm td.inputCol{
@@ -73,6 +73,8 @@
 	border-radius:4px;
 	color:var(--vscode-menu-foreground);
 	font-family:var(--vscode-font-family);
+	font-size:13px;
+	line-height:17px;
 }
 .dialogContent > table.dialogForm input[type=text]:focus, .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:focus ~ .customCheckbox{
 	border-color:var(--vscode-focusBorder);
@@ -168,7 +170,7 @@
 	display:inline-block;
 	position:relative;
 	width:100%;
-	height:25px;
+	height:27px;
 	vertical-align:middle;
 }
 
@@ -185,7 +187,7 @@
 	border-radius:4px;
 	outline-style:none;
 	color:var(--vscode-menu-foreground);
-	line-height:15px;
+	line-height:17px;
 	text-overflow:ellipsis;
 	white-space:nowrap;
 	overflow:hidden;
@@ -196,7 +198,7 @@
 .customSelectCurrent:after{
 	position:absolute;
 	content:"";
-	top:10px;
+	top:11px;
 	right:7px;
 	width:0;
 	height:0;
@@ -212,7 +214,7 @@
 }
 .customSelectContainer.open .customSelectCurrent:after{
 	border-color:transparent transparent var(--vscode-menu-foreground) transparent;
-	top:5px;
+	top:6px;
 }
 
 .customSelectOptions{
@@ -227,10 +229,13 @@
 }
 
 .customSelectOption{
+	box-sizing:border-box;
+	width:100%;
 	padding:5px 6px;
-	max-height:51px;
+	max-height:61px;
 	background-color:rgba(127,127,127,0.05);
 	overflow:hidden;
+	word-wrap:break-word;
 	user-select:none;
 	cursor:pointer;
 }

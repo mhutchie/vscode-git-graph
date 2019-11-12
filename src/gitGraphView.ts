@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitCommitDetails, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -156,7 +156,7 @@ export class GitGraphView {
 					this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath);
 					break;
 				case 'commitDetails':
-					let data = await Promise.all([
+					let data = await Promise.all<GitCommitDetails, string | null>([
 						msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.baseHash) : this.dataSource.getUncommittedDetails(msg.repo),
 						msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
 					]);
@@ -279,7 +279,7 @@ export class GitGraphView {
 					}
 					this.sendMessage({
 						command: 'loadRepoInfo',
-						... repoInfo,
+						...repoInfo,
 						hard: msg.hard,
 						isRepo: isRepo
 					});

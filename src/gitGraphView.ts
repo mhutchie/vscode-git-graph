@@ -157,7 +157,11 @@ export class GitGraphView {
 					break;
 				case 'commitDetails':
 					let data = await Promise.all<GitCommitDetails, string | null>([
-						msg.commitHash !== UNCOMMITTED ? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.baseHash) : this.dataSource.getUncommittedDetails(msg.repo),
+						msg.commitHash === UNCOMMITTED
+							? this.dataSource.getUncommittedDetails(msg.repo)
+							: msg.stash === null
+								? this.dataSource.getCommitDetails(msg.repo, msg.commitHash)
+								: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
 						msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
 					]);
 					this.sendMessage({

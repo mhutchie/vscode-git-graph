@@ -6,7 +6,7 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { BranchOrCommit, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitNode, GitFileChange, GitFileChangeType, GitRefData, GitRepoSettings, GitResetMode, GitStash, GitUnsavedChanges } from './types';
+import { BranchOrCommit, CommitOrdering, DateType, ErrorInfo, GitCommitDetails, GitCommitNode, GitCommitStash, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
@@ -108,22 +108,48 @@ export class DataSource {
 
 			for (i = 0; i < commits.length; i++) {
 				commitLookup[commits[i].hash] = i;
-				commitNodes.push({ hash: commits[i].hash, parents: commits[i].parents, author: commits[i].author, email: commits[i].email, date: commits[i].date, message: commits[i].message, heads: [], tags: [], remotes: [], stash: null });
+				commitNodes.push({
+					hash: commits[i].hash,
+					parents: commits[i].parents,
+					author: commits[i].author,
+					email: commits[i].email,
+					date: commits[i].date,
+					message: commits[i].message,
+					heads: [], tags: [], remotes: [],
+					stash: null
+				});
 			}
 
 			/* Insert Stashes */
 			let toAdd: { index: number, data: GitStash }[] = [];
 			for (i = 0; i < stashes.length; i++) {
 				if (typeof commitLookup[stashes[i].hash] === 'number') {
-					commitNodes[commitLookup[stashes[i].hash]].stash = stashes[i].selector;
-				} else if (typeof commitLookup[stashes[i].base] === 'number') {
-					toAdd.push({ index: commitLookup[stashes[i].base], data: stashes[i] });
+					commitNodes[commitLookup[stashes[i].hash]].stash = {
+						selector: stashes[i].selector,
+						baseHash: stashes[i].baseHash,
+						untrackedFilesHash: stashes[i].untrackedFilesHash
+					};
+				} else if (typeof commitLookup[stashes[i].baseHash] === 'number') {
+					toAdd.push({ index: commitLookup[stashes[i].baseHash], data: stashes[i] });
 				}
 			}
 			toAdd.sort((a, b) => a.index !== b.index ? a.index - b.index : b.data.date - a.data.date);
 			for (i = toAdd.length - 1; i >= 0; i--) {
 				let stash = toAdd[i].data;
-				commitNodes.splice(toAdd[i].index, 0, { hash: stash.hash, parents: [stash.base], author: stash.author, email: stash.email, date: stash.date, message: stash.message, heads: [], tags: [], remotes: [], stash: stash.selector });
+				commitNodes.splice(toAdd[i].index, 0, {
+					hash: stash.hash,
+					parents: [stash.baseHash],
+					author: stash.author,
+					email: stash.email,
+					date: stash.date,
+					message: stash.message,
+					heads: [], tags: [], remotes: [],
+					stash: {
+						selector: stash.selector,
+						baseHash: stash.baseHash,
+						untrackedFilesHash: stash.untrackedFilesHash
+					}
+				});
 			}
 			for (i = 0; i < commitNodes.length; i++) {
 				// Correct commit lookup after stashes have been spliced in
@@ -158,28 +184,36 @@ export class DataSource {
 
 	/* Get Data Methods - Commit Details View */
 
-	public getCommitDetails(repo: string, commitHash: string, baseHash: string | null): Promise<GitCommitDetails> {
+	public getCommitDetails(repo: string, commitHash: string): Promise<GitCommitDetails> {
 		return Promise.all([
-			this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): GitCommitDetails => {
-				let lines = stdout.split(EOL_REGEX);
-				let lastLine = lines.length - 1;
-				while (lines.length > 0 && lines[lastLine] === '') lastLine--;
-				let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
-				return {
-					hash: commitInfo[0],
-					parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
-					author: commitInfo[2],
-					email: commitInfo[3],
-					date: parseInt(commitInfo[4]),
-					committer: commitInfo[5],
-					body: lines.slice(1, lastLine + 1).join('\n'),
-					fileChanges: [], error: null
-				};
-			}),
-			this.getDiffNameStatus(repo, baseHash !== null ? baseHash : commitHash, commitHash),
-			this.getDiffNumStat(repo, baseHash !== null ? baseHash : commitHash, commitHash)
+			this.getCommitDetailsBase(repo, commitHash),
+			this.getDiffNameStatus(repo, commitHash, commitHash),
+			this.getDiffNumStat(repo, commitHash, commitHash)
 		]).then((results) => {
 			results[0].fileChanges = generateFileChanges(results[1], results[2], null);
+			return results[0];
+		}).catch((errorMessage) => {
+			return { hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage };
+		});
+	}
+
+	public getStashDetails(repo: string, commitHash: string, stash: GitCommitStash): Promise<GitCommitDetails> {
+		return Promise.all([
+			this.getCommitDetailsBase(repo, commitHash),
+			this.getDiffNameStatus(repo, stash.baseHash, commitHash),
+			this.getDiffNumStat(repo, stash.baseHash, commitHash),
+			stash.untrackedFilesHash !== null ? this.getDiffNameStatus(repo, stash.untrackedFilesHash, stash.untrackedFilesHash) : Promise.resolve([]),
+			stash.untrackedFilesHash !== null ? this.getDiffNumStat(repo, stash.untrackedFilesHash, stash.untrackedFilesHash) : Promise.resolve([])
+		]).then((results) => {
+			results[0].fileChanges = generateFileChanges(results[1], results[2], null);
+			if (stash.untrackedFilesHash !== null) {
+				generateFileChanges(results[3], results[4], null).forEach((fileChange) => {
+					if (fileChange.type === GitFileStatus.Added) {
+						fileChange.type = GitFileStatus.Untracked;
+						results[0].fileChanges.push(fileChange);
+					}
+				});
+			}
 			return results[0];
 		}).catch((errorMessage) => {
 			return { hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage };
@@ -202,7 +236,7 @@ export class DataSource {
 	}
 
 	public getCommitComparison(repo: string, fromHash: string, toHash: string): Promise<GitCommitComparisonData> {
-		return Promise.all<DiffNameStatusRecord[], DiffNumStatRecord[], GitFileStatus | null>([
+		return Promise.all<DiffNameStatusRecord[], DiffNumStatRecord[], GitStatusFiles | null>([
 			this.getDiffNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
 			this.getDiffNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
 			toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null)
@@ -620,7 +654,26 @@ export class DataSource {
 		});
 	}
 
-	private async getConfigList(repo: string, type: 'local' | 'global' | 'system') {
+	private getCommitDetailsBase(repo: string, commitHash: string) {
+		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): GitCommitDetails => {
+			let lines = stdout.split(EOL_REGEX);
+			let lastLine = lines.length - 1;
+			while (lines.length > 0 && lines[lastLine] === '') lastLine--;
+			let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
+			return {
+				hash: commitInfo[0],
+				parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
+				author: commitInfo[2],
+				email: commitInfo[3],
+				date: parseInt(commitInfo[4]),
+				committer: commitInfo[5],
+				body: lines.slice(1, lastLine + 1).join('\n'),
+				fileChanges: [], error: null
+			};
+		});
+	}
+
+	private getConfigList(repo: string, type: 'local' | 'global' | 'system') {
 		return this.spawnGit(['--no-pager', 'config', '--list', '--' + type], repo, (stdout) => stdout.split(EOL_REGEX));
 	}
 
@@ -628,13 +681,13 @@ export class DataSource {
 		return this.execDiff(repo, fromHash, toHash, '--name-status').then((output) => {
 			let records: DiffNameStatusRecord[] = [], i = 0;
 			while (i < output.length && output[i] !== '') {
-				let type = <GitFileChangeType>output[i][0];
-				if (type === 'A' || type === 'D' || type === 'M') {
+				let type = <GitFileStatus>output[i][0];
+				if (type === GitFileStatus.Added || type === GitFileStatus.Deleted || type === GitFileStatus.Modified) {
 					// Add, Modify, or Delete
 					let p = getPathFromStr(output[i + 1]);
 					records.push({ type: type, oldFilePath: p, newFilePath: p });
 					i += 2;
-				} else if (type === 'R') {
+				} else if (type === GitFileStatus.Renamed) {
 					// Rename
 					records.push({ type: type, oldFilePath: getPathFromStr(output[i + 1]), newFilePath: getPathFromStr(output[i + 2]) });
 					i += 3;
@@ -742,7 +795,17 @@ export class DataSource {
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(GIT_LOG_SEPARATOR);
 				if (line.length !== 7 || line[1] === '') continue;
-				stashes.push({ hash: line[0], base: line[1].split(' ')[0], selector: line[2], author: line[3], email: line[4], date: parseInt(line[5]), message: line[6] });
+				let parentHashes = line[1].split(' ');
+				stashes.push({
+					hash: line[0],
+					baseHash: parentHashes[0],
+					untrackedFilesHash: parentHashes.length === 3 ? parentHashes[2] : null,
+					selector: line[2],
+					author: line[3],
+					email: line[4],
+					date: parseInt(line[5]),
+					message: line[6]
+				});
 			}
 			return stashes;
 		}).catch(() => <GitStash[]>[]);
@@ -768,7 +831,7 @@ export class DataSource {
 	private getStatus(repo: string) {
 		return this.spawnGit(['status', '-s', '--untracked-files', '--porcelain', '-z'], repo, (stdout) => {
 			let output = stdout.split('\0'), i = 0;
-			let status: GitFileStatus = { deleted: [], untracked: [] };
+			let status: GitStatusFiles = { deleted: [], untracked: [] };
 			let path = '', c1 = '', c2 = '';
 			while (i < output.length && output[i] !== '') {
 				if (output[i].length < 4) break;
@@ -866,7 +929,7 @@ export class DataSource {
 
 
 // Generates a list of file changes from each diff-tree output
-function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatRecords: DiffNumStatRecord[], status: GitFileStatus | null) {
+function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatRecords: DiffNumStatRecord[], status: GitStatusFiles | null) {
 	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {}, i = 0;
 
 	for (i = 0; i < nameStatusRecords.length; i++) {
@@ -879,14 +942,14 @@ function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatR
 		for (i = 0; i < status.deleted.length; i++) {
 			filePath = getPathFromStr(status.deleted[i]);
 			if (typeof fileLookup[filePath] === 'number') {
-				fileChanges[fileLookup[filePath]].type = 'D';
+				fileChanges[fileLookup[filePath]].type = GitFileStatus.Deleted;
 			} else {
-				fileChanges.push({ oldFilePath: filePath, newFilePath: filePath, type: 'D', additions: null, deletions: null });
+				fileChanges.push({ oldFilePath: filePath, newFilePath: filePath, type: GitFileStatus.Deleted, additions: null, deletions: null });
 			}
 		}
 		for (i = 0; i < status.untracked.length; i++) {
 			filePath = getPathFromStr(status.untracked[i]);
-			fileChanges.push({ oldFilePath: filePath, newFilePath: filePath, type: 'U', additions: null, deletions: null });
+			fileChanges.push({ oldFilePath: filePath, newFilePath: filePath, type: GitFileStatus.Untracked, additions: null, deletions: null });
 		}
 	}
 
@@ -935,7 +998,7 @@ function getErrorMessage(error: Error | null, stdoutBuffer: Buffer, stderr: stri
 // Types
 
 interface DiffNameStatusRecord {
-	type: GitFileChangeType;
+	type: GitFileStatus;
 	oldFilePath: string;
 	newFilePath: string;
 }
@@ -952,6 +1015,15 @@ interface GitBranchData {
 	error: ErrorInfo;
 }
 
+interface GitCommit {
+	hash: string;
+	parents: string[];
+	author: string;
+	email: string;
+	date: number;
+	message: string;
+}
+
 interface GitCommitData {
 	commits: GitCommitNode[];
 	head: string | null;
@@ -964,13 +1036,45 @@ interface GitCommitComparisonData {
 	error: ErrorInfo;
 }
 
-interface GitFileStatus {
-	deleted: string[];
-	untracked: string[];
+interface GitRef {
+	hash: string;
+	name: string;
+}
+
+interface GitRefTag extends GitRef {
+	annotated: boolean;
+}
+
+interface GitRefData {
+	head: string | null;
+	heads: GitRef[];
+	tags: GitRefTag[];
+	remotes: GitRef[];
 }
 
 interface GitRepoInfo extends GitBranchData {
 	remotes: string[];
+}
+
+interface GitRepoSettingsData {
+	settings: GitRepoSettings | null;
+	error: ErrorInfo;
+}
+
+interface GitStash {
+	hash: string;
+	baseHash: string;
+	untrackedFilesHash: string | null;
+	selector: string;
+	author: string;
+	email: string;
+	date: number;
+	message: string;
+}
+
+interface GitStatusFiles {
+	deleted: string[];
+	untracked: string[];
 }
 
 interface GitTagDetailsData {
@@ -982,7 +1086,7 @@ interface GitTagDetailsData {
 	error: ErrorInfo;
 }
 
-interface GitRepoSettingsData {
-	settings: GitRepoSettings | null;
-	error: ErrorInfo;
+interface GitUnsavedChanges {
+	branch: string;
+	changes: number;
 }

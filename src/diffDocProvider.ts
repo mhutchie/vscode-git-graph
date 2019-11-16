@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
-import { GitFileChangeType } from './types';
+import { GitFileStatus } from './types';
 import { getPathFromStr, UNCOMMITTED } from './utils';
 
 export const enum DiffSide {
@@ -74,13 +74,13 @@ type DiffDocUriData = {
 	repo: string;
 } | null;
 
-export function encodeDiffDocUri(repo: string, filePath: string, commit: string, type: GitFileChangeType, diffSide: DiffSide): vscode.Uri {
-	if (commit === UNCOMMITTED && type !== 'D') {
+export function encodeDiffDocUri(repo: string, filePath: string, commit: string, type: GitFileStatus, diffSide: DiffSide): vscode.Uri {
+	if (commit === UNCOMMITTED && type !== GitFileStatus.Deleted) {
 		return vscode.Uri.file(path.join(repo, filePath));
 	}
 
 	let data: DiffDocUriData, extension: string;
-	if ((diffSide === DiffSide.Old && type === 'A') || (diffSide === DiffSide.New && type === 'D')) {
+	if ((diffSide === DiffSide.Old && type === GitFileStatus.Added) || (diffSide === DiffSide.New && type === GitFileStatus.Deleted)) {
 		data = null;
 		extension = '';
 	} else {

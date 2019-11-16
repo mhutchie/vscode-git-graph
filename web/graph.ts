@@ -656,7 +656,7 @@ class Graph {
 			for (let j = 0; j < commit.heads.length; j++) heads.push(commit.heads[j]);
 			for (let j = 0; j < commit.remotes.length; j++) remotes.push(commit.remotes[j]);
 			for (let j = 0; j < commit.tags.length; j++) tags.push(commit.tags[j].name);
-			if (commit.stash !== null) stashes.push(commit.stash.substring(5));
+			if (commit.stash !== null) stashes.push(commit.stash.selector.substring(5));
 			if (commit.hash === this.commitHead) childrenIncludesHead = true;
 		}
 

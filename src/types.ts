@@ -20,7 +20,7 @@ export interface GitCommitNode {
 	heads: string[];
 	tags: GitCommitTag[];
 	remotes: GitCommitRemote[];
-	stash: string | null; // null => not a stash, otherwise => stash selector
+	stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
 }
 
 export interface GitCommitTag {
@@ -33,13 +33,10 @@ export interface GitCommitRemote {
 	remote: string | null; // null => remote not found, otherwise => remote name
 }
 
-export interface GitCommit {
-	hash: string;
-	parents: string[];
-	author: string;
-	email: string;
-	date: number;
-	message: string;
+export interface GitCommitStash {
+	readonly selector: string;
+	readonly baseHash: string;
+	readonly untrackedFilesHash: string | null;
 }
 
 export interface GitCommitDetails {
@@ -54,34 +51,6 @@ export interface GitCommitDetails {
 	error: ErrorInfo;
 }
 
-export interface GitRef {
-	hash: string;
-	name: string;
-}
-
-export interface GitStash {
-	hash: string;
-	base: string;
-	selector: string;
-	author: string;
-	email: string;
-	date: number;
-	message: string;
-}
-
-export interface GitTagRef {
-	hash: string;
-	name: string;
-	annotated: boolean;
-}
-
-export interface GitRefData {
-	head: string | null;
-	heads: GitRef[];
-	tags: GitTagRef[];
-	remotes: GitRef[];
-}
-
 export type GitRepoSet = { [repo: string]: GitRepoState };
 export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
@@ -93,15 +62,10 @@ export interface GitRepoState {
 }
 export type ColumnWidth = number;
 
-export interface GitUnsavedChanges {
-	branch: string;
-	changes: number;
-}
-
 export interface GitFileChange {
 	oldFilePath: string;
 	newFilePath: string;
-	type: GitFileChangeType;
+	type: GitFileStatus;
 	additions: number | null;
 	deletions: number | null;
 }
@@ -122,7 +86,14 @@ export type AvatarCache = { [email: string]: Avatar };
 
 export type BranchOrCommit = 'Branch' | 'Commit';
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
-export type GitFileChangeType = 'A' | 'M' | 'D' | 'R' | 'U';
+
+export const enum GitFileStatus {
+	Added = 'A',
+	Modified = 'M',
+	Deleted = 'D',
+	Renamed = 'R',
+	Untracked = 'U'
+}
 
 
 /* Git Graph View Interfaces */
@@ -419,7 +390,7 @@ export interface RequestCodeReviewFileReviewed extends RepoRequest {
 export interface RequestCommitDetails extends RepoRequest {
 	readonly command: 'commitDetails';
 	readonly commitHash: string;
-	readonly baseHash: string | null; // string => diff between baseHash and commitHash (used by stashes), null => diff of commitHash
+	readonly stash: GitCommitStash | null; // null => request is for a commit, otherwise => request is for a stash
 	readonly avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	readonly refresh: boolean;
 }
@@ -795,7 +766,7 @@ export interface RequestViewDiff extends RepoRequest {
 	readonly toHash: string;
 	readonly oldFilePath: string;
 	readonly newFilePath: string;
-	readonly type: GitFileChangeType;
+	readonly type: GitFileStatus;
 }
 export interface ResponseViewDiff extends ResponseWithErrorInfo {
 	readonly command: 'viewDiff';

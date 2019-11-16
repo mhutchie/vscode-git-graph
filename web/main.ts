@@ -224,7 +224,15 @@ class GitGraphView {
 	}
 
 	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
-		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) => a.hash === b.hash && arraysStrictlyEqual(a.heads, b.heads) && arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) && arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) && arraysStrictlyEqual(a.parents, b.parents) && a.stash === b.stash) && this.renderedGitBranchHead === this.gitBranchHead) {
+		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
+			a.hash === b.hash &&
+			arraysStrictlyEqual(a.heads, b.heads) &&
+			arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) &&
+			arraysEqual(a.remotes, b.remotes, (a, b) => a.name === b.name && a.remote === b.remote) &&
+			arraysStrictlyEqual(a.parents, b.parents) &&
+			((a.stash === null && b.stash === null) || (a.stash !== null && b.stash !== null && a.stash.selector === b.stash.selector))
+		) && this.renderedGitBranchHead === this.gitBranchHead) {
+
 			if (this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED) {
 				this.commits[0] = commits[0];
 				this.saveState();
@@ -395,7 +403,7 @@ class GitGraphView {
 			command: 'commitDetails',
 			repo: this.currentRepo,
 			commitHash: hash,
-			baseHash: commit.stash !== null ? commit.parents[0] : null,
+			stash: commit.stash,
 			avatarEmail: this.config.fetchAvatars && hash !== UNCOMMITTED ? commit.email : null,
 			refresh: refresh
 		});
@@ -510,7 +518,7 @@ class GitGraphView {
 				refTags += '<span class="gitRef tag" data-name="' + refName + '" data-tagtype="' + (commit.tags[j].annotated ? 'annotated' : 'lightweight') + '">' + SVG_ICONS.tag + '<span class="gitRefName">' + refName + '</span></span>';
 			}
 			if (commit.stash !== null) {
-				refBranches = '<span class="gitRef stash">' + SVG_ICONS.stash + '<span class="gitRefName">' + commit.stash.substring(5) + '</span></span>' + refBranches;
+				refBranches = '<span class="gitRef stash">' + SVG_ICONS.stash + '<span class="gitRefName">' + commit.stash.selector.substring(5) + '</span></span>' + refBranches;
 			}
 
 			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
@@ -580,7 +588,7 @@ class GitGraphView {
 			if (commit.hash === UNCOMMITTED) {
 				menu = this.getUncommittedChangesContextMenuActions(commitElem);
 			} else if (commit.stash !== null) {
-				menu = this.getStashContextMenuActions(commit.hash, commit.stash, commitElem);
+				menu = this.getStashContextMenuActions(commit.hash, commit.stash.selector, commitElem);
 			} else {
 				menu = this.getCommitContextMenuActions(commit.hash, commitElem);
 			}
@@ -619,7 +627,7 @@ class GitGraphView {
 
 			let sourceElem = <HTMLElement>refElem.children[1], actions: ContextMenuActions;
 			if (refElem.classList.contains(CLASS_REF_STASH)) {
-				actions = this.getStashContextMenuActions(commit.hash, commit.stash!, sourceElem);
+				actions = this.getStashContextMenuActions(commit.hash, commit.stash!.selector, sourceElem);
 			} else {
 				let refName = unescapeHtml(refElem.dataset.name!);
 				if (refElem.classList.contains(CLASS_REF_TAG)) {
@@ -1908,6 +1916,7 @@ class GitGraphView {
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile')!;
 			if (!sourceElem.classList.contains('gitDiffPossible')) return;
 			let commit = this.commits[this.commitLookup[expandedCommit.hash]], fromHash: string, toHash: string;
+			let fileStatus = <GG.GitFileStatus>sourceElem.dataset.type;
 			if (expandedCommit.compareWithHash !== null) {
 				// Commit Comparison
 				let commitOrder = this.getCommitOrder(expandedCommit.hash, expandedCommit.compareWithHash);
@@ -1915,8 +1924,14 @@ class GitGraphView {
 				toHash = commitOrder.to;
 			} else if (commit.stash !== null) {
 				// Stash Commit
-				fromHash = commit.parents[0];
-				toHash = expandedCommit.hash;
+				if (fileStatus === GG.GitFileStatus.Untracked) {
+					fromHash = commit.stash.untrackedFilesHash!;
+					toHash = commit.stash.untrackedFilesHash!;
+					fileStatus = GG.GitFileStatus.Added;
+				} else {
+					fromHash = commit.stash.baseHash;
+					toHash = expandedCommit.hash;
+				}
 			} else {
 				// Single Commit
 				fromHash = expandedCommit.hash;
@@ -1933,7 +1948,7 @@ class GitGraphView {
 				toHash: toHash,
 				oldFilePath: decodeURIComponent(sourceElem.dataset.oldfilepath!),
 				newFilePath: newFilePath,
-				type: <GG.GitFileChangeType>sourceElem.dataset.type
+				type: fileStatus
 			});
 		});
 
@@ -2287,12 +2302,12 @@ function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: GG
 	if (leaf.type === 'file') {
 		let fileTreeFile = gitFiles[leaf.index];
 		let textFile = fileTreeFile.additions !== null && fileTreeFile.deletions !== null;
-		let diffPossible = fileTreeFile.type === 'U' || textFile;
-		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeFileRecord"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + (leaf.reviewed ? '' : ' pendingReview') + '" data-oldfilepath="' + encodeURIComponent(fileTreeFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '" data-type="' + fileTreeFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== 'D' ? ' (this is a binary file)' : '')) + ' • ' + GIT_FILE_CHANGE_TYPES[fileTreeFile.type] + (fileTreeFile.type === 'R' ? ' (' + escapeHtml(fileTreeFile.oldFilePath) + ' → ' + escapeHtml(fileTreeFile.newFilePath) + ')' : '') + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapedName + '</span></span>' +
-			(fileTreeFile.type !== 'A' && fileTreeFile.type !== 'U' && fileTreeFile.type !== 'D' && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
+		let diffPossible = fileTreeFile.type === GG.GitFileStatus.Untracked || textFile;
+		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeFileRecord"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + (leaf.reviewed ? '' : ' pendingReview') + '" data-oldfilepath="' + encodeURIComponent(fileTreeFile.oldFilePath) + '" data-newfilepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '" data-type="' + fileTreeFile.type + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== GG.GitFileStatus.Deleted ? ' (this is a binary file)' : '')) + ' • ' + GIT_FILE_CHANGE_TYPES[fileTreeFile.type] + (fileTreeFile.type === GG.GitFileStatus.Renamed ? ' (' + escapeHtml(fileTreeFile.oldFilePath) + ' → ' + escapeHtml(fileTreeFile.newFilePath) + ')' : '') + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapedName + '</span></span>' +
+			(fileTreeFile.type !== GG.GitFileStatus.Added && fileTreeFile.type !== GG.GitFileStatus.Untracked && fileTreeFile.type !== GG.GitFileStatus.Deleted && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
 			(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
 			'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.copy + '</span>' +
-			(fileTreeFile.type !== 'D' ? '<span class="openGitFile fileTreeFileAction" title="Click to Open File" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
+			(fileTreeFile.type !== GG.GitFileStatus.Deleted ? '<span class="openGitFile fileTreeFileAction" title="Click to Open File" data-filepath="' + encodeURIComponent(fileTreeFile.newFilePath) + '">' + SVG_ICONS.openFile + '</span>' : '') + '</span></li>';
 	} else {
 		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeRepo" data-path="' + encodeURIComponent(leaf.path) + '" title="Click to View Repository"><span class="fileTreeRepoIcon">' + SVG_ICONS.closedFolder + '</span>' + escapedName + '</span></li>';
 	}

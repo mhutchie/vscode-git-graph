@@ -237,6 +237,9 @@ export interface DialogDefaults {
 	readonly createBranch: {
 		readonly checkout: boolean
 	};
+	readonly deleteBranch: {
+		readonly forceDelete: boolean
+	};
 	readonly merge: {
 		readonly noFastForward: boolean,
 		readonly squash: boolean

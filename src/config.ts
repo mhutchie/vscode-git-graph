@@ -130,6 +130,9 @@ class Config {
 			createBranch: {
 				checkout: !!this.config.get('dialog.createBranch.checkOut', false)
 			},
+			deleteBranch: {
+				forceDelete: !!this.config.get('dialog.deleteBranch.forceDelete', false)
+			},
 			merge: {
 				noFastForward: !!this.config.get('dialog.merge.noFastForward', true),
 				squash: !!this.config.get('dialog.merge.squashCommits', false)

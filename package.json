@@ -434,6 +434,11 @@
 					"default": false,
 					"description": "Default state of the \"Check out\" checkbox."
 				},
+				"git-graph.dialog.deleteBranch.forceDelete": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Force Delete\" checkbox."
+				},
 				"git-graph.dialog.merge.noFastForward": {
 					"type": "boolean",
 					"default": true,

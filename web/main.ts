@@ -716,7 +716,7 @@ class GitGraphView {
 				visible: visibility.delete && this.gitBranchHead !== refName,
 				onClick: () => {
 					let remotesWithBranch = this.gitRemotes.filter(remote => this.gitBranches.includes('remotes/' + remote + '/' + refName));
-					let inputs: DialogInput[] = [{ type: 'checkbox', name: 'Force Delete', value: false }];
+					let inputs: DialogInput[] = [{ type: 'checkbox', name: 'Force Delete', value: this.config.dialogDefaults.deleteBranch.forceDelete }];
 					if (remotesWithBranch.length > 0) {
 						inputs.push({
 							type: 'checkbox',

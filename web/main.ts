@@ -153,7 +153,7 @@ class GitGraphView {
 		this.showRemoteBranchesElem.checked = this.gitRepos[this.currentRepo].showRemoteBranches;
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitRemotes = [];
-		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, false);
+		this.renderFetchButton();
 		this.closeCommitDetails(false);
 		this.settingsWidget.close();
 		this.currentBranches = null;
@@ -170,6 +170,9 @@ class GitGraphView {
 		this.gitBranches = branchOptions;
 		this.gitBranchHead = branchHead;
 		this.gitRemotes = remotes;
+
+		// Update the state of the fetch button
+		this.renderFetchButton();
 
 		// Configure current branches
 
@@ -470,7 +473,6 @@ class GitGraphView {
 	/* Renderers */
 
 	private render() {
-		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, this.gitRemotes.length > 0);
 		this.renderTable();
 		this.renderGraph();
 	}
@@ -685,6 +687,10 @@ class GitGraphView {
 		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
 		this.footerElem.innerHTML = '';
 		this.findWidget.update([]);
+	}
+
+	private renderFetchButton() {
+		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, this.gitRemotes.length > 0);
 	}
 
 	public renderRefreshButton(enabled: boolean) {

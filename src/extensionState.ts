@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
-import { Avatar, AvatarCache, CodeReview, ErrorInfo, FileViewType, GitRepoSet, GitRepoState } from './types';
+import { Avatar, AvatarCache } from './avatarManager';
+import { CodeReview, ErrorInfo, FileViewType, GitRepoSet, GitRepoState } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';

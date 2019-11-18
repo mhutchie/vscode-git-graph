@@ -6,7 +6,7 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { BranchOrCommit, CommitOrdering, DateType, ErrorInfo, GitCommitDetails, GitCommitNode, GitCommitStash, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
+import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommitDetails, GitCommitNode, GitCommitStash, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
@@ -184,20 +184,20 @@ export class DataSource {
 
 	/* Get Data Methods - Commit Details View */
 
-	public getCommitDetails(repo: string, commitHash: string): Promise<GitCommitDetails> {
+	public getCommitDetails(repo: string, commitHash: string): Promise<GitCommitDetailsData> {
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
 			this.getDiffNameStatus(repo, commitHash, commitHash),
 			this.getDiffNumStat(repo, commitHash, commitHash)
 		]).then((results) => {
 			results[0].fileChanges = generateFileChanges(results[1], results[2], null);
-			return results[0];
+			return { commitDetails: results[0], error: null };
 		}).catch((errorMessage) => {
-			return { hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage };
+			return { commitDetails: null, error: errorMessage };
 		});
 	}
 
-	public getStashDetails(repo: string, commitHash: string, stash: GitCommitStash): Promise<GitCommitDetails> {
+	public getStashDetails(repo: string, commitHash: string, stash: GitCommitStash): Promise<GitCommitDetailsData> {
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
 			this.getDiffNameStatus(repo, stash.baseHash, commitHash),
@@ -214,24 +214,27 @@ export class DataSource {
 					}
 				});
 			}
-			return results[0];
+			return { commitDetails: results[0], error: null };
 		}).catch((errorMessage) => {
-			return { hash: '', parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: errorMessage };
+			return { commitDetails: null, error: errorMessage };
 		});
 	}
 
-	public getUncommittedDetails(repo: string): Promise<GitCommitDetails> {
-		let details: GitCommitDetails = { hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '', fileChanges: [], error: null };
+	public getUncommittedDetails(repo: string): Promise<GitCommitDetailsData> {
 		return Promise.all([
 			this.getDiffNameStatus(repo, 'HEAD', ''),
 			this.getDiffNumStat(repo, 'HEAD', ''),
 			this.getStatus(repo)
 		]).then((results) => {
-			details.fileChanges = generateFileChanges(results[0], results[1], results[2]);
-			return details;
+			return {
+				commitDetails: {
+					hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '',
+					fileChanges: generateFileChanges(results[0], results[1], results[2])
+				},
+				error: null
+			};
 		}).catch((errorMessage) => {
-			details.error = errorMessage;
-			return details;
+			return { commitDetails: null, error: errorMessage };
 		});
 	}
 
@@ -518,7 +521,7 @@ export class DataSource {
 
 	/* Git Action Methods - Branches & Commits */
 
-	public async merge(repo: string, obj: string, type: BranchOrCommit, createNewCommit: boolean, squash: boolean) {
+	public async merge(repo: string, obj: string, actionOn: ActionOn, createNewCommit: boolean, squash: boolean) {
 		let args = ['merge', obj];
 		if (squash) args.push('--squash');
 		else if (createNewCommit) args.push('--no-ff');
@@ -526,20 +529,20 @@ export class DataSource {
 		let mergeStatus = await this.runGitCommand(args, repo);
 		if (mergeStatus === null && squash) {
 			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge ' + type.toLowerCase() + ' \'' + obj + '\''], repo);
+				return this.runGitCommand(['commit', '-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\''], repo);
 			}
 		}
 		return mergeStatus;
 	}
 
-	public rebase(repo: string, obj: string, type: BranchOrCommit, ignoreDate: boolean, interactive: boolean) {
+	public rebase(repo: string, obj: string, actionOn: ActionOn, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
 			return new Promise<ErrorInfo>(resolve => {
 				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
 
 				runGitCommandInNewTerminal(repo, this.gitExecutable.path,
-					'rebase --interactive ' + (type === 'Branch' ? obj.replace(/'/g, '"\'"') : obj),
-					'Git Rebase on "' + (type === 'Branch' ? obj : abbrevCommit(obj)) + '"');
+					'rebase --interactive ' + (actionOn === ActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
+					'Git Rebase on "' + (actionOn === ActionOn.Branch ? obj : abbrevCommit(obj)) + '"');
 				setTimeout(() => resolve(null), 1000);
 			});
 		} else {
@@ -568,8 +571,8 @@ export class DataSource {
 		return this.runGitCommand(['rebase', '--onto', commitHash + '^', commitHash], repo);
 	}
 
-	public resetToCommit(repo: string, commitHash: string, resetMode: GitResetMode) {
-		return this.runGitCommand(['reset', '--' + resetMode, commitHash], repo);
+	public resetToCommit(repo: string, commit: string, resetMode: GitResetMode) {
+		return this.runGitCommand(['reset', '--' + resetMode, commit], repo);
 	}
 
 	public revertCommit(repo: string, commitHash: string, parentIndex: number) {
@@ -668,7 +671,7 @@ export class DataSource {
 				date: parseInt(commitInfo[4]),
 				committer: commitInfo[5],
 				body: lines.slice(1, lastLine + 1).join('\n'),
-				fileChanges: [], error: null
+				fileChanges: []
 			};
 		});
 	}
@@ -1028,6 +1031,11 @@ interface GitCommitData {
 	commits: GitCommitNode[];
 	head: string | null;
 	moreCommitsAvailable: boolean;
+	error: ErrorInfo;
+}
+
+export interface GitCommitDetailsData {
+	commitDetails: GitCommitDetails | null;
 	error: ErrorInfo;
 }
 

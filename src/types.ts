@@ -1,15 +1,5 @@
 /* Git Interfaces / Types */
 
-export interface GitRepoSettings {
-	remotes: GitRepoSettingsRemote[];
-}
-
-export interface GitRepoSettingsRemote {
-	name: string;
-	url: string | null;
-	pushUrl: string | null;
-}
-
 export interface GitCommitNode {
 	hash: string;
 	parents: string[];
@@ -24,13 +14,13 @@ export interface GitCommitNode {
 }
 
 export interface GitCommitTag {
-	name: string;
-	annotated: boolean;
+	readonly name: string;
+	readonly annotated: boolean;
 }
 
 export interface GitCommitRemote {
-	name: string;
-	remote: string | null; // null => remote not found, otherwise => remote name
+	readonly name: string;
+	readonly remote: string | null; // null => remote not found, otherwise => remote name
 }
 
 export interface GitCommitStash {
@@ -48,19 +38,7 @@ export interface GitCommitDetails {
 	committer: string;
 	body: string;
 	fileChanges: GitFileChange[];
-	error: ErrorInfo;
 }
-
-export type GitRepoSet = { [repo: string]: GitRepoState };
-export interface GitRepoState {
-	columnWidths: ColumnWidth[] | null;
-	cdvDivider: number;
-	cdvHeight: number;
-	fileViewType: FileViewType;
-	showRemoteBranches: boolean;
-	hideRemotes: string[];
-}
-export type ColumnWidth = number;
 
 export interface GitFileChange {
 	oldFilePath: string;
@@ -70,6 +48,33 @@ export interface GitFileChange {
 	deletions: number | null;
 }
 
+export const enum GitFileStatus {
+	Added = 'A',
+	Modified = 'M',
+	Deleted = 'D',
+	Renamed = 'R',
+	Untracked = 'U'
+}
+
+export interface GitRepoSettings {
+	readonly remotes: GitRepoSettingsRemote[];
+}
+
+export interface GitRepoSettingsRemote {
+	readonly name: string;
+	readonly url: string | null;
+	readonly pushUrl: string | null;
+}
+
+export const enum GitResetMode {
+	Soft = 'soft',
+	Mixed = 'mixed',
+	Hard = 'hard'
+}
+
+
+/* Git Repo State */
+
 export interface CodeReview {
 	id: string;
 	lastActive: number;
@@ -77,22 +82,17 @@ export interface CodeReview {
 	remainingFiles: string[];
 }
 
-export interface Avatar {
-	image: string;
-	timestamp: number;
-	identicon: boolean;
-}
-export type AvatarCache = { [email: string]: Avatar };
+export type ColumnWidth = number;
 
-export type BranchOrCommit = 'Branch' | 'Commit';
-export type GitResetMode = 'soft' | 'mixed' | 'hard';
+export type GitRepoSet = { [repo: string]: GitRepoState };
 
-export const enum GitFileStatus {
-	Added = 'A',
-	Modified = 'M',
-	Deleted = 'D',
-	Renamed = 'R',
-	Untracked = 'U'
+export interface GitRepoState {
+	columnWidths: ColumnWidth[] | null;
+	cdvDivider: number;
+	cdvHeight: number;
+	fileViewType: FileViewType;
+	showRemoteBranches: boolean;
+	hideRemotes: string[];
 }
 
 
@@ -252,10 +252,10 @@ export interface DialogDefaults {
 		readonly interactive: boolean
 	};
 	readonly resetCommit: {
-		readonly mode: 'soft' | 'mixed' | 'hard'
+		readonly mode: GitResetMode
 	};
 	readonly resetUncommitted: {
-		readonly mode: 'mixed' | 'hard'
+		readonly mode: Exclude<GitResetMode, GitResetMode.Soft>
 	};
 	readonly stashUncommittedChanges: {
 		readonly includeUntracked: boolean
@@ -301,6 +301,11 @@ export interface ResponseWithErrorInfo extends BaseMessage {
 
 export interface ResponseWithMultiErrorInfo extends BaseMessage {
 	readonly errors: ErrorInfo[];
+}
+
+export const enum ActionOn {
+	Branch = 'Branch',
+	Commit = 'Commit'
 }
 
 export type ErrorInfo = string | null; // null => no error, otherwise => error message
@@ -397,9 +402,9 @@ export interface RequestCommitDetails extends RepoRequest {
 	readonly avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	readonly refresh: boolean;
 }
-export interface ResponseCommitDetails extends BaseMessage {
+export interface ResponseCommitDetails extends ResponseWithErrorInfo {
 	readonly command: 'commitDetails';
-	readonly commitDetails: GitCommitDetails;
+	readonly commitDetails: GitCommitDetails | null;
 	readonly avatar: string | null;
 	readonly codeReview: CodeReview | null;
 	readonly refresh: boolean;
@@ -605,13 +610,13 @@ export interface ResponseLoadRepos extends BaseMessage {
 export interface RequestMerge extends RepoRequest {
 	readonly command: 'merge';
 	readonly obj: string;
-	readonly type: BranchOrCommit;
+	readonly actionOn: ActionOn;
 	readonly createNewCommit: boolean;
 	readonly squash: boolean;
 }
 export interface ResponseMerge extends ResponseWithErrorInfo {
 	readonly command: 'merge';
-	readonly type: BranchOrCommit;
+	readonly actionOn: ActionOn;
 }
 
 export interface RequestOpenFile extends RepoRequest {
@@ -682,13 +687,13 @@ export interface ResponsePushTag extends ResponseWithErrorInfo {
 export interface RequestRebase extends RepoRequest {
 	readonly command: 'rebase';
 	readonly obj: string;
-	readonly type: BranchOrCommit;
+	readonly actionOn: ActionOn;
 	readonly ignoreDate: boolean;
 	readonly interactive: boolean;
 }
 export interface ResponseRebase extends ResponseWithErrorInfo {
 	readonly command: 'rebase';
-	readonly type: BranchOrCommit;
+	readonly actionOn: ActionOn;
 	readonly interactive: boolean;
 }
 
@@ -711,7 +716,7 @@ export interface RequestRescanForRepos extends BaseMessage {
 
 export interface RequestResetToCommit extends RepoRequest {
 	readonly command: 'resetToCommit';
-	readonly commitHash: string;
+	readonly commit: string;
 	readonly resetMode: GitResetMode;
 }
 export interface ResponseResetToCommit extends ResponseWithErrorInfo {

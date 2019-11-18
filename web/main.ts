@@ -737,11 +737,11 @@ class GitGraphView {
 			}, {
 				title: 'Merge into current branch' + ELLIPSIS,
 				visible: visibility.merge && this.gitBranchHead !== refName,
-				onClick: () => this.mergeAction(refName, refName, 'Branch', sourceElem)
+				onClick: () => this.mergeAction(refName, refName, GG.ActionOn.Branch, sourceElem)
 			}, {
 				title: 'Rebase current branch on Branch' + ELLIPSIS,
 				visible: visibility.rebase && this.gitBranchHead !== refName,
-				onClick: () => this.rebaseAction(refName, refName, 'Branch', sourceElem)
+				onClick: () => this.rebaseAction(refName, refName, GG.ActionOn.Branch, sourceElem)
 			}, {
 				title: 'Push Branch' + ELLIPSIS,
 				visible: visibility.push && this.gitRemotes.length > 0,
@@ -889,21 +889,21 @@ class GitGraphView {
 			{
 				title: 'Merge into current branch' + ELLIPSIS,
 				visible: visibility.merge,
-				onClick: () => this.mergeAction(hash, abbrevCommit(hash), 'Commit', commitElem)
+				onClick: () => this.mergeAction(hash, abbrevCommit(hash), GG.ActionOn.Commit, commitElem)
 			}, {
 				title: 'Rebase current branch on this Commit' + ELLIPSIS,
 				visible: visibility.rebase,
-				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), 'Commit', commitElem)
+				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), GG.ActionOn.Commit, commitElem)
 			}, {
 				title: 'Reset current branch to this Commit' + ELLIPSIS,
 				visible: visibility.reset,
 				onClick: () => {
 					dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', this.config.dialogDefaults.resetCommit.mode, [
-						{ name: 'Soft - Keep all changes, but reset head', value: 'soft' },
-						{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
-						{ name: 'Hard - Discard all changes', value: 'hard' }
+						{ name: 'Soft - Keep all changes, but reset head', value: GG.GitResetMode.Soft },
+						{ name: 'Mixed - Keep working tree, but reset index', value: GG.GitResetMode.Mixed },
+						{ name: 'Hard - Discard all changes', value: GG.GitResetMode.Hard }
 					], 'Yes, reset', (mode) => {
-						runAction({ command: 'resetToCommit', repo: this.currentRepo, commitHash: hash, resetMode: <GG.GitResetMode>mode }, 'Resetting to Commit');
+						runAction({ command: 'resetToCommit', repo: this.currentRepo, commit: hash, resetMode: <GG.GitResetMode>mode }, 'Resetting to Commit');
 					}, commitElem);
 				}
 			}
@@ -1106,10 +1106,10 @@ class GitGraphView {
 				visible: visibility.reset,
 				onClick: () => {
 					dialog.showSelect('Are you sure you want to reset the <b>uncommitted changes</b> to <b>HEAD</b>?', this.config.dialogDefaults.resetUncommitted.mode, [
-						{ name: 'Mixed - Keep working tree, but reset index', value: 'mixed' },
-						{ name: 'Hard - Discard all changes', value: 'hard' }
+						{ name: 'Mixed - Keep working tree, but reset index', value: GG.GitResetMode.Mixed },
+						{ name: 'Hard - Discard all changes', value: GG.GitResetMode.Hard }
 					], 'Yes, reset', (mode) => {
-						runAction({ command: 'resetToCommit', repo: this.currentRepo, commitHash: 'HEAD', resetMode: <GG.GitResetMode>mode }, 'Resetting uncommitted changes');
+						runAction({ command: 'resetToCommit', repo: this.currentRepo, commit: 'HEAD', resetMode: <GG.GitResetMode>mode }, 'Resetting uncommitted changes');
 					}, commitElem);
 				}
 			}, {
@@ -1166,22 +1166,22 @@ class GitGraphView {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
 	}
 
-	private mergeAction(obj: string, name: string, type: GG.BranchOrCommit, sourceElem: HTMLElement | null) {
-		dialog.showForm('Are you sure you want to merge ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
+	private mergeAction(obj: string, name: string, actionOn: GG.ActionOn, sourceElem: HTMLElement | null) {
+		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
 			{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
 			{ type: 'checkbox', name: 'Squash commits', value: this.config.dialogDefaults.merge.squash }
 		], 'Yes, merge', values => {
-			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, type: type, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Merging ' + type);
+			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, actionOn: actionOn, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Merging ' + actionOn);
 		}, sourceElem);
 	}
 
-	private rebaseAction(obj: string, name: string, type: GG.BranchOrCommit, sourceElem: HTMLElement | null) {
-		dialog.showForm('Are you sure you want to rebase the current branch on ' + type.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
+	private rebaseAction(obj: string, name: string, actionOn: GG.ActionOn, sourceElem: HTMLElement | null) {
+		dialog.showForm('Are you sure you want to rebase the current branch on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
 			{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
 			{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
 		], 'Yes, rebase', values => {
 			let interactive = values[0] === 'checked';
-			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, type: type, ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + type);
+			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, actionOn: actionOn, ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + actionOn);
 		}, sourceElem);
 	}
 
@@ -2073,11 +2073,11 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Clean Untracked Files');
 				break;
 			case 'commitDetails':
-				if (msg.commitDetails.error === null) {
+				if (msg.commitDetails !== null) {
 					gitGraph.showCommitDetails(msg.commitDetails, gitGraph.createFileTree(msg.commitDetails.fileChanges, msg.codeReview), msg.avatar, msg.codeReview, msg.codeReview !== null ? msg.codeReview.lastViewedFile : null, msg.refresh);
 				} else {
 					gitGraph.closeCommitDetails(true);
-					dialog.showError('Unable to load Commit Details', msg.commitDetails.error, null, null, null);
+					dialog.showError('Unable to load Commit Details', msg.error, null, null, null);
 				}
 				break;
 			case 'compareCommits':
@@ -2155,7 +2155,7 @@ window.addEventListener('load', () => {
 				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);
 				break;
 			case 'merge':
-				refreshOrDisplayError(msg.error, 'Unable to Merge ' + msg.type);
+				refreshOrDisplayError(msg.error, 'Unable to Merge ' + msg.actionOn);
 				break;
 			case 'openFile':
 				if (msg.error !== null) {
@@ -2188,7 +2188,7 @@ window.addEventListener('load', () => {
 						gitGraph.refresh(false);
 					}
 				} else {
-					dialog.showError('Unable to Rebase current branch on ' + msg.type, msg.error, null, null, null);
+					dialog.showError('Unable to Rebase current branch on ' + msg.actionOn, msg.error, null, null, null);
 				}
 				break;
 			case 'refresh':

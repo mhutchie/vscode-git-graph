@@ -2,12 +2,12 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
-import { DataSource } from './dataSource';
+import { DataSource, GitCommitDetailsData } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitCommitDetails, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -156,7 +156,7 @@ export class GitGraphView {
 					this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath);
 					break;
 				case 'commitDetails':
-					let data = await Promise.all<GitCommitDetails, string | null>([
+					let data = await Promise.all<GitCommitDetailsData, string | null>([
 						msg.commitHash === UNCOMMITTED
 							? this.dataSource.getUncommittedDetails(msg.repo)
 							: msg.stash === null
@@ -166,7 +166,7 @@ export class GitGraphView {
 					]);
 					this.sendMessage({
 						command: 'commitDetails',
-						commitDetails: data[0],
+						...data[0],
 						avatar: data[1],
 						codeReview: msg.commitHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.commitHash) : null,
 						refresh: msg.refresh
@@ -301,8 +301,8 @@ export class GitGraphView {
 					break;
 				case 'merge':
 					this.sendMessage({
-						command: 'merge', type: msg.type,
-						error: await this.dataSource.merge(msg.repo, msg.obj, msg.type, msg.createNewCommit, msg.squash)
+						command: 'merge', actionOn: msg.actionOn,
+						error: await this.dataSource.merge(msg.repo, msg.obj, msg.actionOn, msg.createNewCommit, msg.squash)
 					});
 					break;
 				case 'openFile':
@@ -349,8 +349,8 @@ export class GitGraphView {
 					break;
 				case 'rebase':
 					this.sendMessage({
-						command: 'rebase', type: msg.type, interactive: msg.interactive,
-						error: await this.dataSource.rebase(msg.repo, msg.obj, msg.type, msg.ignoreDate, msg.interactive)
+						command: 'rebase', actionOn: msg.actionOn, interactive: msg.interactive,
+						error: await this.dataSource.rebase(msg.repo, msg.obj, msg.actionOn, msg.ignoreDate, msg.interactive)
 					});
 					break;
 				case 'renameBranch':
@@ -367,7 +367,7 @@ export class GitGraphView {
 				case 'resetToCommit':
 					this.sendMessage({
 						command: 'resetToCommit',
-						error: await this.dataSource.resetToCommit(msg.repo, msg.commitHash, msg.resetMode)
+						error: await this.dataSource.resetToCommit(msg.repo, msg.commit, msg.resetMode)
 					});
 					break;
 				case 'revertCommit':

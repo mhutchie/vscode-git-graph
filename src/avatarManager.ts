@@ -7,7 +7,6 @@ import { DataSource } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger, maskEmail } from './logger';
-import { AvatarCache } from './types';
 
 export class AvatarManager {
 	private readonly dataSource: DataSource;
@@ -383,6 +382,14 @@ class AvatarRequestQueue {
 	}
 }
 
+export interface Avatar {
+	image: string;
+	timestamp: number;
+	identicon: boolean;
+}
+
+export type AvatarCache = { [email: string]: Avatar };
+
 interface AvatarRequestItem {
 	email: string;
 	repo: string;
@@ -391,15 +398,19 @@ interface AvatarRequestItem {
 	checkAfter: number;
 	attempts: number;
 }
+
 interface GitHubRemoteSource {
 	type: 'github';
 	owner: string;
 	repo: string;
 }
+
 interface GitLabRemoteSource {
 	type: 'gitlab';
 }
+
 interface GravatarRemoteSource {
 	type: 'gravatar';
 }
+
 type RemoteSource = GitHubRemoteSource | GitLabRemoteSource | GravatarRemoteSource;

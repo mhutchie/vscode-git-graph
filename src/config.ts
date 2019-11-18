@@ -11,6 +11,7 @@ import {
 	DefaultColumnVisibility,
 	DialogDefaults,
 	FileViewType,
+	GitResetMode,
 	GraphStyle,
 	RefLabelAlignment,
 	TabIconColourTheme
@@ -145,10 +146,10 @@ class Config {
 				interactive: !!this.config.get('dialog.rebase.launchInteractiveRebase', false)
 			},
 			resetCommit: {
-				mode: resetCommitMode === 'Soft' ? 'soft' : (resetCommitMode === 'Hard' ? 'hard' : 'mixed')
+				mode: resetCommitMode === 'Soft' ? GitResetMode.Soft : (resetCommitMode === 'Hard' ? GitResetMode.Hard : GitResetMode.Mixed)
 			},
 			resetUncommitted: {
-				mode: resetUncommittedMode === 'Hard' ? 'hard' : 'mixed'
+				mode: resetUncommittedMode === 'Hard' ? GitResetMode.Hard : GitResetMode.Mixed
 			},
 			stashUncommittedChanges: {
 				includeUntracked: !!this.config.get('dialog.stashUncommittedChanges.includeUntracked', true)

@@ -120,7 +120,7 @@ class Dialog {
 		this.show(DialogType.Message, html, null, 'Close', null, null, null);
 	}
 
-	public showError(message: string, reason: string | null, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
+	public showError(message: string, reason: GG.ErrorInfo, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
 		this.show(DialogType.Message, '<span class="dialogAlert">' + SVG_ICONS.alert + 'Error: ' + message + '</span>' + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', () => {
 			this.close();
 			if (actioned !== null) actioned();

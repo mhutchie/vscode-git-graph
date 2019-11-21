@@ -1,0 +1,14 @@
+name: 'Update Milestone on Release'
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-milestone-on-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Update Milestone on Release'
+        uses: mhutchie/update-milestone-on-release@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

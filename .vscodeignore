@@ -9,5 +9,4 @@ resources/demo.gif
 src/
 web/
 .gitignore
-azure-pipelines.yml
 tslint.json

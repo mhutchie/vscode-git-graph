@@ -55,47 +55,6 @@ declare global {
 	}
 
 
-	/* Dialog Types */
-
-	interface DialogTextInput {
-		readonly type: 'text';
-		readonly name: string;
-		readonly default: string;
-		readonly placeholder: string | null;
-		readonly info?: string;
-	}
-
-	interface DialogTextRefInput {
-		readonly type: 'text-ref';
-		readonly name: string;
-		readonly default: string;
-		readonly info?: string;
-	}
-
-	interface DialogSelectInput {
-		readonly type: 'select';
-		readonly name: string;
-		readonly options: DialogSelectInputOption[];
-		readonly default: string;
-		readonly info?: string;
-	}
-
-	interface DialogCheckboxInput {
-		readonly type: 'checkbox';
-		readonly name: string;
-		readonly value: boolean;
-		readonly info?: string;
-	}
-
-	interface DialogSelectInputOption {
-		readonly name: string;
-		readonly value: string;
-	}
-
-	type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
-	type DialogInputValue = string | boolean;
-
-
 	/* Commit Details / Comparison View File Tree Types */
 
 	interface FileTreeFile {

@@ -731,7 +731,7 @@ class GitGraphView {
 						});
 					}
 					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Delete Branch', (values) => {
-						runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: values[0] === 'checked', deleteOnRemotes: remotesWithBranch.length > 0 && values[1] === 'checked' ? remotesWithBranch : [] }, 'Deleting Branch');
+						runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: <boolean>values[0], deleteOnRemotes: remotesWithBranch.length > 0 && <boolean>values[1] ? remotesWithBranch : [] }, 'Deleting Branch');
 					}, sourceElem);
 				}
 			}, {
@@ -753,14 +753,15 @@ class GitGraphView {
 
 					if (multipleRemotes) {
 						inputs.unshift({
-							type: 'select', name: 'Push to Remote', default: '0',
+							type: 'select', name: 'Push to Remote',
+							default: (this.gitRemotes.includes('origin') ? this.gitRemotes.indexOf('origin') : 0).toString(),
 							options: this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }))
 						});
 					}
 
 					dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
-						let remote = this.gitRemotes[multipleRemotes ? parseInt(values.shift()!) : 0];
-						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: values[0] === 'checked', force: values[1] === 'checked' }, 'Pushing Branch');
+						let remote = this.gitRemotes[multipleRemotes ? parseInt(<string>values.shift()) : 0];
+						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: <boolean>values[0], force: <boolean>values[1] }, 'Pushing Branch');
 					}, sourceElem);
 				}
 			}
@@ -800,19 +801,19 @@ class GitGraphView {
 					} else if (this.gitRemotes.length === 1) {
 						inputs.push({ type: 'checkbox', name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
 					}
-					dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', values => {
-						let pushToRemote = this.gitRemotes.length > 1 && values[3] !== '-1'
-							? this.gitRemotes[parseInt(values[3])]
-							: this.gitRemotes.length === 1 && values[3] === 'checked'
+					dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
+						let pushToRemote = this.gitRemotes.length > 1 && <string>values[3] !== '-1'
+							? this.gitRemotes[parseInt(<string>values[3])]
+							: this.gitRemotes.length === 1 && <boolean>values[3]
 								? this.gitRemotes[0]
 								: null;
 						runAction({
 							command: 'addTag',
 							repo: this.currentRepo,
-							tagName: values[0],
+							tagName: <string>values[0],
 							commitHash: hash,
-							lightweight: values[1] === 'lightweight',
-							message: values[2],
+							lightweight: <string>values[1] === 'lightweight',
+							message: <string>values[2],
 							pushToRemote: pushToRemote
 						}, 'Adding Tag');
 					}, commitElem);
@@ -824,8 +825,8 @@ class GitGraphView {
 					dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 						{ type: 'text-ref', name: 'Name', default: '' },
 						{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
-					], 'Create Branch', values => {
-						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: values[0], commitHash: hash, checkout: values[1] === 'checked' }, 'Creating Branch');
+					], 'Create Branch', (values) => {
+						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: <string>values[0], commitHash: hash, checkout: <boolean>values[1] }, 'Creating Branch');
 					}, commitElem);
 				}
 			}
@@ -854,8 +855,8 @@ class GitGraphView {
 					inputs.push({ type: 'checkbox', name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
 
 					dialog.showForm('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', inputs, 'Yes, cherry pick', (values) => {
-						let parentIndex = isMerge ? parseInt(values.shift()!) : 0;
-						runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parentIndex, noCommit: values[0] === 'checked' }, 'Cherry picking Commit');
+						let parentIndex = isMerge ? parseInt(<string>values.shift()) : 0;
+						runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parentIndex, noCommit: <boolean>values[0] }, 'Cherry picking Commit');
 					}, commitElem);
 				}
 			}, {
@@ -949,8 +950,8 @@ class GitGraphView {
 					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
 						{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
 						{ type: 'checkbox', name: 'Squash commits', value: false }
-					], 'Yes, pull', values => {
-						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Pulling Branch');
+					], 'Yes, pull', (values) => {
+						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Pulling Branch');
 					}, sourceElem);
 				}
 			}
@@ -978,7 +979,7 @@ class GitGraphView {
 						value: this.config.dialogDefaults.applyStash.reinstateIndex,
 						info: 'Attempt to reinstate the indexed changes, in addition to the working tree\'s changes.'
 					}], 'Yes, apply stash', (values) => {
-						runAction({ command: 'applyStash', repo: this.currentRepo, selector: selector, reinstateIndex: values[0] === 'checked' }, 'Applying Stash');
+						runAction({ command: 'applyStash', repo: this.currentRepo, selector: selector, reinstateIndex: <boolean>values[0] }, 'Applying Stash');
 					}, sourceElem);
 				}
 			}, {
@@ -999,7 +1000,7 @@ class GitGraphView {
 						value: this.config.dialogDefaults.popStash.reinstateIndex,
 						info: 'Attempt to reinstate the indexed changes, in addition to the working tree\'s changes.'
 					}], 'Yes, pop stash', (values) => {
-						runAction({ command: 'popStash', repo: this.currentRepo, selector: selector, reinstateIndex: values[0] === 'checked' }, 'Popping Stash');
+						runAction({ command: 'popStash', repo: this.currentRepo, selector: selector, reinstateIndex: <boolean>values[0] }, 'Popping Stash');
 					}, sourceElem);
 				}
 			}, {
@@ -1067,8 +1068,9 @@ class GitGraphView {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[0] }, 'Pushing Tag');
 						}, sourceElem);
 					} else if (this.gitRemotes.length > 1) {
-						let options = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
-						dialog.showSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote to push the tag to:', '0', options, 'Yes, push', (remoteIndex) => {
+						let defaultRemote = (this.gitRemotes.includes('origin') ? this.gitRemotes.indexOf('origin') : 0).toString();
+						let remoteOptions = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
+						dialog.showSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote to push the tag to:', defaultRemote, remoteOptions, 'Yes, push', (remoteIndex) => {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
 						}, sourceElem);
 					}
@@ -1096,7 +1098,7 @@ class GitGraphView {
 						{ type: 'text', name: 'Message', default: '', placeholder: 'Optional' },
 						{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked, info: 'Include all untracked files in the stash, and then clean them from the working directory.' }
 					], 'Yes, stash', (values) => {
-						runAction({ command: 'pushStash', repo: this.currentRepo, message: values[0], includeUntracked: values[1] === 'checked' }, 'Stashing uncommitted changes');
+						runAction({ command: 'pushStash', repo: this.currentRepo, message: <string>values[0], includeUntracked: <boolean>values[1] }, 'Stashing uncommitted changes');
 					}, commitElem);
 				}
 			}
@@ -1170,8 +1172,8 @@ class GitGraphView {
 		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
 			{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
 			{ type: 'checkbox', name: 'Squash commits', value: this.config.dialogDefaults.merge.squash }
-		], 'Yes, merge', values => {
-			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, actionOn: actionOn, createNewCommit: values[0] === 'checked', squash: values[1] === 'checked' }, 'Merging ' + actionOn);
+		], 'Yes, merge', (values) => {
+			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, actionOn: actionOn, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Merging ' + actionOn);
 		}, sourceElem);
 	}
 
@@ -1179,9 +1181,9 @@ class GitGraphView {
 		dialog.showForm('Are you sure you want to rebase the current branch on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
 			{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
 			{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
-		], 'Yes, rebase', values => {
-			let interactive = values[0] === 'checked';
-			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, actionOn: actionOn, ignoreDate: values[1] === 'checked', interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + actionOn);
+		], 'Yes, rebase', (values) => {
+			let interactive = <boolean>values[0];
+			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, actionOn: actionOn, ignoreDate: <boolean>values[1], interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + actionOn);
 		}, sourceElem);
 	}
 

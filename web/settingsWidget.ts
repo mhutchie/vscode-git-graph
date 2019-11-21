@@ -129,8 +129,8 @@ class SettingsWidget {
 					{ type: 'text', name: 'Fetch URL', default: '', placeholder: null },
 					{ type: 'text', name: 'Push URL', default: '', placeholder: pushUrlPlaceholder },
 					{ type: 'checkbox', name: 'Fetch Immediately', value: true }
-				], 'Add Remote', values => {
-					runAction({ command: 'addRemote', name: values[0], repo: this.repo!, url: values[1], pushUrl: values[2] !== '' ? values[2] : null, fetch: values[3] === 'checked' }, 'Adding Remote');
+				], 'Add Remote', (values) => {
+					runAction({ command: 'addRemote', name: <string>values[0], repo: this.repo!, url: <string>values[1], pushUrl: <string>values[2] !== '' ? <string>values[2] : null, fetch: <boolean>values[3] }, 'Adding Remote');
 				}, null);
 			});
 			addListenerToClass('editRemote', 'click', (e) => {
@@ -139,8 +139,8 @@ class SettingsWidget {
 					{ type: 'text', name: 'Name', default: remote.name, placeholder: null },
 					{ type: 'text', name: 'Fetch URL', default: remote.url !== null ? remote.url : '', placeholder: null },
 					{ type: 'text', name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
-				], 'Save Changes', values => {
-					runAction({ command: 'editRemote', repo: this.repo!, nameOld: remote.name, nameNew: values[0], urlOld: remote.url, urlNew: values[1] !== '' ? values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: values[2] !== '' ? values[2] : null }, 'Saving Changes to Remote');
+				], 'Save Changes', (values) => {
+					runAction({ command: 'editRemote', repo: this.repo!, nameOld: remote.name, nameNew: <string>values[0], urlOld: remote.url, urlNew: <string>values[1] !== '' ? <string>values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: <string>values[2] !== '' ? <string>values[2] : null }, 'Saving Changes to Remote');
 				}, null);
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {

@@ -8,6 +8,44 @@ const enum DialogType {
 	Message
 }
 
+interface DialogTextInput {
+	readonly type: 'text';
+	readonly name: string;
+	readonly default: string;
+	readonly placeholder: string | null;
+	readonly info?: string;
+}
+
+interface DialogTextRefInput {
+	readonly type: 'text-ref';
+	readonly name: string;
+	readonly default: string;
+	readonly info?: string;
+}
+
+interface DialogSelectInput {
+	readonly type: 'select';
+	readonly name: string;
+	readonly options: DialogSelectInputOption[];
+	readonly default: string;
+	readonly info?: string;
+}
+
+interface DialogCheckboxInput {
+	readonly type: 'checkbox';
+	readonly name: string;
+	readonly value: boolean;
+	readonly info?: string;
+}
+
+interface DialogSelectInputOption {
+	readonly name: string;
+	readonly value: string;
+}
+
+type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
+type DialogInputValue = string | boolean;
+
 class Dialog {
 	private elem: HTMLElement | null = null;
 	private source: HTMLElement | null = null;
@@ -33,35 +71,28 @@ class Dialog {
 	}
 
 	public showRefInput(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
-		this.showForm(message, [{ type: 'text-ref', name: '', default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
+		this.showForm(message, [
+			{ type: 'text-ref', name: '', default: defaultValue }
+		], actionName, (values) => actioned(<string>values[0]), sourceElem);
 	}
 
 	public showCheckbox(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
-		this.showForm(message, [{ type: 'checkbox', name: checkboxLabel, value: checkboxValue }], actionName, values => actioned(values[0] === 'checked'), sourceElem);
+		this.showForm(message, [
+			{ type: 'checkbox', name: checkboxLabel, value: checkboxValue }
+		], actionName, (values) => actioned(<boolean>values[0]), sourceElem);
 	}
 
 	public showSelect(message: string, defaultValue: string, options: DialogSelectInputOption[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
-		this.showForm(message, [{ type: 'select', name: '', options: options, default: defaultValue }], actionName, values => actioned(values[0]), sourceElem);
+		this.showForm(message, [
+			{ type: 'select', name: '', options: options, default: defaultValue }
+		], actionName, (values) => actioned(<string>values[0]), sourceElem);
 	}
 
-	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: string[]) => void, sourceElem: HTMLElement | null) {
-		let textRefInput = -1, multiElement = inputs.length > 1;
-		let multiCheckbox = multiElement, infoColumn = false;
-
-		if (multiElement) { // If has multiple elements, then check if they are all checkboxes. If so, then the form is a checkbox multi
-			for (let i = 0; i < inputs.length; i++) {
-				if (inputs[i].type !== 'checkbox') {
-					multiCheckbox = false;
-					break;
-				}
-			}
-		}
-		for (let i = 0; i < inputs.length; i++) {
-			if (inputs[i].info && inputs[i].type !== 'checkbox') {
-				infoColumn = true;
-				break;
-			}
-		}
+	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, sourceElem: HTMLElement | null) {
+		const multiElement = inputs.length > 1;
+		const multiCheckbox = multiElement && inputs.every((input) => input.type === 'checkbox');
+		const infoColumn = inputs.some((input) => input.info && input.type !== 'checkbox');
+		let textRefInput = -1;
 
 		let html = message + '<br><table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">', selectIds: number[] = [];
 		for (let i = 0; i < inputs.length; i++) {
@@ -82,15 +113,10 @@ class Dialog {
 
 		this.show(DialogType.Form, html, actionName, 'Cancel', () => {
 			if (this.elem === null || this.elem.classList.contains(CLASS_DIALOG_NO_INPUT) || this.elem.classList.contains(CLASS_DIALOG_INPUT_INVALID)) return;
-			let values = [];
-			for (let i = 0; i < inputs.length; i++) {
-				let input = inputs[i], elem = <HTMLInputElement>document.getElementById('dialogInput' + i);
-				if (input.type === 'checkbox') {
-					values.push(elem.checked ? 'checked' : 'unchecked');
-				} else {
-					values.push(elem.value);
-				}
-			}
+			let values = inputs.map((input, index) => {
+				const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
+				return input.type === 'checkbox' ? elem.checked : elem.value;
+			});
 			this.close();
 			actioned(values);
 		}, null, sourceElem);

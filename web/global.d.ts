@@ -25,7 +25,7 @@ declare global {
 		hash: string;
 		srcElem: HTMLElement | null;
 		commitDetails: GG.GitCommitDetails | null;
-		fileChanges: GG.GitFileChange[] | null;
+		fileChanges: ReadonlyArray<GG.GitFileChange> | null;
 		fileTree: FileTreeFolder | null;
 		compareWithHash: string | null;
 		compareWithSrcElem: HTMLElement | null;
@@ -41,7 +41,7 @@ declare global {
 		readonly gitBranches: string[];
 		readonly gitBranchHead: string | null;
 		readonly gitRemotes: string[];
-		readonly commits: GG.GitCommitNode[];
+		readonly commits: GG.GitCommit[];
 		readonly commitHead: string | null;
 		readonly avatars: AvatarImageCollection;
 		readonly currentBranches: string[] | null;

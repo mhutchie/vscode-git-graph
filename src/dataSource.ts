@@ -6,7 +6,7 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommitDetails, GitCommitNode, GitCommitStash, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
+import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
@@ -75,7 +75,7 @@ export class DataSource {
 			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 			this.getStashes(repo)
 		]).then(async (results) => {
-			let commits: GitCommit[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i, unsavedChanges = null;
+			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i, unsavedChanges = null;
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
 			if (moreCommitsAvailable) commits.pop();
 
@@ -103,21 +103,12 @@ export class DataSource {
 				}
 			}
 
-			let commitNodes: GitCommitNode[] = [];
+			let commitNodes: Writeable<GitCommit>[] = [];
 			let commitLookup: { [hash: string]: number } = {};
 
 			for (i = 0; i < commits.length; i++) {
 				commitLookup[commits[i].hash] = i;
-				commitNodes.push({
-					hash: commits[i].hash,
-					parents: commits[i].parents,
-					author: commits[i].author,
-					email: commits[i].email,
-					date: commits[i].date,
-					message: commits[i].message,
-					heads: [], tags: [], remotes: [],
-					stash: null
-				});
+				commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null });
 			}
 
 			/* Insert Stashes */
@@ -658,7 +649,7 @@ export class DataSource {
 	}
 
 	private getCommitDetailsBase(repo: string, commitHash: string) {
-		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): GitCommitDetails => {
+		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): Writeable<GitCommitDetails> => {
 			let lines = stdout.split(EOL_REGEX);
 			let lastLine = lines.length - 1;
 			while (lines.length > 0 && lines[lastLine] === '') lastLine--;
@@ -747,13 +738,13 @@ export class DataSource {
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);
-			let gitCommits: GitCommit[] = [];
+			let commits: GitCommitRecord[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(GIT_LOG_SEPARATOR);
 				if (line.length !== 6) break;
-				gitCommits.push({ hash: line[0], parents: line[1] !== '' ? line[1].split(' ') : [], author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
+				commits.push({ hash: line[0], parents: line[1] !== '' ? line[1].split(' ') : [], author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
 			}
-			return gitCommits;
+			return commits;
 		});
 	}
 
@@ -933,7 +924,7 @@ export class DataSource {
 
 // Generates a list of file changes from each diff-tree output
 function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatRecords: DiffNumStatRecord[], status: GitStatusFiles | null) {
-	let fileChanges: GitFileChange[] = [], fileLookup: { [file: string]: number } = {}, i = 0;
+	let fileChanges: Writeable<GitFileChange>[] = [], fileLookup: { [file: string]: number } = {}, i = 0;
 
 	for (i = 0; i < nameStatusRecords.length; i++) {
 		fileLookup[nameStatusRecords[i].newFilePath] = fileChanges.length;
@@ -1000,6 +991,8 @@ function getErrorMessage(error: Error | null, stdoutBuffer: Buffer, stderr: stri
 
 // Types
 
+type Writeable<T> = { -readonly [K in keyof T]: Writeable<T[K]> };
+
 interface DiffNameStatusRecord {
 	type: GitFileStatus;
 	oldFilePath: string;
@@ -1018,7 +1011,7 @@ interface GitBranchData {
 	error: ErrorInfo;
 }
 
-interface GitCommit {
+interface GitCommitRecord {
 	hash: string;
 	parents: string[];
 	author: string;
@@ -1028,7 +1021,7 @@ interface GitCommit {
 }
 
 interface GitCommitData {
-	commits: GitCommitNode[];
+	commits: GitCommit[];
 	head: string | null;
 	moreCommitsAvailable: boolean;
 	error: ErrorInfo;

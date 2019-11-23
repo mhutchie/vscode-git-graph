@@ -319,7 +319,7 @@ class Graph {
 	private availableColours: number[] = [];
 	private maxWidth: number = -1;
 
-	private commits: GG.GitCommitNode[] = [];
+	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
 	private expandedCommitId: number = -1;
 
@@ -364,7 +364,7 @@ class Graph {
 
 	/* Graph Operations */
 
-	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
+	public loadCommits(commits: GG.GitCommit[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.vertices = [];

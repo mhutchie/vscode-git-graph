@@ -83,7 +83,7 @@ const ATTR_ERROR = 'data-error';
 
 /* General Helpers */
 
-function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) {
+function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>, equalElements: (a: T, b: T) => boolean) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
 		if (!equalElements(a[i], b[i])) return false;
@@ -91,7 +91,7 @@ function arraysEqual<T>(a: T[], b: T[], equalElements: (a: T, b: T) => boolean) 
 	return true;
 }
 
-function arraysStrictlyEqual<T>(a: T[], b: T[]) {
+function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
 		if (a[i] !== b[i]) return false;

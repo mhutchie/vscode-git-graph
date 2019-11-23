@@ -3,7 +3,7 @@ class GitGraphView {
 	private gitBranches: string[] = [];
 	private gitBranchHead: string | null = null;
 	private gitRemotes: string[] = [];
-	private commits: GG.GitCommitNode[] = [];
+	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
 	private avatars: AvatarImageCollection = {};
@@ -226,7 +226,7 @@ class GitGraphView {
 		}
 	}
 
-	public loadCommits(commits: GG.GitCommitNode[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
+	public loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
 		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
@@ -1511,7 +1511,7 @@ class GitGraphView {
 		this.renderCommitDetailsView(refresh);
 	}
 
-	public createFileTree(gitFiles: GG.GitFileChange[], codeReview: GG.CodeReview | null) {
+	public createFileTree(gitFiles: ReadonlyArray<GG.GitFileChange>, codeReview: GG.CodeReview | null) {
 		let contents: FileTreeFolderContents = {}, i, j, path, absPath, cur: FileTreeFolder;
 		let files: FileTreeFolder = { type: 'folder', name: '', folderPath: '', contents: contents, open: true, reviewed: true };
 
@@ -1589,7 +1589,7 @@ class GitGraphView {
 		}
 	}
 
-	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: GG.GitFileChange[], fileTree: FileTreeFolder, codeReview: GG.CodeReview | null, lastViewedFile: string | null, refresh: boolean) {
+	public showCommitComparison(commitHash: string, compareWithHash: string, fileChanges: ReadonlyArray<GG.GitFileChange>, fileTree: FileTreeFolder, codeReview: GG.CodeReview | null, lastViewedFile: string | null, refresh: boolean) {
 		let expandedCommit = this.expandedCommit;
 		if (expandedCommit === null || expandedCommit.srcElem === null || expandedCommit.compareWithSrcElem === null || expandedCommit.hash !== commitHash || expandedCommit.compareWithHash !== compareWithHash) return;
 		expandedCommit.commitDetails = null;
@@ -2262,13 +2262,13 @@ window.addEventListener('load', () => {
 
 /* File Tree Methods (for the Commit Details & Comparison Views) */
 
-function generateFileViewHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null, type: GG.FileViewType) {
+function generateFileViewHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, type: GG.FileViewType) {
 	return type === GG.FileViewType.List
 		? generateFileListHtml(folder, gitFiles, lastViewedFile)
 		: generateFileTreeHtml(folder, gitFiles, lastViewedFile);
 }
 
-function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
+function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null) {
 	let html = (folder.name !== '' ? '<span class="fileTreeFolder' + (folder.reviewed ? '' : ' pendingReview') + '" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(folder.name) + '</span></span>' : '') + '<ul class="fileTreeFolderContents' + (!folder.open ? ' hidden' : '') + '">';
 	let keys = sortFolderKeys(folder);
 	for (let i = 0; i < keys.length; i++) {
@@ -2282,7 +2282,7 @@ function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange
 	return html + '</ul>';
 }
 
-function generateFileListHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
+function generateFileListHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null) {
 	const sortLeaves = (folder: FileTreeFolder, folderPath: string) => {
 		let keys = sortFolderKeys(folder);
 		let items: { relPath: string, leaf: FileTreeLeaf }[] = [];
@@ -2305,7 +2305,7 @@ function generateFileListHtml(folder: FileTreeFolder, gitFiles: GG.GitFileChange
 	return '<ul class="fileTreeFolderContents">' + html + '</ul>';
 }
 
-function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: GG.GitFileChange[], lastViewedFile: string | null) {
+function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null) {
 	let encodedName = encodeURIComponent(name), escapedName = escapeHtml(name);
 	if (leaf.type === 'file') {
 		let fileTreeFile = gitFiles[leaf.index];
@@ -2429,7 +2429,7 @@ function updateFileTreeHtmlFileReviewed(elem: HTMLElement, folder: FileTreeFolde
 	update(elem, folder);
 }
 
-function getFilesInTree(folder: FileTreeFolder, gitFiles: GG.GitFileChange[]) {
+function getFilesInTree(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>) {
 	let files: string[] = [];
 	const scanFolder = (folder: FileTreeFolder) => {
 		let keys = Object.keys(folder.contents);
@@ -2463,7 +2463,7 @@ function getChildByPathSegment(folder: FileTreeFolder, pathSeg: string) {
 
 /* Miscellaneous Helper Methods */
 
-function haveFilesChanged(oldFiles: GG.GitFileChange[] | null, newFiles: GG.GitFileChange[] | null) {
+function haveFilesChanged(oldFiles: ReadonlyArray<GG.GitFileChange> | null, newFiles: ReadonlyArray<GG.GitFileChange> | null) {
 	if ((oldFiles === null) !== (newFiles === null)) {
 		return true;
 	} else if (oldFiles === null && newFiles === null) {
@@ -2576,14 +2576,14 @@ function showTagDetailsDialog(tagName: string, tagHash: string, commitHash: stri
 	dialog.showMessage(html);
 }
 
-function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
-	let headLabels: { name: string; remotes: string[] }[] = [], headLookup: { [name: string]: number } = {}, remoteLabels: GG.GitCommitRemote[];
+function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG.GitCommitRemote>) {
+	let headLabels: { name: string; remotes: string[] }[] = [], headLookup: { [name: string]: number } = {}, remoteLabels: ReadonlyArray<GG.GitCommitRemote>;
 	for (let i = 0; i < heads.length; i++) {
 		headLabels.push({ name: heads[i], remotes: [] });
 		headLookup[heads[i]] = i;
 	}
 	if (initialState.config.combineLocalAndRemoteBranchLabels) {
-		remoteLabels = [];
+		let remainingRemoteLabels = [];
 		for (let i = 0; i < remotes.length; i++) {
 			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known
 				let branchName = remotes[i].name.substring(remotes[i].remote!.length + 1);
@@ -2592,8 +2592,9 @@ function getBranchLabels(heads: string[], remotes: GG.GitCommitRemote[]) {
 					continue;
 				}
 			}
-			remoteLabels.push(remotes[i]);
+			remainingRemoteLabels.push(remotes[i]);
 		}
+		remoteLabels = remainingRemoteLabels;
 	} else {
 		remoteLabels = remotes;
 	}

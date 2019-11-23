@@ -1,16 +1,16 @@
 /* Git Interfaces / Types */
 
-export interface GitCommitNode {
-	hash: string;
-	parents: string[];
-	author: string;
-	email: string;
-	date: number;
-	message: string;
-	heads: string[];
-	tags: GitCommitTag[];
-	remotes: GitCommitRemote[];
-	stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
+export interface GitCommit {
+	readonly hash: string;
+	readonly parents: ReadonlyArray<string>;
+	readonly author: string;
+	readonly email: string;
+	readonly date: number;
+	readonly message: string;
+	readonly heads: ReadonlyArray<string>;
+	readonly tags: ReadonlyArray<GitCommitTag>;
+	readonly remotes: ReadonlyArray<GitCommitRemote>;
+	readonly stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
 }
 
 export interface GitCommitTag {
@@ -30,22 +30,22 @@ export interface GitCommitStash {
 }
 
 export interface GitCommitDetails {
-	hash: string;
-	parents: string[];
-	author: string;
-	email: string;
-	date: number;
-	committer: string;
-	body: string;
-	fileChanges: GitFileChange[];
+	readonly hash: string;
+	readonly parents: ReadonlyArray<string>;
+	readonly author: string;
+	readonly email: string;
+	readonly date: number;
+	readonly committer: string;
+	readonly body: string;
+	readonly fileChanges: ReadonlyArray<GitFileChange>;
 }
 
 export interface GitFileChange {
-	oldFilePath: string;
-	newFilePath: string;
-	type: GitFileStatus;
-	additions: number | null;
-	deletions: number | null;
+	readonly oldFilePath: string;
+	readonly newFilePath: string;
+	readonly type: GitFileStatus;
+	readonly additions: number | null;
+	readonly deletions: number | null;
 }
 
 export const enum GitFileStatus {
@@ -590,7 +590,7 @@ export interface RequestLoadCommits extends RepoRequest {
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';
-	readonly commits: GitCommitNode[];
+	readonly commits: GitCommit[];
 	readonly head: string | null;
 	readonly moreCommitsAvailable: boolean;
 	readonly hard: boolean;

@@ -11,7 +11,7 @@ interface FindWidgetState {
 
 class FindWidget {
 	private readonly view: GitGraphView;
-	private commits: GG.GitCommitNode[] = [];
+	private commits: GG.GitCommit[] = [];
 	private text: string = '';
 	private isCaseSensitive: boolean = false;
 	private isRegex: boolean = false;
@@ -114,7 +114,7 @@ class FindWidget {
 		this.view.saveState();
 	}
 
-	public update(commits: GG.GitCommitNode[]) {
+	public update(commits: GG.GitCommit[]) {
 		this.commits = commits;
 		if (this.visible) this.findMatches(this.getCurrentHash(), false);
 	}

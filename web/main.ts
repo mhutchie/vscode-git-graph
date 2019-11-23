@@ -176,15 +176,10 @@ class GitGraphView {
 
 		// Configure current branches
 
-		let globPatterns = [];
-		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
-			globPatterns.push(this.config.customBranchGlobPatterns[i].glob);
-		}
-
 		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			let i = 0;
+			let i = 0, globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
 			while (i < this.currentBranches.length) {
-				if (branchOptions.indexOf(this.currentBranches[i]) === -1 && globPatterns.indexOf(this.currentBranches[i]) === -1) {
+				if (!branchOptions.includes(this.currentBranches[i]) && !globPatterns.includes(this.currentBranches[i])) {
 					this.currentBranches.splice(i, 1);
 				} else {
 					i++;
@@ -202,7 +197,7 @@ class GitGraphView {
 		// Set up branch dropdown options
 		let options: DropdownOption[] = [{ name: 'Show All', value: SHOW_ALL_BRANCHES }];
 		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
-			options.push({ name: 'Glob: ' + escapeHtml(this.config.customBranchGlobPatterns[i].name), value: this.config.customBranchGlobPatterns[i].glob });
+			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
 		}
 		for (let i = 0; i < this.gitBranches.length; i++) {
 			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });

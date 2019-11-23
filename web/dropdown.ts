@@ -86,7 +86,7 @@ class Dropdown {
 		this.numSelected = 0;
 		let selectedOption = -1, isSelected;
 		for (let i = 0; i < options.length; i++) {
-			isSelected = optionsSelected.indexOf(options[i].value) > -1;
+			isSelected = optionsSelected.includes(options[i].value);
 			this.optionsSelected[i] = isSelected;
 			if (isSelected) {
 				selectedOption = i;
@@ -110,7 +110,11 @@ class Dropdown {
 
 	private render() {
 		this.elem.classList.add('loaded');
-		this.currentValueElem.innerHTML = this.getCurrentValueText();
+
+		const curValueText = this.getCurrentValueText();
+		this.currentValueElem.title = curValueText;
+		this.currentValueElem.innerHTML = escapeHtml(curValueText);
+
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
 			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '">' +

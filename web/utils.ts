@@ -136,31 +136,132 @@ function unescapeHtml(str: string) {
 
 /* Formatters */
 
-function formatText(str: string) {
-	let urlRegexp = /https?:\/\/\S+[^,.?!'":;\s]/gu, match: RegExpExecArray | null, matchEnd = 0, outStr = '';
-	while (match = urlRegexp.exec(str)) {
-		if (matchEnd !== match.index) {
-			// Output the text before the url match
-			outStr += escapeHtml(substituteEmojis(str.substring(matchEnd, match.index)));
+interface FormatTextConfig {
+	findUrls: boolean;
+	issueLinking: { regexp: RegExp, url: string } | null;
+}
+
+function getFormatTextConfig(issueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean): FormatTextConfig {
+	let issueLinking = null;
+	if (issueLinkingConfig !== null) {
+		try {
+			issueLinking = { regexp: new RegExp(issueLinkingConfig.issue, 'gu'), url: issueLinkingConfig.url };
+		} catch (e) {
+			issueLinking = null;
 		}
-		matchEnd = urlRegexp.lastIndex;
+	}
+
+	return { findUrls: findUrls, issueLinking: issueLinking };
+}
+
+const enum ParsedTextType {
+	Plain,
+	Html
+}
+
+interface ParsedText {
+	type: ParsedTextType;
+	str: string;
+}
+
+function formatText(str: string, config: FormatTextConfig) {
+	let parsed: ParsedText[] = [{ type: ParsedTextType.Plain, str: str }];
+
+	if (config.findUrls) {
+		// Detect URL's
+		parsed = findUrls(parsed[0]);
+	}
+
+	if (config.issueLinking !== null) {
+		// Detect Issue Links
+		let tmpParsed: ParsedText[] = [];
+		for (let i = 0; i < parsed.length; i++) {
+			if (parsed[i].type === ParsedTextType.Plain) {
+				tmpParsed.push(...findIssueLinks(parsed[i], config.issueLinking));
+			} else {
+				tmpParsed.push(parsed[i]);
+			}
+		}
+		parsed = tmpParsed;
+	}
+
+	// Produce the output string
+	let outputStr = '';
+	for (let i = 0; i < parsed.length; i++) {
+		outputStr += parsed[i].type === ParsedTextType.Plain
+			? escapeHtml(substituteEmojis(parsed[i].str))
+			: parsed[i].str;
+	}
+	return outputStr;
+}
+
+function findUrls(input: ParsedText) {
+	let urlRegExp = /https?:\/\/\S+[^,.?!'":;\s]/gu;
+	let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
+	while (match = urlRegExp.exec(input.str)) {
+		if (matchEnd !== match.index) {
+			// Append the text between the end of the last match, and the start of this match
+			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+		}
 
 		// Correct urls which are enclosed with: (), [], {} or <>
 		let url = match[0];
 		let suffix = url.substring(url.length - 1);
-		if (match.index > 0 && typeof ENCLOSING_GROUPS[suffix] === 'string' && str.substring(match.index - 1, match.index) === ENCLOSING_GROUPS[suffix]) {
+		if (match.index > 0 && typeof ENCLOSING_GROUPS[suffix] === 'string' && input.str.substring(match.index - 1, match.index) === ENCLOSING_GROUPS[suffix]) {
 			url = url.substring(0, url.length - 1);
-		} else {
-			suffix = '';
+			urlRegExp.lastIndex--;
 		}
 
 		let escapedUrl = escapeHtml(url);
-		// Output the detected url
-		outStr += '<a href="' + escapedUrl + '" target="_blank">' + escapedUrl + '</a>' + escapeHtml(suffix);
+		parsed.push({ type: ParsedTextType.Html, str: '<a class="externalUrl" href="' + escapedUrl + '" target="_blank">' + escapedUrl + '</a>' });
+		matchEnd = urlRegExp.lastIndex;
 	}
 
-	// Return the output string, followed by any text after the last match
-	return outStr + escapeHtml(substituteEmojis(str.substring(matchEnd)));
+	if (matchEnd === 0) {
+		// No matches were found, return the input ParsedText
+		return [input];
+	}
+
+	if (matchEnd !== input.str.length) {
+		// Append the text between the end of the last match, and the end of the string
+		parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
+	}
+
+	return parsed;
+}
+
+function findIssueLinks(input: ParsedText, config: { regexp: RegExp, url: string }) {
+	let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
+	config.regexp.lastIndex = 0;
+	while (match = config.regexp.exec(input.str)) {
+		if (match[0].length === 0) {
+			// Zero length match, return the input ParsedText
+			return [input];
+		}
+
+		if (matchEnd !== match.index) {
+			// Append the text between the end of the last match, and the start of this match
+			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+		}
+
+		parsed.push({
+			type: ParsedTextType.Html,
+			str: '<a class="externalUrl" href="' + escapeHtml(match.length > 1 ? config.url.replace('$1', match[1]) : config.url) + '" target="_blank">' + escapeHtml(match[0]) + '</a>'
+		});
+		matchEnd = config.regexp.lastIndex;
+	}
+
+	if (matchEnd === 0) {
+		// No matches were found, return the input ParsedText
+		return [input];
+	}
+
+	if (matchEnd !== input.str.length) {
+		// Append the text between the end of the last match, and the end of the string
+		parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
+	}
+
+	return parsed;
 }
 
 function substituteEmojis(str: string) {

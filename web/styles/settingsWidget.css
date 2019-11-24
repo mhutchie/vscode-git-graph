@@ -1,10 +1,10 @@
 .settingsWidget{
 	display:block;
 	position:fixed;
-	top:-108px;
+	top:-158px;
 	right:28px;
 	width:400px;
-	min-height:96px;
+	min-height:146px;
 	padding:0 10px 4px 10px;
 	z-index:31;
 	background-color:var(--vscode-editorWidget-background);
@@ -15,6 +15,9 @@
 	fill:var(--vscode-editorSuggestWidget-foreground);
 	fill-opacity:0.7;
 	user-select:none;
+	overflow-x:hidden;
+	overflow-y:auto;
+	max-height:90vh;
 }
 .settingsWidget.active{
 	top:0;
@@ -23,19 +26,24 @@
 	transition:top .2s linear;
 }
 
+.settingsWidget .settingsSection{
+	position:relative;
+	padding:6px;
+}
+
 .settingsWidget h2{
-	margin:7px 10px;
+	margin:8px 10px;
 	padding:0;
-	font-size:15px;
-	line-height:20px;
+	font-size:16px;
+	line-height:24px;
 	text-align:center;
 }
 .settingsWidget h3{
 	position:relative;
 	margin:5px 0;
-	padding:10px 0 0 0;
-	font-size:14px;
-	line-height:18px;
+	padding:0;
+	font-size:15px;
+	line-height:20px;
 	text-align:center;
 }
 
@@ -43,7 +51,8 @@
 	width:100%;
 	border-collapse:collapse;
 }
-.settingsWidget table tr.lineAbove td:before, .settingsWidget h3:before{
+
+.settingsWidget table tr.lineAbove td:before, .settingsWidget .settingsSection:before, .settingsWidget .settingsSectionButtons.lineAbove:before{
 	content:'';
 	position:absolute;
 	display:block;
@@ -54,6 +63,10 @@
 	background-color:var(--vscode-editorSuggestWidget-foreground);
 	opacity:0.3;
 }
+.settingsWidget table tr.lineAbove td:before, .settingsWidget .settingsSectionButtons.lineAbove:before{
+	opacity:0.15;
+}
+
 .settingsWidget table th, .settingsWidget table td{
 	position:relative;
 	text-align:center;
@@ -69,10 +82,10 @@
 .settingsWidget table tr.lineAbove td{
 	padding-top:3px;
 }
-.settingsWidget table td.remoteName{
+.settingsWidget table td.left{
 	text-align:left;
 }
-.settingsWidget table td.remoteUrl{
+.settingsWidget table td.leftWithEllipsis{
 	width:100%;
 	max-width:0;
 	overflow:hidden;
@@ -118,16 +131,39 @@
 	height:16px !important;
 }
 
-#settingsAddRemote{
+.settingsSectionText{
+	display:inline-block;
+	text-align:center;
+}
+
+.settingsSectionButtons{
+	position:relative;
+	width:100%;
+	padding:2px 0;
+	text-align:center;
+}
+
+.settingsSectionButtons > div{
+	display:inline-block;
 	line-height:24px;
 	cursor:pointer;
+	padding-right:6px;
 }
-#settingsAddRemote svg{
+
+#settingsAddRemote svg, #editIssueLinking svg{
 	vertical-align:top;
 	margin:6px;
 	width:12px !important;
 	height:12px !important;
+}
+#settingsAddRemote svg, #editIssueLinking.addIssueLinking svg{
 	transform:rotate(45deg);
+}
+#removeIssueLinking svg{
+	vertical-align:top;
+	width:14px !important;
+	height:14px !important;
+	margin:5px;
 }
 
 #settingsLoading{
@@ -162,7 +198,7 @@
 	position:absolute;
 	width:24px;
 	height:24px;
-	top:5px;
+	top:8px;
 	right:10px;
 	cursor:pointer;
 	z-index:33;
@@ -175,7 +211,7 @@
 	height:16px !important;
 }
 
-#settingsAddRemote:hover svg, .settingsWidget .hideRemoteBtn:hover svg, .settingsWidget .remoteBtns div:hover svg, #settingsClose:hover{
+.settingsSectionButtons > div:hover svg, .settingsWidget .hideRemoteBtn:hover svg, .settingsWidget .remoteBtns div:hover svg, #settingsClose:hover{
 	fill-opacity:1;
 }
 .settingsWidget.loading #settingsContent{

@@ -86,11 +86,17 @@ export type ColumnWidth = number;
 
 export type GitRepoSet = { [repo: string]: GitRepoState };
 
+export interface IssueLinkingConfig {
+	issue: string;
+	url: string;
+}
+
 export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
 	fileViewType: FileViewType;
+	issueLinkingConfig: IssueLinkingConfig | null;
 	showRemoteBranches: boolean;
 	hideRemotes: string[];
 }

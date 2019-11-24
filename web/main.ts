@@ -95,7 +95,7 @@ class GitGraphView {
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
-				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes);
+				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig);
 			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
@@ -117,7 +117,7 @@ class GitGraphView {
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
-			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo].hideRemotes, true);
+			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, true);
 		});
 	}
 
@@ -464,6 +464,13 @@ class GitGraphView {
 		}
 	}
 
+	public saveIssueLinkingConfig(repo: string, config: GG.IssueLinkingConfig | null) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].issueLinkingConfig = config;
+			this.saveRepoState();
+		}
+	}
+
 
 	/* Renderers */
 
@@ -484,7 +491,12 @@ class GitGraphView {
 	}
 
 	private renderTable() {
-		let commit, colVisibility = this.getColumnVisibility(), currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead, vertexColours = this.graph.getVertexColours(), widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
+		const colVisibility = this.getColumnVisibility();
+		const currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead;
+		const vertexColours = this.graph.getVertexColours();
+		const widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
+		const formatTextConfig = getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, false);
+
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
@@ -492,8 +504,11 @@ class GitGraphView {
 			'</tr>';
 
 		for (let i = 0; i < this.commits.length; i++) {
-			commit = this.commits[i];
-			let refBranches = '', refTags = '', message = escapeHtml(substituteEmojis(commit.message)), date = formatShortDate(commit.date), j, k, refName, remoteName, refActive, refHtml, branchLabels = getBranchLabels(commit.heads, commit.remotes);
+			let commit = this.commits[i];
+			let message = formatText(commit.message, formatTextConfig);
+			let date = formatShortDate(commit.date);
+			let branchLabels = getBranchLabels(commit.heads, commit.remotes);
+			let refBranches = '', refTags = '', j, k, refName, remoteName, refActive, refHtml;
 
 			for (j = 0; j < branchLabels.heads.length; j++) {
 				refName = escapeHtml(branchLabels.heads[j].name);
@@ -593,6 +608,7 @@ class GitGraphView {
 		});
 
 		addListenerToClass('commit', 'click', (e: Event) => {
+			if ((<Element>e.target).className === 'externalUrl') return;
 			const commitElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
 
 			if (this.expandedCommit !== null) {
@@ -692,6 +708,16 @@ class GitGraphView {
 		this.refreshBtnElem.title = enabled ? 'Refresh' : 'Refreshing';
 		this.refreshBtnElem.innerHTML = enabled ? SVG_ICONS.refresh : SVG_ICONS.loading;
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
+	}
+
+	public renderTagDetails(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
+		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
+		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
+		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
+		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
+		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
+		html += formatText(message, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true)).replace(/\n/g, '<br>') + '</span>';
+		dialog.showMessage(html);
 	}
 
 
@@ -1642,7 +1668,7 @@ class GitGraphView {
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
 					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';
 					html += '</span></span><br><br>';
-					html += formatText(commitDetails.body).replace(/\n/g, '<br>');
+					html += formatText(commitDetails.body, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true)).replace(/\n/g, '<br>');
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}
@@ -2209,7 +2235,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'tagDetails':
 				if (msg.error === null) {
-					showTagDetailsDialog(msg.tagName, msg.tagHash, msg.commitHash, msg.name, msg.email, msg.date, msg.message);
+					gitGraph.renderTagDetails(msg.tagName, msg.tagHash, msg.commitHash, msg.name, msg.email, msg.date, msg.message);
 				} else {
 					dialog.showError('Unable to retrieve Tag Details', msg.error, null, null, null);
 				}
@@ -2559,16 +2585,6 @@ function getRepoDropdownOptions(repos: string[]) {
 function runAction(msg: GG.RequestMessage, action: string) {
 	dialog.showActionRunning(action);
 	sendMessage(msg);
-}
-
-function showTagDetailsDialog(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
-	let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
-	html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
-	html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
-	html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
-	html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
-	html += formatText(message).replace(/\n/g, '<br>') + '</span>';
-	dialog.showMessage(html);
 }
 
 function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG.GitCommitRemote>) {

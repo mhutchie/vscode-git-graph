@@ -17,6 +17,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	cdvDivider: 0.5,
 	cdvHeight: 250,
 	fileViewType: FileViewType.Default,
+	issueLinkingConfig: null,
 	showRemoteBranches: true,
 	hideRemotes: []
 };

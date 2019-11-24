@@ -815,6 +815,10 @@ body.tagLabelsRightAligned .gitRef.tag{
 	background-color:rgba(128,128,128,0.2);
 }
 
+a:focus{
+	outline-color:var(--vscode-focusBorder);
+}
+
 
 /* Checkboxes */
 

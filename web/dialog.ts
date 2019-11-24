@@ -88,13 +88,13 @@ class Dialog {
 		], actionName, (values) => actioned(<string>values[0]), sourceElem);
 	}
 
-	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, sourceElem: HTMLElement | null) {
+	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, sourceElem: HTMLElement | null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
 		const multiCheckbox = multiElement && inputs.every((input) => input.type === 'checkbox');
 		const infoColumn = inputs.some((input) => input.info && input.type !== 'checkbox');
 		let textRefInput = -1;
 
-		let html = message + '<br><table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">', selectIds: number[] = [];
+		let html = message + (includeLineBreak ? '<br>' : '') + '<table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">', selectIds: number[] = [];
 		for (let i = 0; i < inputs.length; i++) {
 			const input = inputs[i], infoHtml = input.info ? '<span class="dialogInfo" title="' + escapeHtml(input.info) + '">' + SVG_ICONS.info + '</span>' : '';
 			html += '<tr' + (input.type !== 'checkbox' ? ' class="largeField"' : '') + '>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '');

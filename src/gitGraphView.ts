@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { copyFilePathToClipboard, copyToClipboard, getNonce, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -303,6 +303,12 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'merge', actionOn: msg.actionOn,
 						error: await this.dataSource.merge(msg.repo, msg.obj, msg.actionOn, msg.createNewCommit, msg.squash)
+					});
+					break;
+				case 'openExtensionSettings':
+					this.sendMessage({
+						command: 'openExtensionSettings',
+						error: await openExtensionSettings()
 					});
 					break;
 				case 'openFile':

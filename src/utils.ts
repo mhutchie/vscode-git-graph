@@ -85,6 +85,13 @@ export function copyToClipboard(text: string): Thenable<ErrorInfo> {
 	);
 }
 
+export function openExtensionSettings(): Thenable<ErrorInfo> {
+	return vscode.commands.executeCommand('workbench.action.openSettings', '@ext:mhutchie.git-graph').then(
+		() => null,
+		() => 'Visual Studio Code was unable to open the Git Graph Extension Settings.'
+	);
+}
+
 export function openFile(repo: string, filePath: string) {
 	return new Promise<ErrorInfo>(resolve => {
 		let p = path.join(repo, filePath);

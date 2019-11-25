@@ -2180,10 +2180,11 @@ window.addEventListener('load', () => {
 			case 'merge':
 				refreshOrDisplayError(msg.error, 'Unable to Merge ' + msg.actionOn);
 				break;
+			case 'openExtensionSettings':
+				finishOrDisplayError(msg.error, 'Unable to Open Extension Settings');
+				break;
 			case 'openFile':
-				if (msg.error !== null) {
-					dialog.showError('Unable to Open File', msg.error, null, null, null);
-				}
+				finishOrDisplayError(msg.error, 'Unable to Open File');
 				break;
 			case 'popStash':
 				refreshOrDisplayError(msg.error, 'Unable to Pop Stash');
@@ -2272,9 +2273,7 @@ window.addEventListener('load', () => {
 		}
 	}
 	function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
-		if (error === null) {
-			dialog.closeActionRunning();
-		} else {
+		if (error !== null) {
 			dialog.showError(errorMessage, error, null, null, null);
 		}
 	}

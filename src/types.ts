@@ -625,6 +625,13 @@ export interface ResponseMerge extends ResponseWithErrorInfo {
 	readonly actionOn: ActionOn;
 }
 
+export interface RequestOpenExtensionSettings extends BaseMessage {
+	readonly command: 'openExtensionSettings';
+}
+export interface ResponseOpenExtensionSettings extends ResponseWithErrorInfo {
+	readonly command: 'openExtensionSettings';
+}
+
 export interface RequestOpenFile extends RepoRequest {
 	readonly command: 'openFile';
 	readonly filePath: string;
@@ -824,6 +831,7 @@ export type RequestMessage =
 	| RequestLoadRepoInfo
 	| RequestLoadRepos
 	| RequestMerge
+	| RequestOpenExtensionSettings
 	| RequestOpenFile
 	| RequestPopStash
 	| RequestPruneRemote
@@ -871,6 +879,7 @@ export type ResponseMessage =
 	| ResponseLoadRepoInfo
 	| ResponseLoadRepos
 	| ResponseMerge
+	| ResponseOpenExtensionSettings
 	| ResponseOpenFile
 	| ResponsePopStash
 	| ResponsePruneRemote

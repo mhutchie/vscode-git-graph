@@ -159,11 +159,14 @@
 #settingsAddRemote svg, #editIssueLinking.addIssueLinking svg{
 	transform:rotate(45deg);
 }
-#removeIssueLinking svg{
+#removeIssueLinking svg, #openExtensionSettings svg{
 	vertical-align:top;
 	width:14px !important;
 	height:14px !important;
 	margin:5px;
+}
+#openExtensionSettings svg{
+	margin-top:6px;
 }
 
 #settingsLoading{

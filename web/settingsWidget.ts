@@ -137,6 +137,9 @@ class SettingsWidget {
 			}
 			html += '</div>';
 
+			html += '<div class="settingsSection"><h3>Extension Settings</h3>';
+			html += '<div class="settingsSectionButtons"><div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div></div></div>';
+
 			this.contentsElem.innerHTML = html;
 
 			document.getElementById('settingsAddRemote')!.addEventListener('click', () => {
@@ -202,6 +205,9 @@ class SettingsWidget {
 				});
 			}
 
+			document.getElementById('openExtensionSettings')!.addEventListener('click', () => {
+				sendMessage({ command: 'openExtensionSettings' });
+			});
 		}
 		alterClass(this.widgetElem, CLASS_LOADING, this.loading);
 		this.loadingElem.innerHTML = this.loading ? '<span>' + SVG_ICONS.loading + 'Loading ...</span>' : '';

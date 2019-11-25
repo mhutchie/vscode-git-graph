@@ -26,11 +26,6 @@
 	transition:top .2s linear;
 }
 
-.settingsWidget .settingsSection{
-	position:relative;
-	padding:6px;
-}
-
 .settingsWidget h2{
 	margin:8px 10px;
 	padding:0;
@@ -38,7 +33,16 @@
 	line-height:24px;
 	text-align:center;
 }
-.settingsWidget h3{
+
+.settingsSection{
+	position:relative;
+	padding:6px;
+}
+.settingsSection.centered{
+	text-align:center;
+}
+
+.settingsSection h3{
 	position:relative;
 	margin:5px 0;
 	padding:0;
@@ -47,12 +51,12 @@
 	text-align:center;
 }
 
-.settingsWidget table{
+.settingsSection table{
 	width:100%;
 	border-collapse:collapse;
 }
 
-.settingsWidget table tr.lineAbove td:before, .settingsWidget .settingsSection:before, .settingsWidget .settingsSectionButtons.lineAbove:before{
+.settingsSection:before, .settingsSection table tr.lineAbove td:before, .settingsSection .settingsSectionButtons.lineAbove:before{
 	content:'';
 	position:absolute;
 	display:block;
@@ -63,29 +67,29 @@
 	background-color:var(--vscode-editorSuggestWidget-foreground);
 	opacity:0.3;
 }
-.settingsWidget table tr.lineAbove td:before, .settingsWidget .settingsSectionButtons.lineAbove:before{
+.settingsSection table tr.lineAbove td:before, .settingsSection .settingsSectionButtons.lineAbove:before{
 	opacity:0.15;
 }
 
-.settingsWidget table th, .settingsWidget table td{
+.settingsSection table th, .settingsSection table td{
 	position:relative;
 	text-align:center;
 	white-space:nowrap;
 }
-.settingsWidget table th{
+.settingsSection table th{
 	font-weight:bold;
 	padding:3px 5px;
 }
-.settingsWidget table td{
+.settingsSection table td{
 	padding:0 5px 3px 5px;
 }
-.settingsWidget table tr.lineAbove td{
+.settingsSection table tr.lineAbove td{
 	padding-top:3px;
 }
-.settingsWidget table td.left{
+.settingsSection table td.left{
 	text-align:left;
 }
-.settingsWidget table td.leftWithEllipsis{
+.settingsSection table td.leftWithEllipsis{
 	width:100%;
 	max-width:0;
 	overflow:hidden;
@@ -93,7 +97,7 @@
 	text-align:left;
 }
 
-.settingsWidget .hideRemoteBtn{
+.settingsSection .hideRemoteBtn{
 	position:relative;
 	display:inline-block;
 	width:13px;
@@ -102,13 +106,13 @@
 	vertical-align:middle;
 	cursor:pointer;
 }
-.settingsWidget .hideRemoteBtn svg{
+.settingsSection .hideRemoteBtn svg{
 	position:absolute;
 	top:0;
 	left:0;
 }
 
-.settingsWidget .remoteBtns div{
+.settingsSection .remoteBtns div{
 	display:inline-block;
 	position:relative;
 	width:17px;
@@ -116,24 +120,19 @@
 	vertical-align:middle;
 	cursor:pointer;
 }
-.settingsWidget .editRemote svg{
+.settingsSection .editRemote svg{
 	position:absolute;
 	left:1.5px;
 	top:1.5px;
 	width:14px !important;
 	height:14px !important;
 }
-.settingsWidget .deleteRemote svg, .settingsWidget .fetchRemote svg, .settingsWidget .pruneRemote svg{
+.settingsSection .deleteRemote svg, .settingsSection .fetchRemote svg, .settingsSection .pruneRemote svg{
 	position:absolute;
 	left:0.5px;
 	top:0.5px;
 	width:16px !important;
 	height:16px !important;
-}
-
-.settingsSectionText{
-	display:inline-block;
-	text-align:center;
 }
 
 .settingsSectionButtons{
@@ -148,6 +147,20 @@
 	line-height:24px;
 	cursor:pointer;
 	padding-right:6px;
+}
+
+.settingsSection label{
+	display:inline-block;
+	margin:4px 0;
+	cursor:pointer;
+}
+
+.settingsSection .customCheckbox{
+	margin-right:6px;
+}
+
+.settingsSection label > input[type=checkbox]:checked ~ .customCheckbox:after{
+	border-color:var(--vscode-editorSuggestWidget-foreground);
 }
 
 #settingsAddRemote svg, #editIssueLinking svg{
@@ -214,7 +227,7 @@
 	height:16px !important;
 }
 
-.settingsSectionButtons > div:hover svg, .settingsWidget .hideRemoteBtn:hover svg, .settingsWidget .remoteBtns div:hover svg, #settingsClose:hover{
+.settingsSectionButtons > div:hover svg, .settingsSection .hideRemoteBtn:hover svg, .settingsSection .remoteBtns div:hover svg, #settingsClose:hover{
 	fill-opacity:1;
 }
 .settingsWidget.loading #settingsContent{

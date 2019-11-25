@@ -270,7 +270,7 @@ export class GitGraphView {
 				case 'loadCommits':
 					this.sendMessage({
 						command: 'loadCommits',
-						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.remotes, msg.hideRemotes),
+						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.showTags, msg.remotes, msg.hideRemotes),
 						hard: msg.hard
 					});
 					break;
@@ -466,6 +466,7 @@ export class GitGraphView {
 				initialLoadCommits: config.initialLoadCommits(),
 				loadMoreCommits: config.loadMoreCommits(),
 				muteMergeCommits: config.muteMergeCommits(),
+				showTags: config.showTags(),
 				showCurrentBranchByDefault: config.showCurrentBranchByDefault(),
 				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal
 			},

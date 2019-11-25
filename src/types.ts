@@ -98,6 +98,7 @@ export interface GitRepoState {
 	fileViewType: FileViewType;
 	issueLinkingConfig: IssueLinkingConfig | null;
 	showRemoteBranches: boolean;
+	showTags: ShowTags;
 	hideRemotes: string[];
 }
 
@@ -132,6 +133,7 @@ export interface GitGraphViewConfig {
 	readonly loadMoreCommits: number;
 	readonly muteMergeCommits: boolean;
 	readonly showCurrentBranchByDefault: boolean;
+	readonly showTags: boolean;
 	readonly tagLabelsOnRight: boolean;
 }
 
@@ -283,6 +285,12 @@ export const enum RefLabelAlignment {
 	Normal,
 	BranchesOnLeftAndTagsOnRight,
 	BranchesAlignedToGraphAndTagsOnRight
+}
+
+export const enum ShowTags {
+	Default,
+	Show,
+	Hide
 }
 
 export const enum TabIconColourTheme {
@@ -590,6 +598,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly branches: string[] | null; // null => Show All
 	readonly maxCommits: number;
 	readonly showRemoteBranches: boolean;
+	readonly showTags: boolean;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
 	readonly hard: boolean;

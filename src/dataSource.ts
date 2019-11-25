@@ -68,10 +68,10 @@ export class DataSource {
 		});
 	}
 
-	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, remotes: string[], hideRemotes: string[]): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, showTags: boolean, remotes: string[], hideRemotes: string[]): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
-			this.getLog(repo, branches, maxCommits + 1, config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering(), remotes, hideRemotes),
+			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering(), remotes, hideRemotes),
 			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 			this.getStashes(repo)
 		]).then(async (results) => {
@@ -153,8 +153,10 @@ export class DataSource {
 			}
 
 			/* Annotate Tags */
-			for (i = 0; i < refData.tags.length; i++) {
-				if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
+			if (showTags) {
+				for (i = 0; i < refData.tags.length; i++) {
+					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
+				}
 			}
 
 			/* Annotate Remotes */

@@ -9,8 +9,11 @@ class SettingsWidget {
 	private visible: boolean = false;
 	private loading: boolean = false;
 	private repo: string | null = null;
+
 	private hideRemotes: string[] | null = null;
 	private issueLinkingConfig: GG.IssueLinkingConfig | null = null;
+	private showTags: GG.ShowTags | null = null;
+
 	private settings: GG.GitRepoSettings | null = null;
 
 	private readonly widgetElem: HTMLElement;
@@ -32,13 +35,14 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
-	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, transition: boolean) {
+	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, showTags: GG.ShowTags, transition: boolean) {
 		if (this.visible) return;
 		this.visible = true;
 		this.loading = true;
 		this.repo = repo;
 		this.hideRemotes = hideRemotes;
 		this.issueLinkingConfig = issueLinkingConfig;
+		this.showTags = showTags;
 		alterClass(this.widgetElem, CLASS_TRANSITION, transition);
 		this.widgetElem.classList.add(CLASS_ACTIVE);
 		this.requestSettings();
@@ -58,6 +62,7 @@ class SettingsWidget {
 		this.repo = null;
 		this.hideRemotes = null;
 		this.issueLinkingConfig = null;
+		this.showTags = null;
 		this.settings = null;
 		this.widgetElem.classList.add(CLASS_TRANSITION);
 		this.widgetElem.classList.remove(CLASS_ACTIVE);
@@ -75,10 +80,10 @@ class SettingsWidget {
 			settings: this.settings
 		};
 	}
-	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null) {
+	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, showTags: GG.ShowTags) {
 		if (!state.visible || state.repo === null) return;
 		this.settings = state.settings;
-		this.show(state.repo, hideRemotes, issueLinkingConfig, false);
+		this.show(state.repo, hideRemotes, issueLinkingConfig, showTags, false);
 	}
 
 	public isVisible() {
@@ -110,7 +115,10 @@ class SettingsWidget {
 
 	private render() {
 		if (this.settings !== null) {
-			let html = '<div class="settingsSection"><h3>Remote Configuration</h3><table><tr><th>Remote</th><th>URL</th><th>Type</th><th>Action</th></tr>', pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
+			let html = '<div class="settingsSection centered"><h3>General</h3>';
+			html += '<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label></div>';
+
+			html += '<div class="settingsSection"><h3>Remote Configuration</h3><table><tr><th>Remote</th><th>URL</th><th>Type</th><th>Action</th></tr>';
 			if (this.settings.remotes.length > 0) {
 				this.settings.remotes.forEach((remote, i) => {
 					let hidden = this.hideRemotes !== null && this.hideRemotes.includes(remote.name);
@@ -126,13 +134,13 @@ class SettingsWidget {
 			}
 			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote">' + SVG_ICONS.close + 'Add Remote</div></div></div>';
 
-			html += '<div class="settingsSection"><h3>Issue Linking</h3>';
+			html += '<div class="settingsSection centered"><h3>Issue Linking</h3>';
 			if (this.issueLinkingConfig !== null) {
 				let escapedIssue = escapeHtml(this.issueLinkingConfig.issue), escapedUrl = escapeHtml(this.issueLinkingConfig.url);
 				html += '<table><tr><td class="left">Issue Regex:</td><td class="leftWithEllipsis" title="' + escapedIssue + '">' + escapedIssue + '</td></tr><tr><td class="left">Issue URL:</td><td class="leftWithEllipsis" title="' + escapedUrl + '">' + escapedUrl + '</td></tr></table>';
 				html += '<div class="settingsSectionButtons"><div id="editIssueLinking">' + SVG_ICONS.pencil + 'Edit</div><div id="removeIssueLinking">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
-				html += '<span class="settingsSectionText">Issue Linking converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.</span>';
+				html += '<span>Issue Linking converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.</span>';
 				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="addIssueLinking">' + SVG_ICONS.close + 'Add Issue Linking</div></div>';
 			}
 			html += '</div>';
@@ -142,6 +150,19 @@ class SettingsWidget {
 
 			this.contentsElem.innerHTML = html;
 
+			const showTagsElem = <HTMLInputElement>document.getElementById('settingsShowTagsCheckbox');
+			showTagsElem.checked = this.showTags === GG.ShowTags.Default
+				? initialState.config.showTags
+				: this.showTags === GG.ShowTags.Show;
+			showTagsElem.addEventListener('change', () => {
+				if (this.repo === null) return;
+				const value = (<HTMLInputElement>document.getElementById('settingsShowTagsCheckbox')).checked;
+				this.showTags = value ? GG.ShowTags.Show : GG.ShowTags.Hide;
+				this.view.saveShowTagsConfig(this.repo, this.showTags);
+				this.view.refresh(true);
+			});
+
+			const pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
 			document.getElementById('settingsAddRemote')!.addEventListener('click', () => {
 				dialog.showForm('Add a new remote to this repository:', [
 					{ type: 'text', name: 'Name', default: '', placeholder: null },

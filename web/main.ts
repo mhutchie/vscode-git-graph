@@ -95,7 +95,7 @@ class GitGraphView {
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
-				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig);
+				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, this.gitRepos[this.currentRepo].showTags);
 			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
@@ -117,7 +117,7 @@ class GitGraphView {
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
-			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, true);
+			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, this.gitRepos[this.currentRepo].showTags, true);
 		});
 	}
 
@@ -370,6 +370,9 @@ class GitGraphView {
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
+			showTags: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Default
+				? this.config.showTags
+				: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Show,
 			remotes: this.gitRemotes,
 			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
 			hard: hard
@@ -467,6 +470,13 @@ class GitGraphView {
 	public saveIssueLinkingConfig(repo: string, config: GG.IssueLinkingConfig | null) {
 		if (repo === this.currentRepo) {
 			this.gitRepos[this.currentRepo].issueLinkingConfig = config;
+			this.saveRepoState();
+		}
+	}
+
+	public saveShowTagsConfig(repo: string, showTags: GG.ShowTags) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].showTags = showTags;
 			this.saveRepoState();
 		}
 	}

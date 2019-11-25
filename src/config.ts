@@ -233,6 +233,10 @@ class Config {
 		return !!this.config.get('showStatusBarItem', true);
 	}
 
+	public showTags() {
+		return !!this.config.get('showTags', true);
+	}
+
 	public showUncommittedChanges() {
 		return !!this.config.get('showUncommittedChanges', true);
 	}

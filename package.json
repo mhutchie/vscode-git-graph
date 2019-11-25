@@ -627,6 +627,11 @@
 					"default": true,
 					"description": "Show a Status Bar item which opens Git Graph when clicked."
 				},
+				"git-graph.showTags": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show Tags in Git Graph by default. This can be overridden per repository in the Git Graph View's Repository Settings Widget."
+				},
 				"git-graph.showUncommittedChanges": {
 					"type": "boolean",
 					"default": true,

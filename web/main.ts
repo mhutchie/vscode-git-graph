@@ -1441,6 +1441,8 @@ class GitGraphView {
 					this.refresh(true);
 				} else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
 					this.findWidget.show(true);
+				} else if (e.key === 'h' && (e.ctrlKey || e.metaKey) && this.commitHead !== null) {
+					this.scrollToCommit(this.commitHead, true);
 				} else if (e.key === 'Escape' && this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
 				} else if (e.key === 'Escape' && this.findWidget.isVisible()) {

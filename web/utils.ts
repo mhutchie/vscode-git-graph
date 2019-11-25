@@ -156,20 +156,28 @@ function getFormatTextConfig(issueLinkingConfig: GG.IssueLinkingConfig | null, f
 
 const enum ParsedTextType {
 	Plain,
-	Html
+	Url
 }
 
-interface ParsedText {
-	type: ParsedTextType;
+interface ParsedTextPlain {
+	type: ParsedTextType.Plain;
 	str: string;
 }
+
+interface ParsedTextUrl {
+	type: ParsedTextType.Url;
+	url: string;
+	displayText: string;
+}
+
+type ParsedText = ParsedTextPlain | ParsedTextUrl;
 
 function formatText(str: string, config: FormatTextConfig) {
 	let parsed: ParsedText[] = [{ type: ParsedTextType.Plain, str: str }];
 
 	if (config.findUrls) {
 		// Detect URL's
-		parsed = findUrls(parsed[0]);
+		parsed = findUrls(<ParsedTextPlain>parsed[0]);
 	}
 
 	if (config.issueLinking !== null) {
@@ -177,7 +185,7 @@ function formatText(str: string, config: FormatTextConfig) {
 		let tmpParsed: ParsedText[] = [];
 		for (let i = 0; i < parsed.length; i++) {
 			if (parsed[i].type === ParsedTextType.Plain) {
-				tmpParsed.push(...findIssueLinks(parsed[i], config.issueLinking));
+				tmpParsed.push(...findIssueLinks(<ParsedTextPlain>parsed[i], config.issueLinking));
 			} else {
 				tmpParsed.push(parsed[i]);
 			}
@@ -189,13 +197,13 @@ function formatText(str: string, config: FormatTextConfig) {
 	let outputStr = '';
 	for (let i = 0; i < parsed.length; i++) {
 		outputStr += parsed[i].type === ParsedTextType.Plain
-			? escapeHtml(substituteEmojis(parsed[i].str))
-			: parsed[i].str;
+			? escapeHtml(substituteEmojis((<ParsedTextPlain>parsed[i]).str))
+			: '<a class="externalUrl" href="' + escapeHtml((<ParsedTextUrl>parsed[i]).url) + '" tabindex="-1">' + escapeHtml((<ParsedTextUrl>parsed[i]).displayText) + '</a>';
 	}
 	return outputStr;
 }
 
-function findUrls(input: ParsedText) {
+function findUrls(input: ParsedTextPlain) {
 	let urlRegExp = /https?:\/\/\S+[^,.?!'":;\s]/gu;
 	let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
 	while (match = urlRegExp.exec(input.str)) {
@@ -212,8 +220,7 @@ function findUrls(input: ParsedText) {
 			urlRegExp.lastIndex--;
 		}
 
-		let escapedUrl = escapeHtml(url);
-		parsed.push({ type: ParsedTextType.Html, str: '<a class="externalUrl" href="' + escapedUrl + '" target="_blank">' + escapedUrl + '</a>' });
+		parsed.push({ type: ParsedTextType.Url, url: url, displayText: url });
 		matchEnd = urlRegExp.lastIndex;
 	}
 
@@ -230,7 +237,7 @@ function findUrls(input: ParsedText) {
 	return parsed;
 }
 
-function findIssueLinks(input: ParsedText, config: { regexp: RegExp, url: string }) {
+function findIssueLinks(input: ParsedTextPlain, config: { regexp: RegExp, url: string }) {
 	let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
 	config.regexp.lastIndex = 0;
 	while (match = config.regexp.exec(input.str)) {
@@ -244,10 +251,7 @@ function findIssueLinks(input: ParsedText, config: { regexp: RegExp, url: string
 			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
 		}
 
-		parsed.push({
-			type: ParsedTextType.Html,
-			str: '<a class="externalUrl" href="' + escapeHtml(match.length > 1 ? config.url.replace('$1', match[1]) : config.url) + '" target="_blank">' + escapeHtml(match[0]) + '</a>'
-		});
+		parsed.push({ type: ParsedTextType.Url, url: match.length > 1 ? config.url.replace('$1', match[1]) : config.url, displayText: match[0] });
 		matchEnd = config.regexp.lastIndex;
 	}
 

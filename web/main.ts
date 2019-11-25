@@ -724,7 +724,7 @@ class GitGraphView {
 		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
 		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
-		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + encodeURIComponent(email) + '">' + escapeHtml(email) + '</a>&gt;<br>';
+		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
 		html += formatText(message, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true)).replace(/\n/g, '<br>') + '</span>';
 		dialog.showMessage(html);
@@ -1675,7 +1675,7 @@ class GitGraphView {
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">';
 					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
 					html += '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>';
-					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + encodeURIComponent(commitDetails.email) + '">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
+					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + escapeHtml(commitDetails.email) + '" tabindex="-1">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
 					html += '<b>Date: </b>' + formatLongDate(commitDetails.date) + '<br>';
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
 					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';

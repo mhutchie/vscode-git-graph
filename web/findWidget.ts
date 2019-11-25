@@ -31,14 +31,18 @@ class FindWidget {
 		this.view = view;
 		this.widgetElem = document.createElement('div');
 		this.widgetElem.className = 'findWidget';
-		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifer" title="Match Case">Aa</span><span id="findRegex" class="findModifer" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev"></span><span id="findNext"></span><span id="findClose"></span>';
+		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifer" title="Match Case">Aa</span><span id="findRegex" class="findModifer" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev" title="Previous match (Shift+Enter)"></span><span id="findNext" title="Next match (Enter)"></span><span id="findClose" title="Close (Escape)"></span>';
 		document.body.appendChild(this.widgetElem);
 
 		this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
 		let keyupTimeout: NodeJS.Timer | null = null;
 		this.inputElem.addEventListener('keyup', (e) => {
 			if (e.key === 'Enter' && this.text !== '') {
-				this.next();
+				if (e.shiftKey) {
+					this.prev();
+				} else {
+					this.next();
+				}
 			} else {
 				if (keyupTimeout !== null) clearTimeout(keyupTimeout);
 				keyupTimeout = setTimeout(() => {
@@ -72,12 +76,12 @@ class FindWidget {
 
 		this.prevElem = document.getElementById('findPrev')!;
 		this.prevElem.classList.add(CLASS_DISABLED);
-		this.prevElem.innerHTML = SVG_ICONS.arrowLeft;
+		this.prevElem.innerHTML = SVG_ICONS.arrowUp;
 		this.prevElem.addEventListener('click', () => this.prev());
 
 		this.nextElem = document.getElementById('findNext')!;
 		this.nextElem.classList.add(CLASS_DISABLED);
-		this.nextElem.innerHTML = SVG_ICONS.arrowRight;
+		this.nextElem.innerHTML = SVG_ICONS.arrowDown;
 		this.nextElem.addEventListener('click', () => this.next());
 
 		const findClose = document.getElementById('findClose')!;

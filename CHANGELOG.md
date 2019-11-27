@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.19.0 - 2019-11-27
+* #220 Issue Linking - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system. This is configured in the Repository Settings Widget (opened from the Git Graph View's Control Bar).
+* #208 Include the Untracked Files of Stashes in the Commit Details View.
+* #213 Added a new extension setting to set the default state of the "Force Delete" checkbox on the "Delete Branch" dialog.
+* #215 Added "Open Git Graph Extension Settings" button on the Repository Settings Widget.
+* #216 Added new "Show Tags" Extension Setting, that can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
+* #218 New Keyboard Shortcut `CTRL/CMD + h` scrolls the Git Graph View to be centered on the commit referenced by HEAD.
+* Numerous code and UI improvements, including:
+    * #209 Improved handling of Electron `*.asar` files.
+    * Push Branch & Push Tag Dialogs now default to pushing to `origin` in repositories with multiple remotes (if it exists).
+    * Find Widget - Updated icons, tooltips, and added a new `SHIFT+Enter` keystroke to go to the previous match.
+
 ## 1.18.0 - 2019-11-05
 * #202 New File List View in the Commit Details / Comparison Views, as an alternative to the existing File Tree View. The default File View Type can be specified using the setting `git-graph.defaultFileViewType`. This can be overridden per repository using the new controls on the right side of the Commit Details / Comparison Views.
 * #197 Improved the default column widths when the table is being automatically laid out on narrow width views.

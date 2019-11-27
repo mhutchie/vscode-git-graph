@@ -42,10 +42,13 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Select from a user predefined array of custom glob patterns (by setting `git-graph.customBranchGlobPatterns`)
     * Fetch from Remote(s) _(available on the top control bar)_
     * Find Widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names).
-    * Repository Settings Widget allows you to view, add, edit, delete, fetch & prune remotes of the repository.
-    * Keyboard Shortcuts:
+    * Repository Settings Widget:
+        * Allows you to view, add, edit, delete, fetch & prune remotes of the repository.
+        * Configure Issue Linking - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.
+    * Keyboard Shortcuts (available in the Git Graph View):
         * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
-        * CTRL/CMD + f: Open the find widget.
+        * CTRL/CMD + f: Open the Find Widget.
+        * CTRL/CMD + h: Scrolls the Git Graph View to be centered on the commit referenced by HEAD.
         * CTRL/CMD + r: Refresh the Git Graph View.
         * Enter: If a dialog is open, pressing enter submits the dialog, taking the primary (left) action.
         * Escape: Closes the active dialog, context menu or the Commit Details View.
@@ -72,7 +75,7 @@ A summary of the Git Graph extension settings are:
 * **Date Type**: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
 * **Default File View Type**: Sets the default type of File View (Tree or List) used in the Commit Details / Comparison Views. This can be overridden per repository using the controls on the right side of the Commit Details / Comparison Views.
-* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Create Branch, Merge, Pop Stash, Rebase, Reset, and Stash Uncommitted Changes
+* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Create Branch, Delete Branch, Merge, Pop Stash, Rebase, Reset, and Stash Uncommitted Changes
 * **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
 * **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8
@@ -90,6 +93,7 @@ A summary of the Git Graph extension settings are:
 * **Show Commits Only Referenced By Tags**: Show commits that are only referenced by tags in Git Graph. Default: true (enabled)
 * **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
 * **Show Status Bar Item**: Show a Status Bar item which opens Git Graph when clicked.
+* **Show Tags**: Show Tags in Git Graph by default. This can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
 * **Show Uncommitted Changes**: Show uncommitted changes (set to false to decrease load time on large repositories).
 * **Source Code Provider Integration Location**: Specifies where the "View Git Graph" action appears on the title of SCM Providers. Default: Inline
 * **Tab Icon Colour Theme**: Specifies the colour theme of the icon displayed on the Git Graph tab.

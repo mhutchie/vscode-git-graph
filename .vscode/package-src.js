@@ -7,7 +7,7 @@ const ASKPASS_DIRECTORY = '/askpass';
 
 fs.readdirSync(OUT_DIRECTORY).forEach(filename => {
 	if (filename.endsWith('.js')) {
-		fs.writeFileSync(OUT_DIRECTORY + filename, fs.readFileSync(OUT_DIRECTORY + filename).toString().replace(/require\("fs\"\)/g, 'require("original-fs")'));
+		fs.writeFileSync(OUT_DIRECTORY + filename, fs.readFileSync(OUT_DIRECTORY + filename).toString().replace(/require\("fs"\)/g, 'require("original-fs")'));
 	}
 });
 

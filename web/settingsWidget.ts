@@ -125,9 +125,9 @@ class SettingsWidget {
 					let fetchUrl = escapeHtml(remote.url || 'Not Set'), pushUrl = escapeHtml(remote.pushUrl || remote.url || 'Not Set');
 					html += '<tr class="lineAbove">' +
 						'<td class="left" rowspan="2"><span class="hideRemoteBtn" data-index="' + i + '" title="Click to ' + (hidden ? 'show' : 'hide') + ' branches of this remote.">' + (hidden ? SVG_ICONS.eyeClosed : SVG_ICONS.eyeOpen) + '</span>' + escapeHtml(remote.name) + '</td>' +
-						'<td class="leftWithEllipsis" title="' + fetchUrl + '">' + fetchUrl + '</td><td>Fetch</td>' +
+						'<td class="leftWithEllipsis" title="Fetch URL: ' + fetchUrl + '">' + fetchUrl + '</td><td>Fetch</td>' +
 						'<td class="remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
-						'</tr><tr><td class="leftWithEllipsis" title="' + pushUrl + '">' + pushUrl + '</td><td>Push</td></tr>';
+						'</tr><tr><td class="leftWithEllipsis" title="Push URL: ' + pushUrl + '">' + pushUrl + '</td><td>Push</td></tr>';
 				});
 			} else {
 				html += '<tr class="lineAbove"><td colspan="4">There are no remotes configured for this repository.</td></tr>';
@@ -256,7 +256,7 @@ class SettingsWidget {
 			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' },
 			{ type: 'text', name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' }
 		], 'Save', (values) => {
-			let issueRegex = <string>values[0], issueUrl = <string>values[1];
+			let issueRegex = (<string>values[0]).trim(), issueUrl = (<string>values[1]).trim();
 			let regExpParseError = null;
 			try {
 				if (issueRegex.indexOf('(') === -1 || issueRegex.indexOf(')') === -1) {

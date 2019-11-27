@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.19.1 - 2019-11-27
+* #221 Fixed a compatibility issue with Visual Studio Code Remote Development that was introduced in Git Graph 1.19.0.
+
 ## 1.19.0 - 2019-11-27
 * #220 Issue Linking - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system. This is configured in the Repository Settings Widget (opened from the Git Graph View's Control Bar).
 * #208 Include the Untracked Files of Stashes in the Commit Details View.

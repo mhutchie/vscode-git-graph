@@ -139,9 +139,10 @@ function unescapeHtml(str: string) {
 interface FormatTextConfig {
 	findUrls: boolean;
 	issueLinking: { regexp: RegExp, url: string } | null;
+	whitespace: boolean;
 }
 
-function getFormatTextConfig(issueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean): FormatTextConfig {
+function getFormatTextConfig(issueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean, whitespace: boolean): FormatTextConfig {
 	let issueLinking = null;
 	if (issueLinkingConfig !== null) {
 		try {
@@ -151,7 +152,7 @@ function getFormatTextConfig(issueLinkingConfig: GG.IssueLinkingConfig | null, f
 		}
 	}
 
-	return { findUrls: findUrls, issueLinking: issueLinking };
+	return { findUrls: findUrls, issueLinking: issueLinking, whitespace: whitespace };
 }
 
 const enum ParsedTextType {
@@ -200,6 +201,11 @@ function formatText(str: string, config: FormatTextConfig) {
 			? escapeHtml(substituteEmojis((<ParsedTextPlain>parsed[i]).str))
 			: '<a class="externalUrl" href="' + escapeHtml((<ParsedTextUrl>parsed[i]).url) + '" tabindex="-1">' + escapeHtml((<ParsedTextUrl>parsed[i]).displayText) + '</a>';
 	}
+
+	if (config.whitespace) {
+		outputStr = outputStr.split('\n').map(line => line.replace(/^[ \t]+/, (str) => str.replace(/ /g, '&nbsp;').replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;'))).join('<br>');
+	}
+
 	return outputStr;
 }
 

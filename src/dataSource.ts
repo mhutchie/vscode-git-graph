@@ -295,7 +295,7 @@ export class DataSource {
 				name: data[1],
 				email: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
 				date: parseInt(data[3]),
-				message: data[4].trim().split(EOL_REGEX).join('\n'),
+				message: removeTrailingBlankLines(data[4].split(EOL_REGEX)).join('\n'),
 				error: null
 			};
 		}).then((data) => {
@@ -653,9 +653,7 @@ export class DataSource {
 	private getCommitDetailsBase(repo: string, commitHash: string) {
 		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): Writeable<GitCommitDetails> => {
 			let lines = stdout.split(EOL_REGEX);
-			let lastLine = lines.length - 1;
-			while (lines.length > 0 && lines[lastLine] === '') lastLine--;
-			let commitInfo = lines[0].split(GIT_LOG_SEPARATOR);
+			let commitInfo = lines.shift()!.split(GIT_LOG_SEPARATOR);
 			return {
 				hash: commitInfo[0],
 				parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
@@ -663,7 +661,7 @@ export class DataSource {
 				email: commitInfo[3],
 				date: parseInt(commitInfo[4]),
 				committer: commitInfo[5],
-				body: lines.slice(1, lastLine + 1).join('\n'),
+				body: removeTrailingBlankLines(lines).join('\n'),
 				fileChanges: []
 			};
 		});
@@ -988,6 +986,13 @@ function getErrorMessage(error: Error | null, stdoutBuffer: Buffer, stderr: stri
 		lines = [];
 	}
 	return lines.join('\n');
+}
+
+function removeTrailingBlankLines(lines: string[]) {
+	while (lines.length > 0 && lines[lines.length - 1] === '') {
+		lines.pop();
+	}
+	return lines;
 }
 
 

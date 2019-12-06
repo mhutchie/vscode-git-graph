@@ -505,7 +505,7 @@ class GitGraphView {
 		const currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead;
 		const vertexColours = this.graph.getVertexColours();
 		const widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
-		const formatTextConfig = getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, false);
+		const formatTextConfig = getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, false, false);
 
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
@@ -726,7 +726,7 @@ class GitGraphView {
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
 		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
-		html += formatText(message, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true)).replace(/\n/g, '<br>') + '</span>';
+		html += formatText(message, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true)) + '</span>';
 		dialog.showMessage(html);
 	}
 
@@ -1680,7 +1680,7 @@ class GitGraphView {
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
 					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';
 					html += '</span></span><br><br>';
-					html += formatText(commitDetails.body, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true)).replace(/\n/g, '<br>');
+					html += formatText(commitDetails.body, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true));
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}

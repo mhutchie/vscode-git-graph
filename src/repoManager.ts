@@ -6,7 +6,7 @@ import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
-import { evalPromises, getPathFromUri, pathWithTrailingSlash } from './utils';
+import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
 
 export class RepoManager {
 	private readonly dataSource: DataSource;
@@ -168,6 +168,25 @@ export class RepoManager {
 			if (repoPaths[i] === path || repoPaths[i].startsWith(pathFolder)) reposInFolder.push(repoPaths[i]);
 		}
 		return reposInFolder;
+	}
+
+	public async getKnownRepo(repo: string) {
+		if (this.isKnownRepo(repo)) {
+			// The path is already known as a repo
+			return repo;
+		}
+
+		// Check to see if a known repository contains a symlink that resolves the repo
+		let canonicalRepo = await realpath(repo);
+		let repoPaths = Object.keys(this.repos);
+		for (let i = 0; i < repoPaths.length; i++) {
+			if (canonicalRepo === (await realpath(repoPaths[i]))) {
+				return repoPaths[i];
+			}
+		}
+
+		// Repo is unknown
+		return null;
 	}
 
 	public isKnownRepo(repo: string) {

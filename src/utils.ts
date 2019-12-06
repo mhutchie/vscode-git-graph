@@ -45,6 +45,34 @@ export function realpath(path: string) {
 	});
 }
 
+export async function resolveToSymbolicPath(path: string) {
+	let workspaceFolders = vscode.workspace.workspaceFolders;
+	if (typeof workspaceFolders !== 'undefined') {
+		for (let i = 0; i < workspaceFolders.length; i++) {
+			let rootSymPath = getPathFromUri(workspaceFolders[i].uri);
+			let rootCanonicalPath = await realpath(rootSymPath);
+			if (path === rootCanonicalPath) {
+				return rootSymPath;
+			} else if (path.startsWith(rootCanonicalPath + '/')) {
+				return rootSymPath + path.substring(rootCanonicalPath.length);
+			} else if (rootCanonicalPath.startsWith(path + '/')) {
+				let symPath = rootSymPath;
+				let first = symPath.indexOf('/');
+				while (true) {
+					if (path === symPath || path === await realpath(symPath)) return symPath;
+					let next = symPath.lastIndexOf('/');
+					if (first !== next && next > -1) {
+						symPath = symPath.substring(0, next);
+					} else {
+						return path;
+					}
+				}
+			}
+		}
+	}
+	return path;
+}
+
 
 /* General Methods */
 

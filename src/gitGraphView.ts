@@ -418,7 +418,7 @@ export class GitGraphView {
 			this.repoFileWatcher.unmute();
 		}, null, this.disposables);
 
-		this.logger.log('Created Git Graph View');
+		this.logger.log('Created Git Graph View' + (loadRepo !== null ? ' (active repo: ' + loadRepo + ')' : ''));
 	}
 
 	public sendMessage(msg: ResponseMessage) {

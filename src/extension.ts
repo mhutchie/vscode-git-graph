@@ -9,7 +9,7 @@ import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { findGit, getGitExecutable, getPathFromUri, GitExecutable, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { findGit, getGitExecutable, getPathFromUri, GitExecutable, resolveToSymbolicPath, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -35,17 +35,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem, logger);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('git-graph.view', args => {
+		vscode.commands.registerCommand('git-graph.view', async (args) => {
 			let loadRepo: string | null = null;
 
 			if (typeof args === 'object' && args.rootUri) {
-				// If command is run from the SCP menu, load the specific repo
-				loadRepo = getPathFromUri(args.rootUri);
-				if (!repoManager.isKnownRepo(loadRepo)) {
-					repoManager.registerRepo(loadRepo, true).then(status => {
-						GitGraphView.createOrShow(context.extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, status.root);
-					});
-					return;
+				// If command is run from the Visual Studio Code Source Control View, load the specific repo
+				const repoPath = getPathFromUri(args.rootUri);
+				loadRepo = await repoManager.getKnownRepo(repoPath);
+				if (loadRepo === null) {
+					// The repo is not currently known, add it
+					loadRepo = (await repoManager.registerRepo(await resolveToSymbolicPath(repoPath), true)).root;
 				}
 			} else if (getConfig().openToTheRepoOfTheActiveTextEditorDocument() && vscode.window.activeTextEditor) {
 				// If the config setting is enabled, load the repo containing the active text editor document

@@ -324,6 +324,10 @@ class GitGraphView {
 
 	/* Public Get Methods checking the GitGraphView state */
 
+	public getCommits(): ReadonlyArray<GG.GitCommit> {
+		return this.commits;
+	}
+
 	public getNumBranches() {
 		return this.gitBranches.length;
 	}

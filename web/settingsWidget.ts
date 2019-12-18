@@ -275,8 +275,15 @@ class SettingsWidget {
 		let html = '<b>' + (isEdit ? 'Edit Issue Linking for' : 'Add Issue Linking to') + ' this Repository</b>';
 		html += '<p style="font-size:12px; margin:6px 0;">The following example links <b>#123</b> in commit messages to <b>https://github.com/mhutchie/repo/issues/123</b>:</p>';
 		html += '<table style="display:inline-table; width:360px; text-align:left; font-size:12px; margin-bottom:2px;"><tr><td>Issue Regex:</td><td>#(\\d+)</td></tr><tr><td>Issue URL:</td><td>https://github.com/mhutchie/repo/issues/$1</td></tr></tbody></table>';
+
+		let autodetectedIssueRegex = false;
+		if (!isEdit && defaultIssueRegex === null && defaultIssueUrl === null) {
+			defaultIssueRegex = autoDetectIssueRegex(this.view.getCommits());
+			if (defaultIssueRegex !== null) autodetectedIssueRegex = true;
+		}
+
 		dialog.showForm(html, [
-			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' },
+			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' + (autodetectedIssueRegex ? ' Note: The prefilled regular expression was detected in commit messages in this repository.' : '') },
 			{ type: 'text', name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' },
 			{ type: 'checkbox', name: 'Use Globally', value: this.issueLinkingConfig === null && globalState.issueLinkingConfig !== null, info: 'Use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).' }
 		], 'Save', (values) => {
@@ -308,4 +315,20 @@ class SettingsWidget {
 	private getRemoteForBtnEvent(e: Event) {
 		return this.settings!.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.remoteBtns')!).dataset.index!)];
 	}
+}
+
+function autoDetectIssueRegex(commits: ReadonlyArray<GG.GitCommit>) {
+	const patterns = ['#(\\d+)', '^(\\d+)\\.(?=\\s|$)', '^(\\d+):(?=\\s|$)', '([A-Za-z]+-\\d+)'].map((pattern) => {
+		const regexp = new RegExp(pattern);
+		return {
+			pattern: pattern,
+			matches: commits.filter((commit) => regexp.test(commit.message)).length
+		};
+	}).sort((a, b) => b.matches - a.matches);
+
+	if (patterns[0].matches > 0.1 * commits.length) {
+		// If the most common pattern was matched in more than 10% of commits, return the pattern
+		return patterns[0].pattern;
+	}
+	return null;
 }

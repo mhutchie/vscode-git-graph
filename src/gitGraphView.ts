@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitGraphViewGlobalState, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -385,10 +385,10 @@ export class GitGraphView {
 				case 'setRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
 					break;
-				case 'setGlobalIssueLinkingConfig':
+				case 'setGlobalViewState':
 					this.sendMessage({
-						command: 'setGlobalIssueLinkingConfig',
-						error: await this.extensionState.setGlobalIssueLinkingConfig(msg.config)
+						command: 'setGlobalViewState',
+						error: await this.extensionState.setGlobalViewState(msg.state)
 					});
 					break;
 				case 'startCodeReview':
@@ -480,9 +480,7 @@ export class GitGraphView {
 			loadRepo: this.loadRepo,
 			repos: this.repoManager.getRepos()
 		};
-		const globalState: GitGraphViewGlobalState = {
-			issueLinkingConfig: this.extensionState.getGlobalIssueLinkingConfig()
-		};
+		const globalState = this.extensionState.getGlobalViewState();
 
 		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < initialState.config.graphColours.length; i++) {

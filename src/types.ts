@@ -138,6 +138,7 @@ export interface GitGraphViewConfig {
 }
 
 export interface GitGraphViewGlobalState {
+	alwaysAcceptCheckoutCommit: boolean;
 	issueLinkingConfig: IssueLinkingConfig | null;
 }
 
@@ -758,17 +759,17 @@ export interface ResponseRevertCommit extends ResponseWithErrorInfo {
 	readonly command: 'revertCommit';
 }
 
+export interface RequestSetGlobalViewState extends BaseMessage {
+	readonly command: 'setGlobalViewState';
+	readonly state: GitGraphViewGlobalState;
+}
+export interface ResponseSetGlobalViewState extends ResponseWithErrorInfo {
+	readonly command: 'setGlobalViewState';
+}
+
 export interface RequestSetRepoState extends RepoRequest {
 	readonly command: 'setRepoState';
 	readonly state: GitRepoState;
-}
-
-export interface RequestSetGlobalIssueLinkingConfig extends BaseMessage {
-	readonly command: 'setGlobalIssueLinkingConfig';
-	readonly config: IssueLinkingConfig | null;
-}
-export interface ResponseSetGlobalIssueLinkingConfig extends ResponseWithErrorInfo {
-	readonly command: 'setGlobalIssueLinkingConfig';
 }
 
 export interface RequestStartCodeReview extends RepoRequest {
@@ -865,8 +866,8 @@ export type RequestMessage =
 	| RequestRescanForRepos
 	| RequestResetToCommit
 	| RequestRevertCommit
+	| RequestSetGlobalViewState
 	| RequestSetRepoState
-	| RequestSetGlobalIssueLinkingConfig
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff
@@ -914,7 +915,7 @@ export type ResponseMessage =
 	| ResponseRenameBranch
 	| ResponseResetToCommit
 	| ResponseRevertCommit
-	| ResponseSetGlobalIssueLinkingConfig
+	| ResponseSetGlobalViewState
 	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseViewDiff

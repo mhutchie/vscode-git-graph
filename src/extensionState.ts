@@ -1,13 +1,13 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
-import { CodeReview, ErrorInfo, FileViewType, GitRepoSet, GitRepoState, IssueLinkingConfig, ShowTags } from './types';
+import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, ShowTags } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
 const CODE_REVIEWS = 'codeReviews';
-const GLOBAL_ISSUE_LINKING_CONFIG = 'globalIssueLinkingConfig';
+const GLOBAL_VIEW_STATE = 'globalViewState';
 const IGNORED_REPOS = 'ignoredRepos';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
 const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
@@ -22,6 +22,11 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	showRemoteBranches: true,
 	showTags: ShowTags.Default,
 	hideRemotes: []
+};
+
+const DEFAULT_GLOBAL_VIEW_STATE: GitGraphViewGlobalState = {
+	alwaysAcceptCheckoutCommit: false,
+	issueLinkingConfig: null
 };
 
 export interface CodeReviewData {
@@ -84,14 +89,15 @@ export class ExtensionState {
 	}
 
 
-	/* Global Issue Linking Config */
+	/* Global View State */
 
-	public getGlobalIssueLinkingConfig() {
-		return this.globalState.get<IssueLinkingConfig | null>(GLOBAL_ISSUE_LINKING_CONFIG, null);
+	public getGlobalViewState() {
+		const globalViewState = this.globalState.get<GitGraphViewGlobalState>(GLOBAL_VIEW_STATE, DEFAULT_GLOBAL_VIEW_STATE);
+		return Object.assign({}, DEFAULT_GLOBAL_VIEW_STATE, globalViewState);
 	}
 
-	public setGlobalIssueLinkingConfig(config: IssueLinkingConfig | null) {
-		return this.updateGlobalState(GLOBAL_ISSUE_LINKING_CONFIG, config);
+	public setGlobalViewState(state: GitGraphViewGlobalState) {
+		return this.updateGlobalState(GLOBAL_VIEW_STATE, state);
 	}
 
 
@@ -250,7 +256,7 @@ export class ExtensionState {
 	private updateWorkspaceState(key: string, value: any): Thenable<ErrorInfo> {
 		return this.workspaceState.update(key, value).then(
 			() => null,
-			() => 'Visual Studio Code was unable to update the Git Graph Workspace State Memento.'
+			() => 'Visual Studio Code was unable to save the Git Graph Workspace State Memento.'
 		);
 	}
 }

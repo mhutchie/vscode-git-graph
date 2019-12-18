@@ -487,6 +487,11 @@ class GitGraphView {
 		}
 	}
 
+	public updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(key: K, value: GG.GitGraphViewGlobalState[K]) {
+		globalState[key] = value;
+		sendMessage({ command: 'setGlobalViewState', state: globalState });
+	}
+
 
 	/* Renderers */
 
@@ -869,12 +874,20 @@ class GitGraphView {
 			}
 		], [
 			{
-				title: 'Checkout' + ELLIPSIS,
+				title: 'Checkout' + (globalState.alwaysAcceptCheckoutCommit ? '' : ELLIPSIS),
 				visible: visibility.checkout,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', () => {
-						runAction({ command: 'checkoutCommit', repo: this.currentRepo, commitHash: hash }, 'Checking out Commit');
-					}, commitElem);
+					const checkoutCommit = () => runAction({ command: 'checkoutCommit', repo: this.currentRepo, commitHash: hash }, 'Checking out Commit');
+					if (globalState.alwaysAcceptCheckoutCommit) {
+						checkoutCommit();
+					} else {
+						dialog.showCheckbox('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', 'Always Accept', false, 'Yes, checkout', (alwaysAccept) => {
+							if (alwaysAccept) {
+								this.updateGlobalViewState('alwaysAcceptCheckoutCommit', true);
+							}
+							checkoutCommit();
+						}, commitElem);
+					}
 				}
 			}, {
 				title: 'Cherry Pick' + ELLIPSIS,
@@ -2245,8 +2258,8 @@ window.addEventListener('load', () => {
 			case 'revertCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
 				break;
-			case 'setGlobalIssueLinkingConfig':
-				finishOrDisplayError(msg.error, 'Unable to Save Global Issue Linking');
+			case 'setGlobalViewState':
+				finishOrDisplayError(msg.error, 'Unable to save the Global View State');
 				break;
 			case 'startCodeReview':
 				if (msg.error === null) {

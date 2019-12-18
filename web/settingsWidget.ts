@@ -260,8 +260,7 @@ class SettingsWidget {
 				this.issueLinkingConfig = null;
 				this.view.saveIssueLinkingConfig(this.repo, null);
 			}
-			globalState.issueLinkingConfig = config;
-			sendMessage({ command: 'setGlobalIssueLinkingConfig', config: config });
+			this.view.updateGlobalViewState('issueLinkingConfig', config);
 		} else {
 			this.issueLinkingConfig = config;
 			this.view.saveIssueLinkingConfig(this.repo, this.issueLinkingConfig);

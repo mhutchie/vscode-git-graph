@@ -47,9 +47,11 @@ class GitGraphView {
 		this.footerElem = document.getElementById('footer')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 
-		this.repoDropdown = new Dropdown('repoSelect', true, false, 'Repos', values => this.loadRepo(values[0]));
+		this.repoDropdown = new Dropdown('repoDropdown', true, false, 'Repos', (values) => {
+			this.loadRepo(values[0]);
+		});
 
-		this.branchDropdown = new Dropdown('branchSelect', false, true, 'Branches', values => {
+		this.branchDropdown = new Dropdown('branchDropdown', false, true, 'Branches', (values) => {
 			this.currentBranches = values;
 			this.maxCommits = this.config.initialLoadCommits;
 			this.closeCommitDetails(false);
@@ -137,7 +139,7 @@ class GitGraphView {
 			newRepo = this.currentRepo;
 		}
 
-		document.getElementById('repoControl')!.style.display = repoPaths.length > 1 ? 'inline' : 'none';
+		alterClass(this.controlsElem, 'singleRepo', repoPaths.length === 1);
 		this.repoDropdown.setOptions(getRepoDropdownOptions(repoPaths), [newRepo]);
 
 		if (this.currentRepo !== newRepo) {

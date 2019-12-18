@@ -694,14 +694,25 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 
 #repoControl, #branchControl, #showRemoteBranchesControl{
+	display:inline-block;
 	white-space:nowrap;
 	margin:0 10px;
 }
-#repoSelect, #branchSelect{
+#repoDropdown, #branchDropdown{
 	margin-left:3px;
 }
 #showRemoteBranchesControl > .customCheckbox{
 	margin-right:6px;
+}
+
+.dropdownCurrentValue{
+	max-width:30vw;
+}
+#controls.singleRepo #repoControl{
+	display:none;
+}
+#controls.singleRepo .dropdownCurrentValue{
+	max-width:40vw;
 }
 
 #findBtn, #settingsBtn, #fetchBtn, #refreshBtn{

@@ -117,10 +117,10 @@ class Dropdown {
 
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
-			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '">' +
+			const escapedName = escapeHtml(this.options[i].name);
+			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '" title="' + escapedName + '">' +
 				(this.multipleAllowed && this.optionsSelected[i] ? '<div class="dropdownOptionMultiSelected">' + SVG_ICONS.check + '</div>' : '') +
-				escapeHtml(this.options[i].name) +
-				(typeof this.options[i].hint === 'string' && this.options[i].hint !== '' ? '<span class="dropdownOptionHint">' + escapeHtml(this.options[i].hint!) + '</span>' : '') +
+				escapedName + (typeof this.options[i].hint === 'string' && this.options[i].hint !== '' ? '<span class="dropdownOptionHint">' + escapeHtml(this.options[i].hint!) + '</span>' : '') +
 				(this.showInfo ? '<div class="dropdownOptionInfo" title="' + escapeHtml(this.options[i].value) + '">' + SVG_ICONS.info + '</div>' : '') +
 				'</div>';
 		}
@@ -129,10 +129,11 @@ class Dropdown {
 		this.filterInput.style.display = 'none';
 		this.noResultsElem.style.display = 'none';
 		this.menuElem.style.cssText = 'opacity:0; display:block;';
-		// Width must be at least 138px for the filter element. Max height for the dropdown is [filter (31px) + 9.5 * dropdown item (28px) = 297px]
+		// Width must be at least 138px for the filter element.
 		// Don't need to add 12px if showing (info icons or multi checkboxes) and the scrollbar isn't needed. The scrollbar isn't needed if: menuElem height + filter input (25px) < 297px
-		this.currentValueElem.style.width = Math.max(this.menuElem.offsetWidth + ((this.showInfo || this.multipleAllowed) && this.menuElem.offsetHeight < 272 ? 0 : 12), 138) + 'px';
-		this.menuElem.style.cssText = 'right:0; overflow-y:auto; max-height:297px;';
+		const menuElemRect = this.menuElem.getBoundingClientRect();
+		this.currentValueElem.style.width = Math.max(Math.ceil(menuElemRect.width) + ((this.showInfo || this.multipleAllowed) && menuElemRect.height < 272 ? 0 : 12), 138) + 'px';
+		this.menuElem.style.cssText = 'right:0; overflow-y:auto; max-height:297px;'; // Max height for the dropdown is [filter (31px) + 9.5 * dropdown item (28px) = 297px]
 		if (this.dropdownVisible) this.filter();
 	}
 

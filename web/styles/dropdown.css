@@ -64,6 +64,9 @@
 	cursor:pointer;
 	padding:4px 10px;
 	user-select:none;
+	text-overflow:ellipsis;
+	white-space:nowrap;
+	overflow:hidden;
 }
 .dropdown.multi .dropdownOption{
 	padding-left:30px;

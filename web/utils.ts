@@ -142,7 +142,11 @@ interface FormatTextConfig {
 	whitespace: boolean;
 }
 
-function getFormatTextConfig(issueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean, whitespace: boolean): FormatTextConfig {
+function getFormatTextConfig(repoIssueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean, whitespace: boolean): FormatTextConfig {
+	const issueLinkingConfig = repoIssueLinkingConfig !== null
+		? repoIssueLinkingConfig
+		: globalState.issueLinkingConfig;
+
 	let issueLinking = null;
 	if (issueLinkingConfig !== null) {
 		try {

@@ -1,12 +1,13 @@
 import * as fs from 'fs';
 import { ExtensionContext, Memento } from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
-import { CodeReview, ErrorInfo, FileViewType, GitRepoSet, GitRepoState, ShowTags } from './types';
+import { CodeReview, ErrorInfo, FileViewType, GitRepoSet, GitRepoState, IssueLinkingConfig, ShowTags } from './types';
 import { getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
 const CODE_REVIEWS = 'codeReviews';
+const GLOBAL_ISSUE_LINKING_CONFIG = 'globalIssueLinkingConfig';
 const IGNORED_REPOS = 'ignoredRepos';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
 const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
@@ -80,6 +81,17 @@ export class ExtensionState {
 			delete reviews[oldRepo];
 			this.setCodeReviews(reviews);
 		}
+	}
+
+
+	/* Global Issue Linking Config */
+
+	public getGlobalIssueLinkingConfig() {
+		return this.globalState.get<IssueLinkingConfig | null>(GLOBAL_ISSUE_LINKING_CONFIG, null);
+	}
+
+	public setGlobalIssueLinkingConfig(config: IssueLinkingConfig | null) {
+		return this.updateGlobalState(GLOBAL_ISSUE_LINKING_CONFIG, config);
 	}
 
 
@@ -221,10 +233,24 @@ export class ExtensionState {
 		return this.workspaceState.get<CodeReviews>(CODE_REVIEWS, {});
 	}
 
-	private setCodeReviews(reviews: CodeReviews): Thenable<ErrorInfo> {
-		return this.workspaceState.update(CODE_REVIEWS, reviews).then(
+	private setCodeReviews(reviews: CodeReviews) {
+		return this.updateWorkspaceState(CODE_REVIEWS, reviews);
+	}
+
+
+	/* Update State Memento's */
+
+	private updateGlobalState(key: string, value: any): Thenable<ErrorInfo> {
+		return this.globalState.update(key, value).then(
 			() => null,
-			() => 'Visual Studio Code was unable to update the Workspace State.'
+			() => 'Visual Studio Code was unable to save the Git Graph Global State Memento.'
+		);
+	}
+
+	private updateWorkspaceState(key: string, value: any): Thenable<ErrorInfo> {
+		return this.workspaceState.update(key, value).then(
+			() => null,
+			() => 'Visual Studio Code was unable to update the Git Graph Workspace State Memento.'
 		);
 	}
 }

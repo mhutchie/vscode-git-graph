@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitGraphViewGlobalState, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -382,8 +382,14 @@ export class GitGraphView {
 						error: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					break;
-				case 'saveRepoState':
+				case 'setRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
+					break;
+				case 'setGlobalIssueLinkingConfig':
+					this.sendMessage({
+						command: 'setGlobalIssueLinkingConfig',
+						error: await this.extensionState.setGlobalIssueLinkingConfig(msg.config)
+					});
 					break;
 				case 'startCodeReview':
 					this.sendMessage({
@@ -474,6 +480,9 @@ export class GitGraphView {
 			loadRepo: this.loadRepo,
 			repos: this.repoManager.getRepos()
 		};
+		const globalState: GitGraphViewGlobalState = {
+			issueLinkingConfig: this.extensionState.getGlobalIssueLinkingConfig()
+		};
 
 		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < initialState.config.graphColours.length; i++) {
@@ -505,7 +514,7 @@ export class GitGraphView {
 				<div id="footer"></div>
 			</div>
 			<div id="scrollShadow"></div>
-			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)};</script>
+			<script nonce="${nonce}">var globalState = ${JSON.stringify(globalState)}, initialState = ${JSON.stringify(initialState)};</script>
 			<script src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {

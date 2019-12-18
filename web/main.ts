@@ -35,7 +35,7 @@ class GitGraphView {
 	private loadRepoInfoCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
 	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
 
-	constructor(viewElem: HTMLElement, initialState: InitialState, prevState: WebViewState | null) {
+	constructor(viewElem: HTMLElement, prevState: WebViewState | null) {
 		this.gitRepos = initialState.repos;
 		this.config = initialState.config;
 		this.maxCommits = this.config.initialLoadCommits;
@@ -452,7 +452,7 @@ class GitGraphView {
 	}
 
 	public saveRepoState() {
-		sendMessage({ command: 'saveRepoState', repo: this.currentRepo, state: this.gitRepos[this.currentRepo] });
+		sendMessage({ command: 'setRepoState', repo: this.currentRepo, state: this.gitRepos[this.currentRepo] });
 	}
 
 	private saveColumnWidths(columnWidths: GG.ColumnWidth[]) {
@@ -2074,7 +2074,7 @@ window.addEventListener('load', () => {
 	let viewElem = document.getElementById('view');
 	if (viewElem === null) return;
 
-	const gitGraph = new GitGraphView(viewElem, initialState, VSCODE_API.getState());
+	const gitGraph = new GitGraphView(viewElem, VSCODE_API.getState());
 	const settingsWidget = gitGraph.getSettingsWidget();
 	const imageResizer = new ImageResizer();
 
@@ -2238,6 +2238,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'revertCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
+				break;
+			case 'setGlobalIssueLinkingConfig':
+				finishOrDisplayError(msg.error, 'Unable to Save Global Issue Linking');
 				break;
 			case 'startCodeReview':
 				if (msg.error === null) {

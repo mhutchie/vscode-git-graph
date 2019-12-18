@@ -13,10 +13,10 @@ declare global {
 
 	/* State Types */
 
-	type InitialState = GG.GitGraphViewInitialState;
 	type Config = GG.GitGraphViewConfig;
 
-	var initialState: InitialState;
+	var globalState: GG.GitGraphViewGlobalState;
+	var initialState: GG.GitGraphViewInitialState;
 
 	type AvatarImageCollection = { [email: string]: string };
 

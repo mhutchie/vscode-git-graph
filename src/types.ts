@@ -137,6 +137,10 @@ export interface GitGraphViewConfig {
 	readonly tagLabelsOnRight: boolean;
 }
 
+export interface GitGraphViewGlobalState {
+	issueLinkingConfig: IssueLinkingConfig | null;
+}
+
 
 /* Extension Settings Types */
 
@@ -754,9 +758,17 @@ export interface ResponseRevertCommit extends ResponseWithErrorInfo {
 	readonly command: 'revertCommit';
 }
 
-export interface RequestSaveRepoState extends RepoRequest {
-	readonly command: 'saveRepoState';
+export interface RequestSetRepoState extends RepoRequest {
+	readonly command: 'setRepoState';
 	readonly state: GitRepoState;
+}
+
+export interface RequestSetGlobalIssueLinkingConfig extends BaseMessage {
+	readonly command: 'setGlobalIssueLinkingConfig';
+	readonly config: IssueLinkingConfig | null;
+}
+export interface ResponseSetGlobalIssueLinkingConfig extends ResponseWithErrorInfo {
+	readonly command: 'setGlobalIssueLinkingConfig';
 }
 
 export interface RequestStartCodeReview extends RepoRequest {
@@ -853,7 +865,8 @@ export type RequestMessage =
 	| RequestRescanForRepos
 	| RequestResetToCommit
 	| RequestRevertCommit
-	| RequestSaveRepoState
+	| RequestSetRepoState
+	| RequestSetGlobalIssueLinkingConfig
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff
@@ -901,6 +914,7 @@ export type ResponseMessage =
 	| ResponseRenameBranch
 	| ResponseResetToCommit
 	| ResponseRevertCommit
+	| ResponseSetGlobalIssueLinkingConfig
 	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseViewDiff

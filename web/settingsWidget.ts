@@ -22,6 +22,7 @@ class SettingsWidget {
 
 	constructor(view: GitGraphView) {
 		this.view = view;
+
 		this.widgetElem = document.createElement('div');
 		this.widgetElem.className = 'settingsWidget';
 		this.widgetElem.innerHTML = '<h2>Repository Settings</h2><div id="settingsContent"></div><div id="settingsLoading"></div><div id="settingsClose"></div>';
@@ -135,8 +136,12 @@ class SettingsWidget {
 			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote">' + SVG_ICONS.close + 'Add Remote</div></div></div>';
 
 			html += '<div class="settingsSection centered"><h3>Issue Linking</h3>';
-			if (this.issueLinkingConfig !== null) {
-				let escapedIssue = escapeHtml(this.issueLinkingConfig.issue), escapedUrl = escapeHtml(this.issueLinkingConfig.url);
+
+			const issueLinkingConfig = this.issueLinkingConfig !== null
+				? this.issueLinkingConfig
+				: globalState.issueLinkingConfig;
+			if (issueLinkingConfig !== null) {
+				let escapedIssue = escapeHtml(issueLinkingConfig.issue), escapedUrl = escapeHtml(issueLinkingConfig.url);
 				html += '<table><tr><td class="left">Issue Regex:</td><td class="leftWithEllipsis" title="' + escapedIssue + '">' + escapedIssue + '</td></tr><tr><td class="left">Issue URL:</td><td class="leftWithEllipsis" title="' + escapedUrl + '">' + escapedUrl + '</td></tr></table>';
 				html += '<div class="settingsSectionButtons"><div id="editIssueLinking">' + SVG_ICONS.pencil + 'Edit</div><div id="removeIssueLinking">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
@@ -215,13 +220,20 @@ class SettingsWidget {
 			});
 
 			document.getElementById('editIssueLinking')!.addEventListener('click', () => {
-				this.showIssueLinkingDialog(this.issueLinkingConfig !== null ? this.issueLinkingConfig.issue : null, this.issueLinkingConfig !== null ? this.issueLinkingConfig.url : null);
+				const issueLinkingConfig = this.issueLinkingConfig !== null
+					? this.issueLinkingConfig
+					: globalState.issueLinkingConfig;
+				if (issueLinkingConfig !== null) {
+					this.showIssueLinkingDialog(issueLinkingConfig.issue, issueLinkingConfig.url, true);
+				} else {
+					this.showIssueLinkingDialog(null, null, false);
+				}
 			});
 
-			if (this.issueLinkingConfig !== null) {
+			if (this.issueLinkingConfig !== null || globalState.issueLinkingConfig !== null) {
 				document.getElementById('removeIssueLinking')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove Issue Linking?', () => {
-						this.setIssueLinkingConfig(null);
+					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? 'Issue Linking from this repository' : 'the globally configured Issue Linking in Git Graph') + '?', () => {
+						this.setIssueLinkingConfig(null, this.issueLinkingConfig === null);
 					}, null);
 				});
 			}
@@ -240,21 +252,33 @@ class SettingsWidget {
 		this.render();
 	}
 
-	private setIssueLinkingConfig(config: GG.IssueLinkingConfig | null) {
+	private setIssueLinkingConfig(config: GG.IssueLinkingConfig | null, global: boolean) {
 		if (this.repo === null) return;
-		this.issueLinkingConfig = config;
-		this.view.saveIssueLinkingConfig(this.repo, this.issueLinkingConfig);
+
+		if (global) {
+			if (this.issueLinkingConfig !== null) {
+				this.issueLinkingConfig = null;
+				this.view.saveIssueLinkingConfig(this.repo, null);
+			}
+			globalState.issueLinkingConfig = config;
+			sendMessage({ command: 'setGlobalIssueLinkingConfig', config: config });
+		} else {
+			this.issueLinkingConfig = config;
+			this.view.saveIssueLinkingConfig(this.repo, this.issueLinkingConfig);
+		}
+
 		this.view.refresh(true);
 		this.render();
 	}
 
-	private showIssueLinkingDialog(defaultIssueRegex: string | null, defaultIssueUrl: string | null) {
-		let html = '<b>' + (this.issueLinkingConfig !== null ? 'Edit Issue Linking for this Repository' : 'Add Issue Linking to this Repository') + '</b>';
+	private showIssueLinkingDialog(defaultIssueRegex: string | null, defaultIssueUrl: string | null, isEdit: boolean) {
+		let html = '<b>' + (isEdit ? 'Edit Issue Linking for' : 'Add Issue Linking to') + ' this Repository</b>';
 		html += '<p style="font-size:12px; margin:6px 0;">The following example links <b>#123</b> in commit messages to <b>https://github.com/mhutchie/repo/issues/123</b>:</p>';
 		html += '<table style="display:inline-table; width:360px; text-align:left; font-size:12px; margin-bottom:2px;"><tr><td>Issue Regex:</td><td>#(\\d+)</td></tr><tr><td>Issue URL:</td><td>https://github.com/mhutchie/repo/issues/$1</td></tr></tbody></table>';
 		dialog.showForm(html, [
 			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' },
-			{ type: 'text', name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' }
+			{ type: 'text', name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' },
+			{ type: 'checkbox', name: 'Use Globally', value: this.issueLinkingConfig === null && globalState.issueLinkingConfig !== null, info: 'Use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).' }
 		], 'Save', (values) => {
 			let issueRegex = (<string>values[0]).trim(), issueUrl = (<string>values[1]).trim();
 			let regExpParseError = null;
@@ -269,14 +293,14 @@ class SettingsWidget {
 			}
 			if (regExpParseError !== null) {
 				dialog.showError('Invalid Issue Regex', regExpParseError, 'Go Back', () => {
-					this.showIssueLinkingDialog(issueRegex, issueUrl);
+					this.showIssueLinkingDialog(issueRegex, issueUrl, isEdit);
 				}, null);
 			} else if (issueUrl.indexOf('$1') === -1) {
 				dialog.showError('Invalid Issue URL', 'The Issue URL does not contain the placeholder $1 for the issue number captured in the Issue Regex.', 'Go Back', () => {
-					this.showIssueLinkingDialog(issueRegex, issueUrl);
+					this.showIssueLinkingDialog(issueRegex, issueUrl, isEdit);
 				}, null);
 			} else {
-				this.setIssueLinkingConfig({ issue: issueRegex, url: issueUrl });
+				this.setIssueLinkingConfig({ issue: issueRegex, url: issueUrl }, <boolean>values[2]);
 			}
 		}, null, false);
 	}

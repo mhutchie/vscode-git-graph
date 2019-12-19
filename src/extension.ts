@@ -46,7 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					// The repo is not currently known, add it
 					loadRepo = (await repoManager.registerRepo(await resolveToSymbolicPath(repoPath), true)).root;
 				}
-			} else if (getConfig().openToTheRepoOfTheActiveTextEditorDocument() && vscode.window.activeTextEditor) {
+			} else if (getConfig().openToTheRepoOfTheActiveTextEditorDocument && vscode.window.activeTextEditor) {
 				// If the config setting is enabled, load the repo containing the active text editor document
 				loadRepo = repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 			}
@@ -75,7 +75,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			} else if (e.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
 				repoManager.maxDepthOfRepoSearchChanged();
 			} else if (e.affectsConfiguration('git.path')) {
-				let path = getConfig().gitPath();
+				const path = getConfig().gitPath;
 				if (path === null) return;
 
 				getGitExecutable(path).then(exec => {

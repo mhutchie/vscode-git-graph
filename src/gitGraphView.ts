@@ -58,12 +58,13 @@ export class GitGraphView {
 		this.loadRepo = loadRepo;
 		this.avatarManager.registerView(this);
 
+		const config = getConfig();
 		this.panel = vscode.window.createWebviewPanel('git-graph', 'Git Graph', column || vscode.ViewColumn.One, {
 			enableScripts: true,
 			localResourceRoots: [vscode.Uri.file(path.join(extensionPath, 'media'))],
-			retainContextWhenHidden: getConfig().retainContextWhenHidden()
+			retainContextWhenHidden: config.retainContextWhenHidden
 		});
-		this.panel.iconPath = getConfig().tabIconColourTheme() === TabIconColourTheme.Colour
+		this.panel.iconPath = config.tabIconColourTheme === TabIconColourTheme.Colour
 			? this.getUri('resources', 'webview-icon.svg')
 			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
 
@@ -450,30 +451,30 @@ export class GitGraphView {
 
 	private getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
-		const refLabelAlignment = config.refLabelAlignment();
+		const refLabelAlignment = config.refLabelAlignment;
 		const initialState: GitGraphViewInitialState = {
 			config: {
-				autoCenterCommitDetailsView: config.autoCenterCommitDetailsView(),
+				autoCenterCommitDetailsView: config.autoCenterCommitDetailsView,
 				branchLabelsAlignedToGraph: refLabelAlignment === RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight,
-				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels(),
-				commitDetailsViewLocation: config.commitDetailsViewLocation(),
-				contextMenuActionsVisibility: config.contextMenuActionsVisibility(),
-				customBranchGlobPatterns: config.customBranchGlobPatterns(),
-				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings(),
-				dateFormat: config.dateFormat(),
-				defaultColumnVisibility: config.defaultColumnVisibility(),
-				defaultFileViewType: config.defaultFileViewType(),
-				dialogDefaults: config.dialogDefaults(),
-				fetchAndPrune: config.fetchAndPrune(),
-				fetchAvatars: config.fetchAvatars() && this.extensionState.isAvatarStorageAvailable(),
-				graphColours: config.graphColours(),
-				graphStyle: config.graphStyle(),
+				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels,
+				commitDetailsViewLocation: config.commitDetailsViewLocation,
+				contextMenuActionsVisibility: config.contextMenuActionsVisibility,
+				customBranchGlobPatterns: config.customBranchGlobPatterns,
+				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings,
+				dateFormat: config.dateFormat,
+				defaultColumnVisibility: config.defaultColumnVisibility,
+				defaultFileViewType: config.defaultFileViewType,
+				dialogDefaults: config.dialogDefaults,
+				fetchAndPrune: config.fetchAndPrune,
+				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
+				graphColours: config.graphColours,
+				graphStyle: config.graphStyle,
 				grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },
-				initialLoadCommits: config.initialLoadCommits(),
-				loadMoreCommits: config.loadMoreCommits(),
-				muteMergeCommits: config.muteMergeCommits(),
-				showTags: config.showTags(),
-				showCurrentBranchByDefault: config.showCurrentBranchByDefault(),
+				initialLoadCommits: config.initialLoadCommits,
+				loadMoreCommits: config.loadMoreCommits,
+				muteMergeCommits: config.muteMergeCommits,
+				showCurrentBranchByDefault: config.showCurrentBranchByDefault,
+				showTags: config.showTags,
 				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),

@@ -25,21 +25,21 @@ class Config {
 		this.config = vscode.workspace.getConfiguration('git-graph');
 	}
 
-	public autoCenterCommitDetailsView() {
+	get autoCenterCommitDetailsView() {
 		return !!this.config.get('autoCenterCommitDetailsView', true);
 	}
 
-	public combineLocalAndRemoteBranchLabels() {
+	get combineLocalAndRemoteBranchLabels() {
 		return !!this.config.get('combineLocalAndRemoteBranchLabels', true);
 	}
 
-	public commitDetailsViewLocation() {
+	get commitDetailsViewLocation() {
 		return this.config.get<string>('commitDetailsViewLocation', 'Inline') === 'Docked to Bottom'
 			? CommitDetailsViewLocation.DockedToBottom
 			: CommitDetailsViewLocation.Inline;
 	}
 
-	public commitOrdering() {
+	get commitOrdering() {
 		const ordering = this.config.get<string>('commitOrdering', 'date');
 		return ordering === 'author-date'
 			? CommitOrdering.AuthorDate
@@ -48,7 +48,7 @@ class Config {
 				: CommitOrdering.Date;
 	}
 
-	public contextMenuActionsVisibility(): ContextMenuActionsVisibility {
+	get contextMenuActionsVisibility(): ContextMenuActionsVisibility {
 		let userConfig = this.config.get('contextMenuActionsVisibility', {});
 		let config = {
 			branch: { checkout: true, rename: true, delete: true, merge: true, rebase: true, push: true, copyName: true },
@@ -62,7 +62,7 @@ class Config {
 		return config;
 	}
 
-	public customBranchGlobPatterns(): CustomBranchGlobPattern[] {
+	get customBranchGlobPatterns(): CustomBranchGlobPattern[] {
 		let inPatterns = this.config.get('customBranchGlobPatterns', <any[]>[]);
 		let outPatterns: CustomBranchGlobPattern[] = [];
 		for (let i = 0; i < inPatterns.length; i++) {
@@ -73,7 +73,7 @@ class Config {
 		return outPatterns;
 	}
 
-	public customEmojiShortcodeMappings(): CustomEmojiShortcodeMapping[] {
+	get customEmojiShortcodeMappings(): CustomEmojiShortcodeMapping[] {
 		let inMappings = this.config.get('customEmojiShortcodeMappings', <any[]>[]);
 		let outMappings: CustomEmojiShortcodeMapping[] = [];
 		for (let i = 0; i < inMappings.length; i++) {
@@ -84,7 +84,7 @@ class Config {
 		return outMappings;
 	}
 
-	public dateFormat(): DateFormat {
+	get dateFormat(): DateFormat {
 		let configValue = this.config.get<string>('dateFormat', 'Date & Time'), type = DateFormatType.DateAndTime, iso = false;
 		if (configValue === 'Relative') {
 			type = DateFormatType.Relative;
@@ -95,13 +95,13 @@ class Config {
 		return { type: type, iso: iso };
 	}
 
-	public dateType() {
+	get dateType() {
 		return this.config.get<string>('dateType', 'Author Date') === 'Commit Date'
 			? DateType.Commit
 			: DateType.Author;
 	}
 
-	public defaultColumnVisibility(): DefaultColumnVisibility {
+	get defaultColumnVisibility(): DefaultColumnVisibility {
 		let obj: any = this.config.get('defaultColumnVisibility', {});
 		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean') {
 			return { author: obj['Author'], commit: obj['Commit'], date: obj['Date'] };
@@ -110,13 +110,13 @@ class Config {
 		}
 	}
 
-	public defaultFileViewType(): FileViewType {
+	get defaultFileViewType(): FileViewType {
 		return this.config.get<string>('defaultFileViewType', 'File Tree') === 'File List'
 			? FileViewType.List
 			: FileViewType.Tree;
 	}
 
-	public dialogDefaults(): DialogDefaults {
+	get dialogDefaults(): DialogDefaults {
 		let resetCommitMode = this.config.get<string>('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
 		let resetUncommittedMode = this.config.get<string>('dialog.resetUncommittedChanges.mode', 'Mixed');
 
@@ -157,58 +157,58 @@ class Config {
 		};
 	}
 
-	public fetchAndPrune() {
+	get fetchAndPrune() {
 		return !!this.config.get('fetchAndPrune', false);
 	}
 
-	public fetchAvatars() {
+	get fetchAvatars() {
 		return !!this.config.get('fetchAvatars', false);
 	}
 
-	public fileEncoding(): string {
-		return this.config.get('fileEncoding', 'utf8');
+	get fileEncoding() {
+		return this.config.get<string>('fileEncoding', 'utf8');
 	}
 
-	public graphColours() {
+	get graphColours() {
 		return this.config.get('graphColours', ['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000'])
 			.filter((v) => v.match(/^\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgb[a]?\s*\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))\s*$/) !== null);
 	}
 
-	public graphStyle() {
+	get graphStyle() {
 		return this.config.get<string>('graphStyle', 'rounded') === 'angular'
 			? GraphStyle.Angular
 			: GraphStyle.Rounded;
 	}
 
-	public initialLoadCommits() {
+	get initialLoadCommits() {
 		return this.config.get('initialLoadCommits', 300);
 	}
 
-	public integratedTerminalShell() {
+	get integratedTerminalShell() {
 		return this.config.get('integratedTerminalShell', '');
 	}
 
-	public loadMoreCommits() {
+	get loadMoreCommits() {
 		return this.config.get('loadMoreCommits', 75);
 	}
 
-	public maxDepthOfRepoSearch() {
+	get maxDepthOfRepoSearch() {
 		return this.config.get('maxDepthOfRepoSearch', 0);
 	}
 
-	public muteMergeCommits() {
+	get muteMergeCommits() {
 		return !!this.config.get('muteMergeCommits', true);
 	}
 
-	public openDiffTabLocation() {
+	get openDiffTabLocation() {
 		return this.config.get('openDiffTabLocation', 'Active') === 'Active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
 	}
 
-	public openToTheRepoOfTheActiveTextEditorDocument() {
+	get openToTheRepoOfTheActiveTextEditorDocument() {
 		return this.config.get('openToTheRepoOfTheActiveTextEditorDocument', false);
 	}
 
-	public refLabelAlignment() {
+	get refLabelAlignment() {
 		let configValue = this.config.get<string>('referenceLabelAlignment', 'Normal');
 		return configValue === 'Branches (on the left) & Tags (on the right)'
 			? RefLabelAlignment.BranchesOnLeftAndTagsOnRight
@@ -217,42 +217,42 @@ class Config {
 				: RefLabelAlignment.Normal;
 	}
 
-	public retainContextWhenHidden() {
+	get retainContextWhenHidden() {
 		return !!this.config.get('retainContextWhenHidden', true);
 	}
 
-	public showCommitsOnlyReferencedByTags() {
+	get showCommitsOnlyReferencedByTags() {
 		return !!this.config.get('showCommitsOnlyReferencedByTags', true);
 	}
 
-	public showCurrentBranchByDefault() {
+	get showCurrentBranchByDefault() {
 		return !!this.config.get('showCurrentBranchByDefault', false);
 	}
 
-	public showStatusBarItem() {
+	get showStatusBarItem() {
 		return !!this.config.get('showStatusBarItem', true);
 	}
 
-	public showTags() {
+	get showTags() {
 		return !!this.config.get('showTags', true);
 	}
 
-	public showUncommittedChanges() {
+	get showUncommittedChanges() {
 		return !!this.config.get('showUncommittedChanges', true);
 	}
 
-	public tabIconColourTheme() {
+	get tabIconColourTheme() {
 		return this.config.get<string>('tabIconColourTheme', 'colour') === 'grey'
 			? TabIconColourTheme.Grey
 			: TabIconColourTheme.Colour;
 	}
 
-	public useMailmap() {
+	get useMailmap() {
 		return !!this.config.get('useMailmap', false);
 	}
 
-	public gitPath(): string | null {
-		return vscode.workspace.getConfiguration('git').get('path', null);
+	get gitPath() {
+		return vscode.workspace.getConfiguration('git').get<string | null>('path', null);
 	}
 }
 

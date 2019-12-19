@@ -22,7 +22,7 @@ export class StatusBarItem {
 	}
 
 	public refresh() {
-		if (getConfig().showStatusBarItem() && this.numRepos > 0) {
+		if (getConfig().showStatusBarItem && this.numRepos > 0) {
 			this.statusBarItem.show();
 		} else {
 			this.statusBarItem.hide();

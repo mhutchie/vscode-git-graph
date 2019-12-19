@@ -32,7 +32,7 @@ export class RepoManager {
 		this.logger = logger;
 		this.repos = extensionState.getRepos();
 		this.ignoredRepos = extensionState.getIgnoredRepos();
-		this.maxDepthOfRepoSearch = getConfig().maxDepthOfRepoSearch();
+		this.maxDepthOfRepoSearch = getConfig().maxDepthOfRepoSearch;
 		this.startupTasks();
 
 		this.folderChangeHandler = vscode.workspace.onDidChangeWorkspaceFolders(async e => {
@@ -75,7 +75,7 @@ export class RepoManager {
 	}
 
 	public maxDepthOfRepoSearchChanged() {
-		let newDepth = getConfig().maxDepthOfRepoSearch();
+		const newDepth = getConfig().maxDepthOfRepoSearch;
 		if (newDepth > this.maxDepthOfRepoSearch) {
 			this.maxDepthOfRepoSearch = newDepth;
 			this.searchWorkspaceForRepos();

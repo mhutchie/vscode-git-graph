@@ -43,8 +43,8 @@ export class DataSource {
 
 	public generateGitCommandFormats() {
 		const config = getConfig();
-		let dateType = config.dateType() === DateType.Author ? '%at' : '%ct';
-		let useMailmap = config.useMailmap();
+		const dateType = config.dateType === DateType.Author ? '%at' : '%ct';
+		const useMailmap = config.useMailmap;
 		this.gitFormatCommitDetails = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
 		this.gitFormatLog = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
 		this.gitFormatStash = ['%H', '%P', '%gD', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
@@ -71,7 +71,7 @@ export class DataSource {
 	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, showTags: boolean, remotes: string[], hideRemotes: string[]): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
-			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags(), showRemoteBranches, config.commitOrdering(), remotes, hideRemotes),
+			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, config.commitOrdering, remotes, hideRemotes),
 			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 			this.getStashes(repo)
 		]).then(async (results) => {
@@ -94,7 +94,7 @@ export class DataSource {
 			if (refData.head !== null) {
 				for (i = 0; i < commits.length; i++) {
 					if (refData.head === commits[i].hash) {
-						unsavedChanges = config.showUncommittedChanges() ? await this.getUnsavedChanges(repo) : null;
+						unsavedChanges = config.showUncommittedChanges ? await this.getUnsavedChanges(repo) : null;
 						if (unsavedChanges !== null) {
 							commits.unshift({ hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
 						}
@@ -248,7 +248,7 @@ export class DataSource {
 
 	public getCommitFile(repo: string, commitHash: string, filePath: string) {
 		return this._spawnGit(['show', commitHash + ':' + filePath], repo, stdout => {
-			let encoding = getConfig().fileEncoding();
+			let encoding = getConfig().fileEncoding;
 			return decode(stdout, encodingExists(encoding) ? encoding : 'utf8');
 		});
 	}

@@ -125,8 +125,13 @@ export function openFile(repo: string, filePath: string) {
 		let p = path.join(repo, filePath);
 		fs.exists(p, exists => {
 			if (exists) {
-				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), { preview: true, viewColumn: getConfig().openDiffTabLocation() })
-					.then(() => resolve(null), () => resolve('Visual Studio Code was unable to open ' + filePath + '.'));
+				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), {
+					preview: true,
+					viewColumn: getConfig().openDiffTabLocation
+				}).then(
+					() => resolve(null),
+					() => resolve('Visual Studio Code was unable to open ' + filePath + '.')
+				);
 			} else {
 				resolve('The file ' + filePath + ' doesn\'t currently exist in this repository.');
 			}
@@ -145,7 +150,10 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 		if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-		return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, { preview: true, viewColumn: getConfig().openDiffTabLocation() }).then(
+		return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {
+			preview: true,
+			viewColumn: getConfig().openDiffTabLocation
+		}).then(
 			() => null,
 			() => 'Visual Studio Code was unable load the diff editor for ' + newFilePath + '.'
 		);
@@ -167,7 +175,7 @@ export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command
 	p += path.dirname(gitPath);
 
 	let options: vscode.TerminalOptions = { cwd: cwd, name: name, env: { 'PATH': p } };
-	let shell = getConfig().integratedTerminalShell();
+	let shell = getConfig().integratedTerminalShell;
 	if (shell !== '') options.shellPath = shell;
 
 	let terminal = vscode.window.createTerminal(options);
@@ -233,7 +241,7 @@ export async function findGit(extensionState: ExtensionState) {
 		} catch (_) { }
 	}
 
-	const configGitPath = getConfig().gitPath();
+	const configGitPath = getConfig().gitPath;
 	if (configGitPath !== null) {
 		try {
 			return await getGitExecutable(configGitPath);

@@ -473,6 +473,7 @@ export class GitGraphView {
 				initialLoadCommits: config.initialLoadCommits,
 				loadMoreCommits: config.loadMoreCommits,
 				muteMergeCommits: config.muteMergeCommits,
+				openRepoToHead: config.openRepoToHead,
 				showCurrentBranchByDefault: config.showCurrentBranchByDefault,
 				showTags: config.showTags,
 				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal

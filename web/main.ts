@@ -13,6 +13,7 @@ class GitGraphView {
 	private readonly graph: Graph;
 	private readonly config: Config;
 
+	private repoFirstLoad: boolean = false;
 	private moreCommitsAvailable: boolean = false;
 	private expandedCommit: ExpandedCommit | null = null;
 	private maxCommits: number;
@@ -160,6 +161,8 @@ class GitGraphView {
 		this.settingsWidget.close();
 		this.currentBranches = null;
 		this.saveState();
+
+		this.repoFirstLoad = true;
 		this.refresh(true);
 	}
 
@@ -291,6 +294,13 @@ class GitGraphView {
 
 		this.triggerLoadCommitsCallback(true);
 		this.requestAvatars(avatarsNeeded);
+
+		if (this.repoFirstLoad) {
+			if (this.config.openRepoToHead && this.commitHead !== null) {
+				this.scrollToCommit(this.commitHead, true);
+			}
+			this.repoFirstLoad = false;
+		}
 	}
 	private triggerLoadCommitsCallback(changes: boolean) {
 		if (this.loadCommitsCallback !== null) {

@@ -204,8 +204,12 @@ class Config {
 		return this.config.get('openDiffTabLocation', 'Active') === 'Active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
 	}
 
+	get openRepoToHead() {
+		return !!this.config.get('openRepoToHead', false);
+	}
+
 	get openToTheRepoOfTheActiveTextEditorDocument() {
-		return this.config.get('openToTheRepoOfTheActiveTextEditorDocument', false);
+		return !!this.config.get('openToTheRepoOfTheActiveTextEditorDocument', false);
 	}
 
 	get refLabelAlignment() {

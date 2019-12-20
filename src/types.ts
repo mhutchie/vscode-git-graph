@@ -132,6 +132,7 @@ export interface GitGraphViewConfig {
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
 	readonly muteMergeCommits: boolean;
+	readonly openRepoToHead: boolean;
 	readonly showCurrentBranchByDefault: boolean;
 	readonly showTags: boolean;
 	readonly tagLabelsOnRight: boolean;

@@ -587,10 +587,15 @@
 					"default": "Active",
 					"description": "Specifies which pane the Visual Studio Code Diff is opened in."
 				},
+				"git-graph.openRepoToHead": {
+					"type": "boolean",
+					"default": false,
+					"description": "When opening or switching repositories in the Git Graph View, automatically scroll the view to be centered on the commit referenced by HEAD."
+				},
 				"git-graph.openToTheRepoOfTheActiveTextEditorDocument": {
 					"type": "boolean",
 					"default": false,
-					"description": "Open Git Graph to the repository containing the active Text Editor document."
+					"description": "Open the Git Graph View to the repository containing the active Text Editor document."
 				},
 				"git-graph.referenceLabelAlignment": {
 					"type": "string",

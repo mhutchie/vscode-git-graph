@@ -1,4 +1,6 @@
 const CLASS_GRAPH_VERTEX_ACTIVE = 'graphVertexActive';
+const NULL_VERTEX_ID = -1;
+
 
 /* Types */
 
@@ -188,7 +190,7 @@ class Vertex {
 		this.children.push(vertex);
 	}
 
-	public getChildren() {
+	public getChildren(): ReadonlyArray<Vertex> {
 		return this.children;
 	}
 
@@ -197,6 +199,10 @@ class Vertex {
 
 	public addParent(vertex: Vertex) {
 		this.parents.push(vertex);
+	}
+
+	public getParents(): ReadonlyArray<Vertex> {
+		return this.parents;
 	}
 
 	public hasParents() {
@@ -319,8 +325,9 @@ class Graph {
 	private availableColours: number[] = [];
 	private maxWidth: number = -1;
 
-	private commits: GG.GitCommit[] = [];
+	private commits: ReadonlyArray<GG.GitCommit> = [];
 	private commitHead: string | null = null;
+	private commitLookup: { [hash: string]: number } = {};
 	private expandedCommitId: number = -1;
 
 	private readonly viewElem: HTMLElement;
@@ -364,15 +371,16 @@ class Graph {
 
 	/* Graph Operations */
 
-	public loadCommits(commits: GG.GitCommit[], commitHead: string | null, commitLookup: { [hash: string]: number }) {
+	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }) {
 		this.commits = commits;
 		this.commitHead = commitHead;
+		this.commitLookup = commitLookup;
 		this.vertices = [];
 		this.branches = [];
 		this.availableColours = [];
 		if (commits.length === 0) return;
 
-		const nullVertex = new Vertex(-1);
+		const nullVertex = new Vertex(NULL_VERTEX_ID);
 		let i: number, j: number;
 		for (i = 0; i < commits.length; i++) {
 			this.vertices.push(new Vertex(i));
@@ -511,6 +519,50 @@ class Graph {
 		return Object.keys(visited).map((key) => visited[key]).sort((a, b) => a - b);
 	}
 
+	public getMutedCommits(currentHash: string | null) {
+		const muted = [];
+		for (let i = 0; i < this.commits.length; i++) {
+			muted[i] = false;
+		}
+
+		// Mute any merge commits if the Extension Setting is enabled
+		if (this.config.muteMergeCommits) {
+			for (let i = 0; i < this.commits.length; i++) {
+				if (this.commits[i].parents.length > 1 && this.commits[i].stash === null) {
+					muted[i] = true;
+				}
+			}
+		}
+
+		// Mute any commits that are not ancestors of the commit head if the Extension Setting is enabled, and the head commit is in the graph
+		if (this.config.muteCommitsNotAncestorsOfHead && currentHash !== null && typeof this.commitLookup[currentHash] === 'number') {
+			let ancestor: boolean[] = [];
+			for (let i = 0; i < this.commits.length; i++) {
+				ancestor[i] = false;
+			}
+
+			// Recursively discover ancestors of commit head
+			const rec = (vertex: Vertex) => {
+				const id = vertex.getId();
+				if (id === NULL_VERTEX_ID || ancestor[id]) return;
+				ancestor[id] = true;
+
+				let parents = vertex.getParents();
+				for (let i = 0; i < parents.length; i++) rec(parents[i]);
+			};
+			rec(this.vertices[this.commitLookup[currentHash]]);
+
+			for (let i = 0; i < this.commits.length; i++) {
+				if (!ancestor[i] && (this.commits[i].stash === null || typeof this.commitLookup[this.commits[i].stash!.baseHash] !== 'number' || !ancestor[this.commitLookup[this.commits[i].stash!.baseHash]])) {
+					// Commit i is not an ancestor of currentHash, or a stash based on an ancesstor of currentHash
+					muted[i] = true;
+				}
+			}
+		}
+
+		return muted;
+	}
+
 
 	/* Width Adjustment Methods */
 
@@ -547,7 +599,7 @@ class Graph {
 		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent(), curVertex;
 		let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint(), curPoint;
 
-		if (parentVertex !== null && parentVertex.getId() > -1 && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
+		if (parentVertex !== null && parentVertex.getId() !== NULL_VERTEX_ID && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
 			// Branch is a merge between two vertices already on branches
 			let foundPointToParent = false, parentBranch = parentVertex.getBranch()!;
 			for (i = startAt + 1; i < this.vertices.length; i++) {
@@ -592,7 +644,7 @@ class Graph {
 					}
 				}
 			}
-			if (i === this.vertices.length && parentVertex !== null && parentVertex.getId() === -1) {
+			if (i === this.vertices.length && parentVertex !== null && parentVertex.getId() === NULL_VERTEX_ID) {
 				// Vertex is the last in the graph, so no more branch can be formed to the parent
 				vertex.registerParentProcessed();
 			}

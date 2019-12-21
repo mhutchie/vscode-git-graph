@@ -196,6 +196,10 @@ class Config {
 		return this.config.get('maxDepthOfRepoSearch', 0);
 	}
 
+	get muteCommitsThatAreNotAncestorsOfHead() {
+		return !!this.config.get('muteCommitsThatAreNotAncestorsOfHead', false);
+	}
+
 	get muteMergeCommits() {
 		return !!this.config.get('muteMergeCommits', true);
 	}

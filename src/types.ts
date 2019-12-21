@@ -131,6 +131,7 @@ export interface GitGraphViewConfig {
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
+	readonly muteCommitsNotAncestorsOfHead: boolean;
 	readonly muteMergeCommits: boolean;
 	readonly openRepoToHead: boolean;
 	readonly showCurrentBranchByDefault: boolean;

@@ -201,10 +201,26 @@ body #view{
 #commitTable tr.commit td{
 	cursor:pointer;
 }
-#commitTable tr.commit.current td span.text{
+
+#commitTable tr.commit.current span.description .text{
 	font-weight:bold;
 }
-#commitTable tr.commit.merge td.text, #commitTable tr.commit.merge td span.text{
+
+#commitTable tr.commit span.description{
+	display:flex;
+}
+#commitTable tr.commit span.description .commitHeadDot, #commitTable tr.commit td span.description .gitRef{
+	flex-shrink:0;
+}
+#commitTable tr.commit span.description .text{
+	display:inline-block;
+	text-overflow:ellipsis;
+	white-space:nowrap;
+	overflow:hidden;
+	flex-grow:1;
+}
+
+#commitTable tr.commit.mute td.text, #commitTable tr.commit.mute span.description .text{
 	opacity:0.5;
 }
 
@@ -588,7 +604,10 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 #commitTable tr.commit.findCurrentCommit {
 	background-image:linear-gradient(var(--git-graph-findMatchCommit), var(--git-graph-findMatchCommit));
 }
-#commitTable tr.commit.merge.commitDetailsOpen td.text, #commitTable tr.commit.merge.commitDetailsOpen td span.text, #commitTable tr.commit.merge.findCurrentCommit td.text, #commitTable tr.commit.merge.findCurrentCommit td span.text{
+#commitTable tr.commit.mute.commitDetailsOpen td.text,
+#commitTable tr.commit.mute.commitDetailsOpen span.description .text,
+#commitTable tr.commit.mute.findCurrentCommit td.text,
+#commitTable tr.commit.mute.findCurrentCommit span.description .text{
 	opacity:1;
 }
 
@@ -645,9 +664,6 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 
 body.branchLabelsAlignedToGraph tr.commit td:first-child .gitRef:last-child{
 	margin-right:0;
-}
-body.tagLabelsRightAligned .gitRefTags{
-	float:right;
 }
 body.tagLabelsRightAligned .gitRef.tag{
 	margin-left:5px;

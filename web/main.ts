@@ -8,12 +8,13 @@ class GitGraphView {
 	private commitLookup: { [hash: string]: number } = {};
 	private avatars: AvatarImageCollection = {};
 	private currentBranches: string[] | null = null;
+
 	private currentRepo!: string;
+	private currentRepoLoading: boolean = true;
 
 	private readonly graph: Graph;
 	private readonly config: Config;
 
-	private repoFirstLoad: boolean = false;
 	private moreCommitsAvailable: boolean = false;
 	private expandedCommit: ExpandedCommit | null = null;
 	private maxCommits: number;
@@ -88,7 +89,8 @@ class GitGraphView {
 		this.observeKeyboardEvents();
 
 		this.renderShowLoading();
-		if (prevState && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
+
+		if (prevState && !prevState.currentRepoLoading && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
 			this.currentRepo = prevState.currentRepo;
 			this.currentBranches = prevState.currentBranches;
 			this.maxCommits = prevState.maxCommits;
@@ -102,7 +104,13 @@ class GitGraphView {
 			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
-		if (!this.loadRepos(this.gitRepos, initialState.lastActiveRepo, initialState.loadRepo)) {
+
+		let loadRepo = initialState.loadRepo;
+		if (loadRepo === null && prevState && prevState.currentRepoLoading && typeof prevState.currentRepo !== 'undefined') {
+			loadRepo = prevState.currentRepo;
+		}
+
+		if (!this.loadRepos(this.gitRepos, initialState.lastActiveRepo, loadRepo)) {
 			if (prevState) {
 				this.scrollTop = prevState.scrollTop;
 				this.viewElem.scroll(0, this.scrollTop);
@@ -153,6 +161,7 @@ class GitGraphView {
 
 	private loadRepo(repo: string) {
 		this.currentRepo = repo;
+		this.currentRepoLoading = true;
 		this.showRemoteBranchesElem.checked = this.gitRepos[this.currentRepo].showRemoteBranches;
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitRemotes = [];
@@ -161,8 +170,6 @@ class GitGraphView {
 		this.settingsWidget.close();
 		this.currentBranches = null;
 		this.saveState();
-
-		this.repoFirstLoad = true;
 		this.refresh(true);
 	}
 
@@ -227,7 +234,7 @@ class GitGraphView {
 	}
 
 	public loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
-		if (!hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
+		if (!this.currentRepoLoading && !hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
 			arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) &&
@@ -258,11 +265,12 @@ class GitGraphView {
 			return;
 		}
 
+		const currentRepoLoading = this.currentRepoLoading;
+		this.currentRepoLoading = false;
 		this.moreCommitsAvailable = moreAvailable;
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.commitLookup = {};
-		this.saveState();
 
 		let i: number, expandedCommitVisible = false, expandedCompareWithCommitVisible = false, avatarsNeeded: { [email: string]: string[] } = {}, commit;
 		for (i = 0; i < this.commits.length; i++) {
@@ -284,22 +292,20 @@ class GitGraphView {
 			}
 		}
 
-		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
-
 		if (this.expandedCommit !== null && (!expandedCommitVisible || (this.expandedCommit.compareWithHash !== null && !expandedCompareWithCommitVisible))) {
 			this.closeCommitDetails(false);
-			this.saveState();
 		}
+
+		this.saveState();
+
+		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
 		this.render();
 
 		this.triggerLoadCommitsCallback(true);
 		this.requestAvatars(avatarsNeeded);
 
-		if (this.repoFirstLoad) {
-			if (this.config.openRepoToHead && this.commitHead !== null) {
-				this.scrollToCommit(this.commitHead, true);
-			}
-			this.repoFirstLoad = false;
+		if (currentRepoLoading && this.config.openRepoToHead && this.commitHead !== null) {
+			this.scrollToCommit(this.commitHead, true);
 		}
 	}
 	private triggerLoadCommitsCallback(changes: boolean) {
@@ -449,6 +455,8 @@ class GitGraphView {
 
 	public saveState() {
 		VSCODE_API.setState({
+			currentRepo: this.currentRepo,
+			currentRepoLoading: this.currentRepoLoading,
 			gitRepos: this.gitRepos,
 			gitBranches: this.gitBranches,
 			gitBranchHead: this.gitBranchHead,
@@ -457,7 +465,6 @@ class GitGraphView {
 			commitHead: this.commitHead,
 			avatars: this.avatars,
 			currentBranches: this.currentBranches,
-			currentRepo: this.currentRepo,
 			moreCommitsAvailable: this.moreCommitsAvailable,
 			maxCommits: this.maxCommits,
 			expandedCommit: this.expandedCommit,

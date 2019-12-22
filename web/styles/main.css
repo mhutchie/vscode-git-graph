@@ -87,6 +87,11 @@ body #view{
 	stroke-width:1;
 	stroke-opacity:0.75;
 }
+#commitGraph circle.stashInner{
+	stroke-opacity:1;
+	pointer-events:none;
+	fill:transparent;
+}
 #commitGraph path.shadow{
 	fill:none;
 	stroke:var(--vscode-editor-background);

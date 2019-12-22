@@ -164,7 +164,9 @@ class Branch {
 /* Vertex Class */
 
 class Vertex {
-	private readonly y: number;
+	public readonly id: number;
+	public readonly isStash: boolean;
+
 	private x: number = 0;
 	private children: Vertex[] = [];
 	private parents: Vertex[] = [];
@@ -175,12 +177,9 @@ class Vertex {
 	private nextX: number = 0;
 	private connections: UnavailablePoint[] = [];
 
-	constructor(y: number) {
-		this.y = y;
-	}
-
-	public getId() {
-		return this.y;
+	constructor(id: number, isStash: boolean) {
+		this.id = id;
+		this.isStash = isStash;
 	}
 
 
@@ -253,16 +252,18 @@ class Vertex {
 	/* Point */
 
 	public getPoint(): Point {
-		return { x: this.x, y: this.y };
+		return { x: this.x, y: this.id };
 	}
 
 	public getNextPoint(): Point {
-		return { x: this.nextX, y: this.y };
+		return { x: this.nextX, y: this.id };
 	}
 
 	public getPointConnectingTo(vertex: VertexOrNull, onBranch: Branch) {
 		for (let i = 0; i < this.connections.length; i++) {
-			if (this.connections[i].connectsTo === vertex && this.connections[i].onBranch === onBranch) return { x: i, y: this.y };
+			if (this.connections[i].connectsTo === vertex && this.connections[i].onBranch === onBranch) {
+				return { x: i, y: this.id };
+			}
 		}
 		return null;
 	}
@@ -298,11 +299,14 @@ class Vertex {
 	public draw(svg: SVGElement, config: Config, expandOffset: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
 		if (this.onBranch === null) return;
 
-		let circle = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'circle'));
-		circle.dataset.id = this.y.toString();
-		let colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
-		circle.setAttribute('cx', (this.x * config.grid.x + config.grid.offsetX).toString());
-		circle.setAttribute('cy', (this.y * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString());
+		const colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
+		const cx = (this.x * config.grid.x + config.grid.offsetX).toString();
+		const cy = (this.id * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString();
+
+		const circle = document.createElementNS(SVG_NAMESPACE, 'circle');
+		circle.dataset.id = this.id.toString();
+		circle.setAttribute('cx', cx);
+		circle.setAttribute('cy', cy);
 		circle.setAttribute('r', '4');
 		if (this.isCurrent) {
 			circle.setAttribute('class', 'current');
@@ -310,6 +314,19 @@ class Vertex {
 		} else {
 			circle.setAttribute('fill', colour);
 		}
+		svg.appendChild(circle);
+
+		if (this.isStash && !this.isCurrent) {
+			circle.setAttribute('r', '4.5');
+			circle.setAttribute('class', 'stashOuter');
+			const innerCircle = document.createElementNS(SVG_NAMESPACE, 'circle');
+			innerCircle.setAttribute('cx', cx);
+			innerCircle.setAttribute('cy', cy);
+			innerCircle.setAttribute('r', '2');
+			innerCircle.setAttribute('class', 'stashInner');
+			svg.appendChild(innerCircle);
+		}
+
 		circle.addEventListener('mouseover', overListener);
 		circle.addEventListener('mouseout', outListener);
 	}
@@ -380,10 +397,10 @@ class Graph {
 		this.availableColours = [];
 		if (commits.length === 0) return;
 
-		const nullVertex = new Vertex(NULL_VERTEX_ID);
+		const nullVertex = new Vertex(NULL_VERTEX_ID, false);
 		let i: number, j: number;
 		for (i = 0; i < commits.length; i++) {
-			this.vertices.push(new Vertex(i));
+			this.vertices.push(new Vertex(i, commits[i].stash !== null));
 		}
 		for (i = 0; i < commits.length; i++) {
 			for (j = 0; j < commits[i].parents.length; j++) {
@@ -507,11 +524,10 @@ class Graph {
 	private getAllChildren(i: number) {
 		let visited: { [id: string]: number } = {};
 		const rec = (vertex: Vertex) => {
-			let id = vertex.getId();
-			let idStr = id.toString();
+			const idStr = vertex.id.toString();
 			if (typeof visited[idStr] !== 'undefined') return;
 
-			visited[idStr] = id;
+			visited[idStr] = vertex.id;
 			let children = vertex.getChildren();
 			for (let i = 0; i < children.length; i++) rec(children[i]);
 		};
@@ -543,9 +559,8 @@ class Graph {
 
 			// Recursively discover ancestors of commit head
 			const rec = (vertex: Vertex) => {
-				const id = vertex.getId();
-				if (id === NULL_VERTEX_ID || ancestor[id]) return;
-				ancestor[id] = true;
+				if (vertex.id === NULL_VERTEX_ID || ancestor[vertex.id]) return;
+				ancestor[vertex.id] = true;
 
 				let parents = vertex.getParents();
 				for (let i = 0; i < parents.length; i++) rec(parents[i]);
@@ -599,7 +614,7 @@ class Graph {
 		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent(), curVertex;
 		let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint(), curPoint;
 
-		if (parentVertex !== null && parentVertex.getId() !== NULL_VERTEX_ID && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
+		if (parentVertex !== null && parentVertex.id !== NULL_VERTEX_ID && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
 			// Branch is a merge between two vertices already on branches
 			let foundPointToParent = false, parentBranch = parentVertex.getBranch()!;
 			for (i = startAt + 1; i < this.vertices.length; i++) {
@@ -644,7 +659,7 @@ class Graph {
 					}
 				}
 			}
-			if (i === this.vertices.length && parentVertex !== null && parentVertex.getId() === NULL_VERTEX_ID) {
+			if (i === this.vertices.length && parentVertex !== null && parentVertex.id === NULL_VERTEX_ID) {
 				// Vertex is the last in the graph, so no more branch can be formed to the parent
 				vertex.registerParentProcessed();
 			}
@@ -698,7 +713,7 @@ class Graph {
 
 	private showTooltip(id: number, vertexScreenY: number) {
 		if (this.tooltipVertex !== null) {
-			this.tooltipVertex.setAttribute('r', '5');
+			this.tooltipVertex.setAttribute('r', this.tooltipVertex.classList.contains('stashOuter') ? '5.5' : '5');
 		}
 
 		const children = this.getAllChildren(id);
@@ -795,7 +810,7 @@ class Graph {
 		}
 
 		if (this.tooltipVertex !== null) {
-			this.tooltipVertex.setAttribute('r', '4');
+			this.tooltipVertex.setAttribute('r', this.tooltipVertex.classList.contains('stashOuter') ? '4.5' : '4');
 			this.tooltipVertex = null;
 		}
 	}

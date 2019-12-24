@@ -1,5 +1,21 @@
 # Change Log
 
+## Happy Holidays & New Year
+I'd like to wish everyone Happy Holidays and all the best for the New Year! Thank you all for using and supporting Git Graph this year, and making it a part of your development workflow. I first released Git Graph just 11 months ago, and in this short amount of time over 170 feature requests & improvements driven by your feedback have been implemented. I look forward to making Git Graph an even more useful tool in 2020, there's heaps of exciting new features on their way! 
+
+## 1.20.0 - 2019-12-24
+* #139 Added a new Extension Setting `git-graph.muteCommitsThatAreNotAncestorsOfHead`, that when enabled will display commits that aren't ancestors of the checked-out branch / commit with a muted text colour. 
+* #219 Added a new Extension Setting `git-graph.openRepoToHead`, that when enabled will scroll the Git Graph View to be centered on the commit referenced by HEAD when opening or switching repositories. Default: false (disabled)
+* #222 Resolve symbolic links when Git Graph is opened via the Visual Studio Code Source Control View.
+* #223 Enhancements to Issue Linking:
+    * New checkbox to use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).
+    * Automatically prefill the "Issue Regex" field if a common issue pattern is detected in commit messages in the repository.
+* #227 Format the leading whitespace of lines in commit messages (in the Commit Details View) and tag messages (in the Tag Details Dialog).
+* #232 Limit the maximum width of the Control Bar dropdowns to improve support for lower resolution viewports and long branch names.
+* #233 Added an "Always Accept" checkbox on the "Checkout Commit" Dialog.
+* #237 When a commit in the graph is a stash, it is now displayed differently from normal commits.
+* Various code and UI improvements.
+
 ## 1.19.1 - 2019-11-27
 * #221 Fixed a compatibility issue with Visual Studio Code Remote Development that was introduced in Git Graph 1.19.0.
 
@@ -8,7 +24,7 @@
 * #208 Include the Untracked Files of Stashes in the Commit Details View.
 * #213 Added a new extension setting to set the default state of the "Force Delete" checkbox on the "Delete Branch" dialog.
 * #215 Added "Open Git Graph Extension Settings" button on the Repository Settings Widget.
-* #216 Added new "Show Tags" Extension Setting, that can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
+* #216 Added a new "Show Tags" Extension Setting, that can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
 * #218 New Keyboard Shortcut `CTRL/CMD + h` scrolls the Git Graph View to be centered on the commit referenced by HEAD.
 * Numerous code and UI improvements, including:
     * #209 Improved handling of Electron `*.asar` files.
@@ -258,13 +274,13 @@
 * Significantly reduced package size.
 
 ## 1.3.1 - 2019-02-17
-* View the Visual Studio Code Diff of a file change in a commit, by clicking on the file in the commit details view.
+* #5 View the Visual Studio Code Diff of a file change in a commit, by clicking on the file in the commit details view.
 * All git commands are run asynchronously to improve responsiveness.
 
 ## 1.3.0 - 2019-02-16
-* Commit details view (click on a commit to open it). This shows the full commit details, and a tree view of all file changes in the commit.
-* Support for git reset hard, mixed & soft.
-* Add the branch colour to ref labels to make them easier to read.
+* #4 Commit details view (click on a commit to open it). This shows the full commit details, and a tree view of all file changes in the commit.
+* #2 Support for git reset hard, mixed & soft.
+* #1 Add the branch colour to ref labels to make them easier to read.
 
 ## 1.2.0 - 2019-02-12
 * Graph generation improvements, making complex graphs easier to read

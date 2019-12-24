@@ -65,7 +65,7 @@ Detailed information of all Git Graph settings is available [here](https://githu
 A summary of the Git Graph extension settings are:
 
 * **Auto Center Commit Details View**: Automatically center the commit details view when it is opened.
-* **Combine Local And Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
+* **Combine Local and Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
 * **Commit Details View Location**: Specifies where the Commit Details View is rendered in the Git Graph view. Default: Inline (with graph)
 * **Commit Ordering**: Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option. Default: date
 * **Context Menu Actions Visibility**: Customise which context menu actions are visible. For more information, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
@@ -85,9 +85,11 @@ A summary of the Git Graph extension settings are:
 * **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when opened by Git Graph during Interactive Rebase's.
 * **Load More Commits**: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
-* **Mute Merge Commits**: Show merge commits with a muted text colour. Default: true (enabled)
+* **Mute Commits that are not ancestors of HEAD**: Display commits that aren't ancestors of the checked-out branch / commit with a muted text color. Default: false (disabled)
+* **Mute Merge Commits**: Display merge commits with a muted text color. Default: true (enabled)
 * **Open Diff Tab Location**: Specifies which pane the Visual Studio Code Diff is opened in. Default: Active
-* **Open To The Repo Of The Active Text Editor Document**: Open Git Graph to the repository containing the active Text Editor document. Default: false (disabled)
+* **Open Repo to HEAD**: When opening or switching repositories in the Git Graph View, automatically scroll the view to be centered on the commit referenced by HEAD. Default: false (disabled)
+* **Open to the Repo of the Active Text Editor Document**: Open the Git Graph View to the repository containing the active Text Editor document. Default: false (disabled)
 * **Reference Label Alignment**: Specifies how branch and tag reference labels are aligned for each commit.
 * **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead. Default: true (enabled)
 * **Show Commits Only Referenced By Tags**: Show commits that are only referenced by tags in Git Graph. Default: true (enabled)

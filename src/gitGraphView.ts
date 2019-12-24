@@ -383,14 +383,14 @@ export class GitGraphView {
 						error: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
 					});
 					break;
-				case 'setRepoState':
-					this.repoManager.setRepoState(msg.repo, msg.state);
-					break;
 				case 'setGlobalViewState':
 					this.sendMessage({
 						command: 'setGlobalViewState',
 						error: await this.extensionState.setGlobalViewState(msg.state)
 					});
+					break;
+				case 'setRepoState':
+					this.repoManager.setRepoState(msg.repo, msg.state);
 					break;
 				case 'startCodeReview':
 					this.sendMessage({

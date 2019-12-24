@@ -732,7 +732,10 @@ class Graph {
 			return htmlRefs.join('');
 		};
 
-		let html = '<div class="graphTooltipTitle">Commit ' + abbrevCommit(this.commits[id].hash) + '</div><div class="graphTooltipSection">This commit is ' + (childrenIncludesHead ? '' : '<b><i>not</i></b> ') + 'included in <span class="graphTooltipRef">HEAD</span></div>';
+		let html = '<div class="graphTooltipTitle">Commit ' + abbrevCommit(this.commits[id].hash) + '</div>';
+		if (this.commitHead !== null && typeof this.commitLookup[this.commitHead] === 'number') {
+			html += '<div class="graphTooltipSection">This commit is ' + (childrenIncludesHead ? '' : '<b><i>not</i></b> ') + 'included in <span class="graphTooltipRef">HEAD</span></div>';
+		}
 		if (heads.length > 0 || remotes.length > 0) {
 			let branchLabels = getBranchLabels(heads, remotes), htmlRefs: string[] = [];
 			branchLabels.heads.forEach((head) => {

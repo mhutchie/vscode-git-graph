@@ -224,9 +224,9 @@ class SettingsWidget {
 					? this.issueLinkingConfig
 					: globalState.issueLinkingConfig;
 				if (issueLinkingConfig !== null) {
-					this.showIssueLinkingDialog(issueLinkingConfig.issue, issueLinkingConfig.url, true);
+					this.showIssueLinkingDialog(issueLinkingConfig.issue, issueLinkingConfig.url, this.issueLinkingConfig === null && globalState.issueLinkingConfig !== null, true);
 				} else {
-					this.showIssueLinkingDialog(null, null, false);
+					this.showIssueLinkingDialog(null, null, false, false);
 				}
 			});
 
@@ -270,23 +270,24 @@ class SettingsWidget {
 		this.render();
 	}
 
-	private showIssueLinkingDialog(defaultIssueRegex: string | null, defaultIssueUrl: string | null, isEdit: boolean) {
+	private showIssueLinkingDialog(defaultIssueRegex: string | null, defaultIssueUrl: string | null, defaultUseGlobally: boolean, isEdit: boolean) {
 		let html = '<b>' + (isEdit ? 'Edit Issue Linking for' : 'Add Issue Linking to') + ' this Repository</b>';
 		html += '<p style="font-size:12px; margin:6px 0;">The following example links <b>#123</b> in commit messages to <b>https://github.com/mhutchie/repo/issues/123</b>:</p>';
 		html += '<table style="display:inline-table; width:360px; text-align:left; font-size:12px; margin-bottom:2px;"><tr><td>Issue Regex:</td><td>#(\\d+)</td></tr><tr><td>Issue URL:</td><td>https://github.com/mhutchie/repo/issues/$1</td></tr></tbody></table>';
 
-		let autodetectedIssueRegex = false;
 		if (!isEdit && defaultIssueRegex === null && defaultIssueUrl === null) {
 			defaultIssueRegex = autoDetectIssueRegex(this.view.getCommits());
-			if (defaultIssueRegex !== null) autodetectedIssueRegex = true;
+			if (defaultIssueRegex !== null) {
+				html += '<p style="font-size:12px"><i>The prefilled Issue Regex was detected in commit messages in this repository. Review and/or correct it if necessary.</i></p>';
+			}
 		}
 
 		dialog.showForm(html, [
-			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' + (autodetectedIssueRegex ? ' Note: The prefilled regular expression was detected in commit messages in this repository.' : '') },
+			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' },
 			{ type: 'text', name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' },
-			{ type: 'checkbox', name: 'Use Globally', value: this.issueLinkingConfig === null && globalState.issueLinkingConfig !== null, info: 'Use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).' }
+			{ type: 'checkbox', name: 'Use Globally', value: defaultUseGlobally, info: 'Use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).' }
 		], 'Save', (values) => {
-			let issueRegex = (<string>values[0]).trim(), issueUrl = (<string>values[1]).trim();
+			let issueRegex = (<string>values[0]).trim(), issueUrl = (<string>values[1]).trim(), useGlobally = <boolean>values[2];
 			let regExpParseError = null;
 			try {
 				if (issueRegex.indexOf('(') === -1 || issueRegex.indexOf(')') === -1) {
@@ -299,14 +300,14 @@ class SettingsWidget {
 			}
 			if (regExpParseError !== null) {
 				dialog.showError('Invalid Issue Regex', regExpParseError, 'Go Back', () => {
-					this.showIssueLinkingDialog(issueRegex, issueUrl, isEdit);
+					this.showIssueLinkingDialog(issueRegex, issueUrl, useGlobally, isEdit);
 				}, null);
 			} else if (issueUrl.indexOf('$1') === -1) {
 				dialog.showError('Invalid Issue URL', 'The Issue URL does not contain the placeholder $1 for the issue number captured in the Issue Regex.', 'Go Back', () => {
-					this.showIssueLinkingDialog(issueRegex, issueUrl, isEdit);
+					this.showIssueLinkingDialog(issueRegex, issueUrl, useGlobally, isEdit);
 				}, null);
 			} else {
-				this.setIssueLinkingConfig({ issue: issueRegex, url: issueUrl }, <boolean>values[2]);
+				this.setIssueLinkingConfig({ issue: issueRegex, url: issueUrl }, useGlobally);
 			}
 		}, null, false);
 	}

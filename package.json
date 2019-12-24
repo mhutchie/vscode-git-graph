@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.19.1",
+	"version": "1.20.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -32,7 +32,9 @@
 	"engines": {
 		"vscode": "^1.31.0"
 	},
-	"extensionKind": "workspace",
+	"extensionKind": [
+		"workspace"
+	],
 	"activationEvents": [
 		"*"
 	],
@@ -572,7 +574,7 @@
 				"git-graph.muteCommitsThatAreNotAncestorsOfHead": {
 					"type": "boolean",
 					"default": false,
-					"description": "Display commits that aren't ancestors of the checked-out branch / commit with a muted text color."
+					"description": "Display commits that aren't ancestors of the checked-out branch / commit with a muted text color. Muting will only occur if the commit referenced by HEAD is within the loaded commits on the Git Graph View."
 				},
 				"git-graph.muteMergeCommits": {
 					"type": "boolean",
@@ -595,7 +597,7 @@
 				"git-graph.openRepoToHead": {
 					"type": "boolean",
 					"default": false,
-					"description": "When opening or switching repositories in the Git Graph View, automatically scroll the view to be centered on the commit referenced by HEAD."
+					"description": "When opening or switching repositories in the Git Graph View, automatically scroll the view to be centered on the commit referenced by HEAD. This will only occur if the commit referenced by HEAD is within the loaded commits on the Git Graph View."
 				},
 				"git-graph.openToTheRepoOfTheActiveTextEditorDocument": {
 					"type": "boolean",

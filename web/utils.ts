@@ -98,9 +98,6 @@ function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	}
 	return true;
 }
-function pad2(i: number) {
-	return i > 9 ? i : '0' + i;
-}
 
 // Modify opacity of rgb/rgba/hex colour by multiplying it by opacity (0 <= opacity <= 1)
 function modifyColourOpacity(colour: string, opacity: number) {
@@ -122,6 +119,19 @@ function modifyColourOpacity(colour: string, opacity: number) {
 	return fadedCol;
 }
 
+function pad2(i: number) {
+	return i > 9 ? i : '0' + i;
+}
+
+function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[]) {
+	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
+	for (let i = 0; i < mappings.length; i++) {
+		if (validShortcodeRegex.test(mappings[i].shortcode)) {
+			EMOJI_MAPPINGS[mappings[i].shortcode.substring(1, mappings[i].shortcode.length - 1)] = mappings[i].emoji;
+		}
+	}
+}
+
 
 /* HTML Escape / Unescape */
 
@@ -135,29 +145,6 @@ function unescapeHtml(str: string) {
 
 
 /* Formatters */
-
-interface FormatTextConfig {
-	findUrls: boolean;
-	issueLinking: { regexp: RegExp, url: string } | null;
-	whitespace: boolean;
-}
-
-function getFormatTextConfig(repoIssueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean, whitespace: boolean): FormatTextConfig {
-	const issueLinkingConfig = repoIssueLinkingConfig !== null
-		? repoIssueLinkingConfig
-		: globalState.issueLinkingConfig;
-
-	let issueLinking = null;
-	if (issueLinkingConfig !== null) {
-		try {
-			issueLinking = { regexp: new RegExp(issueLinkingConfig.issue, 'gu'), url: issueLinkingConfig.url };
-		} catch (e) {
-			issueLinking = null;
-		}
-	}
-
-	return { findUrls: findUrls, issueLinking: issueLinking, whitespace: whitespace };
-}
 
 const enum ParsedTextType {
 	Plain,
@@ -177,117 +164,143 @@ interface ParsedTextUrl {
 
 type ParsedText = ParsedTextPlain | ParsedTextUrl;
 
-function formatText(str: string, config: FormatTextConfig) {
-	let parsed: ParsedText[] = [{ type: ParsedTextType.Plain, str: str }];
+// TextFormatter formats commit & tag messages with issue linking, urls, whitespace, and emoji shortcodes.
+class TextFormatter {
+	private issueLinking: {
+		regexp: RegExp,
+		url: string
+	} | null = null;
+	private findUrls: boolean;
+	private whitespace: boolean;
 
-	if (config.findUrls) {
-		// Detect URL's
-		parsed = findUrls(<ParsedTextPlain>parsed[0]);
-	}
+	constructor(repoIssueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean, whitespace: boolean) {
+		const issueLinkingConfig = repoIssueLinkingConfig !== null
+			? repoIssueLinkingConfig
+			: globalState.issueLinkingConfig;
 
-	if (config.issueLinking !== null) {
-		// Detect Issue Links
-		let tmpParsed: ParsedText[] = [];
-		for (let i = 0; i < parsed.length; i++) {
-			if (parsed[i].type === ParsedTextType.Plain) {
-				tmpParsed.push(...findIssueLinks(<ParsedTextPlain>parsed[i], config.issueLinking));
-			} else {
-				tmpParsed.push(parsed[i]);
+		if (issueLinkingConfig !== null) {
+			try {
+				this.issueLinking = {
+					regexp: new RegExp(issueLinkingConfig.issue, 'gu'),
+					url: issueLinkingConfig.url
+				};
+			} catch (e) {
+				this.issueLinking = null;
 			}
 		}
-		parsed = tmpParsed;
+
+		this.findUrls = findUrls;
+		this.whitespace = whitespace;
 	}
 
-	// Produce the output string
-	let outputStr = '';
-	for (let i = 0; i < parsed.length; i++) {
-		outputStr += parsed[i].type === ParsedTextType.Plain
-			? escapeHtml(substituteEmojis((<ParsedTextPlain>parsed[i]).str))
-			: '<a class="externalUrl" href="' + escapeHtml((<ParsedTextUrl>parsed[i]).url) + '" tabindex="-1">' + escapeHtml((<ParsedTextUrl>parsed[i]).displayText) + '</a>';
-	}
+	public format(text: string) {
+		let parsed: ParsedText[] = [{ type: ParsedTextType.Plain, str: text }];
 
-	if (config.whitespace) {
-		outputStr = outputStr.split('\n').map(line => line.replace(/^[ \t]+/, (str) => str.replace(/ /g, '&nbsp;').replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;'))).join('<br>');
-	}
-
-	return outputStr;
-}
-
-function findUrls(input: ParsedTextPlain) {
-	let urlRegExp = /https?:\/\/\S+[^,.?!'":;\s]/gu;
-	let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
-	while (match = urlRegExp.exec(input.str)) {
-		if (matchEnd !== match.index) {
-			// Append the text between the end of the last match, and the start of this match
-			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+		if (this.findUrls) {
+			// Parse URL's
+			parsed = this.parseUrls(<ParsedTextPlain>parsed[0]);
 		}
 
-		// Correct urls which are enclosed with: (), [], {} or <>
-		let url = match[0];
-		let suffix = url.substring(url.length - 1);
-		if (match.index > 0 && typeof ENCLOSING_GROUPS[suffix] === 'string' && input.str.substring(match.index - 1, match.index) === ENCLOSING_GROUPS[suffix]) {
-			url = url.substring(0, url.length - 1);
-			urlRegExp.lastIndex--;
+		if (this.issueLinking !== null) {
+			// Parse Issue Links
+			let tmpParsed: ParsedText[] = [];
+			for (let i = 0; i < parsed.length; i++) {
+				if (parsed[i].type === ParsedTextType.Plain) {
+					tmpParsed.push(...this.parseIssueLinks(<ParsedTextPlain>parsed[i]));
+				} else {
+					tmpParsed.push(parsed[i]);
+				}
+			}
+			parsed = tmpParsed;
 		}
 
-		parsed.push({ type: ParsedTextType.Url, url: url, displayText: url });
-		matchEnd = urlRegExp.lastIndex;
+		// Produce the output string
+		let outputStr = '';
+		for (let i = 0; i < parsed.length; i++) {
+			outputStr += parsed[i].type === ParsedTextType.Plain
+				? escapeHtml(this.resolveEmojis((<ParsedTextPlain>parsed[i]).str))
+				: '<a class="externalUrl" href="' + escapeHtml((<ParsedTextUrl>parsed[i]).url) + '" tabindex="-1">' + escapeHtml((<ParsedTextUrl>parsed[i]).displayText) + '</a>';
+		}
+
+		if (this.whitespace) {
+			outputStr = outputStr
+				.split('\n')
+				.map((line) => line.replace(/^[ \t]+/, (str) => str.replace(/ /g, '&nbsp;').replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')))
+				.join('<br>');
+		}
+
+		return outputStr;
 	}
 
-	if (matchEnd === 0) {
-		// No matches were found, return the input ParsedText
-		return [input];
-	}
+	private parseUrls(input: ParsedTextPlain) {
+		const urlRegExp = /https?:\/\/\S+[^,.?!'":;\s]/gu;
+		let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
+		while (match = urlRegExp.exec(input.str)) {
+			if (matchEnd !== match.index) {
+				// Append the text between the end of the last match, and the start of this match
+				parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+			}
 
-	if (matchEnd !== input.str.length) {
-		// Append the text between the end of the last match, and the end of the string
-		parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
-	}
+			// Correct urls which are enclosed with: (), [], {} or <>
+			let url = match[0];
+			let suffix = url.substring(url.length - 1);
+			if (match.index > 0 && typeof ENCLOSING_GROUPS[suffix] === 'string' && input.str.substring(match.index - 1, match.index) === ENCLOSING_GROUPS[suffix]) {
+				url = url.substring(0, url.length - 1);
+				urlRegExp.lastIndex--;
+			}
 
-	return parsed;
-}
+			parsed.push({ type: ParsedTextType.Url, url: url, displayText: url });
+			matchEnd = urlRegExp.lastIndex;
+		}
 
-function findIssueLinks(input: ParsedTextPlain, config: { regexp: RegExp, url: string }) {
-	let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
-	config.regexp.lastIndex = 0;
-	while (match = config.regexp.exec(input.str)) {
-		if (match[0].length === 0) {
-			// Zero length match, return the input ParsedText
+		if (matchEnd === 0) {
+			// No matches were found, return the input ParsedText
 			return [input];
 		}
 
-		if (matchEnd !== match.index) {
-			// Append the text between the end of the last match, and the start of this match
-			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+		if (matchEnd !== input.str.length) {
+			// Append the text between the end of the last match, and the end of the string
+			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
 		}
 
-		parsed.push({ type: ParsedTextType.Url, url: match.length > 1 ? config.url.replace('$1', match[1]) : config.url, displayText: match[0] });
-		matchEnd = config.regexp.lastIndex;
+		return parsed;
 	}
 
-	if (matchEnd === 0) {
-		// No matches were found, return the input ParsedText
-		return [input];
-	}
+	private parseIssueLinks(input: ParsedTextPlain) {
+		const config = this.issueLinking!;
+		let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
 
-	if (matchEnd !== input.str.length) {
-		// Append the text between the end of the last match, and the end of the string
-		parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
-	}
+		config.regexp.lastIndex = 0;
+		while (match = config.regexp.exec(input.str)) {
+			if (match[0].length === 0) {
+				// Zero length match, return the input ParsedText
+				return [input];
+			}
 
-	return parsed;
-}
+			if (matchEnd !== match.index) {
+				// Append the text between the end of the last match, and the start of this match
+				parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+			}
 
-function substituteEmojis(str: string) {
-	return str.replace(EMOJI_SHORTCODE_REGEX, (match, shortcode) => typeof EMOJI_MAPPINGS[shortcode] === 'string' ? EMOJI_MAPPINGS[shortcode] : match);
-}
-
-function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[]) {
-	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
-	for (let i = 0; i < mappings.length; i++) {
-		if (validShortcodeRegex.test(mappings[i].shortcode)) {
-			EMOJI_MAPPINGS[mappings[i].shortcode.substring(1, mappings[i].shortcode.length - 1)] = mappings[i].emoji;
+			parsed.push({ type: ParsedTextType.Url, url: match.length > 1 ? config.url.replace('$1', match[1]) : config.url, displayText: match[0] });
+			matchEnd = config.regexp.lastIndex;
 		}
+
+		if (matchEnd === 0) {
+			// No matches were found, return the input ParsedText
+			return [input];
+		}
+
+		if (matchEnd !== input.str.length) {
+			// Append the text between the end of the last match, and the end of the string
+			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
+		}
+
+		return parsed;
+	}
+
+	private resolveEmojis(text: string) {
+		return text.replace(EMOJI_SHORTCODE_REGEX, (match, shortcode) => typeof EMOJI_MAPPINGS[shortcode] === 'string' ? EMOJI_MAPPINGS[shortcode] : match);
 	}
 }
 

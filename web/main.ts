@@ -534,7 +534,7 @@ class GitGraphView {
 		const vertexColours = this.graph.getVertexColours();
 		const widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		const mutedCommits = this.graph.getMutedCommits(currentHash);
-		const formatTextConfig = getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, false, false);
+		const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, false, false);
 
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
@@ -544,7 +544,7 @@ class GitGraphView {
 
 		for (let i = 0; i < this.commits.length; i++) {
 			let commit = this.commits[i];
-			let message = '<span class="text">' + formatText(commit.message, formatTextConfig) + '</span>';
+			let message = '<span class="text">' + textFormatter.format(commit.message) + '</span>';
 			let date = formatShortDate(commit.date);
 			let branchLabels = getBranchLabels(commit.heads, commit.remotes);
 			let refBranches = '', refTags = '', j, k, refName, remoteName, refActive, refHtml;
@@ -753,12 +753,13 @@ class GitGraphView {
 	}
 
 	public renderTagDetails(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
+		const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true);
 		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
 		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
 		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
-		html += formatText(message, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true)) + '</span>';
+		html += textFormatter.format(message) + '</span>';
 		dialog.showMessage(html);
 	}
 
@@ -1711,7 +1712,8 @@ class GitGraphView {
 			if (expandedCommit.compareWithHash === null) {
 				// Commit details should be shown
 				if (expandedCommit.hash !== UNCOMMITTED) {
-					let commitDetails = expandedCommit.commitDetails!;
+					const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true);
+					const commitDetails = expandedCommit.commitDetails!;
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">';
 					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
 					html += '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>';
@@ -1720,7 +1722,7 @@ class GitGraphView {
 					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
 					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';
 					html += '</span></span><br><br>';
-					html += formatText(commitDetails.body, getFormatTextConfig(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true));
+					html += textFormatter.format(commitDetails.body);
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}

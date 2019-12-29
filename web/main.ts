@@ -2187,6 +2187,13 @@ window.addEventListener('load', () => {
 			case 'deleteTag':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
 				break;
+			case 'deleteUserDetails':
+				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => {
+					if (settingsWidget.isVisible()) {
+						settingsWidget.refresh();
+					}
+				}, true);
+				break;
 			case 'dropCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Drop Commit');
 				break;
@@ -2196,6 +2203,13 @@ window.addEventListener('load', () => {
 			case 'editRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');
 				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				break;
+			case 'editUserDetails':
+				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => {
+					if (settingsWidget.isVisible()) {
+						settingsWidget.refresh();
+					}
+				}, true);
 				break;
 			case 'fetch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch from Remote(s)');
@@ -2306,6 +2320,7 @@ window.addEventListener('load', () => {
 				break;
 		}
 	});
+
 	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
 		if (error === null) {
 			gitGraph.refresh(false);
@@ -2313,7 +2328,34 @@ window.addEventListener('load', () => {
 			dialog.showError(errorMessage, error, null, null, null);
 		}
 	}
+
 	function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string) {
+		const reducedErrors = reduceErrorInfos(errors);
+		if (reducedErrors.error !== null) {
+			dialog.showError(errorMessage, reducedErrors.error, null, null, null);
+		}
+		if (reducedErrors.partialOrCompleteSuccess) {
+			gitGraph.refresh(false);
+		}
+	}
+
+	function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string, dismissActionRunning: boolean = false) {
+		if (error !== null) {
+			dialog.showError(errorMessage, error, null, null, null);
+		} else if (dismissActionRunning) {
+			dialog.closeActionRunning();
+		}
+	}
+
+	function finishOrDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string, partialOrCompleteSuccessCallback: () => void, dismissActionRunning: boolean = false) {
+		const reducedErrors = reduceErrorInfos(errors);
+		finishOrDisplayError(reducedErrors.error, errorMessage, dismissActionRunning);
+		if (reducedErrors.partialOrCompleteSuccess) {
+			partialOrCompleteSuccessCallback();
+		}
+	}
+
+	function reduceErrorInfos(errors: GG.ErrorInfo[]) {
 		let error: GG.ErrorInfo = null, partialOrCompleteSuccess = false;
 		for (let i = 0; i < errors.length; i++) {
 			if (errors[i] !== null) {
@@ -2322,17 +2364,11 @@ window.addEventListener('load', () => {
 				partialOrCompleteSuccess = true;
 			}
 		}
-		if (error !== null) {
-			dialog.showError(errorMessage, error, null, null, null);
-		}
-		if (partialOrCompleteSuccess) {
-			gitGraph.refresh(false);
-		}
-	}
-	function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
-		if (error !== null) {
-			dialog.showError(errorMessage, error, null, null, null);
-		}
+
+		return {
+			error: error,
+			partialOrCompleteSuccess: partialOrCompleteSuccess
+		};
 	}
 });
 

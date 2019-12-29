@@ -40,6 +40,12 @@ export interface GitCommitDetails {
 	readonly fileChanges: ReadonlyArray<GitFileChange>;
 }
 
+export const enum GitConfigLocation {
+	Local = 'local',
+	Global = 'global',
+	System = 'system'
+}
+
 export interface GitFileChange {
 	readonly oldFilePath: string;
 	readonly newFilePath: string;
@@ -57,6 +63,16 @@ export const enum GitFileStatus {
 }
 
 export interface GitRepoSettings {
+	readonly user: {
+		readonly name: {
+			readonly local: string | null,
+			readonly global: string | null
+		},
+		readonly email: {
+			readonly local: string | null,
+			readonly global: string | null
+		}
+	};
 	readonly remotes: GitRepoSettingsRemote[];
 }
 
@@ -512,6 +528,16 @@ export interface ResponseDeleteTag extends ResponseWithErrorInfo {
 	readonly command: 'deleteTag';
 }
 
+export interface RequestDeleteUserDetails extends RepoRequest {
+	readonly command: 'deleteUserDetails';
+	readonly name: boolean; // TRUE => Delete Name, FALSE => Don't Delete Name
+	readonly email: boolean; // TRUE => Delete Email, FALSE => Don't Delete Email
+	readonly location: GitConfigLocation.Global | GitConfigLocation.Local;
+}
+export interface ResponseDeleteUserDetails extends ResponseWithMultiErrorInfo {
+	readonly command: 'deleteUserDetails';
+}
+
 export interface RequestDropCommit extends RepoRequest {
 	readonly command: 'dropCommit';
 	readonly commitHash: string;
@@ -539,6 +565,18 @@ export interface RequestEditRemote extends RepoRequest {
 }
 export interface ResponseEditRemote extends ResponseWithErrorInfo {
 	readonly command: 'editRemote';
+}
+
+export interface RequestEditUserDetails extends RepoRequest {
+	readonly command: 'editUserDetails';
+	readonly name: string;
+	readonly email: string;
+	readonly location: GitConfigLocation.Global | GitConfigLocation.Local;
+	readonly deleteLocalName: boolean; // TRUE => Delete Local Name, FALSE => Don't Delete Local Name
+	readonly deleteLocalEmail: boolean; // TRUE => Delete Local Email, FALSE => Don't Delete Local Email
+}
+export interface ResponseEditUserDetails extends ResponseWithMultiErrorInfo {
+	readonly command: 'editUserDetails';
 }
 
 export interface RequestEndCodeReview extends RepoRequest {
@@ -843,9 +881,11 @@ export type RequestMessage =
 	| RequestDeleteRemote
 	| RequestDeleteRemoteBranch
 	| RequestDeleteTag
+	| RequestDeleteUserDetails
 	| RequestDropCommit
 	| RequestDropStash
 	| RequestEditRemote
+	| RequestEditUserDetails
 	| RequestEndCodeReview
 	| RequestFetch
 	| RequestFetchAvatar
@@ -893,9 +933,11 @@ export type ResponseMessage =
 	| ResponseDeleteRemote
 	| ResponseDeleteRemoteBranch
 	| ResponseDeleteTag
+	| ResponseDeleteUserDetails
 	| ResponseDropCommit
 	| ResponseDropStash
 	| ResponseEditRemote
+	| ResponseEditUserDetails
 	| ResponseFetch
 	| ResponseFetchAvatar
 	| ResponseFetchIntoLocalBranch

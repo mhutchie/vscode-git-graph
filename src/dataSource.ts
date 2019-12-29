@@ -6,13 +6,16 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
+import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
+
+export const GIT_CONFIG_USER_NAME = 'user.name';
+export const GIT_CONFIG_USER_EMAIL = 'user.email';
 
 
 export class DataSource {
@@ -264,20 +267,34 @@ export class DataSource {
 
 	public async getRepoSettings(repo: string): Promise<GitRepoSettingsData> {
 		return Promise.all([
-			this.getConfigList(repo, 'local'),
+			this.getConfigList(repo, GitConfigLocation.Local),
+			this.getConfigList(repo, GitConfigLocation.Global),
 			this.getRemotes(repo)
 		]).then((results) => {
-			let configNames: string[] = [];
-			results[1].forEach(remote => {
-				configNames.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
+			const fetchLocalConfigs = [GIT_CONFIG_USER_NAME, GIT_CONFIG_USER_EMAIL];
+			const fetchGlobalConfigs = [GIT_CONFIG_USER_NAME, GIT_CONFIG_USER_EMAIL];
+			results[2].forEach((remote) => {
+				fetchLocalConfigs.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
 			});
-			let configs = getConfigs(results[0], configNames);
+
+			const localConfigs = getConfigs(results[0], fetchLocalConfigs);
+			const globalConfigs = getConfigs(results[1], fetchGlobalConfigs);
 			return {
 				settings: {
-					remotes: results[1].map(remote => ({
+					user: {
+						name: {
+							local: localConfigs[GIT_CONFIG_USER_NAME],
+							global: globalConfigs[GIT_CONFIG_USER_NAME]
+						},
+						email: {
+							local: localConfigs[GIT_CONFIG_USER_EMAIL],
+							global: globalConfigs[GIT_CONFIG_USER_EMAIL]
+						}
+					},
+					remotes: results[2].map((remote) => ({
 						name: remote,
-						url: configs['remote.' + remote + '.url'],
-						pushUrl: configs['remote.' + remote + '.pushurl']
+						url: localConfigs['remote.' + remote + '.url'],
+						pushUrl: localConfigs['remote.' + remote + '.pushurl']
 					}))
 				},
 				error: null
@@ -575,6 +592,17 @@ export class DataSource {
 	}
 
 
+	/* Git Action Methods - Config */
+
+	public setConfigValue(repo: string, key: string, value: string, location: GitConfigLocation) {
+		return this.runGitCommand(['config', '--' + location, key, value], repo);
+	}
+
+	public unsetConfigValue(repo: string, key: string, location: GitConfigLocation) {
+		return this.runGitCommand(['config', '--' + location, '--unset-all', key], repo);
+	}
+
+
 	/* Git Action Methods - Uncommitted */
 
 	public cleanUntrackedFiles(repo: string, directories: boolean) {
@@ -667,8 +695,8 @@ export class DataSource {
 		});
 	}
 
-	private getConfigList(repo: string, type: 'local' | 'global' | 'system') {
-		return this.spawnGit(['--no-pager', 'config', '--list', '--' + type], repo, (stdout) => stdout.split(EOL_REGEX));
+	private getConfigList(repo: string, location: GitConfigLocation) {
+		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location], repo, (stdout) => stdout.split(EOL_REGEX));
 	}
 
 	private getDiffNameStatus(repo: string, fromHash: string, toHash: string) {

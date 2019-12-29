@@ -2,12 +2,12 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
-import { DataSource, GitCommitDetailsData } from './dataSource';
+import { DataSource, GIT_CONFIG_USER_EMAIL, GIT_CONFIG_USER_NAME, GitCommitDetailsData } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -226,6 +226,19 @@ export class GitGraphView {
 						error: await this.dataSource.deleteTag(msg.repo, msg.tagName, msg.deleteOnRemote)
 					});
 					break;
+				case 'deleteUserDetails':
+					errorInfos = [];
+					if (msg.name) {
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_NAME, msg.location));
+					}
+					if (msg.email) {
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, msg.location));
+					}
+					this.sendMessage({
+						command: 'deleteUserDetails',
+						errors: errorInfos
+					});
+					break;
 				case 'dropCommit':
 					this.sendMessage({
 						command: 'dropCommit',
@@ -242,6 +255,24 @@ export class GitGraphView {
 					this.sendMessage({
 						command: 'editRemote',
 						error: await this.dataSource.editRemote(msg.repo, msg.nameOld, msg.nameNew, msg.urlOld, msg.urlNew, msg.pushUrlOld, msg.pushUrlNew)
+					});
+					break;
+				case 'editUserDetails':
+					errorInfos = [
+						await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG_USER_NAME, msg.name, msg.location),
+						await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, msg.email, msg.location)
+					];
+					if (errorInfos[0] === null && errorInfos[1] === null) {
+						if (msg.deleteLocalName) {
+							errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_NAME, GitConfigLocation.Local));
+						}
+						if (msg.deleteLocalEmail) {
+							errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, GitConfigLocation.Local));
+						}
+					}
+					this.sendMessage({
+						command: 'editUserDetails',
+						errors: errorInfos
 					});
 					break;
 				case 'fetch':

@@ -163,16 +163,16 @@
 	border-color:var(--vscode-editorSuggestWidget-foreground);
 }
 
-#settingsAddRemote svg, #editIssueLinking svg{
+.settingsSectionButtons > div.addBtn svg, .settingsSectionButtons > div.editBtn svg{
 	vertical-align:top;
 	margin:6px;
 	width:12px !important;
 	height:12px !important;
 }
-#settingsAddRemote svg, #editIssueLinking.addIssueLinking svg{
+.settingsSectionButtons > div.addBtn svg{
 	transform:rotate(45deg);
 }
-#removeIssueLinking svg, #openExtensionSettings svg{
+.settingsSectionButtons > div.removeBtn svg, #openExtensionSettings svg{
 	vertical-align:top;
 	width:14px !important;
 	height:14px !important;

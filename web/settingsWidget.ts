@@ -73,7 +73,9 @@ class SettingsWidget {
 		this.view.saveState();
 	}
 
+
 	/* State */
+
 	public getState(): SettingsWidgetState {
 		return {
 			visible: this.visible,
@@ -81,6 +83,7 @@ class SettingsWidget {
 			settings: this.settings
 		};
 	}
+
 	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, showTags: GG.ShowTags) {
 		if (!state.visible || state.repo === null) return;
 		this.settings = state.settings;
@@ -114,10 +117,31 @@ class SettingsWidget {
 		}
 	}
 
+
+	/* Render Methods */
+
 	private render() {
 		if (this.settings !== null) {
 			let html = '<div class="settingsSection centered"><h3>General</h3>';
 			html += '<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label></div>';
+
+			html += '<div class="settingsSection centered"><h3>User Details</h3>';
+			const userName = this.settings.user.name, userEmail = this.settings.user.email;
+			const userNameSet = userName.local !== null || userName.global !== null;
+			const userEmailSet = userEmail.local !== null || userEmail.global !== null;
+			if (userNameSet || userEmailSet) {
+				const escapedUserName = escapeHtml(userName.local ?? userName.global ?? 'Not Set');
+				const escapedUserEmail = escapeHtml(userEmail.local ?? userEmail.global ?? 'Not Set');
+				html += '<table>';
+				html += '<tr><td class="left">User Name:</td><td class="leftWithEllipsis" title="' + escapedUserName + (userNameSet ? ' (' + (userName.local !== null ? 'Local' : 'Global') + ')' : '') + '">' + escapedUserName + '</td></tr>';
+				html += '<tr><td class="left">User Email:</td><td class="leftWithEllipsis" title="' + escapedUserEmail + (userEmailSet ? ' (' + (userEmail.local !== null ? 'Local' : 'Global') + ')' : '') + '">' + escapedUserEmail + '</td></tr>';
+				html += '</table>';
+				html += '<div class="settingsSectionButtons"><div id="editUserDetails" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removeUserDetails" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
+			} else {
+				html += '<span>User Details (such as name and email) are used by Git to record the Author and Committer of commit objects.</span>';
+				html += '<div class="settingsSectionButtons"><div id="editUserDetails" class="addBtn">' + SVG_ICONS.close + 'Add User Details</div></div>';
+			}
+			html += '</div>';
 
 			html += '<div class="settingsSection"><h3>Remote Configuration</h3><table><tr><th>Remote</th><th>URL</th><th>Type</th><th>Action</th></tr>';
 			if (this.settings.remotes.length > 0) {
@@ -133,20 +157,19 @@ class SettingsWidget {
 			} else {
 				html += '<tr class="lineAbove"><td colspan="4">There are no remotes configured for this repository.</td></tr>';
 			}
-			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote">' + SVG_ICONS.close + 'Add Remote</div></div></div>';
+			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote" class="addBtn">' + SVG_ICONS.close + 'Add Remote</div></div></div>';
 
 			html += '<div class="settingsSection centered"><h3>Issue Linking</h3>';
-
 			const issueLinkingConfig = this.issueLinkingConfig !== null
 				? this.issueLinkingConfig
 				: globalState.issueLinkingConfig;
 			if (issueLinkingConfig !== null) {
-				let escapedIssue = escapeHtml(issueLinkingConfig.issue), escapedUrl = escapeHtml(issueLinkingConfig.url);
+				const escapedIssue = escapeHtml(issueLinkingConfig.issue), escapedUrl = escapeHtml(issueLinkingConfig.url);
 				html += '<table><tr><td class="left">Issue Regex:</td><td class="leftWithEllipsis" title="' + escapedIssue + '">' + escapedIssue + '</td></tr><tr><td class="left">Issue URL:</td><td class="leftWithEllipsis" title="' + escapedUrl + '">' + escapedUrl + '</td></tr></table>';
-				html += '<div class="settingsSectionButtons"><div id="editIssueLinking">' + SVG_ICONS.pencil + 'Edit</div><div id="removeIssueLinking">' + SVG_ICONS.close + 'Remove</div></div>';
+				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removeIssueLinking" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
 				html += '<span>Issue Linking converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.</span>';
-				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="addIssueLinking">' + SVG_ICONS.close + 'Add Issue Linking</div></div>';
+				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="addBtn">' + SVG_ICONS.close + 'Add Issue Linking</div></div>';
 			}
 			html += '</div>';
 
@@ -166,6 +189,43 @@ class SettingsWidget {
 				this.view.saveShowTagsConfig(this.repo, this.showTags);
 				this.view.refresh(true);
 			});
+
+			document.getElementById('editUserDetails')!.addEventListener('click', () => {
+				if (this.settings === null) return;
+				const userName = this.settings.user.name, userEmail = this.settings.user.email;
+				dialog.showForm('Set the user name and email used by Git to record the Author and Committer of commit objects:', [
+					{ type: 'text', name: 'User Name', default: userName.local ?? userName.global ?? '', placeholder: null },
+					{ type: 'text', name: 'User Email', default: userEmail.local ?? userEmail.global ?? '', placeholder: null },
+					{ type: 'checkbox', name: 'Use Globally', value: userName.local === null && userEmail.local === null, info: 'Use the "User Name" and "User Email" globally for all Git repositories (it can be overridden per repository).' }
+				], 'Set User Details', (values) => {
+					const useGlobally = <boolean>values[2];
+					runAction({
+						command: 'editUserDetails',
+						repo: this.repo!,
+						name: <string>values[0],
+						email: <string>values[1],
+						location: useGlobally ? GG.GitConfigLocation.Global : GG.GitConfigLocation.Local,
+						deleteLocalName: useGlobally && userName.local !== null,
+						deleteLocalEmail: useGlobally && userEmail.local !== null
+					}, 'Setting User Details');
+				}, null);
+			});
+			if (userNameSet || userEmailSet) {
+				document.getElementById('removeUserDetails')!.addEventListener('click', () => {
+					if (this.settings === null) return;
+					const userName = this.settings.user.name, userEmail = this.settings.user.email;
+					const isGlobal = userName.local === null && userEmail.local === null;
+					dialog.showConfirmation('Are you sure you want to remove the <b>' + (isGlobal ? 'globally' : 'locally') + ' configured</b> user name and email, which are used by Git to record the Author and Committer of commit objects?', () => {
+						runAction({
+							command: 'deleteUserDetails',
+							repo: this.repo!,
+							name: (isGlobal ? userName.global : userName.local) !== null,
+							email: (isGlobal ? userEmail.global : userEmail.local) !== null,
+							location: isGlobal ? GG.GitConfigLocation.Global : GG.GitConfigLocation.Local
+						}, 'Removing User Details');
+					}, null);
+				});
+			}
 
 			const pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
 			document.getElementById('settingsAddRemote')!.addEventListener('click', () => {
@@ -232,7 +292,7 @@ class SettingsWidget {
 
 			if (this.issueLinkingConfig !== null || globalState.issueLinkingConfig !== null) {
 				document.getElementById('removeIssueLinking')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? 'Issue Linking from this repository' : 'the globally configured Issue Linking in Git Graph') + '?', () => {
+					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', () => {
 						this.setIssueLinkingConfig(null, this.issueLinkingConfig === null);
 					}, null);
 				});
@@ -245,6 +305,9 @@ class SettingsWidget {
 		alterClass(this.widgetElem, CLASS_LOADING, this.loading);
 		this.loadingElem.innerHTML = this.loading ? '<span>' + SVG_ICONS.loading + 'Loading ...</span>' : '';
 	}
+
+
+	/* Private Helper Methods */
 
 	private requestSettings() {
 		if (this.repo === null) return;

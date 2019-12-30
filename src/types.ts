@@ -62,6 +62,12 @@ export const enum GitFileStatus {
 	Untracked = 'U'
 }
 
+export const enum GitPushBranchMode {
+	Normal = '',
+	Force = 'force',
+	ForceWithLease = 'force-with-lease'
+}
+
 export interface GitRepoSettings {
 	readonly user: {
 		readonly name: {
@@ -727,7 +733,7 @@ export interface RequestPushBranch extends RepoRequest {
 	readonly branchName: string;
 	readonly remote: string;
 	readonly setUpstream: boolean;
-	readonly force: boolean;
+	readonly mode: GitPushBranchMode;
 }
 export interface ResponsePushBranch extends ResponseWithErrorInfo {
 	readonly command: 'pushBranch';

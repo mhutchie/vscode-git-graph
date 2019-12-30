@@ -6,7 +6,7 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitRepoSettings, GitResetMode } from './types';
+import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode } from './types';
 import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
@@ -456,11 +456,11 @@ export class DataSource {
 		return this.runGitCommand(args, repo);
 	}
 
-	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean, force: boolean) {
+	public pushBranch(repo: string, branchName: string, remote: string, setUpstream: boolean, mode: GitPushBranchMode) {
 		let args = ['push'];
-		if (setUpstream) args.push('-u');
 		args.push(remote, branchName);
-		if (force) args.push('--force');
+		if (setUpstream) args.push('--set-upstream');
+		if (mode !== GitPushBranchMode.Normal) args.push('--' + mode);
 
 		return this.runGitCommand(args, repo);
 	}

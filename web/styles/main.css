@@ -852,34 +852,39 @@ a:focus{
 }
 
 
-/* Checkboxes */
+/* Checkboxes & Radio Inputs */
 
-input[type=checkbox]{
+input[type=checkbox], input[type=radio]{
 	position:absolute;
 	width:0;
 	height:0;
 	opacity:0;
-	cursor:pointer;
 }
 
-.customCheckbox{
+.customCheckbox, .customRadio{
 	display:inline-block;
-	width:15px;
-	height:15px;
 	background-color:rgba(128,128,128,0.1);
 	border:1px solid rgba(128,128,128,0.5);
-	border-radius:3px;
 	vertical-align:middle;
-	margin-top:-2px;
 }
 
-label:hover > .customCheckbox{
+label:hover > .customCheckbox, label:hover > .customRadio{
 	background-color:rgba(128,128,128,0.2);
 }
 
-.customCheckbox:after{
+.customCheckbox:after, .customRadio:after{
 	content:"";
 	display:none;
+}
+
+
+/* Checkboxes */
+
+.customCheckbox{
+	width:15px;
+	height:15px;
+	border-radius:3px;
+	margin-top:-2px;
 }
 
 label > input[type=checkbox]:checked ~ .customCheckbox:after{
@@ -892,6 +897,27 @@ label > input[type=checkbox]:checked ~ .customCheckbox:after{
 	border:solid var(--vscode-editor-foreground);
 	border-width:0 2px 2px 0;
 	transform:rotate(45deg);
+}
+
+
+/* Radio Inputs */
+
+.customRadio{
+	width:13px;
+	height:13px;
+	border-radius:7.5px;
+	margin-top:-1px;
+}
+
+label > input[type=radio]:checked ~ .customRadio:after{
+	position:relative;
+	display:block;
+	left:4px;
+	top:4px;
+	width:5px;
+	height:5px;
+	background-color:var(--vscode-editor-foreground);
+	border-radius:2.5px;
 }
 
 

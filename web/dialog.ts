@@ -8,8 +8,16 @@ const enum DialogType {
 	Message
 }
 
+const enum DialogInputType {
+	Text,
+	TextRef,
+	Select,
+	Radio,
+	Checkbox
+}
+
 interface DialogTextInput {
-	readonly type: 'text';
+	readonly type: DialogInputType.Text;
 	readonly name: string;
 	readonly default: string;
 	readonly placeholder: string | null;
@@ -17,22 +25,29 @@ interface DialogTextInput {
 }
 
 interface DialogTextRefInput {
-	readonly type: 'text-ref';
+	readonly type: DialogInputType.TextRef;
 	readonly name: string;
 	readonly default: string;
 	readonly info?: string;
 }
 
 interface DialogSelectInput {
-	readonly type: 'select';
+	readonly type: DialogInputType.Select;
 	readonly name: string;
 	readonly options: DialogSelectInputOption[];
 	readonly default: string;
 	readonly info?: string;
 }
 
+interface DialogRadioInput {
+	readonly type: DialogInputType.Radio;
+	readonly name: string;
+	readonly options: DialogRadioInputOption[];
+	readonly default: string;
+}
+
 interface DialogCheckboxInput {
-	readonly type: 'checkbox';
+	readonly type: DialogInputType.Checkbox;
 	readonly name: string;
 	readonly value: boolean;
 	readonly info?: string;
@@ -43,7 +58,12 @@ interface DialogSelectInputOption {
 	readonly value: string;
 }
 
-type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogCheckboxInput;
+interface DialogRadioInputOption {
+	readonly name: string;
+	readonly value: string;
+}
+
+type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogRadioInput | DialogCheckboxInput;
 type DialogInputValue = string | boolean;
 
 class Dialog {
@@ -72,57 +92,86 @@ class Dialog {
 
 	public showRefInput(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
 		this.showForm(message, [
-			{ type: 'text-ref', name: '', default: defaultValue }
+			{ type: DialogInputType.TextRef, name: '', default: defaultValue }
 		], actionName, (values) => actioned(<string>values[0]), sourceElem);
 	}
 
 	public showCheckbox(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
 		this.showForm(message, [
-			{ type: 'checkbox', name: checkboxLabel, value: checkboxValue }
+			{ type: DialogInputType.Checkbox, name: checkboxLabel, value: checkboxValue }
 		], actionName, (values) => actioned(<boolean>values[0]), sourceElem);
 	}
 
 	public showSelect(message: string, defaultValue: string, options: DialogSelectInputOption[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
 		this.showForm(message, [
-			{ type: 'select', name: '', options: options, default: defaultValue }
+			{ type: DialogInputType.Select, name: '', options: options, default: defaultValue }
 		], actionName, (values) => actioned(<string>values[0]), sourceElem);
 	}
 
 	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, sourceElem: HTMLElement | null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
-		const multiCheckbox = multiElement && inputs.every((input) => input.type === 'checkbox');
-		const infoColumn = inputs.some((input) => input.info && input.type !== 'checkbox');
-		let textRefInput = -1;
-
-		let html = message + (includeLineBreak ? '<br>' : '') + '<table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">', selectIds: number[] = [];
-		for (let i = 0; i < inputs.length; i++) {
-			const input = inputs[i], infoHtml = input.info ? '<span class="dialogInfo" title="' + escapeHtml(input.info) + '">' + SVG_ICONS.info + '</span>' : '';
-			html += '<tr' + (input.type !== 'checkbox' ? ' class="largeField"' : '') + '>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '');
-			if (input.type === 'select') {
-				html += '<td class="inputCol"><div id="dialogFormSelect' + i + '"></div></td>' + (infoColumn ? '<td>' + infoHtml + '</td>' : '');
-				selectIds.push(i);
-			} else if (input.type === 'checkbox') {
-				html += '<td class="inputCol"' + (infoColumn ? ' colspan="2"' : '') + '><span class="dialogFormCheckbox"><label><input id="dialogInput' + i + '" type="checkbox"' + (input.value ? ' checked' : '') + ' tabindex="' + (i + 1) + '"/><span class="customCheckbox"></span>' + (multiElement && !multiCheckbox ? '' : input.name) + infoHtml + '</label></span></td>';
+		const multiCheckbox = multiElement && inputs.every((input) => input.type === DialogInputType.Checkbox);
+		const infoColRequired = inputs.some((input) => input.type !== DialogInputType.Checkbox && input.type !== DialogInputType.Radio && input.info);
+		const inputRowsHtml = inputs.map((input, id) => {
+			let inputHtml;
+			if (input.type === DialogInputType.Radio) {
+				inputHtml = '<td class="inputCol"' + (infoColRequired ? ' colspan="2"' : '') + '><span class="dialogFormRadio">' +
+					input.options.map((option, optionId) => '<label><input type="radio" name="dialogInput' + id + '" value="' + optionId + '"' + (option.value === input.default ? ' checked' : '') + ' tabindex="' + (id + 1) + '"/><span class="customRadio"></span>' + escapeHtml(option.name) + '</label>').join('<br>') +
+					'</span></td>';
 			} else {
-				html += '<td class="inputCol"><input id="dialogInput' + i + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === 'text' && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + ' tabindex="' + (i + 1) + '"/></td>' + (infoColumn ? '<td>' + infoHtml + '</td>' : '');
-				if (input.type === 'text-ref') textRefInput = i;
+				const infoHtml = input.info ? '<span class="dialogInfo" title="' + escapeHtml(input.info) + '">' + SVG_ICONS.info + '</span>' : '';
+				if (input.type === DialogInputType.Select) {
+					inputHtml = '<td class="inputCol"><div id="dialogFormSelect' + id + '"></div></td>' + (infoColRequired ? '<td>' + infoHtml + '</td>' : '');
+				} else if (input.type === DialogInputType.Checkbox) {
+					inputHtml = '<td class="inputCol"' + (infoColRequired ? ' colspan="2"' : '') + '><span class="dialogFormCheckbox"><label><input id="dialogInput' + id + '" type="checkbox"' + (input.value ? ' checked' : '') + ' tabindex="' + (id + 1) + '"/><span class="customCheckbox"></span>' + (multiElement && !multiCheckbox ? '' : input.name) + infoHtml + '</label></span></td>';
+				} else {
+					inputHtml = '<td class="inputCol"><input id="dialogInput' + id + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === DialogInputType.Text && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + ' tabindex="' + (id + 1) + '"/></td>' + (infoColRequired ? '<td>' + infoHtml + '</td>' : '');
+				}
 			}
-			html += '</tr>';
-		}
-		html += '</table>';
+			return '<tr' + (input.type === DialogInputType.Radio ? ' class="mediumField"' : input.type !== DialogInputType.Checkbox ? ' class="largeField"' : '') + '>' + (multiElement && !multiCheckbox ? '<td>' + input.name + ': </td>' : '') + inputHtml + '</tr>';
+		});
+
+		const html = message + (includeLineBreak ? '<br>' : '') +
+			'<table class="dialogForm ' + (multiElement ? multiCheckbox ? 'multiCheckbox' : 'multi' : 'single') + '">' +
+			inputRowsHtml.join('') +
+			'</table>';
 
 		this.show(DialogType.Form, html, actionName, 'Cancel', () => {
 			if (this.elem === null || this.elem.classList.contains(CLASS_DIALOG_NO_INPUT) || this.elem.classList.contains(CLASS_DIALOG_INPUT_INVALID)) return;
-			let values = inputs.map((input, index) => {
-				const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
-				return input.type === 'checkbox' ? elem.checked : elem.value;
+			const values = inputs.map((input, index) => {
+				if (input.type === DialogInputType.Radio) {
+					// Iterate through all of the radio options to get the checked value
+					const elems = <NodeListOf<HTMLInputElement>>document.getElementsByName('dialogInput' + index);
+					for (let i = 0; i < elems.length; i++) {
+						if (elems[i].checked) {
+							return input.options[parseInt(elems[i].value)].value;
+						}
+					}
+					return input.default; // If no option is checked, return the default value
+				} else {
+					const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
+					return input.type === DialogInputType.Checkbox
+						? elem.checked // Checkboxes return a boolean indicating if the value is checked
+						: elem.value; // All other fields return the value as a string
+				}
 			});
 			this.close();
 			actioned(values);
 		}, null, sourceElem);
 
-		this.customSelects = selectIds.map(id => new CustomSelect(<DialogSelectInput>inputs[id], 'dialogFormSelect' + id, 'dialogInput' + id, id + 1, this.elem!));
+		// Create custom select inputs
+		const selectIds: number[] = [];
+		inputs.forEach((input, id) => {
+			if (input.type === DialogInputType.Select) {
+				selectIds.push(id);
+			}
+		});
+		this.customSelects = selectIds.map((id) => {
+			return new CustomSelect(<DialogSelectInput>inputs[id], 'dialogFormSelect' + id, 'dialogInput' + id, id + 1, this.elem!);
+		});
 
+		// If the dialog contains a TextRef input, attach event listeners for validation
+		const textRefInput = inputs.findIndex((input) => input.type === DialogInputType.TextRef);
 		if (textRefInput > -1) {
 			let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
 			if (dialogInput.value === '') this.elem!.classList.add(CLASS_DIALOG_NO_INPUT);
@@ -136,7 +185,7 @@ class Dialog {
 			});
 		}
 
-		if (inputs.length > 0 && (inputs[0].type === 'text' || inputs[0].type === 'text-ref')) {
+		if (inputs.length > 0 && (inputs[0].type === DialogInputType.Text || inputs[0].type === DialogInputType.TextRef)) {
 			// If the first input is a text field, set focus to it.
 			(<HTMLInputElement>document.getElementById('dialogInput0')).focus();
 		}

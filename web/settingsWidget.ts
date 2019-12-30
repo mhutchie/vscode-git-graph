@@ -194,9 +194,9 @@ class SettingsWidget {
 				if (this.settings === null) return;
 				const userName = this.settings.user.name, userEmail = this.settings.user.email;
 				dialog.showForm('Set the user name and email used by Git to record the Author and Committer of commit objects:', [
-					{ type: 'text', name: 'User Name', default: userName.local ?? userName.global ?? '', placeholder: null },
-					{ type: 'text', name: 'User Email', default: userEmail.local ?? userEmail.global ?? '', placeholder: null },
-					{ type: 'checkbox', name: 'Use Globally', value: userName.local === null && userEmail.local === null, info: 'Use the "User Name" and "User Email" globally for all Git repositories (it can be overridden per repository).' }
+					{ type: DialogInputType.Text, name: 'User Name', default: userName.local ?? userName.global ?? '', placeholder: null },
+					{ type: DialogInputType.Text, name: 'User Email', default: userEmail.local ?? userEmail.global ?? '', placeholder: null },
+					{ type: DialogInputType.Checkbox, name: 'Use Globally', value: userName.local === null && userEmail.local === null, info: 'Use the "User Name" and "User Email" globally for all Git repositories (it can be overridden per repository).' }
 				], 'Set User Details', (values) => {
 					const useGlobally = <boolean>values[2];
 					runAction({
@@ -230,10 +230,10 @@ class SettingsWidget {
 			const pushUrlPlaceholder = 'Leave blank to use the Fetch URL';
 			document.getElementById('settingsAddRemote')!.addEventListener('click', () => {
 				dialog.showForm('Add a new remote to this repository:', [
-					{ type: 'text', name: 'Name', default: '', placeholder: null },
-					{ type: 'text', name: 'Fetch URL', default: '', placeholder: null },
-					{ type: 'text', name: 'Push URL', default: '', placeholder: pushUrlPlaceholder },
-					{ type: 'checkbox', name: 'Fetch Immediately', value: true }
+					{ type: DialogInputType.Text, name: 'Name', default: '', placeholder: null },
+					{ type: DialogInputType.Text, name: 'Fetch URL', default: '', placeholder: null },
+					{ type: DialogInputType.Text, name: 'Push URL', default: '', placeholder: pushUrlPlaceholder },
+					{ type: DialogInputType.Checkbox, name: 'Fetch Immediately', value: true }
 				], 'Add Remote', (values) => {
 					runAction({ command: 'addRemote', name: <string>values[0], repo: this.repo!, url: <string>values[1], pushUrl: <string>values[2] !== '' ? <string>values[2] : null, fetch: <boolean>values[3] }, 'Adding Remote');
 				}, null);
@@ -241,9 +241,9 @@ class SettingsWidget {
 			addListenerToClass('editRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
 				dialog.showForm('Edit the remote <b><i>' + escapeHtml(remote.name) + '</i></b>:', [
-					{ type: 'text', name: 'Name', default: remote.name, placeholder: null },
-					{ type: 'text', name: 'Fetch URL', default: remote.url !== null ? remote.url : '', placeholder: null },
-					{ type: 'text', name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
+					{ type: DialogInputType.Text, name: 'Name', default: remote.name, placeholder: null },
+					{ type: DialogInputType.Text, name: 'Fetch URL', default: remote.url !== null ? remote.url : '', placeholder: null },
+					{ type: DialogInputType.Text, name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
 				], 'Save Changes', (values) => {
 					runAction({ command: 'editRemote', repo: this.repo!, nameOld: remote.name, nameNew: <string>values[0], urlOld: remote.url, urlNew: <string>values[1] !== '' ? <string>values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: <string>values[2] !== '' ? <string>values[2] : null }, 'Saving Changes to Remote');
 				}, null);
@@ -346,9 +346,9 @@ class SettingsWidget {
 		}
 
 		dialog.showForm(html, [
-			{ type: 'text', name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' },
-			{ type: 'text', name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' },
-			{ type: 'checkbox', name: 'Use Globally', value: defaultUseGlobally, info: 'Use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).' }
+			{ type: DialogInputType.Text, name: 'Issue Regex', default: defaultIssueRegex !== null ? defaultIssueRegex : '', placeholder: null, info: 'A regular expression that matches your issue numbers, with a single capturing group ( ) that will be substituted into the "Issue URL".' },
+			{ type: DialogInputType.Text, name: 'Issue URL', default: defaultIssueUrl !== null ? defaultIssueUrl : '', placeholder: null, info: 'The issue\'s URL in your project’s issue tracking system, with $1 as a placeholder for the group captured ( ) in the "Issue Regex".' },
+			{ type: DialogInputType.Checkbox, name: 'Use Globally', value: defaultUseGlobally, info: 'Use the "Issue Regex" and "Issue URL" for all repositories by default (it can be overridden per repository). Note: "Use Globally" is only suitable if identical Issue Linking applies to the majority of your repositories (e.g. when using JIRA or Pivotal Tracker).' }
 		], 'Save', (values) => {
 			let issueRegex = (<string>values[0]).trim(), issueUrl = (<string>values[1]).trim(), useGlobally = <boolean>values[2];
 			let regExpParseError = null;

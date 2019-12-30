@@ -786,10 +786,10 @@ class GitGraphView {
 				visible: visibility.delete && this.gitBranchHead !== refName,
 				onClick: () => {
 					let remotesWithBranch = this.gitRemotes.filter(remote => this.gitBranches.includes('remotes/' + remote + '/' + refName));
-					let inputs: DialogInput[] = [{ type: 'checkbox', name: 'Force Delete', value: this.config.dialogDefaults.deleteBranch.forceDelete }];
+					let inputs: DialogInput[] = [{ type: DialogInputType.Checkbox, name: 'Force Delete', value: this.config.dialogDefaults.deleteBranch.forceDelete }];
 					if (remotesWithBranch.length > 0) {
 						inputs.push({
-							type: 'checkbox',
+							type: DialogInputType.Checkbox,
 							name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : '') + '<span class="dialogInfo" title="This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map(remote => escapeHtml('"' + remote + '"'))) + '">' + SVG_ICONS.info + '</span>',
 							value: false
 						});
@@ -811,13 +811,22 @@ class GitGraphView {
 				visible: visibility.push && this.gitRemotes.length > 0,
 				onClick: () => {
 					let multipleRemotes = this.gitRemotes.length > 1, inputs: DialogInput[] = [
-						{ type: 'checkbox', name: 'Set Upstream', value: true },
-						{ type: 'checkbox', name: 'Force Push', value: false }
+						{ type: DialogInputType.Checkbox, name: 'Set Upstream', value: true },
+						{
+							type: DialogInputType.Radio,
+							name: 'Push Mode',
+							options: [
+								{ name: 'Normal', value: GG.GitPushBranchMode.Normal },
+								{ name: 'Force With Lease', value: GG.GitPushBranchMode.ForceWithLease },
+								{ name: 'Force', value: GG.GitPushBranchMode.Force }
+							],
+							default: GG.GitPushBranchMode.Normal
+						}
 					];
 
 					if (multipleRemotes) {
 						inputs.unshift({
-							type: 'select', name: 'Push to Remote',
+							type: DialogInputType.Select, name: 'Push to Remote',
 							default: (this.gitRemotes.includes('origin') ? this.gitRemotes.indexOf('origin') : 0).toString(),
 							options: this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }))
 						});
@@ -825,7 +834,7 @@ class GitGraphView {
 
 					dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
 						let remote = this.gitRemotes[multipleRemotes ? parseInt(<string>values.shift()) : 0];
-						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: <boolean>values[0], force: <boolean>values[1] }, 'Pushing Branch');
+						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: <boolean>values[0], mode: <GG.GitPushBranchMode>values[1] }, 'Pushing Branch');
 					}, sourceElem);
 				}
 			}
@@ -849,9 +858,9 @@ class GitGraphView {
 				onClick: () => {
 					const dialogConfig = this.config.dialogDefaults.addTag;
 					let inputs: DialogInput[] = [
-						{ type: 'text-ref', name: 'Name', default: '' },
-						{ type: 'select', name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
-						{ type: 'text', name: 'Message', default: '', placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
+						{ type: DialogInputType.TextRef, name: 'Name', default: '' },
+						{ type: DialogInputType.Select, name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+						{ type: DialogInputType.Text, name: 'Message', default: '', placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
 					];
 					if (this.gitRemotes.length > 1) {
 						let options = [{ name: 'Don\'t push', value: '-1' }];
@@ -861,9 +870,9 @@ class GitGraphView {
 								? this.gitRemotes.indexOf('origin')
 								: 0
 							: -1;
-						inputs.push({ type: 'select', name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
+						inputs.push({ type: DialogInputType.Select, name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
 					} else if (this.gitRemotes.length === 1) {
-						inputs.push({ type: 'checkbox', name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
+						inputs.push({ type: DialogInputType.Checkbox, name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
 					}
 					dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
 						let pushToRemote = this.gitRemotes.length > 1 && <string>values[3] !== '-1'
@@ -887,8 +896,8 @@ class GitGraphView {
 				visible: visibility.createBranch,
 				onClick: () => {
 					dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-						{ type: 'text-ref', name: 'Name', default: '' },
-						{ type: 'checkbox', name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
+						{ type: DialogInputType.TextRef, name: 'Name', default: '' },
+						{ type: DialogInputType.Checkbox, name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
 					], 'Create Branch', (values) => {
 						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: <string>values[0], commitHash: hash, checkout: <boolean>values[1] }, 'Creating Branch');
 					}, commitElem);
@@ -922,9 +931,9 @@ class GitGraphView {
 							name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 							value: (index + 1).toString()
 						}));
-						inputs.push({ type: 'select', name: 'Parent Hash', options: options, default: '1', info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.' });
+						inputs.push({ type: DialogInputType.Select, name: 'Parent Hash', options: options, default: '1', info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.' });
 					}
-					inputs.push({ type: 'checkbox', name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
+					inputs.push({ type: DialogInputType.Checkbox, name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
 
 					dialog.showForm('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', inputs, 'Yes, cherry pick', (values) => {
 						let parentIndex = isMerge ? parseInt(<string>values.shift()) : 0;
@@ -1020,8 +1029,8 @@ class GitGraphView {
 				visible: visibility.pull && remote !== '',
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
-						{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: false },
-						{ type: 'checkbox', name: 'Squash commits', value: false }
+						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: false },
+						{ type: DialogInputType.Checkbox, name: 'Squash commits', value: false }
 					], 'Yes, pull', (values) => {
 						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Pulling Branch');
 					}, sourceElem);
@@ -1046,7 +1055,7 @@ class GitGraphView {
 				visible: visibility.apply,
 				onClick: () => {
 					dialog.showForm('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', [{
-						type: 'checkbox',
+						type: DialogInputType.Checkbox,
 						name: 'Reinstate Index',
 						value: this.config.dialogDefaults.applyStash.reinstateIndex,
 						info: 'Attempt to reinstate the indexed changes, in addition to the working tree\'s changes.'
@@ -1067,7 +1076,7 @@ class GitGraphView {
 				visible: visibility.pop,
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', [{
-						type: 'checkbox',
+						type: DialogInputType.Checkbox,
 						name: 'Reinstate Index',
 						value: this.config.dialogDefaults.popStash.reinstateIndex,
 						info: 'Attempt to reinstate the indexed changes, in addition to the working tree\'s changes.'
@@ -1167,8 +1176,8 @@ class GitGraphView {
 				visible: visibility.stash,
 				onClick: () => {
 					dialog.showForm('Are you sure you want to stash the <b>uncommitted changes</b>?', [
-						{ type: 'text', name: 'Message', default: '', placeholder: 'Optional' },
-						{ type: 'checkbox', name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked, info: 'Include all untracked files in the stash, and then clean them from the working directory.' }
+						{ type: DialogInputType.Text, name: 'Message', default: '', placeholder: 'Optional' },
+						{ type: DialogInputType.Checkbox, name: 'Include Untracked', value: this.config.dialogDefaults.stashUncommittedChanges.includeUntracked, info: 'Include all untracked files in the stash, and then clean them from the working directory.' }
 					], 'Yes, stash', (values) => {
 						runAction({ command: 'pushStash', repo: this.currentRepo, message: <string>values[0], includeUntracked: <boolean>values[1] }, 'Stashing uncommitted changes');
 					}, commitElem);
@@ -1242,8 +1251,8 @@ class GitGraphView {
 
 	private mergeAction(obj: string, name: string, actionOn: GG.ActionOn, sourceElem: HTMLElement | null) {
 		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
-			{ type: 'checkbox', name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
-			{ type: 'checkbox', name: 'Squash commits', value: this.config.dialogDefaults.merge.squash }
+			{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
+			{ type: DialogInputType.Checkbox, name: 'Squash commits', value: this.config.dialogDefaults.merge.squash }
 		], 'Yes, merge', (values) => {
 			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, actionOn: actionOn, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Merging ' + actionOn);
 		}, sourceElem);
@@ -1251,8 +1260,8 @@ class GitGraphView {
 
 	private rebaseAction(obj: string, name: string, actionOn: GG.ActionOn, sourceElem: HTMLElement | null) {
 		dialog.showForm('Are you sure you want to rebase the current branch on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
-			{ type: 'checkbox', name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
-			{ type: 'checkbox', name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
+			{ type: DialogInputType.Checkbox, name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
+			{ type: DialogInputType.Checkbox, name: 'Ignore Date (non-interactive rebase only)', value: this.config.dialogDefaults.rebase.ignoreDate }
 		], 'Yes, rebase', (values) => {
 			let interactive = <boolean>values[0];
 			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, actionOn: actionOn, ignoreDate: <boolean>values[1], interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + actionOn);

@@ -33,6 +33,9 @@
 	user-select:none;
 }
 
+.dialogContent > table.dialogForm tr.mediumField td{
+	line-height:22px;
+}
 .dialogContent > table.dialogForm tr.largeField td{
 	line-height:27px;
 }
@@ -45,13 +48,18 @@
 	padding-right:5px;
 }
 
-.dialogContent > table.dialogForm.single .dialogFormCheckbox{
+.dialogContent > table.dialogForm.single .dialogFormCheckbox, .dialogContent > table.dialogForm.single .dialogFormRadio{
 	display:inline-block;
-	text-align:center;
 	width:100%;
 }
+.dialogContent > table.dialogForm.single .dialogFormCheckbox{
+	text-align:center;
+}
+.dialogContent > table.dialogForm.single .dialogFormRadio{
+	text-align:left;
+}
 
-.dialogContent .dialogFormCheckbox > label{
+.dialogContent .dialogFormCheckbox > label, .dialogContent .dialogFormRadio > label{
 	user-select:none;
 	cursor:pointer;
 }
@@ -59,8 +67,15 @@
 .dialogContent > table.dialogForm.single .customCheckbox, .dialogContent > table.dialogForm.multiCheckbox .customCheckbox{
 	margin-right:6px;
 }
+.dialogContent > table.dialogForm .customRadio{
+	margin-left:1px;
+	margin-right:7px;
+}
 .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:checked ~ .customCheckbox:after{
 	border-color:var(--vscode-menu-foreground);
+}
+.dialogContent .dialogFormRadio > label > input[type=radio]:checked ~ .customRadio:after{
+	background-color:var(--vscode-menu-foreground);
 }
 
 .dialogContent > table.dialogForm input[type=text]{
@@ -76,7 +91,7 @@
 	font-size:13px;
 	line-height:17px;
 }
-.dialogContent > table.dialogForm input[type=text]:focus, .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:focus ~ .customCheckbox{
+.dialogContent > table.dialogForm input[type=text]:focus, .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:focus ~ .customCheckbox, .dialogContent .dialogFormRadio > label > input[type=radio]:focus ~ .customRadio{
 	border-color:var(--vscode-focusBorder);
 }
 .dialogContent > table.dialogForm input[type=text]::placeholder{

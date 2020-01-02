@@ -11,7 +11,6 @@ interface FindWidgetState {
 
 class FindWidget {
 	private readonly view: GitGraphView;
-	private commits: GG.GitCommit[] = [];
 	private text: string = '';
 	private isCaseSensitive: boolean = false;
 	private isRegex: boolean = false;
@@ -118,9 +117,10 @@ class FindWidget {
 		this.view.saveState();
 	}
 
-	public update(commits: GG.GitCommit[]) {
-		this.commits = commits;
-		if (this.visible) this.findMatches(this.getCurrentHash(), false);
+	public refresh() {
+		if (this.visible) {
+			this.findMatches(this.getCurrentHash(), false);
+		}
 	}
 
 	public setColour(colour: string) {
@@ -174,8 +174,9 @@ class FindWidget {
 				let commitElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, zeroLengthMatch = false;
 
 				// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
-				for (let i = 0; i < this.commits.length; i++) {
-					commit = this.commits[i];
+				const commits = this.view.getCommits();
+				for (let i = 0; i < commits.length; i++) {
+					commit = commits[i];
 					let branchLabels = getBranchLabels(commit.heads, commit.remotes);
 					if (commit.hash !== UNCOMMITTED && ((colVisibility.author && findPattern.test(commit.author))
 						|| (colVisibility.commit && (commit.hash.search(findPattern) === 0 || findPattern.test(abbrevCommit(commit.hash))))

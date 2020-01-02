@@ -132,6 +132,8 @@ export interface GitGraphViewInitialState {
 	readonly lastActiveRepo: string | null;
 	readonly loadRepo: string | null;
 	readonly repos: GitRepoSet;
+	readonly loadRepoInfoRefreshId: number;
+	readonly loadCommitsRefreshId: number;
 }
 
 export interface GitGraphViewConfig {
@@ -631,35 +633,35 @@ export interface ResponseGetSettings extends ResponseWithErrorInfo {
 
 export interface RequestLoadRepoInfo extends RepoRequest {
 	readonly command: 'loadRepoInfo';
+	readonly refreshId: number;
 	readonly showRemoteBranches: boolean;
 	readonly hideRemotes: string[];
-	readonly hard: boolean;
 }
 export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 	readonly command: 'loadRepoInfo';
+	readonly refreshId: number;
 	readonly branches: string[];
 	readonly head: string | null;
 	readonly remotes: string[];
-	readonly hard: boolean;
 	readonly isRepo: boolean;
 }
 
 export interface RequestLoadCommits extends RepoRequest {
 	readonly command: 'loadCommits';
+	readonly refreshId: number;
 	readonly branches: string[] | null; // null => Show All
 	readonly maxCommits: number;
 	readonly showRemoteBranches: boolean;
 	readonly showTags: boolean;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
-	readonly hard: boolean;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';
+	readonly refreshId: number;
 	readonly commits: GitCommit[];
 	readonly head: string | null;
 	readonly moreCommitsAvailable: boolean;
-	readonly hard: boolean;
 }
 
 export interface RequestLoadRepos extends BaseMessage {

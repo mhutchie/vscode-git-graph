@@ -455,14 +455,6 @@ class Graph {
 		this.closeTooltip();
 	}
 
-	public clear() {
-		if (this.group !== null) {
-			this.svg.removeChild(this.group);
-			this.group = null;
-			this.setDimensions(0, 0);
-		}
-	}
-
 
 	/* Get */
 

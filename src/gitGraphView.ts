@@ -27,6 +27,9 @@ export class GitGraphView {
 	private currentRepo: string | null = null;
 	private loadRepo: string | null = null; // Is used by the next call to getHtmlForWebview, and is then reset to null
 
+	private loadRepoInfoRefreshId: number = 0;
+	private loadCommitsRefreshId: number = 0;
+
 	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadRepo: string | null) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
@@ -300,13 +303,15 @@ export class GitGraphView {
 					});
 					break;
 				case 'loadCommits':
+					this.loadCommitsRefreshId = msg.refreshId;
 					this.sendMessage({
 						command: 'loadCommits',
-						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.showTags, msg.remotes, msg.hideRemotes),
-						hard: msg.hard
+						refreshId: msg.refreshId,
+						... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.showTags, msg.remotes, msg.hideRemotes)
 					});
 					break;
 				case 'loadRepoInfo':
+					this.loadRepoInfoRefreshId = msg.refreshId;
 					let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.hideRemotes), isRepo = true;
 					if (repoInfo.error) {
 						// If an error occurred, check to make sure the repo still exists
@@ -315,8 +320,8 @@ export class GitGraphView {
 					}
 					this.sendMessage({
 						command: 'loadRepoInfo',
+						refreshId: msg.refreshId,
 						...repoInfo,
-						hard: msg.hard,
 						isRepo: isRepo
 					});
 					if (msg.repo !== this.currentRepo) {
@@ -512,7 +517,9 @@ export class GitGraphView {
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadRepo: this.loadRepo,
-			repos: this.repoManager.getRepos()
+			repos: this.repoManager.getRepos(),
+			loadRepoInfoRefreshId: this.loadRepoInfoRefreshId,
+			loadCommitsRefreshId: this.loadCommitsRefreshId
 		};
 		const globalState = this.extensionState.getGlobalViewState();
 

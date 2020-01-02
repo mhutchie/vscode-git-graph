@@ -11,6 +11,13 @@ class GitGraphView {
 
 	private currentRepo!: string;
 	private currentRepoLoading: boolean = true;
+	private currentRepoRefreshState: {
+		inProgress: boolean;
+		hard: boolean;
+		loadRepoInfoRefreshId: number;
+		loadCommitsRefreshId: number;
+		repoInfoChanges: boolean;
+	};
 
 	private readonly graph: Graph;
 	private readonly config: Config;
@@ -34,15 +41,19 @@ class GitGraphView {
 	private readonly refreshBtnElem: HTMLElement;
 	private readonly scrollShadowElem: HTMLElement;
 
-	private loadRepoInfoCallback: ((changes: boolean, isRepo: boolean) => void) | null = null;
-	private loadCommitsCallback: ((changes: boolean) => void) | null = null;
-
 	constructor(viewElem: HTMLElement, prevState: WebViewState | null) {
 		this.gitRepos = initialState.repos;
 		this.config = initialState.config;
 		this.maxCommits = this.config.initialLoadCommits;
 		this.graph = new Graph('commitGraph', viewElem, this.config);
 		this.viewElem = viewElem;
+		this.currentRepoRefreshState = {
+			inProgress: false,
+			hard: true,
+			loadRepoInfoRefreshId: initialState.loadRepoInfoRefreshId,
+			loadCommitsRefreshId: initialState.loadCommitsRefreshId,
+			repoInfoChanges: false
+		};
 
 		this.controlsElem = document.getElementById('controls')!;
 		this.tableElem = document.getElementById('commitTable')!;
@@ -56,10 +67,9 @@ class GitGraphView {
 		this.branchDropdown = new Dropdown('branchDropdown', false, true, 'Branches', (values) => {
 			this.currentBranches = values;
 			this.maxCommits = this.config.initialLoadCommits;
-			this.closeCommitDetails(false);
 			this.saveState();
-			this.renderShowLoading();
-			this.requestLoadCommits(true, () => { });
+			this.clearCommits();
+			this.requestLoadRepoInfoAndCommits(true, true);
 		});
 
 		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
@@ -75,7 +85,7 @@ class GitGraphView {
 				this.refresh(true);
 			}
 		});
-		this.renderRefreshButton(true);
+		this.renderRefreshButton();
 
 		this.findWidget = new FindWidget(this);
 		this.settingsWidget = new SettingsWidget(this);
@@ -88,16 +98,14 @@ class GitGraphView {
 		this.observeWebviewScroll();
 		this.observeKeyboardEvents();
 
-		this.renderShowLoading();
-
 		if (prevState && !prevState.currentRepoLoading && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
 			this.currentRepo = prevState.currentRepo;
 			this.currentBranches = prevState.currentBranches;
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
-			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, true, true);
-			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, true);
+			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, true);
+			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable);
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
 				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, this.gitRepos[this.currentRepo].showTags);
@@ -115,7 +123,7 @@ class GitGraphView {
 				this.scrollTop = prevState.scrollTop;
 				this.viewElem.scroll(0, this.scrollTop);
 			}
-			this.requestLoadRepoInfoAndCommits(false);
+			this.requestLoadRepoInfoAndCommits(false, false);
 		}
 
 		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!;
@@ -173,9 +181,9 @@ class GitGraphView {
 		this.refresh(true);
 	}
 
-	public loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], hard: boolean, isRepo: boolean) {
-		if (!isRepo || (!hard && arraysStrictlyEqual(this.gitBranches, branchOptions) && this.gitBranchHead === branchHead && arraysStrictlyEqual(this.gitRemotes, remotes))) {
-			this.triggerLoadRepoInfoCallback(false, isRepo);
+	private loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], isRepo: boolean) {
+		if (!isRepo || (!this.currentRepoRefreshState.hard && arraysStrictlyEqual(this.gitBranches, branchOptions) && this.gitBranchHead === branchHead && arraysStrictlyEqual(this.gitRemotes, remotes))) {
+			this.finaliseLoadRepoInfo(false, isRepo);
 			return;
 		}
 
@@ -223,18 +231,25 @@ class GitGraphView {
 			this.saveHiddenRemotes(this.currentRepo, hideRemotes);
 		}
 
-		// Trigger Callback
-		this.triggerLoadRepoInfoCallback(true, isRepo);
+		this.finaliseLoadRepoInfo(true, isRepo);
 	}
-	private triggerLoadRepoInfoCallback(changes: boolean, isRepo: boolean) {
-		if (this.loadRepoInfoCallback !== null) {
-			this.loadRepoInfoCallback(changes, isRepo);
-			this.loadRepoInfoCallback = null;
+	private finaliseLoadRepoInfo(repoInfoChanges: boolean, isRepo: boolean) {
+		const refreshState = this.currentRepoRefreshState;
+		if (refreshState.inProgress) {
+			if (isRepo) {
+				refreshState.repoInfoChanges = refreshState.repoInfoChanges || repoInfoChanges;
+				this.requestLoadCommits();
+			} else {
+				dialog.closeActionRunning();
+				refreshState.inProgress = false;
+				this.renderRefreshButton();
+				sendMessage({ command: 'loadRepos', check: true });
+			}
 		}
 	}
 
-	public loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean, hard: boolean) {
-		if (!this.currentRepoLoading && !hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
+	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean) {
+		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
 			arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) &&
@@ -261,7 +276,7 @@ class GitGraphView {
 					}
 				}
 			}
-			this.triggerLoadCommitsCallback(false);
+			this.finaliseLoadCommits(false);
 			return;
 		}
 
@@ -301,28 +316,68 @@ class GitGraphView {
 		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
 		this.render();
 
-		this.triggerLoadCommitsCallback(true);
-		this.requestAvatars(avatarsNeeded);
-
 		if (currentRepoLoading && this.config.openRepoToHead && this.commitHead !== null) {
 			this.scrollToCommit(this.commitHead, true);
 		}
+
+		this.finaliseLoadCommits(true);
+		this.requestAvatars(avatarsNeeded);
 	}
-	private triggerLoadCommitsCallback(changes: boolean) {
-		if (this.loadCommitsCallback !== null) {
-			this.loadCommitsCallback(changes);
-			this.loadCommitsCallback = null;
+	private finaliseLoadCommits(commitChanges: boolean) {
+		const refreshState = this.currentRepoRefreshState;
+		if (refreshState.inProgress) {
+			const dialogType = dialog.getType();
+			if ((!refreshState.hard && (refreshState.repoInfoChanges || commitChanges) && dialogType !== DialogType.Message) || dialogType === DialogType.ActionRunning) {
+				closeDialogAndContextMenu();
+			}
+			refreshState.inProgress = false;
+			this.renderRefreshButton();
 		}
 	}
 
-	public loadDataError(message: string, reason: string) {
-		this.graph.clear();
+	private clearCommits() {
+		closeDialogAndContextMenu();
+		this.moreCommitsAvailable = false;
+		this.commits = [];
+		this.commitHead = null;
+		this.commitLookup = {};
+		this.renderedGitBranchHead = null;
+		this.closeCommitDetails(false);
+		this.saveState();
+		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
 		this.tableElem.innerHTML = '';
 		this.footerElem.innerHTML = '';
-		this.loadRepoInfoCallback = null;
-		this.loadCommitsCallback = null;
-		this.renderRefreshButton(true);
-		this.findWidget.update([]);
+		this.renderGraph();
+		this.findWidget.refresh();
+	}
+
+	public processLoadRepoInfoResponse(msg: GG.ResponseLoadRepoInfo) {
+		if (msg.error === null) {
+			const refreshState = this.currentRepoRefreshState;
+			if (refreshState.inProgress && refreshState.loadRepoInfoRefreshId === msg.refreshId) {
+				this.loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.isRepo);
+			}
+		} else {
+			this.displayLoadDataError('Unable to load Repository Info', msg.error);
+		}
+	}
+	public processLoadCommitsResponse(msg: GG.ResponseLoadCommits) {
+		if (msg.error === null) {
+			const refreshState = this.currentRepoRefreshState;
+			if (refreshState.inProgress && refreshState.loadCommitsRefreshId === msg.refreshId) {
+				this.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable);
+			}
+		} else {
+			const error = this.gitBranches.length === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
+				? 'There are no commits in this repository.'
+				: msg.error;
+			this.displayLoadDataError('Unable to load Commits', error);
+		}
+	}
+	private displayLoadDataError(message: string, reason: string) {
+		this.clearCommits();
+		this.currentRepoRefreshState.inProgress = false;
+		this.renderRefreshButton();
 		dialog.showError(message, reason, 'Retry', () => {
 			this.refresh(true);
 		}, null);
@@ -346,10 +401,6 @@ class GitGraphView {
 		return this.commits;
 	}
 
-	public getNumBranches() {
-		return this.gitBranches.length;
-	}
-
 	public getSettingsWidget() {
 		return this.settingsWidget;
 	}
@@ -359,36 +410,29 @@ class GitGraphView {
 
 	public refresh(hard: boolean) {
 		if (hard) {
-			if (this.expandedCommit !== null) {
-				this.closeCommitDetails(false);
-				this.saveState();
-			}
-			this.renderShowLoading();
+			this.clearCommits();
 		}
-		this.requestLoadRepoInfoAndCommits(hard);
+		this.requestLoadRepoInfoAndCommits(hard, false);
 	}
 
 
 	/* Requests */
 
-	private requestLoadRepoInfo(hard: boolean, loadedCallback: (changes: boolean, isRepo: boolean) => void) {
-		if (this.loadRepoInfoCallback !== null) return;
-		this.loadRepoInfoCallback = loadedCallback;
+	private requestLoadRepoInfo() {
 		sendMessage({
 			command: 'loadRepoInfo',
 			repo: this.currentRepo,
+			refreshId: ++this.currentRepoRefreshState.loadRepoInfoRefreshId,
 			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
-			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
-			hard: hard
+			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes
 		});
 	}
 
-	private requestLoadCommits(hard: boolean, loadedCallback: (changes: boolean) => void) {
-		if (this.loadCommitsCallback !== null) return;
-		this.loadCommitsCallback = loadedCallback;
+	private requestLoadCommits() {
 		sendMessage({
 			command: 'loadCommits',
 			repo: this.currentRepo,
+			refreshId: ++this.currentRepoRefreshState.loadCommitsRefreshId,
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
 			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
@@ -396,28 +440,34 @@ class GitGraphView {
 				? this.config.showTags
 				: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Show,
 			remotes: this.gitRemotes,
-			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
-			hard: hard
+			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes
 		});
 	}
 
-	private requestLoadRepoInfoAndCommits(hard: boolean) {
-		this.renderRefreshButton(false);
-		this.requestLoadRepoInfo(hard, (repoInfoChanges: boolean, isRepo: boolean) => {
-			if (isRepo) {
-				this.requestLoadCommits(hard, (commitChanges: boolean) => {
-					const dialogType = dialog.getType();
-					if ((!hard && (repoInfoChanges || commitChanges) && dialogType !== DialogType.Message) || dialogType === DialogType.ActionRunning) {
-						closeDialogAndContextMenu();
-					}
-					this.renderRefreshButton(true);
-				});
-			} else {
-				dialog.closeActionRunning();
-				this.renderRefreshButton(true);
-				sendMessage({ command: 'loadRepos', check: true });
+	private requestLoadRepoInfoAndCommits(hard: boolean, skipRepoInfo: boolean) {
+		const refreshState = this.currentRepoRefreshState;
+		if (refreshState.inProgress) {
+			refreshState.hard = refreshState.hard || hard;
+			if (!skipRepoInfo) {
+				// This request will trigger a loadCommit request after the loadRepoInfo request has completed. 
+				// Invalidate any previous commit requests in progress.
+				refreshState.loadCommitsRefreshId++;
 			}
-		});
+		} else {
+			refreshState.hard = hard;
+			refreshState.inProgress = true;
+			refreshState.repoInfoChanges = false;
+		}
+		this.renderRefreshButton();
+		if (this.commits.length === 0) {
+			this.tableElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
+		}
+
+		if (skipRepoInfo) {
+			this.requestLoadCommits();
+		} else {
+			this.requestLoadRepoInfo();
+		}
 	}
 
 	public requestCommitDetails(hash: string, refresh: boolean) {
@@ -518,13 +568,26 @@ class GitGraphView {
 	}
 
 	private renderGraph() {
-		let colHeadersElem = document.getElementById('tableColHeaders');
-		if (colHeadersElem === null) return;
-		let expandedCommit = this.isCdvDocked() ? null : this.expandedCommit, cdvHeight = this.gitRepos[this.currentRepo].cdvHeight;
-		let headerHeight = colHeadersElem.clientHeight + 1, expandedCommitElem = expandedCommit !== null ? document.getElementById('cdv') : null;
-		this.config.grid.expandY = expandedCommitElem !== null ? expandedCommitElem.getBoundingClientRect().height : cdvHeight;
-		this.config.grid.y = this.commits.length > 0 ? (this.tableElem.children[0].clientHeight - headerHeight - (expandedCommit !== null ? cdvHeight : 0)) / this.commits.length : this.config.grid.y;
+		if (typeof this.currentRepo === 'undefined') {
+			// Only render the graph if a repo is loaded (or a repo is currently being loaded)
+			return;
+		}
+
+		const colHeadersElem = document.getElementById('tableColHeaders');
+		const cdvHeight = this.gitRepos[this.currentRepo].cdvHeight;
+		const headerHeight = colHeadersElem !== null ? colHeadersElem.clientHeight + 1 : 0;
+		const expandedCommit = this.isCdvDocked() ? null : this.expandedCommit;
+		const expandedCommitElem = expandedCommit !== null ? document.getElementById('cdv') : null;
+
+		// Update the graphs grid dimensions
+		this.config.grid.expandY = expandedCommitElem !== null
+			? expandedCommitElem.getBoundingClientRect().height
+			: cdvHeight;
+		this.config.grid.y = this.commits.length > 0 && this.tableElem.children.length > 0
+			? (this.tableElem.children[0].clientHeight - headerHeight - (expandedCommit !== null ? cdvHeight : 0)) / this.commits.length
+			: this.config.grid.y;
 		this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
+
 		this.graph.render(expandedCommit);
 	}
 
@@ -585,16 +648,15 @@ class GitGraphView {
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
 		this.footerElem.innerHTML = this.moreCommitsAvailable ? '<div id="loadMoreCommitsBtn" class="roundedBtn">Load More Commits</div>' : '';
 		this.makeTableResizable();
-		this.findWidget.update(this.commits);
+		this.findWidget.refresh();
 		this.renderedGitBranchHead = this.gitBranchHead;
 
 		if (this.moreCommitsAvailable) {
 			document.getElementById('loadMoreCommitsBtn')!.addEventListener('click', () => {
 				this.footerElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
 				this.maxCommits += this.config.loadMoreCommits;
-				this.closeCommitDetails(true);
 				this.saveState();
-				this.requestLoadCommits(true, () => { });
+				this.requestLoadRepoInfoAndCommits(false, true);
 			});
 		}
 
@@ -615,16 +677,20 @@ class GitGraphView {
 				if (expandedCommit.compareWithHash === null) {
 					// Commit Details View is open
 					if (!expandedCommit.loading && expandedCommit.commitDetails !== null && expandedCommit.fileTree !== null) {
-						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.fileTree, expandedCommit.avatar, expandedCommit.codeReview, expandedCommit.lastViewedFile, false);
-						if (expandedCommit.hash === UNCOMMITTED) this.requestCommitDetails(expandedCommit.hash, true);
+						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.fileTree, expandedCommit.avatar, expandedCommit.codeReview, expandedCommit.lastViewedFile, true);
+						if (expandedCommit.hash === UNCOMMITTED) {
+							this.requestCommitDetails(expandedCommit.hash, true);
+						}
 					} else {
 						this.loadCommitDetails(elem);
 					}
 				} else {
 					// Commit Comparison is open
 					if (!expandedCommit.loading && expandedCommit.fileChanges !== null && expandedCommit.fileTree !== null) {
-						this.showCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, expandedCommit.fileChanges, expandedCommit.fileTree, expandedCommit.codeReview, expandedCommit.lastViewedFile, false);
-						if (expandedCommit.hash === UNCOMMITTED || expandedCommit.compareWithHash === UNCOMMITTED) this.requestCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, true);
+						this.showCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, expandedCommit.fileChanges, expandedCommit.fileTree, expandedCommit.codeReview, expandedCommit.lastViewedFile, true);
+						if (expandedCommit.hash === UNCOMMITTED || expandedCommit.compareWithHash === UNCOMMITTED) {
+							this.requestCommitComparison(expandedCommit.hash, expandedCommit.compareWithHash, true);
+						}
 					} else {
 						this.loadCommitComparison(compareWithElem!);
 					}
@@ -734,19 +800,12 @@ class GitGraphView {
 			(colVisibility.commit ? '<td title="*">*</td>' : '');
 	}
 
-	private renderShowLoading() {
-		closeDialogAndContextMenu();
-		this.graph.clear();
-		this.tableElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
-		this.footerElem.innerHTML = '';
-		this.findWidget.update([]);
-	}
-
 	private renderFetchButton() {
 		alterClass(this.controlsElem, CLASS_FETCH_SUPPORTED, this.gitRemotes.length > 0);
 	}
 
-	public renderRefreshButton(enabled: boolean) {
+	public renderRefreshButton() {
+		const enabled = !this.currentRepoRefreshState.inProgress;
 		this.refreshBtnElem.title = enabled ? 'Refresh' : 'Refreshing';
 		this.refreshBtnElem.innerHTML = enabled ? SVG_ICONS.refresh : SVG_ICONS.loading;
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
@@ -2235,21 +2294,10 @@ window.addEventListener('load', () => {
 				settingsWidget.loadSettings(msg.settings, msg.error);
 				break;
 			case 'loadCommits':
-				if (msg.error === null) {
-					gitGraph.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.hard);
-				} else {
-					let error = gitGraph.getNumBranches() === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
-						? 'There are no commits in this repository.'
-						: msg.error;
-					gitGraph.loadDataError('Unable to load Commits', error);
-				}
+				gitGraph.processLoadCommitsResponse(msg);
 				break;
 			case 'loadRepoInfo':
-				if (msg.error === null) {
-					gitGraph.loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.hard, msg.isRepo);
-				} else {
-					gitGraph.loadDataError('Unable to load Repository Info', msg.error);
-				}
+				gitGraph.processLoadRepoInfoResponse(msg);
 				break;
 			case 'loadRepos':
 				gitGraph.loadRepos(msg.repos, msg.lastActiveRepo, msg.loadRepo);

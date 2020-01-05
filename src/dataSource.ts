@@ -49,7 +49,7 @@ export class DataSource {
 		const dateType = config.dateType === DateType.Author ? '%at' : '%ct';
 		const useMailmap = config.useMailmap;
 		this.gitFormatCommitDetails = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
-		this.gitFormatLog = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
+		this.gitFormatLog = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s', '%b'].join(GIT_LOG_SEPARATOR);
 		this.gitFormatStash = ['%H', '%P', '%gD', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
 	}
 
@@ -769,8 +769,19 @@ export class DataSource {
 			let commits: GitCommitRecord[] = [];
 			for (let i = 0; i < lines.length - 1; i++) {
 				let line = lines[i].split(GIT_LOG_SEPARATOR);
-				if (line.length !== 6) break;
-				commits.push({ hash: line[0], parents: line[1] !== '' ? line[1].split(' ') : [], author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
+				if (line.length < 7) {
+					// The length can be less that 7 because the current line is a part of
+					// multiline body. Ignore it and process the next lines
+					continue;
+				}
+				commits.push({
+					hash: line[0],
+					parents: line[1] !== '' ? line[1].split(' ') : [],
+					author: line[2],
+					email: line[3],
+					date: parseInt(line[4]),
+					message: line[5] + (line[6] !== '' ? '…' : ''), // add '…' if body isn't empty
+				});
 			}
 			return commits;
 		});

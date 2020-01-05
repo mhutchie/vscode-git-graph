@@ -16,11 +16,15 @@ export class Logger {
 	}
 
 	public logCmd(cmd: string, args: string[]) {
-		this.channel.appendLine(timestamp() + '> ' + cmd + ' ' + args.join(' ').replace(/--format=[^ ]+/, '--format=...'));
+		this.log('> ' + cmd + ' ' + args.map((arg) => {
+			return arg.startsWith('--format=')
+				? '--format=...'
+				: arg.includes(' ') ? '"' + arg.replace(/"/g, '\\"') + '"' : arg;
+		}).join(' '));
 	}
 
 	public logError(message: string) {
-		this.channel.appendLine(timestamp() + 'ERROR: ' + message);
+		this.log('ERROR: ' + message);
 	}
 }
 

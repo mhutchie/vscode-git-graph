@@ -192,6 +192,10 @@ class Config {
 		return this.config.get('loadMoreCommits', 75);
 	}
 
+	get loadMoreCommitsAutomatically() {
+		return !!this.config.get('loadMoreCommitsAutomatically', true);
+	}
+
 	get maxDepthOfRepoSearch() {
 		return this.config.get('maxDepthOfRepoSearch', 0);
 	}

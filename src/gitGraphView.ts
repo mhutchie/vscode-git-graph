@@ -508,6 +508,7 @@ export class GitGraphView {
 				grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },
 				initialLoadCommits: config.initialLoadCommits,
 				loadMoreCommits: config.loadMoreCommits,
+				loadMoreCommitsAutomatically: config.loadMoreCommitsAutomatically,
 				muteCommitsNotAncestorsOfHead: config.muteCommitsThatAreNotAncestorsOfHead,
 				muteMergeCommits: config.muteMergeCommits,
 				openRepoToHead: config.openRepoToHead,

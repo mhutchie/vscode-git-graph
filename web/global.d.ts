@@ -84,6 +84,31 @@ declare global {
 	type FileTreeNode = FileTreeFolder | FileTreeLeaf;
 	type FileTreeFolderContents = { [name: string]: FileTreeNode };
 
+
+	/* Dialog & ContextMenu shared base Target interfaces */
+
+	const enum TargetType {
+		Commit = 'commit',
+		Ref = 'ref',
+		Repo = 'repo'
+	}
+
+	interface CommitOrRefTarget {
+		type: TargetType.Commit | TargetType.Ref;
+		elem: HTMLElement;
+	}
+
+	interface RepoTarget {
+		type: TargetType.Repo;
+	}
+
+	interface CommitTarget extends CommitOrRefTarget {
+		hash: string;
+	}
+
+	interface RefTarget extends CommitTarget {
+		ref: string;
+	}
 }
 
 export as namespace GG;

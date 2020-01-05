@@ -113,7 +113,7 @@ class SettingsWidget {
 			this.contentsElem.innerHTML = '';
 			this.loadingElem.innerHTML = '<span>' + errorTitle + '</span>';
 			alterClass(this.widgetElem, CLASS_LOADING, true);
-			dialog.showError(errorTitle, error, 'Retry', () => this.requestSettings(), null);
+			dialog.showError(errorTitle, error, 'Retry', () => this.requestSettings());
 		}
 	}
 
@@ -236,7 +236,7 @@ class SettingsWidget {
 					{ type: DialogInputType.Checkbox, name: 'Fetch Immediately', value: true }
 				], 'Add Remote', (values) => {
 					runAction({ command: 'addRemote', name: <string>values[0], repo: this.repo!, url: <string>values[1], pushUrl: <string>values[2] !== '' ? <string>values[2] : null, fetch: <boolean>values[3] }, 'Adding Remote');
-				}, null);
+				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('editRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
@@ -246,13 +246,13 @@ class SettingsWidget {
 					{ type: DialogInputType.Text, name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
 				], 'Save Changes', (values) => {
 					runAction({ command: 'editRemote', repo: this.repo!, nameOld: remote.name, nameNew: <string>values[0], urlOld: remote.url, urlNew: <string>values[1] !== '' ? <string>values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: <string>values[2] !== '' ? <string>values[2] : null }, 'Saving Changes to Remote');
-				}, null);
+				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
 				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
 					runAction({ command: 'deleteRemote', repo: this.repo!, name: remote.name }, 'Deleting Remote');
-				}, null);
+				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('fetchRemote', 'click', (e) => {
 				runAction({ command: 'fetch', repo: this.repo!, name: this.getRemoteForBtnEvent(e).name, prune: false }, 'Fetching from Remote');
@@ -261,7 +261,7 @@ class SettingsWidget {
 				let remote = this.getRemoteForBtnEvent(e);
 				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
 					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
-				}, null);
+				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('hideRemoteBtn', 'click', (e) => {
 				if (this.repo === null || this.hideRemotes === null) return;
@@ -364,11 +364,11 @@ class SettingsWidget {
 			if (regExpParseError !== null) {
 				dialog.showError('Invalid Issue Regex', regExpParseError, 'Go Back', () => {
 					this.showIssueLinkingDialog(issueRegex, issueUrl, useGlobally, isEdit);
-				}, null);
+				});
 			} else if (issueUrl.indexOf('$1') === -1) {
 				dialog.showError('Invalid Issue URL', 'The Issue URL does not contain the placeholder $1 for the issue number captured in the Issue Regex.', 'Go Back', () => {
 					this.showIssueLinkingDialog(issueRegex, issueUrl, useGlobally, isEdit);
-				}, null);
+				});
 			} else {
 				this.setIssueLinkingConfig({ issue: issueRegex, url: issueUrl }, useGlobally);
 			}

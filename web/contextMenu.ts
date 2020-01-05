@@ -9,9 +9,17 @@ interface ContextMenuAction {
 
 type ContextMenuActions = ContextMenuAction[][];
 
+type ContextMenuTarget = {
+	type: TargetType.Commit | TargetType.Ref;
+	elem: HTMLElement;
+	hash: string;
+	index: number;
+	ref?: string;
+} | RepoTarget;
+
 class ContextMenu {
 	private elem: HTMLElement | null = null;
-	private source: HTMLElement | null = null;
+	private target: ContextMenuTarget | null = null;
 
 	constructor() {
 		const listener = () => this.close();
@@ -19,7 +27,7 @@ class ContextMenu {
 		document.addEventListener('contextmenu', listener);
 	}
 
-	public show(event: MouseEvent, actions: ContextMenuActions, checked: boolean, sourceElem: HTMLElement | null) {
+	public show(actions: ContextMenuActions, checked: boolean, target: ContextMenuTarget | null, event: MouseEvent) {
 		let viewElem = document.getElementById('view'), html = '', handlers: (() => void)[] = [], handlerId = 0;
 		if (viewElem === null) return;
 		this.close();
@@ -41,7 +49,7 @@ class ContextMenu {
 
 		if (handlers.length === 0) return; // No context menu actions are visible
 
-		let menu = document.createElement('ul');
+		const menu = document.createElement('ul');
 		menu.className = 'contextMenu' + (checked ? ' checked' : '');
 		menu.style.opacity = '0';
 		menu.innerHTML = html;
@@ -60,6 +68,7 @@ class ContextMenu {
 		menu.style.left = (viewElem.scrollLeft + Math.max(event.pageX + relativeX, 2)) + 'px';
 		menu.style.top = (viewElem.scrollTop + Math.max(event.pageY + relativeY, 2)) + 'px';
 		menu.style.opacity = '1';
+		this.elem = menu;
 
 		addListenerToClass('contextMenuItem', 'click', (e) => {
 			e.stopPropagation();
@@ -67,10 +76,10 @@ class ContextMenu {
 			handlers[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]();
 		});
 
-		if (sourceElem !== null) sourceElem.classList.add(CLASS_CONTEXT_MENU_ACTIVE);
-
-		this.elem = menu;
-		this.source = sourceElem;
+		this.target = target;
+		if (this.target !== null && this.target.type !== TargetType.Repo) {
+			alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
+		}
 	}
 
 	public close() {
@@ -78,13 +87,50 @@ class ContextMenu {
 			this.elem.remove();
 			this.elem = null;
 		}
-		if (this.source !== null) {
-			this.source.classList.remove(CLASS_CONTEXT_MENU_ACTIVE);
-			this.source = null;
+		if (this.target !== null && this.target.type !== TargetType.Repo) {
+			alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, false);
 		}
+		this.target = null;
+	}
+
+	public refresh(commits: ReadonlyArray<GG.GitCommit>) {
+		if (!this.isOpen() || this.target === null || this.target.type === TargetType.Repo) {
+			// Don't need to refresh if no context menu is open, or it is not dynamic
+			return;
+		}
+
+		if (this.target.index < commits.length && commits[this.target.index].hash === this.target.hash) {
+			// The commit still exists at the same index
+
+			const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.target.index);
+			if (commitElem !== null) {
+				if (typeof this.target.ref === 'undefined') {
+					// ContextMenu is only dependent on the commit itself
+					this.target.elem = commitElem;
+					alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
+					return;
+				} else {
+					// ContextMenu is dependent on the commit and ref 
+					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
+					for (let i = 0; i < elems.length; i++) {
+						if (elems[i].dataset.fullref! === this.target.ref) {
+							this.target.elem = this.target.type === TargetType.Ref ? elems[i] : commitElem;
+							alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
+							return;
+						}
+					}
+				}
+			}
+		}
+
+		this.close();
 	}
 
 	public isOpen() {
 		return this.elem !== null;
+	}
+
+	public isTargetDynamicSource() {
+		return this.isOpen() && this.target !== null;
 	}
 }

@@ -66,49 +66,56 @@ interface DialogRadioInputOption {
 type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogRadioInput | DialogCheckboxInput;
 type DialogInputValue = string | boolean;
 
+type DialogTarget = {
+	type: TargetType.Commit | TargetType.Ref;
+	elem: HTMLElement;
+	hash?: string;
+	ref?: string;
+} | RepoTarget;
+
 class Dialog {
 	private elem: HTMLElement | null = null;
-	private source: HTMLElement | null = null;
+	private target: DialogTarget | null = null;
 	private actioned: (() => void) | null = null;
 	private type: DialogType | null = null;
 	private customSelects: CustomSelect[] = [];
 
-	public showConfirmation(message: string, confirmed: () => void, sourceElem: HTMLElement | null) {
+	public showConfirmation(message: string, confirmed: () => void, target: DialogTarget | null) {
 		this.show(DialogType.Form, message, 'Yes', 'No', () => {
 			this.close();
 			confirmed();
-		}, null, sourceElem);
+		}, null, target);
 	}
 
-	public showTwoButtons(message: string, buttonLabel1: string, buttonAction1: () => void, buttonLabel2: string, buttonAction2: () => void, sourceElem: HTMLElement | null) {
+	public showTwoButtons(message: string, buttonLabel1: string, buttonAction1: () => void, buttonLabel2: string, buttonAction2: () => void, target: DialogTarget | null) {
 		this.show(DialogType.Form, message, buttonLabel1, buttonLabel2, () => {
 			this.close();
 			buttonAction1();
 		}, () => {
 			this.close();
 			buttonAction2();
-		}, sourceElem);
+		}, target);
 	}
 
-	public showRefInput(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
+	public showRefInput(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.TextRef, name: '', default: defaultValue }
-		], actionName, (values) => actioned(<string>values[0]), sourceElem);
+		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
-	public showCheckbox(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, sourceElem: HTMLElement | null) {
+	public showCheckbox(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.Checkbox, name: checkboxLabel, value: checkboxValue }
-		], actionName, (values) => actioned(<boolean>values[0]), sourceElem);
+		], actionName, (values) => actioned(<boolean>values[0]), target);
 	}
 
-	public showSelect(message: string, defaultValue: string, options: DialogSelectInputOption[], actionName: string, actioned: (value: string) => void, sourceElem: HTMLElement | null) {
+	public showSelect(message: string, defaultValue: string, options: DialogSelectInputOption[], actionName: string, actioned: (value: string) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.Select, name: '', options: options, default: defaultValue }
-		], actionName, (values) => actioned(<string>values[0]), sourceElem);
+		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
-	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, sourceElem: HTMLElement | null, includeLineBreak: boolean = true) {
+	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
 		const multiCheckbox = multiElement && inputs.every((input) => input.type === DialogInputType.Checkbox);
 		const infoColRequired = inputs.some((input) => input.type !== DialogInputType.Checkbox && input.type !== DialogInputType.Radio && input.info);
@@ -157,7 +164,7 @@ class Dialog {
 			});
 			this.close();
 			actioned(values);
-		}, null, sourceElem);
+		}, null, target);
 
 		// Create custom select inputs
 		const selectIds: number[] = [];
@@ -195,27 +202,30 @@ class Dialog {
 		this.show(DialogType.Message, html, null, 'Close', null, null, null);
 	}
 
-	public showError(message: string, reason: GG.ErrorInfo, actionName: string | null, actioned: (() => void) | null, sourceElem: HTMLElement | null) {
+	public showError(message: string, reason: GG.ErrorInfo, actionName: string | null, actioned: (() => void) | null) {
 		this.show(DialogType.Message, '<span class="dialogAlert">' + SVG_ICONS.alert + 'Error: ' + message + '</span>' + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', () => {
 			this.close();
 			if (actioned !== null) actioned();
-		}, null, sourceElem);
+		}, null, null);
 	}
 
 	public showActionRunning(action: string) {
 		this.show(DialogType.ActionRunning, '<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
 	}
 
-	private show(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, sourceElem: HTMLElement | null) {
+	private show(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, target: DialogTarget | null) {
 		closeDialogAndContextMenu();
 
 		this.type = type;
+		this.target = target;
 		eventOverlay.create('dialogBacking', null, null);
-		let dialog = document.createElement('div'), dialogContent = document.createElement('div');
+
+		const dialog = document.createElement('div'), dialogContent = document.createElement('div');
 		dialog.className = 'dialog';
 		dialogContent.className = 'dialogContent';
 		dialogContent.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
 		dialog.appendChild(dialogContent);
+		this.elem = dialog;
 		document.body.appendChild(dialog);
 
 		let docHeight = document.body.clientHeight, dialogHeight = dialog.clientHeight + 2;
@@ -230,10 +240,9 @@ class Dialog {
 		}
 		document.getElementById('dialogDismiss')!.addEventListener('click', dismissed !== null ? dismissed : () => this.close());
 
-		if (sourceElem !== null) sourceElem.classList.add(CLASS_DIALOG_ACTIVE);
-
-		this.elem = dialog;
-		this.source = sourceElem;
+		if (this.target !== null && this.target.type !== TargetType.Repo) {
+			alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);
+		}
 	}
 
 	public close() {
@@ -242,10 +251,10 @@ class Dialog {
 			this.elem.remove();
 			this.elem = null;
 		}
-		if (this.source !== null) {
-			this.source.classList.remove(CLASS_DIALOG_ACTIVE);
-			this.source = null;
+		if (this.target !== null && this.target.type !== TargetType.Repo) {
+			alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, false);
 		}
+		this.target = null;
 		this.customSelects.forEach(select => select.remove());
 		this.customSelects = [];
 		this.actioned = null;
@@ -260,8 +269,46 @@ class Dialog {
 		if (this.actioned !== null) this.actioned();
 	}
 
+	public refresh(commits: ReadonlyArray<GG.GitCommit>) {
+		if (!this.isOpen() || this.target === null || this.target.type === TargetType.Repo) {
+			// Don't need to refresh if: no dialog is open, it is not dynamic, or it is not reliant on commit changes
+			return;
+		}
+
+		const commitIndex = commits.findIndex((commit) => commit.hash === (<CommitTarget | RefTarget>this.target).hash);
+		if (commitIndex > -1) {
+			// The commit still exists
+
+			const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), commitIndex);
+			if (commitElem !== null) {
+				if (typeof this.target.ref === 'undefined') {
+					// Dialog is only dependent on the commit itself
+					this.target.elem = commitElem;
+					alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);
+					return;
+				} else {
+					// Dialog is dependent on the commit and ref 
+					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
+					for (let i = 0; i < elems.length; i++) {
+						if (elems[i].dataset.fullref! === this.target.ref) {
+							this.target.elem = this.target.type === TargetType.Ref ? elems[i] : commitElem;
+							alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);
+							return;
+						}
+					}
+				}
+			}
+		}
+
+		this.close();
+	}
+
 	public isOpen() {
 		return this.elem !== null;
+	}
+
+	public isTargetDynamicSource() {
+		return this.isOpen() && this.target !== null;
 	}
 
 	public getType() {

@@ -6,8 +6,8 @@ import { Uri } from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode } from './types';
-import { abbrevCommit, compareVersions, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus } from './types';
+import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -23,15 +23,15 @@ export class DataSource {
 	private readonly askpassManager: AskpassManager;
 	private readonly askpassEnv: AskpassEnvironment;
 
-	private gitExecutable: GitExecutable | null;
+	private gitExecutable!: GitExecutable | null;
+	private gitExecutableSupportsGpgInfo!: boolean;
 	private gitFormatCommitDetails!: string;
 	private gitFormatLog!: string;
 	private gitFormatStash!: string;
 
 	constructor(gitExecutable: GitExecutable | null, logger: Logger) {
-		this.gitExecutable = gitExecutable;
 		this.logger = logger;
-		this.generateGitCommandFormats();
+		this.setGitExecutable(gitExecutable);
 		this.askpassManager = new AskpassManager();
 		this.askpassEnv = this.askpassManager.getEnv();
 	}
@@ -40,17 +40,35 @@ export class DataSource {
 		return this.gitExecutable === null;
 	}
 
-	public setGitExecutable(gitExecutable: GitExecutable) {
+	public setGitExecutable(gitExecutable: GitExecutable | null) {
 		this.gitExecutable = gitExecutable;
+		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? isGitAtLeastVersion(gitExecutable, '2.4.0') : false;
+		this.generateGitCommandFormats();
 	}
 
 	public generateGitCommandFormats() {
 		const config = getConfig();
 		const dateType = config.dateType === DateType.Author ? '%at' : '%ct';
 		const useMailmap = config.useMailmap;
-		this.gitFormatCommitDetails = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn'].join(GIT_LOG_SEPARATOR) + '%n%B';
-		this.gitFormatLog = ['%H', '%P', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
-		this.gitFormatStash = ['%H', '%P', '%gD', useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, '%s'].join(GIT_LOG_SEPARATOR);
+
+		this.gitFormatCommitDetails = [
+			'%H', '%P', // Hash & Parent Information
+			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn', // Author / Commit Information
+			...(config.showSignatureStatus && this.gitExecutableSupportsGpgInfo ? ['%G?', '%GS', '%GK'] : ['', '', '']), // GPG Key Information
+			'%B' // Body
+		].join(GIT_LOG_SEPARATOR);
+
+		this.gitFormatLog = [
+			'%H', '%P',// Hash & Parent Information
+			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
+			'%s' // Subject
+		].join(GIT_LOG_SEPARATOR);
+
+		this.gitFormatStash = [
+			'%H', '%P', '%gD',// Hash, Parent & Selector Information
+			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
+			'%s' // Subject
+		].join(GIT_LOG_SEPARATOR);
 	}
 
 	public dispose() {
@@ -224,7 +242,7 @@ export class DataSource {
 		]).then((results) => {
 			return {
 				commitDetails: {
-					hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', body: '',
+					hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', signature: null, body: '',
 					fileChanges: generateFileChanges(results[0], results[1], results[2])
 				},
 				error: null
@@ -640,7 +658,7 @@ export class DataSource {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
 		}
-		if (compareVersions(this.gitExecutable, '2.13.2') < 0) {
+		if (!isGitAtLeastVersion(this.gitExecutable, '2.13.2')) {
 			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.13.2'));
 		}
 
@@ -680,8 +698,7 @@ export class DataSource {
 
 	private getCommitDetailsBase(repo: string, commitHash: string) {
 		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): Writeable<GitCommitDetails> => {
-			let lines = stdout.split(EOL_REGEX);
-			let commitInfo = lines.shift()!.split(GIT_LOG_SEPARATOR);
+			const commitInfo = stdout.split(GIT_LOG_SEPARATOR);
 			return {
 				hash: commitInfo[0],
 				parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
@@ -689,7 +706,14 @@ export class DataSource {
 				email: commitInfo[3],
 				date: parseInt(commitInfo[4]),
 				committer: commitInfo[5],
-				body: removeTrailingBlankLines(lines).join('\n'),
+				signature: ['G', 'U', 'X', 'Y', 'R', 'E', 'B'].includes(commitInfo[6])
+					? {
+						key: commitInfo[8].trim(),
+						signer: commitInfo[7].trim(),
+						status: <GitSignatureStatus>commitInfo[6]
+					}
+					: null,
+				body: removeTrailingBlankLines(commitInfo.slice(9).join(GIT_LOG_SEPARATOR).split(EOL_REGEX)).join('\n'),
 				fileChanges: []
 			};
 		});

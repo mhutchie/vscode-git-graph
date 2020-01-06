@@ -36,8 +36,25 @@ export interface GitCommitDetails {
 	readonly email: string;
 	readonly date: number;
 	readonly committer: string;
+	readonly signature: GitCommitSignature | null;
 	readonly body: string;
 	readonly fileChanges: ReadonlyArray<GitFileChange>;
+}
+
+export const enum GitSignatureStatus {
+	GoodAndValid = 'G',
+	GoodWithUnknownValidity = 'U',
+	GoodButExpired = 'X',
+	GoodButMadeByExpiredKey = 'Y',
+	GoodButMadeByRevokedKey = 'R',
+	CannotBeChecked = 'E',
+	Bad = 'B'
+}
+
+export interface GitCommitSignature {
+	readonly key: string;
+	readonly signer: string;
+	readonly status: GitSignatureStatus;
 }
 
 export const enum GitConfigLocation {

@@ -411,6 +411,24 @@ body #view{
 	border-radius:4px;
 }
 
+.signatureInfo{
+	cursor:help;
+	margin-left:4px;
+	vertical-align:middle;
+}
+.signatureInfo.G svg, .signatureInfo.X svg{
+	fill:#009028;
+	opacity:0.9;
+}
+.signatureInfo.U svg, .signatureInfo.Y svg, .signatureInfo.R svg, .signatureInfo.E svg{
+	fill:#f09000;
+	opacity:1;
+}
+.signatureInfo.B svg{
+	fill:#e00000;
+	opacity:0.8;
+}
+
 #cdvFiles{
 	left:50%;
 	right:0;

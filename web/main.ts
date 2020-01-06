@@ -1836,15 +1836,16 @@ class GitGraphView {
 				if (expandedCommit.hash !== UNCOMMITTED) {
 					const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true);
 					const commitDetails = expandedCommit.commitDetails!;
-					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">';
-					html += '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>';
-					html += '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>';
-					html += '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + escapeHtml(commitDetails.email) + '" tabindex="-1">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>';
-					html += '<b>Date: </b>' + formatLongDate(commitDetails.date) + '<br>';
-					html += '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + '</span>';
-					if (expandedCommit.avatar !== null) html += '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>';
-					html += '</span></span><br><br>';
-					html += textFormatter.format(commitDetails.body);
+					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'
+						+ '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>'
+						+ '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>'
+						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + escapeHtml(commitDetails.email) + '" tabindex="-1">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>'
+						+ '<b>Date: </b>' + formatLongDate(commitDetails.date) + '<br>'
+						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer)
+						+ (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '')
+						+ '</span>'
+						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
+						+ '</span></span><br><br>' + textFormatter.format(commitDetails.body);
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}
@@ -2822,6 +2823,18 @@ function findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number |
 		if (findIdStr === elems[i].dataset.id) return elems[i];
 	}
 	return null;
+}
+
+function generateSignatureHtml(signature: GG.GitCommitSignature) {
+	return '<span class="signatureInfo ' + signature.status + '" title="' + GIT_SIGNATURE_STATUS_DESCRIPTIONS[signature.status] + ':'
+		+ ' Signed by ' + escapeHtml(signature.signer !== '' ? signature.signer : '<Unknown>')
+		+ ' (GPG Key Id: ' + escapeHtml(signature.key !== '' ? signature.key : '<Unknown>') + ')">'
+		+ (signature.status === GG.GitSignatureStatus.GoodAndValid
+			? SVG_ICONS.passed
+			: signature.status === GG.GitSignatureStatus.Bad
+				? SVG_ICONS.failed
+				: SVG_ICONS.inconclusive)
+		+ '</span>';
 }
 
 function closeDialogAndContextMenu() {

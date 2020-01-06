@@ -241,6 +241,10 @@ class Config {
 		return !!this.config.get('showCurrentBranchByDefault', false);
 	}
 
+	get showSignatureStatus() {
+		return !!this.config.get('showSignatureStatus', false);
+	}
+
 	get showStatusBarItem() {
 		return !!this.config.get('showStatusBarItem', true);
 	}

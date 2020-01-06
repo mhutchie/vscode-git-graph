@@ -337,25 +337,38 @@ export function getGitExecutable(path: string): Promise<GitExecutable> {
 
 /* Git Version Handling */
 
-export function compareVersions(executable: GitExecutable, version: string) {
-	// 1 => <executable> newer than <version>, 0 => <executable> same as <version>, -1 => <executable> older than <version>
-	let v1 = parseVersion(executable.version), v2 = parseVersion(version);
-	if (v1.major > v2.major) return 1;
-	if (v1.major < v2.major) return -1;
-	if (v1.minor > v2.minor) return 1;
-	if (v1.minor < v2.minor) return -1;
-	if (v1.patch > v2.patch) return 1;
-	if (v1.patch < v2.patch) return -1;
-	return 0;
+export function isGitAtLeastVersion(executable: GitExecutable, version: string) {
+	const v1 = parseVersion(executable.version);
+	const v2 = parseVersion(version);
+
+	if (v1 === null || v2 === null) {
+		// Unable to parse a version number
+		return false;
+	}
+
+	if (v1.major > v2.major) return true; // Git major version is newer
+	if (v1.major < v2.major) return false; // Git major version is older
+
+	if (v1.minor > v2.minor) return true; // Git minor version is newer
+	if (v1.minor < v2.minor) return false; // Git minor version is older
+
+	if (v1.patch > v2.patch) return true; // Git patch version is newer
+	if (v1.patch < v2.patch) return false; // Git patch version is older
+
+	return true; // Versions are the same
 }
 
 function parseVersion(version: string) {
-	let v = version.split(/[^0-9\.]+/)[0].split('.');
-	return {
-		major: v.length > 0 ? parseInt(v[0], 10) : 0,
-		minor: v.length > 1 ? parseInt(v[1], 10) : 0,
-		patch: v.length > 2 ? parseInt(v[2], 10) : 0
-	};
+	try {
+		const v = version.split(/[^0-9\.]+/)[0].split('.');
+		return {
+			major: v.length > 0 ? parseInt(v[0], 10) : 0,
+			minor: v.length > 1 ? parseInt(v[1], 10) : 0,
+			patch: v.length > 2 ? parseInt(v[2], 10) : 0
+		};
+	} catch (_) {
+		return null;
+	}
 }
 
 export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string) {

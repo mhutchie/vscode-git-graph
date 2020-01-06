@@ -639,6 +639,11 @@
 					"default": false,
 					"description": "Show the current branch by default when Git Graph is opened. Default: false (show all branches)"
 				},
+				"git-graph.showSignatureStatus": {
+					"type": "boolean",
+					"default": false,
+					"description": "Show the commit's signature status to the right of the Committer in the Commit Details View (only for signed commits). Hovering over the signature icon displays a tooltip with the signature details. Requires Git (>= 2.4.0) & GPG to be installed on the same machine that is running Visual Studio Code."
+				},
 				"git-graph.showStatusBarItem": {
 					"type": "boolean",
 					"default": true,

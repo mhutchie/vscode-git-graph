@@ -866,8 +866,18 @@ body.tagLabelsRightAligned .gitRef.tag{
 	background-color:rgba(128,128,128,0.2);
 }
 
-a:focus{
-	outline-color:var(--vscode-focusBorder);
+a, span.internalUrl{
+	color:var(--vscode-textLink-foreground);
+	cursor:pointer;
+	text-decoration:underline;
+}
+a:hover, span.internalUrl:hover {
+	color:var(--vscode-textLink-activeForeground);
+}
+a:focus, span.internalUrl:focus{
+	outline:1px solid var(--vscode-focusBorder);
+	outline-offset:-1px;
+	user-select:none;
 }
 
 

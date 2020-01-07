@@ -97,6 +97,7 @@ class GitGraphView {
 		this.observeWebviewStyleChanges();
 		this.observeViewScroll();
 		this.observeKeyboardEvents();
+		this.observeInternalUrls();
 		this.observeTableEvents();
 
 		if (prevState && !prevState.currentRepoLoading && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
@@ -1524,6 +1525,22 @@ class GitGraphView {
 		});
 	}
 
+	private observeInternalUrls() {
+		document.body.addEventListener('click', (e: MouseEvent) => {
+			if (e.target !== null && (<Element>e.target).className === 'internalUrl') {
+				const value = unescapeHtml((<HTMLElement>e.target).dataset.value!);
+				switch ((<HTMLElement>e.target).dataset.type!) {
+					case 'commit':
+						if (typeof this.commitLookup[value] === 'number' && (this.expandedCommit === null || this.expandedCommit.hash !== value || this.expandedCommit.compareWithHash !== null)) {
+							const elem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.commitLookup[value]);
+							if (elem !== null) this.loadCommitDetails(elem);
+						}
+						break;
+				}
+			}
+		});
+	}
+
 	private observeTableEvents() {
 
 		// Register Click Event Handler
@@ -1869,9 +1886,17 @@ class GitGraphView {
 				if (expandedCommit.hash !== UNCOMMITTED) {
 					const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true);
 					const commitDetails = expandedCommit.commitDetails!;
+					const parents = commitDetails.parents.length > 0
+						? commitDetails.parents.map((parent) => {
+							const escapedParent = escapeHtml(parent);
+							return typeof this.commitLookup[parent] === 'number'
+								? '<span class="internalUrl" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedParent + '</span>'
+								: escapedParent;
+						}).join(', ')
+						: 'None';
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'
 						+ '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>'
-						+ '<b>Parents: </b>' + (commitDetails.parents.length > 0 ? commitDetails.parents.join(', ') : 'None') + '<br>'
+						+ '<b>Parents: </b>' + parents + '<br>'
 						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + ' &lt;<a href="mailto:' + escapeHtml(commitDetails.email) + '" tabindex="-1">' + escapeHtml(commitDetails.email) + '</a>&gt;<br>'
 						+ '<b>Date: </b>' + formatLongDate(commitDetails.date) + '<br>'
 						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer)

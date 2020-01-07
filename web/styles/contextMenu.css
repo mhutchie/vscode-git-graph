@@ -8,10 +8,12 @@
 	margin:0;
 	padding:4px 0;
 	z-index:10;
+	user-select:none;
 }
 
 .contextMenu li{
 	cursor:default;
+	user-select:none;
 }
 
 .contextMenu li.contextMenuItem{
@@ -41,6 +43,7 @@
 	top:50%;
 	margin-top:-8px;
 	left:15px;
+	user-select:none;
 }
 
 .contextMenu.checked li.contextMenuItem .contextMenuItemCheck svg{

@@ -730,6 +730,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	text-align:center;
 	font-weight:700;
 	font-size:13px;
+	user-select:none;
 }
 
 #repoControl, #branchControl, #showRemoteBranchesControl{

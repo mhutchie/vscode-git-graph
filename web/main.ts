@@ -97,6 +97,7 @@ class GitGraphView {
 		this.observeWebviewStyleChanges();
 		this.observeViewScroll();
 		this.observeKeyboardEvents();
+		this.observeTableEvents();
 
 		if (prevState && !prevState.currentRepoLoading && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
 			this.currentRepo = prevState.currentRepo;
@@ -709,125 +710,6 @@ class GitGraphView {
 				}
 			}
 		}
-
-		addListenerToClass('commit', 'contextmenu', (e: Event) => {
-			e.stopPropagation();
-			const commitElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
-			const commit = this.getCommitOfElem(commitElem);
-			if (commit === null) return;
-
-			const target: ContextMenuTarget & DialogTarget & CommitTarget = {
-				type: TargetType.Commit,
-				hash: commit.hash,
-				index: parseInt(commitElem.dataset.id!),
-				elem: commitElem
-			};
-
-			let actions: ContextMenuActions;
-			if (commit.hash === UNCOMMITTED) {
-				actions = this.getUncommittedChangesContextMenuActions(target);
-			} else if (commit.stash !== null) {
-				target.ref = commit.stash.selector;
-				actions = this.getStashContextMenuActions(<RefTarget>target);
-			} else {
-				actions = this.getCommitContextMenuActions(target);
-			}
-
-			contextMenu.show(actions, false, target, <MouseEvent>e);
-		});
-
-		addListenerToClass('commit', 'click', (e: Event) => {
-			if ((<Element>e.target).className === 'externalUrl') return;
-			const commitElem = <HTMLElement>(<Element>e.target).closest('.commit')!;
-
-			if (this.expandedCommit !== null) {
-				const commit = this.getCommitOfElem(commitElem);
-				if (commit === null) return;
-
-				if (this.expandedCommit.hash === commit.hash) {
-					this.closeCommitDetails(true);
-				} else if ((<MouseEvent>e).ctrlKey || (<MouseEvent>e).metaKey) {
-					if (this.expandedCommit.compareWithHash === commit.hash) {
-						this.closeCommitComparison(true);
-					} else {
-						this.loadCommitComparison(commitElem);
-					}
-				} else {
-					this.loadCommitDetails(commitElem);
-				}
-			} else {
-				this.loadCommitDetails(commitElem);
-			}
-		});
-
-		addListenerToClass('gitRef', 'contextmenu', (e: Event) => {
-			e.stopPropagation();
-			const refElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
-			const commitElem = <HTMLElement>refElem.closest('.commit')!;
-			const commit = this.getCommitOfElem(commitElem);
-			if (commit === null) return;
-
-			const target: ContextMenuTarget & DialogTarget & RefTarget = {
-				type: TargetType.Ref,
-				hash: commit.hash,
-				index: parseInt(commitElem.dataset.id!),
-				ref: unescapeHtml(refElem.dataset.name!),
-				elem: <HTMLElement>refElem.children[1]
-			};
-
-			let actions: ContextMenuActions;
-			if (refElem.classList.contains(CLASS_REF_STASH)) {
-				actions = this.getStashContextMenuActions(target);
-			} else if (refElem.classList.contains(CLASS_REF_TAG)) {
-				actions = this.getTagContextMenuActions(refElem.dataset.tagtype === 'annotated', target);
-			} else {
-				let isHead = refElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';
-				if (isHead && isRemoteCombinedWithHead) {
-					target.ref = unescapeHtml((<HTMLElement>e.target).dataset.fullref!);
-					target.elem = <HTMLElement>e.target;
-					isHead = false;
-				}
-				if (isHead) {
-					actions = this.getBranchContextMenuActions(target);
-				} else {
-					const remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : refElem).dataset.remote!);
-					actions = this.getRemoteBranchContextMenuActions(remote, target);
-				}
-			}
-
-			contextMenu.show(actions, false, target, <MouseEvent>e);
-		});
-
-		addListenerToClass('gitRef', 'click', (e: Event) => e.stopPropagation());
-
-		addListenerToClass('gitRef', 'dblclick', (e: Event) => {
-			e.stopPropagation();
-			closeDialogAndContextMenu();
-			const refElem = <HTMLElement>(<Element>e.target).closest('.gitRef')!;
-			const commitElem = <HTMLElement>refElem.closest('.commit')!;
-			const commit = this.getCommitOfElem(commitElem);
-			if (commit === null) return;
-
-			if (refElem.classList.contains(CLASS_REF_HEAD) || refElem.classList.contains(CLASS_REF_REMOTE)) {
-				let sourceElem = <HTMLElement>refElem.children[1];
-				let refName = unescapeHtml(refElem.dataset.name!), isHead = refElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = (<HTMLElement>e.target).className === 'gitRefHeadRemote';
-				if (isHead && isRemoteCombinedWithHead) {
-					refName = unescapeHtml((<HTMLElement>e.target).dataset.fullref!);
-					sourceElem = <HTMLElement>e.target;
-					isHead = false;
-				}
-
-				const target: ContextMenuTarget & DialogTarget & RefTarget = {
-					type: TargetType.Ref,
-					hash: commit.hash,
-					index: parseInt(commitElem.dataset.id!),
-					ref: refName,
-					elem: sourceElem
-				};
-
-				this.checkoutBranchAction(refName, isHead ? null : unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>e.target : refElem).dataset.remote!), null, target);
-			}
-		});
 	}
 
 	private renderUncommittedChanges() {
@@ -1460,6 +1342,7 @@ class GitGraphView {
 		};
 
 		addListenerToClass('resizeCol', 'mousedown', (e) => {
+			if (e.target === null) return;
 			col = parseInt((<HTMLElement>e.target).dataset.col!);
 			while (columnWidths[col] === COLUMN_HIDDEN) col--;
 			mouseX = (<MouseEvent>e).clientX;
@@ -1637,6 +1520,156 @@ class GitGraphView {
 						}
 					}
 				}
+			}
+		});
+	}
+
+	private observeTableEvents() {
+
+		// Register Click Event Handler
+		this.tableElem.addEventListener('click', (e: MouseEvent) => {
+			if (e.target === null) return;
+			const eventTarget = <Element>e.target;
+			let eventElem;
+
+			if (eventTarget.className === 'externalUrl') {
+				// An external URL was clicked, skip processing this event
+				return;
+			}
+
+			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
+				// .gitRef was clicked
+				e.stopPropagation();
+				if (contextMenu.isOpen()) {
+					contextMenu.close();
+				}
+
+			} else if ((eventElem = <HTMLElement>eventTarget.closest('.commit')) !== null) {
+				// .commit was clicked
+				if (this.expandedCommit !== null) {
+					const commit = this.getCommitOfElem(eventElem);
+					if (commit === null) return;
+
+					if (this.expandedCommit.hash === commit.hash) {
+						this.closeCommitDetails(true);
+					} else if ((<MouseEvent>e).ctrlKey || (<MouseEvent>e).metaKey) {
+						if (this.expandedCommit.compareWithHash === commit.hash) {
+							this.closeCommitComparison(true);
+						} else {
+							this.loadCommitComparison(eventElem);
+						}
+					} else {
+						this.loadCommitDetails(eventElem);
+					}
+				} else {
+					this.loadCommitDetails(eventElem);
+				}
+			}
+		});
+
+		// Register Double Click Event Handler
+		this.tableElem.addEventListener('dblclick', (e: MouseEvent) => {
+			if (e.target === null) return;
+			const eventTarget = <Element>e.target;
+			let eventElem;
+
+			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
+				// .gitRef was double clicked
+				e.stopPropagation();
+				closeDialogAndContextMenu();
+				const commitElem = <HTMLElement>eventElem.closest('.commit')!;
+				const commit = this.getCommitOfElem(commitElem);
+				if (commit === null) return;
+
+				if (eventElem.classList.contains(CLASS_REF_HEAD) || eventElem.classList.contains(CLASS_REF_REMOTE)) {
+					let sourceElem = <HTMLElement>eventElem.children[1];
+					let refName = unescapeHtml(eventElem.dataset.name!), isHead = eventElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = eventTarget.className === 'gitRefHeadRemote';
+					if (isHead && isRemoteCombinedWithHead) {
+						refName = unescapeHtml((<HTMLElement>eventTarget).dataset.fullref!);
+						sourceElem = <HTMLElement>eventTarget;
+						isHead = false;
+					}
+
+					const target: ContextMenuTarget & DialogTarget & RefTarget = {
+						type: TargetType.Ref,
+						hash: commit.hash,
+						index: parseInt(commitElem.dataset.id!),
+						ref: refName,
+						elem: sourceElem
+					};
+
+					this.checkoutBranchAction(refName, isHead ? null : unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>eventTarget : eventElem).dataset.remote!), null, target);
+				}
+			}
+		});
+
+		// Register ContextMenu Event Handler
+		this.tableElem.addEventListener('contextmenu', (e: Event) => {
+			if (e.target === null) return;
+			const eventTarget = <Element>e.target;
+			let eventElem;
+
+			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
+				// .gitRef was right clicked
+				e.stopPropagation();
+				const commitElem = <HTMLElement>eventElem.closest('.commit')!;
+				const commit = this.getCommitOfElem(commitElem);
+				if (commit === null) return;
+
+				const target: ContextMenuTarget & DialogTarget & RefTarget = {
+					type: TargetType.Ref,
+					hash: commit.hash,
+					index: parseInt(commitElem.dataset.id!),
+					ref: unescapeHtml(eventElem.dataset.name!),
+					elem: <HTMLElement>eventElem.children[1]
+				};
+
+				let actions: ContextMenuActions;
+				if (eventElem.classList.contains(CLASS_REF_STASH)) {
+					actions = this.getStashContextMenuActions(target);
+				} else if (eventElem.classList.contains(CLASS_REF_TAG)) {
+					actions = this.getTagContextMenuActions(eventElem.dataset.tagtype === 'annotated', target);
+				} else {
+					let isHead = eventElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = eventTarget.className === 'gitRefHeadRemote';
+					if (isHead && isRemoteCombinedWithHead) {
+						target.ref = unescapeHtml((<HTMLElement>eventTarget).dataset.fullref!);
+						target.elem = <HTMLElement>eventTarget;
+						isHead = false;
+					}
+					if (isHead) {
+						actions = this.getBranchContextMenuActions(target);
+					} else {
+						const remote = unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>eventTarget : eventElem).dataset.remote!);
+						actions = this.getRemoteBranchContextMenuActions(remote, target);
+					}
+				}
+
+				contextMenu.show(actions, false, target, <MouseEvent>e);
+
+			} else if ((eventElem = <HTMLElement>eventTarget.closest('.commit')) !== null) {
+				// .commit was right clicked
+				e.stopPropagation();
+				const commit = this.getCommitOfElem(eventElem);
+				if (commit === null) return;
+
+				const target: ContextMenuTarget & DialogTarget & CommitTarget = {
+					type: TargetType.Commit,
+					hash: commit.hash,
+					index: parseInt(eventElem.dataset.id!),
+					elem: eventElem
+				};
+
+				let actions: ContextMenuActions;
+				if (commit.hash === UNCOMMITTED) {
+					actions = this.getUncommittedChangesContextMenuActions(target);
+				} else if (commit.stash !== null) {
+					target.ref = commit.stash.selector;
+					actions = this.getStashContextMenuActions(<RefTarget>target);
+				} else {
+					actions = this.getCommitContextMenuActions(target);
+				}
+
+				contextMenu.show(actions, false, target, <MouseEvent>e);
 			}
 		});
 	}
@@ -1927,7 +1960,7 @@ class GitGraphView {
 				this.renderCodeReviewBtn();
 				document.getElementById('cdvCodeReview')!.addEventListener('click', (e) => {
 					let expandedCommit = this.expandedCommit;
-					if (expandedCommit === null) return;
+					if (expandedCommit === null || e.target === null) return;
 					let sourceElem = <HTMLElement>(<Element>e.target).closest('#cdvCodeReview')!;
 					if (sourceElem.classList.contains(CLASS_ACTIVE)) {
 						sendMessage({ command: 'endCodeReview', repo: this.currentRepo, id: expandedCommit.codeReview!.id });
@@ -2103,9 +2136,9 @@ class GitGraphView {
 	private makeCdvFileViewInteractive() {
 		addListenerToClass('fileTreeFolder', 'click', (e) => {
 			let expandedCommit = this.expandedCommit;
-			if (expandedCommit === null || expandedCommit.fileTree === null) return;
+			if (expandedCommit === null || expandedCommit.fileTree === null || e.target === null) return;
 
-			let sourceElem = <HTMLElement>(<Element>e.target!).closest('.fileTreeFolder');
+			let sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFolder');
 			let parent = sourceElem.parentElement!;
 			parent.classList.toggle('closed');
 			let isOpen = !parent.classList.contains('closed');
@@ -2117,7 +2150,7 @@ class GitGraphView {
 
 		addListenerToClass('fileTreeFile', 'click', (e) => {
 			let expandedCommit = this.expandedCommit;
-			if (expandedCommit === null) return;
+			if (expandedCommit === null || e.target === null) return;
 
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile')!;
 			if (!sourceElem.classList.contains('gitDiffPossible')) return;
@@ -2159,17 +2192,19 @@ class GitGraphView {
 		});
 
 		addListenerToClass('fileTreeRepo', 'click', (e) => {
-			this.loadRepos(this.gitRepos, null, decodeURIComponent((<HTMLElement>(<Element>e.target!).closest('.fileTreeRepo')).dataset.path!));
+			if (e.target === null) return;
+			this.loadRepos(this.gitRepos, null, decodeURIComponent((<HTMLElement>(<Element>e.target).closest('.fileTreeRepo')).dataset.path!));
 		});
 
 		addListenerToClass('copyGitFile', 'click', (e) => {
+			if (e.target === null) return;
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.copyGitFile')!;
 			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: decodeURIComponent(sourceElem.dataset.filepath!) });
 		});
 
 		addListenerToClass('openGitFile', 'click', (e) => {
 			let expandedCommit = this.expandedCommit;
-			if (expandedCommit === null) return;
+			if (expandedCommit === null || e.target === null) return;
 
 			let sourceElem = <HTMLElement>(<Element>e.target).closest('.openGitFile')!;
 			let filePath = decodeURIComponent(sourceElem.dataset.filepath!);

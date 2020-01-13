@@ -1,7 +1,14 @@
 # Change Log
 
-## Happy Holidays & New Year
-I'd like to wish everyone Happy Holidays and all the best for the New Year! Thank you all for using and supporting Git Graph this year, and making it a part of your development workflow. I first released Git Graph just 11 months ago, and in this short amount of time over 170 feature requests & improvements driven by your feedback have been implemented. I look forward to making Git Graph an even more useful tool in 2020, there's heaps of exciting new features on their way! 
+## 1.21.0 - 2020-01-13
+* #225 Configure the local and global Git User Name & Email from the new "User Details" section of the Repository Settings Widget.
+* #239 Added "Force With Lease" option to the "Push Branch" dialog.
+* #240 Show the commit's signature status to the right of the Committer in the Commit Details View by enabling the new Extension Setting `git-graph.showSignatureStatus`. Hovering over the signature icon displays a tooltip with the signature details.
+* #241 When the view has been scrolled to the bottom, it will automatically load more commits if they exist (instead of having to press the "Load More Commits" button). The new Extension Setting `git-graph.loadMoreCommitsAutomatically` can be used to disable this.
+* #243 The parents of a commit in the Commit Details View can be clicked to open the Commit Details View for the parent (only if the parent is within the commits loaded in the Git Graph View).
+* Significant code and UI improvements, including:
+    * Overhaul of the Git Graph View data loading & refreshing mechanism (in preparation for upcoming features).
+    * Improved the rendering performance and event handling of the Git Graph View.
 
 ## 1.20.0 - 2019-12-24
 * #139 Added a new Extension Setting `git-graph.muteCommitsThatAreNotAncestorsOfHead`, that when enabled will display commits that aren't ancestors of the checked-out branch / commit with a muted text colour. 

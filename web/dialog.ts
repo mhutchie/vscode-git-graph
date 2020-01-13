@@ -69,7 +69,7 @@ type DialogInputValue = string | boolean;
 type DialogTarget = {
 	type: TargetType.Commit | TargetType.Ref;
 	elem: HTMLElement;
-	hash?: string;
+	hash: string;
 	ref?: string;
 } | RepoTarget;
 

@@ -83,7 +83,8 @@ A summary of the Git Graph extension settings are:
 * **Graph Style**: Specifies the style of the graph.
 * **Initial Load Commits**: Specifies the number of commits to initially load.
 * **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when opened by Git Graph during Interactive Rebase's.
-* **Load More Commits**: Specifies the number of commits to load when the "Load More Commits" button is pressed (only shown when more commits are available).
+* **Load More Commits**: Specifies the number of additional commits to load when the "Load More Commits" button is pressed, or more commits are automatically loaded.
+* **Load More Commits Automatically**: When the view has been scrolled to the bottom, automatically load more commits if they exist (instead of having to press the "Load More Commits" button). Default: true (enabled)
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
 * **Mute Commits that are not ancestors of HEAD**: Display commits that aren't ancestors of the checked-out branch / commit with a muted text color. Default: false (disabled)
 * **Mute Merge Commits**: Display merge commits with a muted text color. Default: true (enabled)
@@ -94,6 +95,7 @@ A summary of the Git Graph extension settings are:
 * **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead. Default: true (enabled)
 * **Show Commits Only Referenced By Tags**: Show commits that are only referenced by tags in Git Graph. Default: true (enabled)
 * **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
+* **Show Signature Status**: Show the commit's signature status to the right of the Committer in the Commit Details View (only for signed commits). Hovering over the signature icon displays a tooltip with the signature details. Default: false (disabled)
 * **Show Status Bar Item**: Show a Status Bar item which opens Git Graph when clicked.
 * **Show Tags**: Show Tags in Git Graph by default. This can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
 * **Show Uncommitted Changes**: Show uncommitted changes (set to false to decrease load time on large repositories).

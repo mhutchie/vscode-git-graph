@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.20.0",
+	"version": "1.21.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -564,7 +564,7 @@
 				"git-graph.loadMoreCommits": {
 					"type": "number",
 					"default": 100,
-					"description": "Specifies the number of additional commits to load when the \"Load More Commits\" button is pressed. It is only shown when more commits are available."
+					"description": "Specifies the number of additional commits to load when the \"Load More Commits\" button is pressed, or more commits are automatically loaded."
 				},
 				"git-graph.loadMoreCommitsAutomatically": {
 					"type": "boolean",
@@ -642,7 +642,7 @@
 				"git-graph.showSignatureStatus": {
 					"type": "boolean",
 					"default": false,
-					"description": "Show the commit's signature status to the right of the Committer in the Commit Details View (only for signed commits). Hovering over the signature icon displays a tooltip with the signature details. Requires Git (>= 2.4.0) & GPG to be installed on the same machine that is running Visual Studio Code."
+					"description": "Show the commit's signature status to the right of the Committer in the Commit Details View (only for signed commits). Hovering over the signature icon displays a tooltip with the signature details. Requires Git (>= 2.4.0) & GPG (or equivalent) to be installed on the same machine that is running Visual Studio Code."
 				},
 				"git-graph.showStatusBarItem": {
 					"type": "boolean",

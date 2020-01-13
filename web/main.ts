@@ -17,6 +17,7 @@ class GitGraphView {
 		loadRepoInfoRefreshId: number;
 		loadCommitsRefreshId: number;
 		repoInfoChanges: boolean;
+		requestingRepoInfo: boolean;
 	};
 
 	private readonly graph: Graph;
@@ -52,7 +53,8 @@ class GitGraphView {
 			hard: true,
 			loadRepoInfoRefreshId: initialState.loadRepoInfoRefreshId,
 			loadCommitsRefreshId: initialState.loadCommitsRefreshId,
-			repoInfoChanges: false
+			repoInfoChanges: false,
+			requestingRepoInfo: false
 		};
 
 		this.controlsElem = document.getElementById('controls')!;
@@ -240,6 +242,7 @@ class GitGraphView {
 		if (refreshState.inProgress) {
 			if (isRepo) {
 				refreshState.repoInfoChanges = refreshState.repoInfoChanges || repoInfoChanges;
+				refreshState.requestingRepoInfo = false;
 				this.requestLoadCommits();
 			} else {
 				dialog.closeActionRunning();
@@ -251,7 +254,7 @@ class GitGraphView {
 	}
 
 	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean) {
-		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && arraysEqual(this.commits, commits, (a, b) =>
+		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && commits.length > 0 && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
 			arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) &&
@@ -260,7 +263,7 @@ class GitGraphView {
 			((a.stash === null && b.stash === null) || (a.stash !== null && b.stash !== null && a.stash.selector === b.stash.selector))
 		) && this.renderedGitBranchHead === this.gitBranchHead) {
 
-			if (this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED) {
+			if (this.commits[0].hash === UNCOMMITTED) {
 				this.commits[0] = commits[0];
 				this.saveState();
 				this.renderUncommittedChanges();
@@ -473,15 +476,20 @@ class GitGraphView {
 			refreshState.hard = hard;
 			refreshState.inProgress = true;
 			refreshState.repoInfoChanges = false;
+			refreshState.requestingRepoInfo = false;
 		}
+
 		this.renderRefreshButton();
 		if (this.commits.length === 0) {
 			this.tableElem.innerHTML = '<h2 id="loadingHeader">' + SVG_ICONS.loading + 'Loading ...</h2>';
 		}
 
 		if (skipRepoInfo) {
-			this.requestLoadCommits();
+			if (!refreshState.requestingRepoInfo) {
+				this.requestLoadCommits();
+			}
 		} else {
+			refreshState.requestingRepoInfo = true;
 			this.requestLoadRepoInfo();
 		}
 	}
@@ -716,9 +724,9 @@ class GitGraphView {
 	private renderUncommittedChanges() {
 		const colVisibility = this.getColumnVisibility(), date = formatShortDate(this.commits[0].date);
 		document.getElementById('uncommittedChanges')!.innerHTML = '<td></td><td><b>' + escapeHtml(this.commits[0].message) + '</b></td>' +
-			(colVisibility.date ? '<td title="' + date.title + '">' + date.formatted + '</td>' : '') +
-			(colVisibility.author ? '<td title="* <>">*</td>' : '') +
-			(colVisibility.commit ? '<td title="*">*</td>' : '');
+			(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
+			(colVisibility.author ? '<td class="authorCol text" title="* <>">*</td>' : '') +
+			(colVisibility.commit ? '<td class="text" title="*">*</td>' : '');
 	}
 
 	private renderFetchButton() {

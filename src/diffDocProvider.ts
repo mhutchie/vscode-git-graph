@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
 import { GitFileStatus } from './types';
-import { getPathFromStr, UNCOMMITTED } from './utils';
+import { getPathFromStr, showErrorMessage, UNCOMMITTED } from './utils';
 
 export const enum DiffSide {
 	Old,
@@ -46,7 +46,7 @@ export class DiffDocProvider implements vscode.TextDocumentContentProvider {
 				return document.value;
 			},
 			(errorMessage) => {
-				vscode.window.showErrorMessage('Unable to retrieve file: ' + errorMessage);
+				showErrorMessage('Unable to retrieve file: ' + errorMessage);
 				return '';
 			}
 		);

@@ -188,6 +188,17 @@ function isWindows() {
 }
 
 
+/* Visual Studio Code API Wrappers */
+
+export function showInformationMessage(message: string) {
+	return vscode.window.showInformationMessage(message).then(() => { }, () => { });
+}
+
+export function showErrorMessage(message: string) {
+	return vscode.window.showErrorMessage(message).then(() => { }, () => { });
+}
+
+
 /* Promise Methods */
 
 // Evaluate promises in parallel, with at most maxParallel running at any time

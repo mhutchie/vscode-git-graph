@@ -9,7 +9,7 @@ import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { findGit, getGitExecutable, getPathFromUri, GitExecutable, resolveToSymbolicPath, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { findGit, getGitExecutable, getPathFromUri, GitExecutable, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -25,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger.log('Using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')');
 	} catch (_) {
 		gitExecutable = null;
-		vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
 		logger.logError(UNABLE_TO_FIND_GIT_MSG);
 	}
 
@@ -64,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => {
 			extensionState.endAllWorkspaceCodeReviews();
-			vscode.window.showInformationMessage('Ended All Code Reviews in Workspace');
+			showInformationMessage('Ended All Code Reviews in Workspace');
 		}),
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource)),
 		vscode.workspace.onDidChangeConfiguration(e => {
@@ -84,12 +84,12 @@ export async function activate(context: vscode.ExtensionContext) {
 					dataSource.setGitExecutable(gitExecutable);
 
 					let msg = 'Git Graph is now using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')';
-					vscode.window.showInformationMessage(msg);
+					showInformationMessage(msg);
 					logger.log(msg);
 					repoManager.searchWorkspaceForRepos();
 				}, () => {
 					let msg = 'The new value of "git.path" (' + path + ') does not match the path and filename of a valid Git executable.';
-					vscode.window.showErrorMessage(msg);
+					showErrorMessage(msg);
 					logger.logError(msg);
 				});
 			}

@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import { RepoManager } from './repoManager';
-import { getPathFromUri, getRepoName, GitExecutable, isPathInWorkspace, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { getPathFromUri, getRepoName, GitExecutable, isPathInWorkspace, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
 
 export function addGitRepository(gitExecutable: GitExecutable | null, repoManager: RepoManager) {
 	if (gitExecutable === null) {
-		vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
 		return;
 	}
 
@@ -15,13 +15,13 @@ export function addGitRepository(gitExecutable: GitExecutable | null, repoManage
 			if (isPathInWorkspace(path)) {
 				repoManager.registerRepo(path, false).then(status => {
 					if (status.error === null) {
-						vscode.window.showInformationMessage('The repository "' + status.root! + '" was added to Git Graph.');
+						showInformationMessage('The repository "' + status.root! + '" was added to Git Graph.');
 					} else {
-						vscode.window.showErrorMessage(status.error + ' Therefore it could not be added to Git Graph.');
+						showErrorMessage(status.error + ' Therefore it could not be added to Git Graph.');
 					}
 				});
 			} else {
-				vscode.window.showErrorMessage('The folder "' + path + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
+				showErrorMessage('The folder "' + path + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
 			}
 		}
 	}, () => { });
@@ -29,7 +29,7 @@ export function addGitRepository(gitExecutable: GitExecutable | null, repoManage
 
 export function removeGitRepositoy(gitExecutable: GitExecutable | null, repoManager: RepoManager) {
 	if (gitExecutable === null) {
-		vscode.window.showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
 		return;
 	}
 
@@ -39,9 +39,9 @@ export function removeGitRepositoy(gitExecutable: GitExecutable | null, repoMana
 	vscode.window.showQuickPick(items, { canPickMany: false, placeHolder: 'Select a repository to remove from Git Graph' }).then((item) => {
 		if (item && item.description !== undefined) {
 			if (repoManager.ignoreRepo(item.description)) {
-				vscode.window.showInformationMessage('The repository "' + item.label + '" was removed from Git Graph.');
+				showInformationMessage('The repository "' + item.label + '" was removed from Git Graph.');
 			} else {
-				vscode.window.showErrorMessage('The repository "' + item.label + '" is not known to Git Graph.');
+				showErrorMessage('The repository "' + item.label + '" is not known to Git Graph.');
 			}
 		}
 	}, () => { });

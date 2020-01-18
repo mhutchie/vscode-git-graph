@@ -72,7 +72,7 @@ export class ExtensionState {
 	}
 
 	public saveRepos(gitRepoSet: GitRepoSet) {
-		this.workspaceState.update(REPO_STATES, gitRepoSet);
+		this.updateWorkspaceState(REPO_STATES, gitRepoSet);
 	}
 
 	public transferRepo(oldRepo: string, newRepo: string) {
@@ -108,7 +108,7 @@ export class ExtensionState {
 	}
 
 	public setIgnoredRepos(ignoredRepos: string[]) {
-		return this.workspaceState.update(IGNORED_REPOS, ignoredRepos);
+		return this.updateWorkspaceState(IGNORED_REPOS, ignoredRepos);
 	}
 
 
@@ -119,7 +119,7 @@ export class ExtensionState {
 	}
 
 	public setLastActiveRepo(repo: string | null) {
-		this.workspaceState.update(LAST_ACTIVE_REPO, repo);
+		this.updateWorkspaceState(LAST_ACTIVE_REPO, repo);
 	}
 
 
@@ -130,7 +130,7 @@ export class ExtensionState {
 	}
 
 	public setLastKnownGitPath(path: string) {
-		this.globalState.update(LAST_KNOWN_GIT_PATH, path);
+		this.updateGlobalState(LAST_KNOWN_GIT_PATH, path);
 	}
 
 
@@ -151,17 +151,17 @@ export class ExtensionState {
 	public saveAvatar(email: string, avatar: Avatar) {
 		let avatars = this.getAvatarCache();
 		avatars[email] = avatar;
-		this.globalState.update(AVATAR_CACHE, avatars);
+		this.updateGlobalState(AVATAR_CACHE, avatars);
 	}
 
 	public removeAvatarFromCache(email: string) {
 		let avatars = this.getAvatarCache();
 		delete avatars[email];
-		this.globalState.update(AVATAR_CACHE, avatars);
+		this.updateGlobalState(AVATAR_CACHE, avatars);
 	}
 
 	public clearAvatarCache() {
-		this.globalState.update(AVATAR_CACHE, {});
+		this.updateGlobalState(AVATAR_CACHE, {});
 		fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {
 			if (err) return;
 			for (let i = 0; i < files.length; i++) {

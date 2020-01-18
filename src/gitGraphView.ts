@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
 	public static currentPanel: GitGraphView | undefined;
@@ -404,7 +404,7 @@ export class GitGraphView {
 					break;
 				case 'rescanForRepos':
 					if (!(await this.repoManager.searchWorkspaceForRepos())) {
-						vscode.window.showErrorMessage('No Git repositories were found in the current workspace.');
+						showErrorMessage('No Git repositories were found in the current workspace.');
 					}
 					break;
 				case 'resetToCommit':

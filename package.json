@@ -441,6 +441,11 @@
 					"default": false,
 					"description": "Default state of the \"Force Delete\" checkbox."
 				},
+				"git-graph.dialog.merge.noCommit": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"No Commit\" checkbox."
+				},
 				"git-graph.dialog.merge.noFastForward": {
 					"type": "boolean",
 					"default": true,
@@ -449,7 +454,7 @@
 				"git-graph.dialog.merge.squashCommits": {
 					"type": "boolean",
 					"default": false,
-					"description": "Default state of the \"Squash commits\" checkbox."
+					"description": "Default state of the \"Squash Commits\" checkbox."
 				},
 				"git-graph.dialog.popStash.reinstateIndex": {
 					"type": "boolean",

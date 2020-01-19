@@ -339,7 +339,7 @@ export class GitGraphView {
 				case 'merge':
 					this.sendMessage({
 						command: 'merge', actionOn: msg.actionOn,
-						error: await this.dataSource.merge(msg.repo, msg.obj, msg.actionOn, msg.createNewCommit, msg.squash)
+						error: await this.dataSource.merge(msg.repo, msg.obj, msg.actionOn, msg.createNewCommit, msg.squash, msg.noCommit)
 					});
 					break;
 				case 'openExtensionSettings':

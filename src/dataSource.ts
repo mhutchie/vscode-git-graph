@@ -549,13 +549,16 @@ export class DataSource {
 
 	/* Git Action Methods - Branches & Commits */
 
-	public async merge(repo: string, obj: string, actionOn: ActionOn, createNewCommit: boolean, squash: boolean) {
+	public async merge(repo: string, obj: string, actionOn: ActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
 		let args = ['merge', obj];
+
 		if (squash) args.push('--squash');
 		else if (createNewCommit) args.push('--no-ff');
 
+		if (noCommit) args.push('--no-commit');
+
 		let mergeStatus = await this.runGitCommand(args, repo);
-		if (mergeStatus === null && squash) {
+		if (mergeStatus === null && squash && !noCommit) {
 			if (await this.areStagedChanges(repo)) {
 				return this.runGitCommand(['commit', '-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\''], repo);
 			}

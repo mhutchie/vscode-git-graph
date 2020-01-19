@@ -135,6 +135,7 @@ class Config {
 				forceDelete: !!this.config.get('dialog.deleteBranch.forceDelete', false)
 			},
 			merge: {
+				noCommit: !!this.config.get('dialog.merge.noCommit', false),
 				noFastForward: !!this.config.get('dialog.merge.noFastForward', true),
 				squash: !!this.config.get('dialog.merge.squashCommits', false)
 			},

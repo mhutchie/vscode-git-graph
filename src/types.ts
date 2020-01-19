@@ -298,6 +298,7 @@ export interface DialogDefaults {
 		readonly forceDelete: boolean
 	};
 	readonly merge: {
+		readonly noCommit: boolean,
 		readonly noFastForward: boolean,
 		readonly squash: boolean
 	};
@@ -699,6 +700,7 @@ export interface RequestMerge extends RepoRequest {
 	readonly actionOn: ActionOn;
 	readonly createNewCommit: boolean;
 	readonly squash: boolean;
+	readonly noCommit: boolean;
 }
 export interface ResponseMerge extends ResponseWithErrorInfo {
 	readonly command: 'merge';

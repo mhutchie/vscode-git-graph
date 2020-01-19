@@ -59,7 +59,7 @@
 	color:var(--vscode-input-placeholderForeground);
 }
 
-.findModifer{
+.findModifier{
 	display:block;
 	position:absolute;
 	top:8px;
@@ -73,11 +73,11 @@
 	color:var(--vscode-input-foreground);
 	opacity:0.7;
 }
-.findModifer.active{
+.findModifier.active{
 	outline:1px solid var(--vscode-inputOption-activeBorder);
 	background-color:var(--vscode-inputOption-activeBackground);
 }
-.findModifer:hover, .findModifer.active{
+.findModifier:hover, .findModifier.active{
 	opacity:1;
 }
 #findCaseSensitive{

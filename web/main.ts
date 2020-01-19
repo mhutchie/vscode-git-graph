@@ -1918,7 +1918,7 @@ class GitGraphView {
 				}
 				this.renderGraph();
 			} else {
-				// Commit comparision should be shown
+				// Commit comparison should be shown
 				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.';
 			}
 			html += '</div><div id="cdvFiles">' + generateFileViewHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile, this.getFileViewType()) + '</div><div id="cdvDivider"></div>';
@@ -2775,18 +2775,18 @@ function getRepoDropdownOptions(repos: string[]) {
 	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
-		let firstOccurance: { [name: string]: number } = {}, ambiguous: { [name: string]: number[] } = {};
+		let firstOccurrence: { [name: string]: number } = {}, ambiguous: { [name: string]: number[] } = {};
 		for (let i = 0; i < indexes.length; i++) {
 			let name = distinctNames[indexes[i]];
-			if (typeof firstOccurance[name] === 'number') {
+			if (typeof firstOccurrence[name] === 'number') {
 				// name is ambiguous
 				if (typeof ambiguous[name] === 'undefined') {
-					// initalise ambiguous array with the first occurance
-					ambiguous[name] = [firstOccurance[name]];
+					// initialise ambiguous array with the first occurrence
+					ambiguous[name] = [firstOccurrence[name]];
 				}
 				ambiguous[name].push(indexes[i]); // append current ambiguous index
 			} else {
-				firstOccurance[name] = indexes[i]; // set the first occurance of the name
+				firstOccurrence[name] = indexes[i]; // set the first occurrence of the name
 			}
 		}
 
@@ -2838,7 +2838,7 @@ function getRepoDropdownOptions(repos: string[]) {
 			// Name is distinct, no hint needed
 			hint = '';
 		} else {
-			// Hint path is the prefix of the distintName before the common suffix with name
+			// Hint path is the prefix of the distinctName before the common suffix with name
 			let hintPath = distinctNames[i].substring(0, distinctNames[i].length - names[i].length - 1);
 
 			// Keep two informative directories

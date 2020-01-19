@@ -234,13 +234,13 @@ class Dropdown {
 			}
 
 			if (change) {
-				// If a change has occured, trigger the callback
+				// If a change has occurred, trigger the callback
 				this.changeCallback(this.getSelectedOptions(false));
 			}
 		}
 
 		if (change) {
-			// If a change has occured, re-render the dropdown elements
+			// If a change has occurred, re-render the dropdown elements
 			let menuScroll = this.menuElem.scrollTop;
 			this.render();
 			if (this.dropdownVisible) this.menuElem.scroll(0, menuScroll);

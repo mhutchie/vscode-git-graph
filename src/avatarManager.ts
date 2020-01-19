@@ -175,7 +175,7 @@ export class AvatarManager {
 					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset.');
 				}
 
-				if (res.statusCode === 200) { // Sucess
+				if (res.statusCode === 200) { // Success
 					let commit: any = JSON.parse(respBody);
 					if (commit.author && commit.author.avatar_url) { // Avatar url found
 						let img = await this.downloadAvatarImage(avatarRequest.email, commit.author.avatar_url + '&size=162');
@@ -229,7 +229,7 @@ export class AvatarManager {
 					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset.');
 				}
 
-				if (res.statusCode === 200) { // Sucess
+				if (res.statusCode === 200) { // Success
 					let users: any = JSON.parse(respBody);
 					if (users.length > 0 && users[0].avatar_url) { // Avatar url found
 						let img = await this.downloadAvatarImage(avatarRequest.email, users[0].avatar_url);

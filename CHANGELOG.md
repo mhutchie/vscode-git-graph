@@ -2,7 +2,7 @@
 
 ## 1.21.0 - 2020-01-13
 * #225 Configure the local and global Git User Name & Email from the new "User Details" section of the Repository Settings Widget.
-* #239 Added "Force With Lease" option to the "Push Branch" dialog.
+* #239 Added "Force With Lease" option to the "Push Branch" Dialog.
 * #240 Show the commit's signature status to the right of the Committer in the Commit Details View by enabling the new Extension Setting `git-graph.showSignatureStatus`. Hovering over the signature icon displays a tooltip with the signature details.
 * #241 When the view has been scrolled to the bottom, it will automatically load more commits if they exist (instead of having to press the "Load More Commits" button). The new Extension Setting `git-graph.loadMoreCommitsAutomatically` can be used to disable this.
 * #243 The parents of a commit in the Commit Details View can be clicked to open the Commit Details View for the parent (only if the parent is within the commits loaded in the Git Graph View).
@@ -29,7 +29,7 @@
 ## 1.19.0 - 2019-11-27
 * #220 Issue Linking - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system. This is configured in the Repository Settings Widget (opened from the Git Graph View's Control Bar).
 * #208 Include the Untracked Files of Stashes in the Commit Details View.
-* #213 Added a new extension setting to set the default state of the "Force Delete" checkbox on the "Delete Branch" dialog.
+* #213 Added a new extension setting to set the default state of the "Force Delete" checkbox on the "Delete Branch" Dialog.
 * #215 Added "Open Git Graph Extension Settings" button on the Repository Settings Widget.
 * #216 Added a new "Show Tags" Extension Setting, that can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
 * #218 New Keyboard Shortcut `CTRL/CMD + h` scrolls the Git Graph View to be centered on the commit referenced by HEAD.
@@ -49,8 +49,8 @@
 ## 1.17.0 - 2019-10-08
 * #128 New "Fetch into local branch..." action on the remote branch context menu. This only appears if a local branch shares the same name as the branch being fetched, and the local branch is not checked out.
 * #185 Added two new date format options, "ISO Date & Time" and "ISO Date Only", to the Extension Setting `git-graph.dateFormat`.
-* #186 Added a new field to the "Add Tag" dialog that enables the extension to push the tag to a remote once it is added. Default: false (can be configured with the new setting `git-graph.dialog.addTag.pushToRemote`)
-* #188 Added a new "No Commit" checkbox to the "Cherry Pick Commit" dialog that enables a commits changes to be staged but not committed. This allows you to select and commit specific parts of the cherry picked commit.
+* #186 Added "Push to remote" option to the "Add Tag" Dialog, that enables the extension to push the tag to a remote once it is added. The default value of this new option can be set using the Extension Setting `git-graph.dialog.addTag.pushToRemote`. Default: false (disabled)
+* #188 Added "No Commit" option to the "Cherry Pick Commit" Dialog, that enables a commits changes to be staged but not committed. This allows you to select and commit specific parts of the cherry picked commit.
 * #189 Fixed the handling of filenames containing double quotes in the Commit Details View.
 * #190 Show / hide branches of individual remotes from the Repository Settings Widget.
 * #192 Fixed the handling of filenames containing URI fragment and query string separators when opening the Diff view.
@@ -60,7 +60,7 @@
 * #156 Hover over any commit vertex on the graph to see a tooltip indicating:
     * Whether the commit is included in the HEAD.
     * Which branches, tags and stashes include the commit.
-* #161 New option on the "Delete Branch" dialog to also delete the branch on the remote(s). This only appears if one or more remotes contain a branch with the same name as the branch being deleted.
+* #161 New option on the "Delete Branch" Dialog to also delete the branch on the remote(s). This only appears if one or more remotes contain a branch with the same name as the branch being deleted.
 * #180 New "Pop..." action on the Stash Context Menu.
 * #181 Added new extension settings to set the default options on the following dialogs: Reset Current Branch To Commit, Reset Uncommitted Changes, and Stash Uncommitted Changes.
 * #183 Graph construction, representation, and layout improvements, that produce a better visualisation, and enable topological analysis for exciting new and upcoming features.
@@ -111,7 +111,7 @@
     * Fetch or Prune a specific remote from the Repository Settings widget.
 * #155 If a known sub repository is included in the Commit Details View file tree, clicking on it will now load it in the Git Graph View.
 * #158 Improved repository management for various Visual Studio Code and Git repository workflows.
-* #159 Added force push option on the "Push Branch" dialog.
+* #159 Added force push option on the "Push Branch" Dialog.
 * #160 Fixed: Shell color codes were included in the Branches dropdown when the user overrides Git Config "color.branch" to "always".
 * Various code and UI improvements. 
 
@@ -165,9 +165,9 @@
 * #90 New command "Git Graph: Add Git Repository" in the Command Palette allows additional Git repositories to be added to Git Graph (e.g. sub-repos).
 * #91 New setting to enable Git Graph to open to the repository containing the active Text Editor document `git-graph.openToTheRepoOfTheActiveTextEditorDocument`. Default: false (disabled)
 * #92 Various improvements for a better user experience:
-    * Display the name of the running Git Action while it is occuring.
+    * Display the name of the running Git Action while it is occurring.
     * Maintain the users scroll position when running a Git Action from context menus.
-    * The refresh button now indicates if a refresh is occuring.
+    * The refresh button now indicates if a refresh is occurring.
     * Enabled by default the recently added setting `git-graph.retainContextWhenHidden` to provide near-instant tab restoration when switching back to Git Graph.
     * Many more small tweaks.
 * #93 Updates to the push tag action so that it:

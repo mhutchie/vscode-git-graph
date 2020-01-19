@@ -81,7 +81,7 @@ class Branch {
 			x1 = line.p1.x * config.grid.x + config.grid.offsetX; y1 = line.p1.y * config.grid.y + config.grid.offsetY;
 			x2 = line.p2.x * config.grid.x + config.grid.offsetX; y2 = line.p2.y * config.grid.y + config.grid.offsetY;
 
-			// If a commit is expanded, we needd to stretch the graph for the height of the commit details view
+			// If a commit is expanded, we need to stretch the graph for the height of the commit details view
 			if (expandAt > -1) {
 				if (line.p1.y > expandAt) { // If the line starts after the expansion, move the whole line lower
 					y1 += config.grid.expandY;
@@ -285,7 +285,7 @@ class Vertex {
 		return this.isCommitted;
 	}
 
-	public setNotCommited() {
+	public setNotCommitted() {
 		this.isCommitted = false;
 	}
 
@@ -418,7 +418,7 @@ class Graph {
 
 		if (commits[0].hash === UNCOMMITTED) {
 			this.vertices[0].setCurrent();
-			this.vertices[0].setNotCommited();
+			this.vertices[0].setNotCommitted();
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
 			this.vertices[commitLookup[commitHead]].setCurrent();
 		}
@@ -561,7 +561,7 @@ class Graph {
 
 			for (let i = 0; i < this.commits.length; i++) {
 				if (!ancestor[i] && (this.commits[i].stash === null || typeof this.commitLookup[this.commits[i].stash!.baseHash] !== 'number' || !ancestor[this.commitLookup[this.commits[i].stash!.baseHash]])) {
-					// Commit i is not an ancestor of currentHash, or a stash based on an ancesstor of currentHash
+					// Commit i is not an ancestor of currentHash, or a stash based on an ancestor of currentHash
 					muted[i] = true;
 				}
 			}
@@ -615,7 +615,7 @@ class Graph {
 				if (curPoint !== null) {
 					foundPointToParent = true; // Parent was found
 				} else {
-					curPoint = curVertex.getNextPoint(); // Parent couldn't be found, choose the next avaialble point for the vertex
+					curPoint = curVertex.getNextPoint(); // Parent couldn't be found, choose the next available point for the vertex
 				}
 				parentBranch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true);
 				curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch);

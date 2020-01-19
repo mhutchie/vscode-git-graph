@@ -27,7 +27,7 @@ We will respond promptly, and get it resolved as quickly as possible.
 
 Suggest a new feature for this extension! We want to make Git Graph an even more useful tool in Visual Studio Code, so any suggestions you have are greatly appreciated.
 
-Check the [open feature requests](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"feature+request"), and any feature requests ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if your idea is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritsed.
+Check the [open feature requests](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"feature+request"), and any feature requests ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if your idea is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritised.
 
 If your feature hasn't previously been suggested, please follow these steps:
 1. Raise an issue using the "Feature Request" template. [Create Feature Request](https://github.com/mhutchie/vscode-git-graph/issues/new?assignees=mhutchie&labels=feature+request&template=feature-request.md&title=)
@@ -40,7 +40,7 @@ We will respond promptly, and your request will be prioritised according to the 
 
 Suggest an improvement to existing functionality of this extension! We want to make Git Graph an even more useful tool in Visual Studio Code, so any improvements you have are greatly appreciated.
 
-Check the [open improvements](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"improvement"), and any improvements ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if your improvement is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritsed.
+Check the [open improvements](https://github.com/mhutchie/vscode-git-graph/issues?q=is%3Aissue+is%3Aopen+label%3A"improvement"), and any improvements ready for release on the [project board](https://github.com/mhutchie/vscode-git-graph/projects/1#column-4514040), to see if your improvement is already under consideration or on its way. If it is, give the issue a thumbs up so it will be higher prioritised.
 
 If your improvement hasn't previously been suggested, please follow these steps:
 1. Raise an issue using the "Improvement" template. [Create Improvement](https://github.com/mhutchie/vscode-git-graph/issues/new?assignees=mhutchie&labels=improvement&template=improvement.md&title=)

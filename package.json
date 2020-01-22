@@ -53,7 +53,7 @@
 			{
 				"category": "Git Graph",
 				"command": "git-graph.addGitRepository",
-				"title": "Add Git Repository"
+				"title": "Add Git Repository..."
 			},
 			{
 				"category": "Git Graph",
@@ -67,8 +67,13 @@
 			},
 			{
 				"category": "Git Graph",
+				"command": "git-graph.endSpecificWorkspaceCodeReview",
+				"title": "End a specific Code Review in Workspace..."
+			},
+			{
+				"category": "Git Graph",
 				"command": "git-graph.removeGitRepository",
-				"title": "Remove Git Repository"
+				"title": "Remove Git Repository..."
 			}
 		],
 		"configuration": {

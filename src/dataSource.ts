@@ -277,13 +277,19 @@ export class DataSource {
 
 	/* Get Data Methods - General */
 
-	public async getRemoteUrl(repo: string, remote: string): Promise<string | null> {
+	public getCommitSubject(repo: string, commitHash: string): Promise<string | null> {
+		return this.spawnGit(['log', '--format=%s', '-n', '1', commitHash, '--'], repo, (stdout) => {
+			return stdout.trim().replace(/\s+/g, ' ');
+		}).then((subject) => subject, () => null);
+	}
+
+	public getRemoteUrl(repo: string, remote: string): Promise<string | null> {
 		return this.spawnGit(['config', '--get', 'remote.' + remote + '.url'], repo, (stdout) => {
 			return stdout.split(EOL_REGEX)[0];
 		}).then((url) => url, () => null);
 	}
 
-	public async getRepoSettings(repo: string): Promise<GitRepoSettingsData> {
+	public getRepoSettings(repo: string): Promise<GitRepoSettingsData> {
 		return Promise.all([
 			this.getConfigList(repo, GitConfigLocation.Local),
 			this.getConfigList(repo, GitConfigLocation.Global),

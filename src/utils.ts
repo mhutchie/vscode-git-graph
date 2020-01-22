@@ -80,6 +80,37 @@ export function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
 }
 
+export function abbrevText(text: string, toChars: number) {
+	return text.length <= toChars ? text : text.substring(0, toChars - 1) + '...';
+}
+
+export function getRelativeTimeDiff(unixTimestamp: number) {
+	let diff = Math.round((new Date()).getTime() / 1000) - unixTimestamp, unit;
+	if (diff < 60) {
+		unit = 'second';
+	} else if (diff < 3600) {
+		unit = 'minute';
+		diff /= 60;
+	} else if (diff < 86400) {
+		unit = 'hour';
+		diff /= 3600;
+	} else if (diff < 604800) {
+		unit = 'day';
+		diff /= 86400;
+	} else if (diff < 2629800) {
+		unit = 'week';
+		diff /= 604800;
+	} else if (diff < 31557600) {
+		unit = 'month';
+		diff /= 2629800;
+	} else {
+		unit = 'year';
+		diff /= 31557600;
+	}
+	diff = Math.round(diff);
+	return diff + ' ' + unit + (diff !== 1 ? 's' : '') + ' ago';
+}
+
 export function getNonce() {
 	let text = '';
 	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

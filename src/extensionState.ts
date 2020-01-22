@@ -34,7 +34,7 @@ export interface CodeReviewData {
 	lastViewedFile: string | null;
 	remainingFiles: string[];
 }
-type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
+export type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
 
 export class ExtensionState {
 	private readonly globalState: Memento;
@@ -188,7 +188,7 @@ export class ExtensionState {
 	public endCodeReview(repo: string, id: string) {
 		let reviews = this.getCodeReviews();
 		removeCodeReview(reviews, repo, id);
-		this.setCodeReviews(reviews);
+		return this.setCodeReviews(reviews);
 	}
 
 	public getCodeReview(repo: string, id: string) {
@@ -235,7 +235,7 @@ export class ExtensionState {
 		this.setCodeReviews({});
 	}
 
-	private getCodeReviews() {
+	public getCodeReviews() {
 		return this.workspaceState.get<CodeReviews>(CODE_REVIEWS, {});
 	}
 

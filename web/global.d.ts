@@ -21,14 +21,14 @@ declare global {
 	type AvatarImageCollection = { [email: string]: string };
 
 	interface ExpandedCommit {
-		id: number;
-		hash: string;
-		srcElem: HTMLElement | null;
+		index: number;
+		commitHash: string;
+		commitElem: HTMLElement | null;
+		compareWithHash: string | null;
+		compareWithElem: HTMLElement | null;
 		commitDetails: GG.GitCommitDetails | null;
 		fileChanges: ReadonlyArray<GG.GitFileChange> | null;
 		fileTree: FileTreeFolder | null;
-		compareWithHash: string | null;
-		compareWithSrcElem: HTMLElement | null;
 		avatar: string | null;
 		codeReview: GG.CodeReview | null;
 		lastViewedFile: string | null;

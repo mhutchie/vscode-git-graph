@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 export class GitGraphView {
@@ -25,40 +25,40 @@ export class GitGraphView {
 	private isGraphViewLoaded: boolean = false;
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
-	private loadRepo: string | null = null; // Is used by the next call to getHtmlForWebview, and is then reset to null
+	private loadViewTo: LoadGitGraphViewTo = null; // Is used by the next call to getHtmlForWebview, and is then reset to null
 
 	private loadRepoInfoRefreshId: number = 0;
 	private loadCommitsRefreshId: number = 0;
 
-	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadRepo: string | null) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
 			// If Git Graph panel already exists
 			if (GitGraphView.currentPanel.isPanelVisible) {
 				// If the Git Graph panel is visible
-				if (loadRepo !== null && loadRepo !== GitGraphView.currentPanel.currentRepo) {
-					GitGraphView.currentPanel.respondLoadRepos(repoManager.getRepos(), loadRepo);
+				if (loadViewTo !== null) {
+					GitGraphView.currentPanel.respondLoadRepos(repoManager.getRepos(), loadViewTo);
 				}
 			} else {
 				// If the Git Graph panel is not visible 
-				GitGraphView.currentPanel.loadRepo = loadRepo;
+				GitGraphView.currentPanel.loadViewTo = loadViewTo;
 			}
 			GitGraphView.currentPanel.panel.reveal(column);
 		} else {
 			// If Git Graph panel doesn't already exist
-			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadRepo, column);
+			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadViewTo, column);
 		}
 	}
 
-	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadRepo: string | null, column: vscode.ViewColumn | undefined) {
+	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo, column: vscode.ViewColumn | undefined) {
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.repoManager = repoManager;
 		this.logger = logger;
-		this.loadRepo = loadRepo;
+		this.loadViewTo = loadViewTo;
 		this.avatarManager.registerView(this);
 
 		const config = getConfig();
@@ -92,11 +92,12 @@ export class GitGraphView {
 		});
 		this.repoManager.registerViewCallback((repos: GitRepoSet, numRepos: number, loadRepo: string | null) => {
 			if (!this.panel.visible) return;
+			const loadViewTo = loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null;
 			if ((numRepos === 0 && this.isGraphViewLoaded) || (numRepos > 0 && !this.isGraphViewLoaded)) {
-				this.loadRepo = loadRepo;
+				this.loadViewTo = loadViewTo;
 				this.update();
 			} else {
-				this.respondLoadRepos(repos, loadRepo);
+				this.respondLoadRepos(repos, loadViewTo);
 			}
 		});
 
@@ -428,6 +429,9 @@ export class GitGraphView {
 				case 'setRepoState':
 					this.repoManager.setRepoState(msg.repo, msg.state);
 					break;
+				case 'showErrorMessage':
+					showErrorMessage(msg.message);
+					break;
 				case 'startCodeReview':
 					this.sendMessage({
 						command: 'startCodeReview',
@@ -461,7 +465,7 @@ export class GitGraphView {
 			this.repoFileWatcher.unmute();
 		}, null, this.disposables);
 
-		this.logger.log('Created Git Graph View' + (loadRepo !== null ? ' (active repo: ' + loadRepo + ')' : ''));
+		this.logger.log('Created Git Graph View' + (loadViewTo !== null ? ' (active repo: ' + loadViewTo.repo + ')' : ''));
 	}
 
 	public sendMessage(msg: ResponseMessage) {
@@ -517,7 +521,7 @@ export class GitGraphView {
 				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
-			loadRepo: this.loadRepo,
+			loadViewTo: this.loadViewTo,
 			repos: this.repoManager.getRepos(),
 			loadRepoInfoRefreshId: this.loadRepoInfoRefreshId,
 			loadCommitsRefreshId: this.loadCommitsRefreshId
@@ -567,7 +571,7 @@ export class GitGraphView {
 			</body>`;
 		}
 		this.isGraphViewLoaded = numRepos > 0;
-		this.loadRepo = null;
+		this.loadViewTo = null;
 
 		return `<!DOCTYPE html>
 		<html lang="en">
@@ -591,12 +595,12 @@ export class GitGraphView {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
-	private respondLoadRepos(repos: GitRepoSet, loadRepo: string | null) {
+	private respondLoadRepos(repos: GitRepoSet, loadViewTo: LoadGitGraphViewTo) {
 		this.sendMessage({
 			command: 'loadRepos',
 			repos: repos,
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
-			loadRepo: loadRepo
+			loadViewTo: loadViewTo
 		});
 	}
 }

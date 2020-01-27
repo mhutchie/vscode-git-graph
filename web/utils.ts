@@ -451,11 +451,19 @@ function getChildUl(elem: HTMLElement) {
 	return null;
 }
 
+function getCommitElems() {
+	return <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+}
+
 
 /* VSCode Helpers */
 
 function sendMessage(msg: GG.RequestMessage) {
 	VSCODE_API.postMessage(msg);
+}
+
+function showErrorMessage(message: string) {
+	sendMessage({ command: 'showErrorMessage', message: message });
 }
 
 function getVSCodeStyle(name: string) {

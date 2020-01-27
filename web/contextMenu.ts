@@ -102,7 +102,7 @@ class ContextMenu {
 		if (this.target.index < commits.length && commits[this.target.index].hash === this.target.hash) {
 			// The commit still exists at the same index
 
-			const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.target.index);
+			const commitElem = findCommitElemWithId(getCommitElems(), this.target.index);
 			if (commitElem !== null) {
 				if (typeof this.target.ref === 'undefined') {
 					// ContextMenu is only dependent on the commit itself

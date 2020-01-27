@@ -74,6 +74,11 @@
 				"category": "Git Graph",
 				"command": "git-graph.removeGitRepository",
 				"title": "Remove Git Repository..."
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.resumeWorkspaceCodeReview",
+				"title": "Resume a specific Code Review in Workspace..."
 			}
 		],
 		"configuration": {

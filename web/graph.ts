@@ -345,7 +345,7 @@ class Graph {
 	private commits: ReadonlyArray<GG.GitCommit> = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
-	private expandedCommitId: number = -1;
+	private expandedCommitIndex: number = -1;
 
 	private readonly viewElem: HTMLElement;
 	private readonly contentElem: HTMLElement;
@@ -434,17 +434,17 @@ class Graph {
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
-		this.expandedCommitId = expandedCommit !== null ? expandedCommit.id : -1;
+		this.expandedCommitIndex = expandedCommit !== null ? expandedCommit.index : -1;
 		let group = document.createElementNS(SVG_NAMESPACE, 'g'), i, contentWidth = this.getContentWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
 		for (i = 0; i < this.branches.length; i++) {
-			this.branches[i].draw(group, this.config, this.expandedCommitId);
+			this.branches[i].draw(group, this.config, this.expandedCommitIndex);
 		}
 
 		const overListener = (e: MouseEvent) => this.vertexOver(e), outListener = (e: MouseEvent) => this.vertexOut(e);
 		for (i = 0; i < this.vertices.length; i++) {
-			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.id, overListener, outListener);
+			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.index, overListener, outListener);
 		}
 
 		if (this.group !== null) this.svg.removeChild(this.group);
@@ -681,7 +681,7 @@ class Graph {
 		const vertexElem = <HTMLElement>event.target;
 		const id = parseInt(vertexElem.dataset.id!);
 		this.tooltipId = id;
-		const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), id);
+		const commitElem = findCommitElemWithId(getCommitElems(), id);
 		if (commitElem !== null) commitElem.classList.add(CLASS_GRAPH_VERTEX_ACTIVE);
 
 		if (id < this.commits.length && this.commits[id].hash !== UNCOMMITTED) { // Only show tooltip for commits (not the uncommitted changes)
@@ -750,7 +750,7 @@ class Graph {
 		const anchor = document.createElement('div'), pointer = document.createElement('div'), content = document.createElement('div'), shadow = document.createElement('div');
 		const pixel: Pixel = {
 			x: point.x * this.config.grid.x + this.config.grid.offsetX,
-			y: point.y * this.config.grid.y + this.config.grid.offsetY + (this.expandedCommitId > -1 && id > this.expandedCommitId ? this.config.grid.expandY : 0)
+			y: point.y * this.config.grid.y + this.config.grid.offsetY + (this.expandedCommitIndex > -1 && id > this.expandedCommitIndex ? this.config.grid.expandY : 0)
 		};
 
 		anchor.setAttribute('id', 'graphTooltip');
@@ -789,7 +789,7 @@ class Graph {
 
 	private closeTooltip() {
 		if (this.tooltipId > -1) {
-			const commitElem = findCommitElemWithId(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), this.tooltipId);
+			const commitElem = findCommitElemWithId(getCommitElems(), this.tooltipId);
 			if (commitElem !== null) commitElem.classList.remove(CLASS_GRAPH_VERTEX_ACTIVE);
 			this.tooltipId = -1;
 		}

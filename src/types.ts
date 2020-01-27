@@ -142,12 +142,12 @@ export interface GitRepoState {
 }
 
 
-/* Git Graph View Interfaces */
+/* Git Graph View Types */
 
 export interface GitGraphViewInitialState {
 	readonly config: GitGraphViewConfig;
 	readonly lastActiveRepo: string | null;
-	readonly loadRepo: string | null;
+	readonly loadViewTo: LoadGitGraphViewTo;
 	readonly repos: GitRepoSet;
 	readonly loadRepoInfoRefreshId: number;
 	readonly loadCommitsRefreshId: number;
@@ -185,6 +185,14 @@ export interface GitGraphViewGlobalState {
 	alwaysAcceptCheckoutCommit: boolean;
 	issueLinkingConfig: IssueLinkingConfig | null;
 }
+
+export type LoadGitGraphViewTo = {
+	repo: string,
+	commitDetails: {
+		commitHash: string,
+		compareWithHash: string | null
+	} | null
+} | null;
 
 
 /* Extension Settings Types */
@@ -691,7 +699,7 @@ export interface ResponseLoadRepos extends BaseMessage {
 	readonly command: 'loadRepos';
 	readonly repos: GitRepoSet;
 	readonly lastActiveRepo: string | null;
-	readonly loadRepo: string | null;
+	readonly loadViewTo: LoadGitGraphViewTo;
 }
 
 export interface RequestMerge extends RepoRequest {
@@ -840,6 +848,11 @@ export interface RequestSetRepoState extends RepoRequest {
 	readonly state: GitRepoState;
 }
 
+export interface RequestShowErrorDialog extends BaseMessage {
+	readonly command: 'showErrorMessage';
+	readonly message: string;
+}
+
 export interface RequestStartCodeReview extends RepoRequest {
 	readonly command: 'startCodeReview';
 	readonly id: string;
@@ -938,6 +951,7 @@ export type RequestMessage =
 	| RequestRevertCommit
 	| RequestSetGlobalViewState
 	| RequestSetRepoState
+	| RequestShowErrorDialog
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff

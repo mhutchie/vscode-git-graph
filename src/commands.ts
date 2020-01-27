@@ -34,6 +34,7 @@ export class CommandManager implements vscode.Disposable {
 		this.registerCommand('git-graph.clearAvatarCache', () => this.clearAvatarCache());
 		this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => this.endAllWorkspaceCodeReviews());
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
+		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
 	}
 
 	public dispose() {
@@ -70,7 +71,7 @@ export class CommandManager implements vscode.Disposable {
 			loadRepo = this.repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 		}
 
-		GitGraphView.createOrShow(this.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo);
+		GitGraphView.createOrShow(this.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null);
 	}
 
 	private addGitRepository() {
@@ -148,6 +149,30 @@ export class CommandManager implements vscode.Disposable {
 						showErrorMessage(errorInfo);
 					}
 				}, () => { });
+			}
+		}, () => { });
+	}
+
+	private resumeWorkspaceCodeReview() {
+		const codeReviews = this.extensionState.getCodeReviews();
+		if (Object.keys(codeReviews).length === 0) {
+			showErrorMessage('There are no Code Reviews in progress within the current workspace.');
+			return;
+		}
+
+		vscode.window.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
+			placeHolder: 'Select the Code Review you want to resume:',
+			canPickMany: false
+		}).then((item) => {
+			if (item) {
+				const commitHashes = item.codeReviewId.split('-');
+				GitGraphView.createOrShow(this.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+					repo: item.codeReviewRepo,
+					commitDetails: {
+						commitHash: commitHashes[commitHashes.length > 1 ? 1 : 0],
+						compareWithHash: commitHashes.length > 1 ? commitHashes[0] : null
+					}
+				});
 			}
 		}, () => { });
 	}

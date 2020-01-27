@@ -171,7 +171,7 @@ class FindWidget {
 				this.widgetElem.setAttribute(ATTR_ERROR, e.message);
 			}
 			if (findPattern !== null && findGlobalPattern !== null) {
-				let commitElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit'), j = 0, commit, zeroLengthMatch = false;
+				let commitElems = getCommitElems(), j = 0, commit, zeroLengthMatch = false;
 
 				// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
 				const commits = this.view.getCommits();

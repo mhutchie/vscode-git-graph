@@ -62,7 +62,7 @@ export class RepoFileWatcher {
 
 	/* Handle an event detected by the File System Watcher */
 
-	private async refresh(uri: vscode.Uri) {
+	private refresh(uri: vscode.Uri) {
 		if (this.muted) return;
 		if (!getPathFromUri(uri).replace(this.repo + '/', '').match(FILE_CHANGE_REGEX)) return;
 		if ((new Date()).getTime() < this.resumeAt) return;
@@ -71,6 +71,7 @@ export class RepoFileWatcher {
 			clearTimeout(this.refreshTimeout);
 		}
 		this.refreshTimeout = setTimeout(() => {
+			this.refreshTimeout = null;
 			this.repoChangeCallback();
 		}, 750);
 	}

@@ -267,9 +267,10 @@ export class AvatarManager {
 		if (img !== null) this.saveAvatar(avatarRequest.email, img, identicon);
 	}
 
-	private async downloadAvatarImage(email: string, imageUrl: string): Promise<string | null> {
-		let hash: string = crypto.createHash('md5').update(email).digest('hex'), imgUrl = url.parse(imageUrl);
-		return new Promise((resolve) => {
+	private downloadAvatarImage(email: string, imageUrl: string) {
+		return (new Promise<string | null>((resolve) => {
+			const hash = crypto.createHash('md5').update(email).digest('hex');
+			const imgUrl = url.parse(imageUrl);
 			https.get({
 				hostname: imgUrl.hostname, path: imgUrl.path,
 				headers: { 'User-Agent': 'vscode-git-graph' },
@@ -290,6 +291,8 @@ export class AvatarManager {
 			}).on('error', () => {
 				resolve(null);
 			});
+		})).catch(() => {
+			return null;
 		});
 	}
 

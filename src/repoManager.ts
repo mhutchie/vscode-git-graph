@@ -357,15 +357,20 @@ export class RepoManager {
 		delete this.folderWatchers[path];
 	}
 
-	private async onWatcherCreate(uri: vscode.Uri) {
+	private onWatcherCreate(uri: vscode.Uri) {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
 		if (path.endsWith('/.git')) path = path.slice(0, -5);
 		if (this.createEventPaths.indexOf(path) > -1) return;
 
 		this.createEventPaths.push(path);
-		if (this.processCreateEventsTimeout !== null) clearTimeout(this.processCreateEventsTimeout);
-		this.processCreateEventsTimeout = setTimeout(() => this.processCreateEvents(), 1000);
+		if (this.processCreateEventsTimeout !== null) {
+			clearTimeout(this.processCreateEventsTimeout);
+		}
+		this.processCreateEventsTimeout = setTimeout(() => {
+			this.processCreateEventsTimeout = null;
+			this.processCreateEvents();
+		}, 1000);
 	}
 
 	private onWatcherChange(uri: vscode.Uri) {
@@ -375,8 +380,13 @@ export class RepoManager {
 		if (this.changeEventPaths.indexOf(path) > -1) return;
 
 		this.changeEventPaths.push(path);
-		if (this.processChangeEventsTimeout !== null) clearTimeout(this.processChangeEventsTimeout);
-		this.processChangeEventsTimeout = setTimeout(() => this.processChangeEvents(), 1000);
+		if (this.processChangeEventsTimeout !== null) {
+			clearTimeout(this.processChangeEventsTimeout);
+		}
+		this.processChangeEventsTimeout = setTimeout(() => {
+			this.processChangeEventsTimeout = null;
+			this.processChangeEvents();
+		}, 1000);
 	}
 
 	private onWatcherDelete(uri: vscode.Uri) {

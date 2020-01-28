@@ -596,9 +596,10 @@ export class DataSource {
 		return this.runGitCommand(['checkout', commitHash], repo);
 	}
 
-	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number, noCommit: boolean) {
+	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number, recordOrigin: boolean, noCommit: boolean) {
 		let args = ['cherry-pick'];
 		if (noCommit) args.push('--no-commit');
+		if (recordOrigin) args.push('-x');
 		if (parentIndex > 0) args.push('-m', parentIndex.toString());
 		args.push(commitHash);
 		return this.runGitCommand(args, repo);

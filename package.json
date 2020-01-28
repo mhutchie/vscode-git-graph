@@ -441,6 +441,11 @@
 					"default": false,
 					"description": "Default state of the \"Reinstate Index\" checkbox."
 				},
+				"git-graph.dialog.cherryPick.recordOrigin": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Record Origin\" checkbox."
+				},
 				"git-graph.dialog.createBranch.checkOut": {
 					"type": "boolean",
 					"default": false,

@@ -128,6 +128,9 @@ class Config {
 			applyStash: {
 				reinstateIndex: !!this.config.get('dialog.applyStash.reinstateIndex', false)
 			},
+			cherryPick: {
+				recordOrigin: !!this.config.get('dialog.cherryPick.recordOrigin', false)
+			},
 			createBranch: {
 				checkout: !!this.config.get('dialog.createBranch.checkOut', false)
 			},

@@ -299,6 +299,9 @@ export interface DialogDefaults {
 	readonly applyStash: {
 		readonly reinstateIndex: boolean
 	};
+	readonly cherryPick: {
+		readonly recordOrigin: boolean
+	};
 	readonly createBranch: {
 		readonly checkout: boolean
 	};
@@ -447,6 +450,7 @@ export interface RequestCherrypickCommit extends RepoRequest {
 	readonly command: 'cherrypickCommit';
 	readonly commitHash: string;
 	readonly parentIndex: number;
+	readonly recordOrigin: boolean;
 	readonly noCommit: boolean;
 }
 export interface ResponseCherrypickCommit extends ResponseWithMultiErrorInfo {

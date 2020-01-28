@@ -145,7 +145,7 @@ export class GitGraphView {
 					});
 					break;
 				case 'cherrypickCommit':
-					errorInfos = [await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex, msg.noCommit)];
+					errorInfos = [await this.dataSource.cherrypickCommit(msg.repo, msg.commitHash, msg.parentIndex, msg.recordOrigin, msg.noCommit)];
 					if (errorInfos[0] === null && msg.noCommit) {
 						errorInfos.push(await viewScm());
 					}

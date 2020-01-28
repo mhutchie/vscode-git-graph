@@ -986,13 +986,36 @@ class GitGraphView {
 							name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 							value: (index + 1).toString()
 						}));
-						inputs.push({ type: DialogInputType.Select, name: 'Parent Hash', options: options, default: '1', info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.' });
+						inputs.push({
+							type: DialogInputType.Select,
+							name: 'Parent Hash',
+							options: options,
+							default: '1',
+							info: 'Choose the parent hash on the main branch, to cherry pick the commit relative to.'
+						});
 					}
-					inputs.push({ type: DialogInputType.Checkbox, name: 'No Commit', value: false, info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.' });
+					inputs.push({
+						type: DialogInputType.Checkbox,
+						name: 'Record Origin',
+						value: this.config.dialogDefaults.cherryPick.recordOrigin,
+						info: 'Record that this commit was the origin of the cherry pick by appending a line to the original commit message that states "(cherry picked from commit ...​)".'
+					}, {
+						type: DialogInputType.Checkbox,
+						name: 'No Commit',
+						value: false,
+						info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.'
+					});
 
 					dialog.showForm('Are you sure you want to cherry pick commit <b><i>' + abbrevCommit(hash) + '</i></b>?', inputs, 'Yes, cherry pick', (values) => {
 						let parentIndex = isMerge ? parseInt(<string>values.shift()) : 0;
-						runAction({ command: 'cherrypickCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parentIndex, noCommit: <boolean>values[0] }, 'Cherry picking Commit');
+						runAction({
+							command: 'cherrypickCommit',
+							repo: this.currentRepo,
+							commitHash: hash,
+							parentIndex: parentIndex,
+							recordOrigin: <boolean>values[0],
+							noCommit: <boolean>values[1]
+						}, 'Cherry picking Commit');
 					}, target);
 				}
 			}, {

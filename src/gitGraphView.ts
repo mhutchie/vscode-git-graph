@@ -10,7 +10,7 @@ import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
-export class GitGraphView {
+export class GitGraphView implements vscode.Disposable {
 	public static currentPanel: GitGraphView | undefined;
 
 	private readonly panel: vscode.WebviewPanel;
@@ -478,7 +478,7 @@ export class GitGraphView {
 		this.repoFileWatcher.unmute();
 	}
 
-	public sendMessage(msg: ResponseMessage) {
+	private sendMessage(msg: ResponseMessage) {
 		this.panel.webview.postMessage(msg);
 	}
 
@@ -599,6 +599,9 @@ export class GitGraphView {
 		</html>`;
 	}
 
+	
+	/* URI Manipulation Methods */
+
 	private getMediaUri(file: string) {
 		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
 	}
@@ -607,6 +610,9 @@ export class GitGraphView {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
+	
+	/* Response Construction Methods */
+
 	private respondLoadRepos(repos: GitRepoSet, loadViewTo: LoadGitGraphViewTo) {
 		this.sendMessage({
 			command: 'loadRepos',
@@ -614,5 +620,9 @@ export class GitGraphView {
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadViewTo: loadViewTo
 		});
+	}
+
+	public respondWithAvatar(email: string, image: string) {
+		this.sendMessage({ command: 'fetchAvatar', email: email, image: image });
 	}
 }

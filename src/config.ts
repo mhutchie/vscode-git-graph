@@ -17,7 +17,6 @@ import {
 	TabIconColourTheme
 } from './types';
 
-
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
 

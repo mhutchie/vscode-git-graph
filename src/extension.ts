@@ -10,7 +10,6 @@ import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
 import { findGit, getGitExecutable, GitExecutable, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
-
 export async function activate(context: vscode.ExtensionContext) {
 	const logger = new Logger();
 	logger.log('Starting Git Graph ...');

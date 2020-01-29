@@ -8,7 +8,6 @@ import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
-
 export class CommandManager implements vscode.Disposable {
 	private readonly extensionPath: string;
 	private readonly avatarManager: AvatarManager;

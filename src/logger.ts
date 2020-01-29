@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export class Logger {
+export class Logger implements vscode.Disposable {
 	private readonly channel: vscode.OutputChannel;
 
 	constructor() {

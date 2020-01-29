@@ -8,7 +8,7 @@ import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
 
-export class RepoManager {
+export class RepoManager implements vscode.Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly statusBarItem: StatusBarItem;

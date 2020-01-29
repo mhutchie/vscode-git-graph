@@ -2,13 +2,12 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import { decode, encodingExists } from 'iconv-lite';
 import * as path from 'path';
-import { Uri } from 'vscode';
+import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus } from './types';
 import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
-
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -17,8 +16,7 @@ const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 export const GIT_CONFIG_USER_NAME = 'user.name';
 export const GIT_CONFIG_USER_EMAIL = 'user.email';
 
-
-export class DataSource {
+export class DataSource implements vscode.Disposable {
 	private readonly logger: Logger;
 	private readonly askpassManager: AskpassManager;
 	private readonly askpassEnv: AskpassEnvironment;
@@ -361,7 +359,7 @@ export class DataSource {
 						}
 
 						if (inSubmoduleSection && (match = lines[i].match(pathProp)) !== null) {
-							let root = await this.repoRoot(getPathFromUri(Uri.file(path.join(repo, getPathFromStr(match[1])))));
+							let root = await this.repoRoot(getPathFromUri(vscode.Uri.file(path.join(repo, getPathFromStr(match[1])))));
 							if (root !== null && !submodules.includes(root)) {
 								submodules.push(root);
 							}
@@ -381,7 +379,7 @@ export class DataSource {
 	}
 
 	public repoRoot(repoPath: string) {
-		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(Uri.file(path.normalize(stdout.trim())))).then(async (canonicalRoot) => {
+		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(vscode.Uri.file(path.normalize(stdout.trim())))).then(async (canonicalRoot) => {
 			let path = repoPath;
 			let first = path.indexOf('/');
 			while (true) {

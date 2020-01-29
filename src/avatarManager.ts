@@ -3,12 +3,13 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import * as url from 'url';
+import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger, maskEmail } from './logger';
 
-export class AvatarManager {
+export class AvatarManager implements vscode.Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
@@ -318,7 +319,7 @@ export class AvatarManager {
 					onError();
 				} else if (this.view !== null) {
 					// Send avatar to the webview as a base64 encoded data uri
-					this.view.sendMessage({ command: 'fetchAvatar', email: email, image: img });
+					this.view.respondWithAvatar(email, img);
 				}
 			}).catch(() => onError());
 		}

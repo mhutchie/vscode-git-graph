@@ -9,7 +9,7 @@ export const enum DiffSide {
 	New
 }
 
-export class DiffDocProvider implements vscode.TextDocumentContentProvider {
+export class DiffDocProvider implements vscode.TextDocumentContentProvider, vscode.Disposable {
 	public static scheme = 'git-graph';
 	private readonly dataSource: DataSource;
 	private readonly docs = new Map<string, DiffDocument>();

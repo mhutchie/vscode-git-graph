@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 
-export class StatusBarItem {
+export class StatusBarItem implements vscode.Disposable {
 	private readonly statusBarItem: vscode.StatusBarItem;
 	private numRepos: number = 0;
 

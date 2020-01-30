@@ -4,6 +4,7 @@ import { CommandManager } from './commands';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
+import { EventEmitter } from './event';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
@@ -14,12 +15,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	const logger = new Logger();
 	logger.log('Starting Git Graph ...');
 
-	const extensionState = new ExtensionState(context);
+	const gitExecutableEmitter = new EventEmitter<GitExecutable>();
+	const onDidChangeGitExecutable = gitExecutableEmitter.subscribe;
+
+	const extensionState = new ExtensionState(context, onDidChangeGitExecutable);
 
 	let gitExecutable: GitExecutable | null;
 	try {
 		gitExecutable = await findGit(extensionState);
-		extensionState.setLastKnownGitPath(gitExecutable.path);
+		gitExecutableEmitter.emit(gitExecutable);
 		logger.log('Using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')');
 	} catch (_) {
 		gitExecutable = null;
@@ -27,14 +31,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger.logError(UNABLE_TO_FIND_GIT_MSG);
 	}
 
-	const dataSource = new DataSource(gitExecutable, logger);
+	const dataSource = new DataSource(gitExecutable, onDidChangeGitExecutable, logger);
 	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
-	const statusBarItem = new StatusBarItem();
-	const repoManager = new RepoManager(dataSource, extensionState, statusBarItem, logger);
-	const commandManager = new CommandManager(context.extensionPath, avatarManager, dataSource, extensionState, logger, repoManager, gitExecutable);
+	const repoManager = new RepoManager(dataSource, extensionState, logger);
+	const statusBarItem = new StatusBarItem(repoManager, logger);
+	const commandManager = new CommandManager(context.extensionPath, avatarManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);
 
 	context.subscriptions.push(
-		commandManager,
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource)),
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
@@ -47,12 +50,8 @@ export async function activate(context: vscode.ExtensionContext) {
 				const path = getConfig().gitPath;
 				if (path === null) return;
 
-				getGitExecutable(path).then(exec => {
-					gitExecutable = exec;
-					extensionState.setLastKnownGitPath(gitExecutable.path);
-					dataSource.setGitExecutable(gitExecutable);
-					commandManager.setGitExecutable(gitExecutable);
-
+				getGitExecutable(path).then((gitExecutable) => {
+					gitExecutableEmitter.emit(gitExecutable);
 					let msg = 'Git Graph is now using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')';
 					showInformationMessage(msg);
 					logger.log(msg);
@@ -64,10 +63,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				});
 			}
 		}),
-		repoManager,
+		commandManager,
 		statusBarItem,
+		repoManager,
 		avatarManager,
 		dataSource,
+		extensionState,
+		gitExecutableEmitter,
 		logger
 	);
 	logger.log('Started Git Graph - Ready to use!');

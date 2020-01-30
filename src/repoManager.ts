@@ -2,76 +2,78 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
+import { EventEmitter } from './event';
 import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { Logger } from './logger';
-import { StatusBarItem } from './statusBarItem';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
+
+interface RepoChangeEvent {
+	repos: GitRepoSet;
+	numRepos: number;
+	loadRepo: string | null;
+}
 
 export class RepoManager implements vscode.Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
-	private readonly statusBarItem: StatusBarItem;
 	private readonly logger: Logger;
 	private repos: GitRepoSet;
 	private ignoredRepos: string[];
 	private maxDepthOfRepoSearch: number;
 	private folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
-	private viewCallback: ((repos: GitRepoSet, numRepos: number, loadRepo: string | null) => void) | null = null;
-	private folderChangeHandler: vscode.Disposable | null;
+	private repoEventEmitter: EventEmitter<RepoChangeEvent>;
+	private disposables: vscode.Disposable[] = [];
 
 	private createEventPaths: string[] = [];
 	private changeEventPaths: string[] = [];
 	private processCreateEventsTimeout: NodeJS.Timer | null = null;
 	private processChangeEventsTimeout: NodeJS.Timer | null = null;
 
-	constructor(dataSource: DataSource, extensionState: ExtensionState, statusBarItem: StatusBarItem, logger: Logger) {
+	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
-		this.statusBarItem = statusBarItem;
 		this.logger = logger;
 		this.repos = extensionState.getRepos();
 		this.ignoredRepos = extensionState.getIgnoredRepos();
 		this.maxDepthOfRepoSearch = getConfig().maxDepthOfRepoSearch;
+		this.repoEventEmitter = new EventEmitter<RepoChangeEvent>();
 		this.startupTasks();
 
-		this.folderChangeHandler = vscode.workspace.onDidChangeWorkspaceFolders(async e => {
-			let changes = false, path;
-			if (e.added.length > 0) {
-				for (let i = 0; i < e.added.length; i++) {
-					path = getPathFromUri(e.added[i].uri);
-					if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
-					this.startWatchingFolder(path);
+		this.disposables.push(
+			vscode.workspace.onDidChangeWorkspaceFolders(async e => {
+				let changes = false, path;
+				if (e.added.length > 0) {
+					for (let i = 0; i < e.added.length; i++) {
+						path = getPathFromUri(e.added[i].uri);
+						if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
+						this.startWatchingFolder(path);
+					}
 				}
-			}
-			if (e.removed.length > 0) {
-				for (let i = 0; i < e.removed.length; i++) {
-					path = getPathFromUri(e.removed[i].uri);
-					if (this.removeReposWithinFolder(path)) changes = true;
-					this.stopWatchingFolder(path);
+				if (e.removed.length > 0) {
+					for (let i = 0; i < e.removed.length; i++) {
+						path = getPathFromUri(e.removed[i].uri);
+						if (this.removeReposWithinFolder(path)) changes = true;
+						this.stopWatchingFolder(path);
+					}
 				}
-			}
-			if (changes) this.sendRepos();
-		});
+				if (changes) this.sendRepos();
+			}),
+			this.repoEventEmitter
+		);
 	}
 
 	public dispose() {
-		if (this.folderChangeHandler !== null) {
-			this.folderChangeHandler.dispose();
-			this.folderChangeHandler = null;
-		}
+		this.disposables.forEach((disposable) => disposable.dispose());
+		this.disposables = [];
 		let folders = Object.keys(this.folderWatchers);
 		for (let i = 0; i < folders.length; i++) {
 			this.stopWatchingFolder(folders[i]);
 		}
 	}
 
-	public registerViewCallback(viewCallback: (repos: GitRepoSet, numRepos: number, loadRepo: string | null) => void) {
-		this.viewCallback = viewCallback;
-	}
-
-	public deregisterViewCallback() {
-		this.viewCallback = null;
+	get onDidChangeRepos() {
+		return this.repoEventEmitter.subscribe;
 	}
 
 	public maxDepthOfRepoSearchChanged() {
@@ -227,11 +229,12 @@ export class RepoManager implements vscode.Disposable {
 		return false;
 	}
 
-	private sendRepos(loadRepo?: string | null) {
-		let repos = this.getRepos();
-		let numRepos = Object.keys(repos).length;
-		this.statusBarItem.setNumRepos(numRepos);
-		if (this.viewCallback !== null) this.viewCallback(repos, numRepos, loadRepo ? loadRepo : null);
+	private sendRepos(loadRepo: string | null = null) {
+		this.repoEventEmitter.emit({
+			repos: this.getRepos(),
+			numRepos: Object.keys(this.repos).length,
+			loadRepo: loadRepo
+		});
 	}
 
 	public checkReposExist() {

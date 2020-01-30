@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
+import { Event } from './event';
 import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
@@ -16,9 +17,9 @@ export class CommandManager implements vscode.Disposable {
 	private readonly logger: Logger;
 	private readonly repoManager: RepoManager;
 	private gitExecutable: GitExecutable | null;
-	private subscriptions: vscode.Disposable[] = [];
+	private disposables: vscode.Disposable[] = [];
 
-	constructor(extensionPath: string, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, logger: Logger, repoManager: RepoManager, gitExecutable: GitExecutable | null) {
+	constructor(extensionPath: string, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManger;
 		this.dataSource = dataSource;
@@ -34,21 +35,19 @@ export class CommandManager implements vscode.Disposable {
 		this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => this.endAllWorkspaceCodeReviews());
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
 		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
+
+		onDidChangeGitExecutable((gitExecutable) => {
+			this.gitExecutable = gitExecutable;
+		}, this.disposables);
 	}
 
 	public dispose() {
-		this.subscriptions.forEach((subscription) => {
-			subscription.dispose();
-		});
-		this.subscriptions = [];
-	}
-
-	public setGitExecutable(gitExecutable: GitExecutable | null) {
-		this.gitExecutable = gitExecutable;
+		this.disposables.forEach((disposable) => disposable.dispose());
+		this.disposables = [];
 	}
 
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
-		this.subscriptions.push(vscode.commands.registerCommand(command, callback));
+		this.disposables.push(vscode.commands.registerCommand(command, callback));
 	}
 
 

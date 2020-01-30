@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
+import { Event } from './event';
 import { Logger } from './logger';
 import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus } from './types';
 import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
@@ -18,20 +19,25 @@ export const GIT_CONFIG_USER_EMAIL = 'user.email';
 
 export class DataSource implements vscode.Disposable {
 	private readonly logger: Logger;
-	private readonly askpassManager: AskpassManager;
 	private readonly askpassEnv: AskpassEnvironment;
-
 	private gitExecutable!: GitExecutable | null;
 	private gitExecutableSupportsGpgInfo!: boolean;
 	private gitFormatCommitDetails!: string;
 	private gitFormatLog!: string;
 	private gitFormatStash!: string;
+	private disposables: vscode.Disposable[] = [];
 
-	constructor(gitExecutable: GitExecutable | null, logger: Logger) {
+	constructor(gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
 		this.logger = logger;
 		this.setGitExecutable(gitExecutable);
-		this.askpassManager = new AskpassManager();
-		this.askpassEnv = this.askpassManager.getEnv();
+
+		const askpassManager = new AskpassManager();
+		this.askpassEnv = askpassManager.getEnv();
+		this.disposables.push(askpassManager);
+
+		onDidChangeGitExecutable((gitExecutable) => {
+			this.setGitExecutable(gitExecutable);
+		}, this.disposables);
 	}
 
 	public isGitExecutableUnknown() {
@@ -70,7 +76,8 @@ export class DataSource implements vscode.Disposable {
 	}
 
 	public dispose() {
-		this.askpassManager.dispose();
+		this.disposables.forEach((disposable) => disposable.dispose());
+		this.disposables = [];
 	}
 
 

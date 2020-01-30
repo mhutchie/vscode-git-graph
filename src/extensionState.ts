@@ -1,8 +1,9 @@
 import * as fs from 'fs';
-import { ExtensionContext, Memento } from 'vscode';
+import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
+import { Event } from './event';
 import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, ShowTags } from './types';
-import { getPathFromStr } from './utils';
+import { getPathFromStr, GitExecutable } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
@@ -36,13 +37,14 @@ export interface CodeReviewData {
 }
 export type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
 
-export class ExtensionState {
-	private readonly globalState: Memento;
-	private readonly workspaceState: Memento;
+export class ExtensionState implements vscode.Disposable {
+	private readonly globalState: vscode.Memento;
+	private readonly workspaceState: vscode.Memento;
 	private readonly globalStoragePath: string;
 	private avatarStorageAvailable: boolean = false;
+	private disposables: vscode.Disposable[] = [];
 
-	constructor(context: ExtensionContext) {
+	constructor(context: vscode.ExtensionContext, onDidChangeGitExecutable: Event<GitExecutable>) {
 		this.globalState = context.globalState;
 		this.workspaceState = context.workspaceState;
 
@@ -58,6 +60,15 @@ export class ExtensionState {
 				});
 			}
 		});
+
+		onDidChangeGitExecutable((gitExecutable) => {
+			this.setLastKnownGitPath(gitExecutable.path);
+		}, this.disposables);
+	}
+
+	public dispose() {
+		this.disposables.forEach((disposable) => disposable.dispose());
+		this.disposables = [];
 	}
 
 
@@ -129,7 +140,7 @@ export class ExtensionState {
 		return this.globalState.get<string | null>(LAST_KNOWN_GIT_PATH, null);
 	}
 
-	public setLastKnownGitPath(path: string) {
+	private setLastKnownGitPath(path: string) {
 		this.updateGlobalState(LAST_KNOWN_GIT_PATH, path);
 	}
 

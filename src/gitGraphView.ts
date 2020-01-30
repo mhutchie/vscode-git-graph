@@ -94,17 +94,17 @@ export class GitGraphView implements vscode.Disposable {
 			}
 		});
 
-		// Register a callback that is called when a repository is added or deleted from Git Graph
-		this.repoManager.registerViewCallback((repos: GitRepoSet, numRepos: number, loadRepo: string | null) => {
+		// Subscribe to events triggered when a repository is added or deleted from Git Graph
+		repoManager.onDidChangeRepos((event) => {
 			if (!this.panel.visible) return;
-			const loadViewTo = loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null;
-			if ((numRepos === 0 && this.isGraphViewLoaded) || (numRepos > 0 && !this.isGraphViewLoaded)) {
+			const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo, commitDetails: null } : null;
+			if ((event.numRepos === 0 && this.isGraphViewLoaded) || (event.numRepos > 0 && !this.isGraphViewLoaded)) {
 				this.loadViewTo = loadViewTo;
 				this.update();
 			} else {
-				this.respondLoadRepos(repos, loadViewTo);
+				this.respondLoadRepos(event.repos, loadViewTo);
 			}
-		});
+		}, this.disposables);
 
 		// Respond to messages sent from the Webview
 		this.panel.webview.onDidReceiveMessage((msg) => this.respondToMessage(msg), null, this.disposables);
@@ -487,13 +487,8 @@ export class GitGraphView implements vscode.Disposable {
 		this.panel.dispose();
 		this.avatarManager.deregisterView();
 		this.repoFileWatcher.stop();
-		this.repoManager.deregisterViewCallback();
-		while (this.disposables.length > 0) {
-			const disposable = this.disposables.pop();
-			if (disposable) {
-				disposable.dispose();
-			}
-		}
+		this.disposables.forEach((disposable) => disposable.dispose());
+		this.disposables = [];
 		this.logger.log('Disposed Git Graph View');
 	}
 

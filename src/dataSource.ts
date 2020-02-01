@@ -142,7 +142,7 @@ export class DataSource implements vscode.Disposable {
 			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
 			this.getStashes(repo)
 		]).then(async (results) => {
-			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i, unsavedChanges = null;
+			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i;
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
 			if (moreCommitsAvailable) commits.pop();
 
@@ -158,12 +158,12 @@ export class DataSource implements vscode.Disposable {
 				}
 			}
 
-			if (refData.head !== null) {
+			if (refData.head !== null && config.showUncommittedChanges) {
 				for (i = 0; i < commits.length; i++) {
 					if (refData.head === commits[i].hash) {
-						unsavedChanges = config.showUncommittedChanges ? await this.getUnsavedChanges(repo) : null;
-						if (unsavedChanges !== null) {
-							commits.unshift({ hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + unsavedChanges.changes + ')' });
+						const numUncommittedChanges = await this.getUncommittedChanges(repo);
+						if (numUncommittedChanges > 0) {
+							commits.unshift({ hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + numUncommittedChanges + ')' });
 						}
 						break;
 					}
@@ -1287,16 +1287,14 @@ export class DataSource implements vscode.Disposable {
 	}
 
 	/**
-	 * Get the unsaved changes summary of a repository.
+	 * Get the number of uncommitted changes in a repository.
 	 * @param repo The path of the repository.
-	 * @returns The unsaved changes summary.
+	 * @returns The number of uncommitted changes.
 	 */
-	private getUnsavedChanges(repo: string) {
-		return this.spawnGit<GitUnsavedChanges | null>(['status', '-s', '--branch', '--untracked-files', '--porcelain'], repo, (stdout) => {
-			let lines = stdout.split(EOL_REGEX);
-			return lines.length > 2
-				? { branch: lines[0].substring(3).split('...')[0], changes: lines.length - 2 }
-				: null;
+	private getUncommittedChanges(repo: string) {
+		return this.spawnGit(['status', '--untracked-files', '--porcelain'], repo, (stdout) => {
+			const numLines = stdout.split(EOL_REGEX).length;
+			return numLines > 1 ? numLines - 1 : 0;
 		});
 	}
 
@@ -1624,9 +1622,4 @@ interface GitTagDetailsData {
 	date: number;
 	message: string;
 	error: ErrorInfo;
-}
-
-interface GitUnsavedChanges {
-	branch: string;
-	changes: number;
 }

@@ -225,9 +225,9 @@ export function openExtensionSettings(): Thenable<ErrorInfo> {
  */
 export function openFile(repo: string, filePath: string) {
 	return new Promise<ErrorInfo>(resolve => {
-		let p = path.join(repo, filePath);
-		fs.exists(p, exists => {
-			if (exists) {
+		const p = path.join(repo, filePath);
+		fs.access(p, fs.constants.R_OK, (err) => {
+			if (err === null) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), {
 					preview: true,
 					viewColumn: getConfig().openDiffTabLocation

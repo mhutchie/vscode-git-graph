@@ -17,27 +17,45 @@ import {
 	TabIconColourTheme
 } from './types';
 
+/**
+ * Represents the users configuration of Git Graph Extension Settings.
+ */
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
 
+	/**
+	 * Creates a Config instance.
+	 */
 	constructor() {
 		this.config = vscode.workspace.getConfiguration('git-graph');
 	}
 
+	/**
+	 * Get the value of the `git-graph.autoCenterCommitDetailsView` Extension Setting.
+	 */
 	get autoCenterCommitDetailsView() {
 		return !!this.config.get('autoCenterCommitDetailsView', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.combineLocalAndRemoteBranchLabels` Extension Setting.
+	 */
 	get combineLocalAndRemoteBranchLabels() {
 		return !!this.config.get('combineLocalAndRemoteBranchLabels', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.commitDetailsViewLocation` Extension Setting.
+	 */
 	get commitDetailsViewLocation() {
 		return this.config.get<string>('commitDetailsViewLocation', 'Inline') === 'Docked to Bottom'
 			? CommitDetailsViewLocation.DockedToBottom
 			: CommitDetailsViewLocation.Inline;
 	}
 
+	/**
+	 * Get the value of the `git-graph.commitOrdering` Extension Setting.
+	 */
 	get commitOrdering() {
 		const ordering = this.config.get<string>('commitOrdering', 'date');
 		return ordering === 'author-date'
@@ -47,6 +65,9 @@ class Config {
 				: CommitOrdering.Date;
 	}
 
+	/**
+	 * Get the value of the `git-graph.contextMenuActionsVisibility` Extension Setting.
+	 */
 	get contextMenuActionsVisibility(): ContextMenuActionsVisibility {
 		let userConfig = this.config.get('contextMenuActionsVisibility', {});
 		let config = {
@@ -61,6 +82,9 @@ class Config {
 		return config;
 	}
 
+	/**
+	 * Get the value of the `git-graph.customBranchGlobPatterns` Extension Setting.
+	 */
 	get customBranchGlobPatterns(): CustomBranchGlobPattern[] {
 		let inPatterns = this.config.get('customBranchGlobPatterns', <any[]>[]);
 		let outPatterns: CustomBranchGlobPattern[] = [];
@@ -72,6 +96,9 @@ class Config {
 		return outPatterns;
 	}
 
+	/**
+	 * Get the value of the `git-graph.customEmojiShortcodeMappings` Extension Setting.
+	 */
 	get customEmojiShortcodeMappings(): CustomEmojiShortcodeMapping[] {
 		let inMappings = this.config.get('customEmojiShortcodeMappings', <any[]>[]);
 		let outMappings: CustomEmojiShortcodeMapping[] = [];
@@ -83,6 +110,9 @@ class Config {
 		return outMappings;
 	}
 
+	/**
+	 * Get the value of the `git-graph.dateFormat` Extension Setting.
+	 */
 	get dateFormat(): DateFormat {
 		let configValue = this.config.get<string>('dateFormat', 'Date & Time'), type = DateFormatType.DateAndTime, iso = false;
 		if (configValue === 'Relative') {
@@ -94,12 +124,18 @@ class Config {
 		return { type: type, iso: iso };
 	}
 
+	/**
+	 * Get the value of the `git-graph.dateType` Extension Setting.
+	 */
 	get dateType() {
 		return this.config.get<string>('dateType', 'Author Date') === 'Commit Date'
 			? DateType.Commit
 			: DateType.Author;
 	}
 
+	/**
+	 * Get the value of the `git-graph.defaultColumnVisibility` Extension Setting.
+	 */
 	get defaultColumnVisibility(): DefaultColumnVisibility {
 		let obj: any = this.config.get('defaultColumnVisibility', {});
 		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean') {
@@ -109,12 +145,18 @@ class Config {
 		}
 	}
 
+	/**
+	 * Get the value of the `git-graph.defaultFileViewType` Extension Setting.
+	 */
 	get defaultFileViewType(): FileViewType {
 		return this.config.get<string>('defaultFileViewType', 'File Tree') === 'File List'
 			? FileViewType.List
 			: FileViewType.Tree;
 	}
 
+	/**
+	 * Get the value of the `git-graph.dialog.*` Extension Settings.
+	 */
 	get dialogDefaults(): DialogDefaults {
 		let resetCommitMode = this.config.get<string>('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
 		let resetUncommittedMode = this.config.get<string>('dialog.resetUncommittedChanges.mode', 'Mixed');
@@ -160,69 +202,117 @@ class Config {
 		};
 	}
 
+	/**
+	 * Get the value of the `git-graph.fetchAndPrune` Extension Setting.
+	 */
 	get fetchAndPrune() {
 		return !!this.config.get('fetchAndPrune', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.fetchAvatars` Extension Setting.
+	 */
 	get fetchAvatars() {
 		return !!this.config.get('fetchAvatars', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.fileEncoding` Extension Setting.
+	 */
 	get fileEncoding() {
 		return this.config.get<string>('fileEncoding', 'utf8');
 	}
 
+	/**
+	 * Get the value of the `git-graph.graphColours` Extension Setting.
+	 */
 	get graphColours() {
 		return this.config.get('graphColours', ['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000'])
 			.filter((v) => v.match(/^\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgb[a]?\s*\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))\s*$/) !== null);
 	}
 
+	/**
+	 * Get the value of the `git-graph.graphStyle` Extension Setting.
+	 */
 	get graphStyle() {
 		return this.config.get<string>('graphStyle', 'rounded') === 'angular'
 			? GraphStyle.Angular
 			: GraphStyle.Rounded;
 	}
 
+	/**
+	 * Get the value of the `git-graph.initialLoadCommits` Extension Setting.
+	 */
 	get initialLoadCommits() {
 		return this.config.get('initialLoadCommits', 300);
 	}
 
+	/**
+	 * Get the value of the `git-graph.integratedTerminalShell` Extension Setting.
+	 */
 	get integratedTerminalShell() {
 		return this.config.get('integratedTerminalShell', '');
 	}
 
+	/**
+	 * Get the value of the `git-graph.loadMoreCommits` Extension Setting.
+	 */
 	get loadMoreCommits() {
 		return this.config.get('loadMoreCommits', 75);
 	}
 
+	/**
+	 * Get the value of the `git-graph.loadMoreCommitsAutomatically` Extension Setting.
+	 */
 	get loadMoreCommitsAutomatically() {
 		return !!this.config.get('loadMoreCommitsAutomatically', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.maxDepthOfRepoSearch` Extension Setting.
+	 */
 	get maxDepthOfRepoSearch() {
 		return this.config.get('maxDepthOfRepoSearch', 0);
 	}
 
+	/**
+	 * Get the value of the `git-graph.muteCommitsThatAreNotAncestorsOfHead` Extension Setting.
+	 */
 	get muteCommitsThatAreNotAncestorsOfHead() {
 		return !!this.config.get('muteCommitsThatAreNotAncestorsOfHead', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.muteMergeCommits` Extension Setting.
+	 */
 	get muteMergeCommits() {
 		return !!this.config.get('muteMergeCommits', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.openDiffTabLocation` Extension Setting.
+	 */
 	get openDiffTabLocation() {
 		return this.config.get('openDiffTabLocation', 'Active') === 'Active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
 	}
 
+	/**
+	 * Get the value of the `git-graph.openRepoToHead` Extension Setting.
+	 */
 	get openRepoToHead() {
 		return !!this.config.get('openRepoToHead', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.openToTheRepoOfTheActiveTextEditorDocument` Extension Setting.
+	 */
 	get openToTheRepoOfTheActiveTextEditorDocument() {
 		return !!this.config.get('openToTheRepoOfTheActiveTextEditorDocument', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.referenceLabelAlignment` Extension Setting.
+	 */
 	get refLabelAlignment() {
 		let configValue = this.config.get<string>('referenceLabelAlignment', 'Normal');
 		return configValue === 'Branches (on the left) & Tags (on the right)'
@@ -232,53 +322,91 @@ class Config {
 				: RefLabelAlignment.Normal;
 	}
 
+	/**
+	 * Get the value of the `git-graph.retainContextWhenHidden` Extension Setting.
+	 */
 	get retainContextWhenHidden() {
 		return !!this.config.get('retainContextWhenHidden', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.showCommitsOnlyReferencedByTags` Extension Setting.
+	 */
 	get showCommitsOnlyReferencedByTags() {
 		return !!this.config.get('showCommitsOnlyReferencedByTags', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.showCurrentBranchByDefault` Extension Setting.
+	 */
 	get showCurrentBranchByDefault() {
 		return !!this.config.get('showCurrentBranchByDefault', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.showSignatureStatus` Extension Setting.
+	 */
 	get showSignatureStatus() {
 		return !!this.config.get('showSignatureStatus', false);
 	}
 
+	/**
+	 * Get the value of the `git-graph.showStatusBarItem` Extension Setting.
+	 */
 	get showStatusBarItem() {
 		return !!this.config.get('showStatusBarItem', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.showTags` Extension Setting.
+	 */
 	get showTags() {
 		return !!this.config.get('showTags', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.showUncommittedChanges` Extension Setting.
+	 */
 	get showUncommittedChanges() {
 		return !!this.config.get('showUncommittedChanges', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.tabIconColourTheme` Extension Setting.
+	 */
 	get tabIconColourTheme() {
 		return this.config.get<string>('tabIconColourTheme', 'colour') === 'grey'
 			? TabIconColourTheme.Grey
 			: TabIconColourTheme.Colour;
 	}
 
+	/**
+	 * Get the value of the `git-graph.useMailmap` Extension Setting.
+	 */
 	get useMailmap() {
 		return !!this.config.get('useMailmap', false);
 	}
 
+	/**
+	 * Get the value of the `git.path` Visual Studio Code Setting.
+	 */
 	get gitPath() {
 		return vscode.workspace.getConfiguration('git').get<string | null>('path', null);
 	}
 }
 
+/**
+ * Get a Config instance for retrieving the users configuration of Git Graph Extension Settings.
+ */
 export function getConfig() {
 	return new Config();
 }
 
+/**
+ * Recursively apply the values in a user specified object to an object containing default values.
+ * @param base An object containing the default values.
+ * @param user An object specified by the user.
+ */
 function mergeConfigObjects(base: { [key: string]: any }, user: { [key: string]: any }) {
 	if (typeof base !== typeof user) return;
 

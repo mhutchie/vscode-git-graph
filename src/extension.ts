@@ -11,6 +11,10 @@ import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
 import { findGit, getGitExecutable, GitExecutable, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
+/**
+ * Activate Git Graph.
+ * @param context The context of the extension.
+ */
 export async function activate(context: vscode.ExtensionContext) {
 	const logger = new Logger();
 	logger.log('Starting Git Graph ...');
@@ -77,4 +81,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	extensionState.expireOldCodeReviews();
 }
 
+/**
+ * Deactivate Git Graph.
+ */
 export function deactivate() { }

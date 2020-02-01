@@ -1,20 +1,40 @@
 import * as vscode from 'vscode';
 
+/**
+ * Manages the Git Graph Logger, which writes log information to the Git Graph Output Channel.
+ */
 export class Logger implements vscode.Disposable {
 	private readonly channel: vscode.OutputChannel;
 
+	/**
+	 * Creates the Git Graph Logger.
+	 */
 	constructor() {
 		this.channel = vscode.window.createOutputChannel('Git Graph');
 	}
 
+	/**
+	 * Disposes the resources used by the Logger.
+	 */
 	public dispose() {
 		this.channel.dispose();
 	}
 
+	/**
+	 * Log a message to the Output Channel.
+	 * @param message The string to be logged.
+	 */
 	public log(message: string) {
-		this.channel.appendLine(timestamp() + message);
+		const date = new Date();
+		const timestamp = date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) + ' ' + pad2(date.getHours()) + ':' + pad2(date.getMinutes()) + ':' + pad2(date.getSeconds()) + '.' + pad3(date.getMilliseconds());
+		this.channel.appendLine('[' + timestamp + '] ' + message);
 	}
 
+	/**
+	 * Log the execution of a spawned command to the Output Channel.
+	 * @param cmd The command being spawned.
+	 * @param args The arguments passed to the command.
+	 */
 	public logCmd(cmd: string, args: string[]) {
 		this.log('> ' + cmd + ' ' + args.map((arg) => {
 			return arg.startsWith('--format=')
@@ -23,24 +43,38 @@ export class Logger implements vscode.Disposable {
 		}).join(' '));
 	}
 
+	/**
+	 * Log an error message to the Output Channel.
+	 * @param message The string to be logged.
+	 */
 	public logError(message: string) {
 		this.log('ERROR: ' + message);
 	}
 }
 
-function timestamp() {
-	const date = new Date();
-	return '[' + date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) + ' ' + pad2(date.getHours()) + ':' + pad2(date.getMinutes()) + ':' + pad2(date.getSeconds()) + '.' + pad3(date.getMilliseconds()) + '] ';
+/** 
+ * Pad a number with a leading zero if it is less than two digits long.
+ * @param n The number to be padded.
+ * @returns The padded number.
+ */
+function pad2(n: number) {
+	return (n > 9 ? '' : '0') + n;
 }
 
-function pad2(i: number) {
-	return (i > 9 ? '' : '0') + i;
+/** 
+ * Pad a number with leading zeros if it is less than three digits long.
+ * @param n The number to be padded.
+ * @returns The padded number.
+ */
+function pad3(n: number) {
+	return (n > 99 ? '' : n > 9 ? '0' : '00') + n;
 }
 
-function pad3(i: number) {
-	return (i > 99 ? '' : i > 9 ? '0' : '00') + i;
-}
-
+/**
+ * Mask an email address for logging.
+ * @param email The string containing the email address.
+ * @returns The masked email address.
+ */
 export function maskEmail(email: string) {
 	return email.substring(0, email.indexOf('@')) + '@*****';
 }

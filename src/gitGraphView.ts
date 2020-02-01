@@ -10,6 +10,9 @@ import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
+/**
+ * Manages the Git Graph View.
+ */
 export class GitGraphView implements vscode.Disposable {
 	public static currentPanel: GitGraphView | undefined;
 
@@ -30,6 +33,16 @@ export class GitGraphView implements vscode.Disposable {
 	private loadRepoInfoRefreshId: number = 0;
 	private loadCommitsRefreshId: number = 0;
 
+	/**
+	 * If a Git Graph View already exists, show and update it. Otherwise, create a Git Graph View.
+	 * @param extensionPath The absolute file path of the directory containing the extension.
+	 * @param dataSource The Git Graph DataSource instance.
+	 * @param extensionState The Git Graph ExtensionState instance.
+	 * @param avatarManger The Git Graph AvatarManager instance.
+	 * @param repoManager The Git Graph RepoManager instance.
+	 * @param logger The Git Graph Logger instance.
+	 * @param loadViewTo What to load the view to.
+	 */
 	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
@@ -51,6 +64,17 @@ export class GitGraphView implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Creates a Git Graph View.
+	 * @param extensionPath The absolute file path of the directory containing the extension.
+	 * @param dataSource The Git Graph DataSource instance.
+	 * @param extensionState The Git Graph ExtensionState instance.
+	 * @param avatarManger The Git Graph AvatarManager instance.
+	 * @param repoManager The Git Graph RepoManager instance.
+	 * @param logger The Git Graph Logger instance.
+	 * @param loadViewTo What to load the view to.
+	 * @param column The column the view should be loaded in.
+	 */
 	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo, column: vscode.ViewColumn | undefined) {
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
@@ -115,6 +139,10 @@ export class GitGraphView implements vscode.Disposable {
 		this.logger.log('Created Git Graph View' + (loadViewTo !== null ? ' (active repo: ' + loadViewTo.repo + ')' : ''));
 	}
 
+	/**
+	 * Respond to a message sent from the front-end.
+	 * @param msg The message that was received.
+	 */
 	private async respondToMessage(msg: RequestMessage) {
 		this.repoFileWatcher.mute();
 		let errorInfos: ErrorInfo[];
@@ -478,10 +506,17 @@ export class GitGraphView implements vscode.Disposable {
 		this.repoFileWatcher.unmute();
 	}
 
+	/**
+	 * Send a message to the front-end.
+	 * @param msg The message to be sent.
+	 */
 	private sendMessage(msg: ResponseMessage) {
 		this.panel.webview.postMessage(msg);
 	}
 
+	/**
+	 * Disposes the resources used by the GitGraphView.
+	 */
 	public dispose() {
 		GitGraphView.currentPanel = undefined;
 		this.panel.dispose();
@@ -492,10 +527,17 @@ export class GitGraphView implements vscode.Disposable {
 		this.logger.log('Disposed Git Graph View');
 	}
 
+	/**
+	 * Update the HTML document loaded in the Webview.
+	 */
 	private update() {
 		this.panel.webview.html = this.getHtmlForWebview();
 	}
 
+	/**
+	 * Get the HTML document to be loaded in the Webview.
+	 * @returns The HTML.
+	 */
 	private getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
 		const refLabelAlignment = config.refLabelAlignment;
@@ -597,10 +639,20 @@ export class GitGraphView implements vscode.Disposable {
 	
 	/* URI Manipulation Methods */
 
+	/**
+	 * Get a URI for a media file included in the extension.
+	 * @param file The file name in the `media` directory.
+	 * @returns The URI.
+	 */
 	private getMediaUri(file: string) {
 		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
 	}
 
+	/**
+	 * Get a URI for a file included in the extension.
+	 * @param pathComps The path components relative to the root directory of the extension.
+	 * @returns The URI.
+	 */
 	private getUri(...pathComps: string[]) {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
@@ -608,6 +660,11 @@ export class GitGraphView implements vscode.Disposable {
 	
 	/* Response Construction Methods */
 
+	/**
+	 * Send the known repositories to the front-end.
+	 * @param repos The set of known repositories.
+	 * @param loadViewTo What to load the view to.
+	 */
 	private respondLoadRepos(repos: GitRepoSet, loadViewTo: LoadGitGraphViewTo) {
 		this.sendMessage({
 			command: 'loadRepos',
@@ -617,6 +674,11 @@ export class GitGraphView implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Send an avatar to the front-end.
+	 * @param email The email address identifying the avatar.
+	 * @param image A base64 encoded data URI.
+	 */
 	public respondWithAvatar(email: string, image: string) {
 		this.sendMessage({ command: 'fetchAvatar', email: email, image: image });
 	}

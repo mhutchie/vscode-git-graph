@@ -9,6 +9,9 @@ import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger, maskEmail } from './logger';
 
+/**
+ * Manages fetching and caching Avatars.
+ */
 export class AvatarManager implements vscode.Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
@@ -24,6 +27,12 @@ export class AvatarManager implements vscode.Disposable {
 	private githubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
 
+	/**
+	 * Creates the Git Graph Avatar Manager.
+	 * @param dataSource The Git Graph DataSource instance.
+	 * @param extensionState The Git Graph ExtensionState instance.
+	 * @param logger The Git Graph Logger instance.
+	 */
 	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
@@ -40,10 +49,16 @@ export class AvatarManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Disposes the resources used by the AvatarManager.
+	 */
 	public dispose() {
 		this.stopInterval();
 	}
 
+	/**
+	 * Stops the interval used to fetch avatars.
+	 */
 	private stopInterval() {
 		if (this.interval !== null) {
 			clearInterval(this.interval);
@@ -52,6 +67,13 @@ export class AvatarManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Fetch an avatar, either from the cache if it already exists, or queue it to be fetched.
+	 * @param email The email address identifying the avatar.
+	 * @param repo The repository that the avatar is used in.
+	 * @param remote The remote that the avatar can be fetched from.
+	 * @param commits The commits that reference the avatar.
+	 */
 	public fetchAvatarImage(email: string, repo: string, remote: string | null, commits: string[]) {
 		if (typeof this.avatars[email] !== 'undefined') {
 			// Avatar exists in the cache
@@ -74,8 +96,12 @@ export class AvatarManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Get the image data of an avatar.
+	 * @param email The email address identifying the avatar.
+	 * @returns A base64 encoded data URI if the avatar exists, otherwise NULL.
+	 */
 	public getAvatarImage(email: string) {
-		// Resolves to a base64 image if the avatar exists, otherwise resolves to null.
 		return new Promise<string | null>(resolve => {
 			if (typeof this.avatars[email] !== 'undefined' && this.avatars[email].image !== null) {
 				fs.readFile(this.avatarStorageFolder + '/' + this.avatars[email].image, (err, data) => {
@@ -87,24 +113,41 @@ export class AvatarManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Register the Git Graph View that avatars are sent to.
+	 * @param view The Git Graph View.
+	 */
 	public registerView(view: GitGraphView) {
 		this.view = view;
 	}
 
+	/**
+	 * Deregister the Git Graph View that avatars are sent to.
+	 */
 	public deregisterView() {
 		this.view = null;
 	}
 
+	/**
+	 * Remove an avatar from the cache.
+	 * @param email The email address identifying the avatar.
+	 */
 	public removeAvatarFromCache(email: string) {
 		delete this.avatars[email];
 		this.extensionState.removeAvatarFromCache(email);
 	}
 
+	/**
+	 * Remove all avatars from the cache.
+	 */
 	public clearCache() {
 		this.avatars = {};
 		this.extensionState.clearAvatarCache();
 	}
 
+	/**
+	 * Triggered by an interval to fetch avatars from Github, GitLab and Gravatar.
+	 */
 	private async fetchAvatarsInterval() {
 		if (this.queue.hasItems()) {
 			let avatarRequest = this.queue.takeItem();
@@ -127,6 +170,11 @@ export class AvatarManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Get the remote source of an avatar request.
+	 * @param avatarRequest The avatar request.
+	 * @returns The remote source.
+	 */
 	private async getRemoteSource(avatarRequest: AvatarRequestItem) {
 		if (typeof this.remoteSourceCache[avatarRequest.repo] === 'object') {
 			// If the repo exists in the cache of remote sources
@@ -151,6 +199,12 @@ export class AvatarManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Fetch an avatar from Github.
+	 * @param avatarRequest The avatar request to fetch.
+	 * @param owner The owner of the repository.
+	 * @param repo The repository that the avatar is used in.
+	 */
 	private fetchFromGithub(avatarRequest: AvatarRequestItem, owner: string, repo: string) {
 		let t = (new Date()).getTime();
 		if (t < this.githubTimeout) {
@@ -206,6 +260,10 @@ export class AvatarManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Fetch an avatar from GitLab.
+	 * @param avatarRequest The avatar request to fetch.
+	 */
 	private fetchFromGitLab(avatarRequest: AvatarRequestItem) {
 		let t = (new Date()).getTime();
 		if (t < this.gitLabTimeout) {
@@ -256,6 +314,10 @@ export class AvatarManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Fetch an avatar from Gravatar.
+	 * @param avatarRequest The avatar request to fetch.
+	 */
 	private async fetchFromGravatar(avatarRequest: AvatarRequestItem) {
 		this.logger.log('Requesting Avatar for ' + maskEmail(avatarRequest.email) + ' from Gravatar');
 		let hash: string = crypto.createHash('md5').update(avatarRequest.email).digest('hex');
@@ -268,6 +330,12 @@ export class AvatarManager implements vscode.Disposable {
 		if (img !== null) this.saveAvatar(avatarRequest.email, img, identicon);
 	}
 
+	/**
+	 * Download and save an avatar image.
+	 * @param email The email address identifying the avatar.
+	 * @param imageUrl The URL the avatar can be downloaded from.
+	 * @returns The image name of the avatar on disk, or NULL if downloading failed.
+	 */
 	private downloadAvatarImage(email: string, imageUrl: string) {
 		return (new Promise<string | null>((resolve) => {
 			const hash = crypto.createHash('md5').update(email).digest('hex');
@@ -297,6 +365,12 @@ export class AvatarManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Save an avatar in the cache.
+	 * @param email The email address identifying the avatar.
+	 * @param image The image name of the avatar on disk.
+	 * @param identicon Whether this avatar is an identicon.
+	 */
 	private saveAvatar(email: string, image: string, identicon: boolean) {
 		if (typeof this.avatars[email] === 'string') {
 			if (!identicon || this.avatars[email].identicon) {
@@ -312,6 +386,11 @@ export class AvatarManager implements vscode.Disposable {
 		this.logger.log('Saved Avatar for ' + maskEmail(email));
 	}
 
+	/**
+	 * Send an avatar to the Git Graph View.
+	 * @param email The email address identifying the avatar.
+	 * @param onError A callback that is invoked if an error occurs.
+	 */
 	private sendAvatarToWebView(email: string, onError: () => void) {
 		if (this.view !== null) {
 			this.getAvatarImage(email).then(img => {
@@ -326,16 +405,29 @@ export class AvatarManager implements vscode.Disposable {
 	}
 }
 
-// Queue implementation, ordering avatar requests by their checkAfter value
+/**
+ * Represents a queue of avatar requests, ordered by their `checkAfter` value.
+ */
 class AvatarRequestQueue {
 	private queue: AvatarRequestItem[] = [];
 	private itemsAvailableCallback: () => void;
 
+	/**
+	 * Create an Avatar Request Queue.
+	 * @param itemsAvailableCallback A callback that is invoked when the queue transitions from having no items, to having at least one item.
+	 */
 	constructor(itemsAvailableCallback: () => void) {
 		this.itemsAvailableCallback = itemsAvailableCallback;
 	}
 
-	// Add a new avatar request to queue
+	/**
+	 * Create and add a new avatar request to the queue.
+	 * @param email The email address identifying the avatar.
+	 * @param repo The repository that the avatar is used in.
+	 * @param remote The remote that the avatar can be fetched from.
+	 * @param commits The commits that reference the avatar.
+	 * @param immediate Whether the avatar should be fetched immediately.
+	 */
 	public add(email: string, repo: string, remote: string | null, commits: string[], immediate: boolean) {
 		let emailIndex = this.queue.findIndex(v => v.email === email && v.repo === repo);
 		if (emailIndex > -1) {
@@ -356,25 +448,39 @@ class AvatarRequestQueue {
 		}
 	}
 
-	// Add an existing avatar request item, setting the next time the request should be checked and registering if the current attempt failed
+	/**
+	 * Add an existing avatar request item back onto the queue.
+	 * @param item The avatar request item.
+	 * @param checkAfter The earliest time the avatar should be requested.
+	 * @param failedAttempt Did the fetch attempt fail.
+	 */
 	public addItem(item: AvatarRequestItem, checkAfter: number, failedAttempt: boolean) {
 		item.checkAfter = checkAfter;
 		if (failedAttempt) item.attempts++;
 		this.insertItem(item);
 	}
 
-	// Returns a boolean indicating if there are items in the queue
+	/**
+	 * Check if there are items in the queue.
+	 * @returns TRUE => Items in the queue, FALSE => Queue is empty.
+	 */
 	public hasItems() {
 		return this.queue.length > 0;
 	}
 
-	// Takes an item from the queue if possible, respecting the value set for checkAfter
+	/**
+	 * Take the next item from the queue if an item is available.
+	 * @returns An avatar request item, or NULL if no item is available.
+	 */
 	public takeItem() {
 		if (this.queue.length > 0 && this.queue[0].checkAfter < (new Date()).getTime()) return this.queue.shift()!;
 		return null;
 	}
 
-	// Binary insertion of avatar request item, ordered by checkAfter
+	/**
+	 * Insert an avatar request item into the queue.
+	 * @param item The avatar request item.
+	 */
 	private insertItem(item: AvatarRequestItem) {
 		var l = 0, r = this.queue.length - 1, c, prevLength = this.queue.length;
 		while (l <= r) {

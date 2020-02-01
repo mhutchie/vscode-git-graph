@@ -14,6 +14,9 @@ interface RepoChangeEvent {
 	loadRepo: string | null;
 }
 
+/**
+ * Detects and manages repositories in Git Graph.
+ */
 export class RepoManager implements vscode.Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
@@ -30,6 +33,12 @@ export class RepoManager implements vscode.Disposable {
 	private processCreateEventsTimeout: NodeJS.Timer | null = null;
 	private processChangeEventsTimeout: NodeJS.Timer | null = null;
 
+	/**
+	 * Creates the Git Graph Repository Manager, and runs startup tasks.
+	 * @param dataSource The Git Graph DataSource instance.
+	 * @param extensionState The Git Graph ExtensionState instance.
+	 * @param logger The Git Graph Logger instance.
+	 */
 	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
@@ -63,6 +72,9 @@ export class RepoManager implements vscode.Disposable {
 		);
 	}
 
+	/**
+	 * Disposes the resources used by the RepoManager.
+	 */
 	public dispose() {
 		this.disposables.forEach((disposable) => disposable.dispose());
 		this.disposables = [];
@@ -72,10 +84,16 @@ export class RepoManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Get the Event that can be used to subscribe to updates when the repositories available in Git Graph change.
+	 */
 	get onDidChangeRepos() {
 		return this.repoEventEmitter.subscribe;
 	}
 
+	/**
+	 * Apply the new value of `git-graph.maxDepthOfRepoSearch` to the RepoManager.
+	 */
 	public maxDepthOfRepoSearchChanged() {
 		const newDepth = getConfig().maxDepthOfRepoSearch;
 		if (newDepth > this.maxDepthOfRepoSearch) {
@@ -86,6 +104,9 @@ export class RepoManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Run various startup tasks when Git Graph is activated.
+	 */
 	private async startupTasks() {
 		this.removeReposNotInWorkspace();
 		if (!await this.checkReposExist()) this.sendRepos();
@@ -94,6 +115,9 @@ export class RepoManager implements vscode.Disposable {
 		this.startWatchingFolders();
 	}
 
+	/**
+	 * Remove any repositories that are no longer in the current workspace.
+	 */
 	private removeReposNotInWorkspace() {
 		let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders, repoPaths = Object.keys(this.repos), path;
 		if (typeof workspaceFolders !== 'undefined') {
@@ -111,9 +135,11 @@ export class RepoManager implements vscode.Disposable {
 		}
 	}
 
-	// path: the path of the repo being registered
-	// expandExistingRepos: if true, in the event that a known repo is within the repo being registered, remove it (excluding subrepos)
-	// loadRepo: if true and the Git Graph view is visible, force it to be loaded with the repo that is being registered
+	/**
+	 * Register a new repository with Git Graph.
+	 * @param path The path of the repository.
+	 * @param loadRepo If TRUE and the Git Graph View is visible, load the Git Graph View with the repository being registered.
+	 */
 	public registerRepo(path: string, loadRepo: boolean) {
 		return new Promise<{ root: string | null, error: string | null }>(async resolve => {
 			let root = await this.dataSource.repoRoot(path);
@@ -133,6 +159,11 @@ export class RepoManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Ignore a repository known to Git Graph. Unlike `removeRepo`, ignoring the repository will prevent it from being automatically detected and re-added the next time Visual Studio Code is started.
+	 * @param repo The path of the repository.
+	 * @returns TRUE => Repository was ignored, FALSE => Repository is not know to Git Graph.
+	 */
 	public ignoreRepo(repo: string) {
 		if (this.isKnownRepo(repo)) {
 			if (!this.ignoredRepos.includes(repo)) this.ignoredRepos.push(repo);
@@ -148,6 +179,10 @@ export class RepoManager implements vscode.Disposable {
 
 	/* Repo Management */
 
+	/**
+	 * Get a set of all known repositories in the current workspace.
+	 * @returns The set of repositories.
+	 */
 	public getRepos() {
 		let repoPaths = Object.keys(this.repos).sort(), repos: GitRepoSet = {};
 		for (let i = 0; i < repoPaths.length; i++) {
@@ -156,6 +191,11 @@ export class RepoManager implements vscode.Disposable {
 		return repos;
 	}
 
+	/**
+	 * Get the repository that contains the specified file.
+	 * @param path The path of the file.
+	 * @returns The path of the repository containing the file, or NULL if no known repository contains the file.
+	 */
 	public getRepoContainingFile(path: string) {
 		let repoPaths = Object.keys(this.repos), repo = null;
 		for (let i = 0; i < repoPaths.length; i++) {
@@ -164,6 +204,11 @@ export class RepoManager implements vscode.Disposable {
 		return repo;
 	}
 
+	/**
+	 * Get all known repositories that are contained in the specified folder.
+	 * @param path The path of the folder.
+	 * @returns An array of the paths of all known repositories contained in the specified folder.
+	 */
 	private getReposInFolder(path: string) {
 		let pathFolder = pathWithTrailingSlash(path), repoPaths = Object.keys(this.repos), reposInFolder: string[] = [];
 		for (let i = 0; i < repoPaths.length; i++) {
@@ -172,6 +217,11 @@ export class RepoManager implements vscode.Disposable {
 		return reposInFolder;
 	}
 
+	/**
+	 * Get the path of the known repository matching the specified repository path (checking symbolic links if necessary).
+	 * @param repo The path of the repository.
+	 * @returns The path of the known repository, or NULL if the specified repository is unknown.
+	 */
 	public async getKnownRepo(repo: string) {
 		if (this.isKnownRepo(repo)) {
 			// The path is already known as a repo
@@ -191,13 +241,23 @@ export class RepoManager implements vscode.Disposable {
 		return null;
 	}
 
+	/**
+	 * Check to see if a repository exactly matches a known repository.
+	 * @param repo The path of the repository to check.
+	 * @returns TRUE => Known repository, FALSE => Unknown repository.
+	 */
 	public isKnownRepo(repo: string) {
 		return typeof this.repos[repo] !== 'undefined';
 	}
 
+	/**
+	 * Add a new repository to Git Graph.
+	 * @param repo The path of the repository.
+	 * @returns TRUE => The repository was added, FALSE => The repository is ignored and couldn't be added.
+	 */
 	private async addRepo(repo: string) {
 		if (this.ignoredRepos.includes(repo)) {
-			return false; // Unable to add repo because it is ignored
+			return false;
 		} else {
 			this.repos[repo] = Object.assign({}, DEFAULT_REPO_STATE);
 			this.extensionState.saveRepos(this.repos);
@@ -207,12 +267,21 @@ export class RepoManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Remove a known repository from Git Graph.
+	 * @param repo The path of the repository.
+	 */
 	private removeRepo(repo: string) {
 		delete this.repos[repo];
 		this.extensionState.saveRepos(this.repos);
 		this.logger.log('Removed repo: ' + repo);
 	}
 
+	/**
+	 * Remove all repositories that are contained within the specified folder.
+	 * @param path The path of the folder.
+	 * @returns TRUE => At least one repository was removed, FALSE => No repositories were removed.
+	 */
 	private removeReposWithinFolder(path: string) {
 		let reposInFolder = this.getReposInFolder(path);
 		for (let i = 0; i < reposInFolder.length; i++) {
@@ -221,6 +290,11 @@ export class RepoManager implements vscode.Disposable {
 		return reposInFolder.length > 0;
 	}
 
+	/**
+	 * Checks if the specified path is within a known repository.
+	 * @param path The path to check.
+	 * @returns TRUE => Path is within a known repository, FALSE => Path isn't within a known repository.
+	 */
 	private isDirectoryWithinRepos(path: string) {
 		let repoPaths = Object.keys(this.repos);
 		for (let i = 0; i < repoPaths.length; i++) {
@@ -229,6 +303,10 @@ export class RepoManager implements vscode.Disposable {
 		return false;
 	}
 
+	/**
+	 * Send the latest set of known repositories to subscribers as they have changed.
+	 * @param loadRepo The optional path of a repository to load in the Git Graph View.
+	 */
 	private sendRepos(loadRepo: string | null = null) {
 		this.repoEventEmitter.emit({
 			repos: this.getRepos(),
@@ -237,6 +315,10 @@ export class RepoManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Check that all known repositories still exist. If they don't, remove them.
+	 * @returns TRUE => At least one repository was removed or transferred, FALSE => No repositories were removed.
+	 */
 	public checkReposExist() {
 		return new Promise<boolean>(resolve => {
 			let repoPaths = Object.keys(this.repos), changes = false;
@@ -256,11 +338,21 @@ export class RepoManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Set the state of a known repository.
+	 * @param repo The repository the state belongs to.
+	 * @param state The state.
+	 */
 	public setRepoState(repo: string, state: GitRepoState) {
 		this.repos[repo] = state;
 		this.extensionState.saveRepos(this.repos);
 	}
 
+	/**
+	 * Transfer the repository state from one known repository to another.
+	 * @param oldRepo The repository to transfer the state from.
+	 * @param newRepo The repository to transfer the state to.
+	 */
 	private transferRepoState(oldRepo: string, newRepo: string) {
 		this.repos[newRepo] = this.repos[oldRepo];
 		delete this.repos[oldRepo];
@@ -273,6 +365,10 @@ export class RepoManager implements vscode.Disposable {
 
 	/* Repo Searching */
 
+	/**
+	 * Search all of the current workspace folders for new repositories (and add them).
+	 * @returns TRUE => At least one repository was added, FALSE => No repositories were added.
+	 */
 	public async searchWorkspaceForRepos() {
 		this.logger.log('Searching workspace for new repos ...');
 		let rootFolders = vscode.workspace.workspaceFolders, changes = false;
@@ -286,7 +382,13 @@ export class RepoManager implements vscode.Disposable {
 		return changes;
 	}
 
-	private searchDirectoryForRepos(directory: string, maxDepth: number) { // Returns a promise resolving to a boolean, that indicates if new repositories were found.
+	/**
+	 * Search the specified directory for new repositories (and add them).
+	 * @param directory The path of the directory to search.
+	 * @param maxDepth The maximum depth to recursively search.
+	 * @returns TRUE => At least one repository was added, FALSE => No repositories were added.
+	 */
+	private searchDirectoryForRepos(directory: string, maxDepth: number) {
 		return new Promise<boolean>(resolve => {
 			if (this.isDirectoryWithinRepos(directory)) {
 				resolve(false);
@@ -317,6 +419,9 @@ export class RepoManager implements vscode.Disposable {
 		});
 	}
 
+	/**
+	 * Check the know repositories for any new submodules (and add them).
+	 */
 	private async checkReposForNewSubmodules() {
 		let repoPaths = Object.keys(this.repos), changes = false;
 		for (let i = 0; i < repoPaths.length; i++) {
@@ -325,6 +430,11 @@ export class RepoManager implements vscode.Disposable {
 		if (changes) this.sendRepos();
 	}
 
+	/**
+	 * Search a repository for any new submodules (and add them).
+	 * @param repo The path of the repository to search.
+	 * @returns TRUE => At least one submodule was added, FALSE => No submodules were added.
+	 */
 	private async searchRepoForSubmodules(repo: string) {
 		let submodules = await this.dataSource.getSubmodules(repo), changes = false;
 		for (let i = 0; i < submodules.length; i++) {
@@ -338,6 +448,9 @@ export class RepoManager implements vscode.Disposable {
 
 	/* Workspace Folder Watching */
 
+	/**
+	 * Start watching each of the folders in the current workspace for changes.
+	 */
 	private startWatchingFolders() {
 		let rootFolders = vscode.workspace.workspaceFolders;
 		if (typeof rootFolders !== 'undefined') {
@@ -347,6 +460,10 @@ export class RepoManager implements vscode.Disposable {
 		}
 	}
 
+	/**
+	 * Start watching the specified directory for file system events.
+	 * @param path The path of the directory.
+	 */
 	private startWatchingFolder(path: string) {
 		let watcher = vscode.workspace.createFileSystemWatcher(path + '/**');
 		watcher.onDidCreate(uri => this.onWatcherCreate(uri));
@@ -355,11 +472,19 @@ export class RepoManager implements vscode.Disposable {
 		this.folderWatchers[path] = watcher;
 	}
 
+	/**
+	 * Stop watching the specified directory for file system events.
+	 * @param path The path of the directory.
+	 */
 	private stopWatchingFolder(path: string) {
 		this.folderWatchers[path].dispose();
 		delete this.folderWatchers[path];
 	}
 
+	/**
+	 * Process a file system creation event.
+	 * @param uri The URI of the creation event.
+	 */
 	private onWatcherCreate(uri: vscode.Uri) {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
@@ -376,6 +501,10 @@ export class RepoManager implements vscode.Disposable {
 		}, 1000);
 	}
 
+	/**
+	 * Process a file system change event.
+	 * @param uri The URI of the change event.
+	 */
 	private onWatcherChange(uri: vscode.Uri) {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
@@ -392,6 +521,10 @@ export class RepoManager implements vscode.Disposable {
 		}, 1000);
 	}
 
+	/**
+	 * Process a file system deletion event.
+	 * @param uri The URI of the deletion event.
+	 */
 	private onWatcherDelete(uri: vscode.Uri) {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
@@ -399,6 +532,9 @@ export class RepoManager implements vscode.Disposable {
 		if (this.removeReposWithinFolder(path)) this.sendRepos();
 	}
 
+	/**
+	 * Process the queue of file system creation events.
+	 */
 	private async processCreateEvents() {
 		let path, changes = false;
 		while (path = this.createEventPaths.shift()) {
@@ -410,6 +546,9 @@ export class RepoManager implements vscode.Disposable {
 		if (changes) this.sendRepos();
 	}
 
+	/**
+	 * Process the queue of file system change events
+	 */
 	private async processChangeEvents() {
 		let path, changes = false;
 		while (path = this.changeEventPaths.shift()) {
@@ -422,6 +561,11 @@ export class RepoManager implements vscode.Disposable {
 	}
 }
 
+/**
+ * Check if the specified path is a directory.
+ * @param path The path to check.
+ * @returns TRUE => Directory, FALSE => Not a directory.
+ */
 function isDirectory(path: string) {
 	return new Promise<boolean>(resolve => {
 		fs.stat(path, (err, stats) => {
@@ -430,6 +574,11 @@ function isDirectory(path: string) {
 	});
 }
 
+/**
+ * Check if the specified path exists.
+ * @param path The path to check.
+ * @returns TRUE => Path exists, FALSE => Path doesn't exist.
+ */
 function doesPathExist(path: string) {
 	return new Promise<boolean>(resolve => {
 		fs.stat(path, err => resolve(!err));

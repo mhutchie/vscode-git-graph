@@ -15,18 +15,38 @@ export const UNABLE_TO_FIND_GIT_MSG = 'Unable to find a Git executable. Either: 
 
 const FS_REGEX = /\\/g;
 
+/**
+ * Get the normalised path of a URI.
+ * @param uri The URI.
+ * @returns The normalised path.
+ */
 export function getPathFromUri(uri: vscode.Uri) {
 	return uri.fsPath.replace(FS_REGEX, '/');
 }
 
+/**
+ * Get the normalised path of a string.
+ * @param str The string.
+ * @returns The normalised path.
+ */
 export function getPathFromStr(str: string) {
 	return str.replace(FS_REGEX, '/');
 }
 
+/**
+ * Get the path with a trailing slash.
+ * @param path The path.
+ * @returns The path with a trailing slash.
+ */
 export function pathWithTrailingSlash(path: string) {
 	return path.endsWith('/') ? path : path + '/';
 }
 
+/**
+ * Check whether a path is within the current Visual Studio Code Workspace.
+ * @param path The path to check.
+ * @returns TRUE => Path is in workspace, FALSE => Path isn't in workspace.
+ */
 export function isPathInWorkspace(path: string) {
 	let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders;
 	if (typeof workspaceFolders !== 'undefined') {
@@ -39,12 +59,22 @@ export function isPathInWorkspace(path: string) {
 	return rootsExact.indexOf(path) > -1 || rootsFolder.findIndex(x => path.startsWith(x)) > -1;
 }
 
+/**
+ * Get the normalised canonical absolute path (i.e. resolves symlinks in `path`).
+ * @param path The path.
+ * @returns The normalised canonical absolute path.
+ */
 export function realpath(path: string) {
 	return new Promise<string>(resolve => {
 		fs.realpath(path, (err, resolvedPath) => resolve(err !== null ? path : getPathFromUri(vscode.Uri.file(resolvedPath))));
 	});
 }
 
+/**
+ * Transform the path from a canonical absolute path to use symbolic links if the containing Visual Studio Code workspace folder has symbolic link(s).
+ * @param path The canonical absolute path.
+ * @returns The transformed path.
+ */
 export async function resolveToSymbolicPath(path: string) {
 	let workspaceFolders = vscode.workspace.workspaceFolders;
 	if (typeof workspaceFolders !== 'undefined') {
@@ -76,14 +106,30 @@ export async function resolveToSymbolicPath(path: string) {
 
 /* General Methods */
 
+/**
+ * Abbreviate a commit hash to the first eight characters.
+ * @param commitHash The full commit hash.
+ * @returns The abbreviated commit hash.
+ */
 export function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
 }
 
+/**
+ * Abbreviate a string to the specified number of characters.
+ * @param text The string to abbreviate.
+ * @param toChars The number of characters to abbreviate the string to.
+ * @returns The abbreviated string.
+ */
 export function abbrevText(text: string, toChars: number) {
 	return text.length <= toChars ? text : text.substring(0, toChars - 1) + '...';
 }
 
+/**
+ * Get the relative time difference between the current time and a Unix timestamp.
+ * @param unixTimestamp The Unix timestamp.
+ * @returns The relative time difference (e.g. 12 minutes ago).
+ */
 export function getRelativeTimeDiff(unixTimestamp: number) {
 	let diff = Math.round((new Date()).getTime() / 1000) - unixTimestamp, unit;
 	if (diff < 60) {
@@ -111,6 +157,10 @@ export function getRelativeTimeDiff(unixTimestamp: number) {
 	return diff + ' ' + unit + (diff !== 1 ? 's' : '') + ' ago';
 }
 
+/**
+ * Randomly generate a nonce.
+ * @returns The nonce.
+ */
 export function getNonce() {
 	let text = '';
 	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -120,6 +170,11 @@ export function getNonce() {
 	return text;
 }
 
+/**
+ * Get a short name for a repository.
+ * @param path The path of the repository.
+ * @returns The short name.
+ */
 export function getRepoName(path: string) {
 	let firstSep = path.indexOf('/');
 	if (firstSep === path.length - 1 || firstSep === -1) {
@@ -133,10 +188,19 @@ export function getRepoName(path: string) {
 
 /* Visual Studio Code Command Wrappers */
 
+/**
+ * Copy the path of a file in a repository to the clipboard.
+ * @param repo The repository the file is contained in.
+ * @param filePath The relative path of the file within the repository.
+ */
 export function copyFilePathToClipboard(repo: string, filePath: string) {
 	return copyToClipboard(path.join(repo, filePath));
 }
 
+/**
+ * Copy a string to the clipboard.
+ * @param text The string.
+ */
 export function copyToClipboard(text: string): Thenable<ErrorInfo> {
 	return vscode.env.clipboard.writeText(text).then(
 		() => null,
@@ -144,6 +208,9 @@ export function copyToClipboard(text: string): Thenable<ErrorInfo> {
 	);
 }
 
+/**
+ * Open the Visual Studio Code Settings Editor to the Git Graph Extension Settings.
+ */
 export function openExtensionSettings(): Thenable<ErrorInfo> {
 	return vscode.commands.executeCommand('workbench.action.openSettings', '@ext:mhutchie.git-graph').then(
 		() => null,
@@ -151,6 +218,11 @@ export function openExtensionSettings(): Thenable<ErrorInfo> {
 	);
 }
 
+/**
+ * Open a file within a repository in Visual Studio Code.
+ * @param repo The repository the file is contained in.
+ * @param filePath The relative path of the file within the repository.
+ */
 export function openFile(repo: string, filePath: string) {
 	return new Promise<ErrorInfo>(resolve => {
 		let p = path.join(repo, filePath);
@@ -170,6 +242,15 @@ export function openFile(repo: string, filePath: string) {
 	});
 }
 
+/**
+ * Open the Visual Studio Code Diff View for a specific Git file change.
+ * @param repo The repository the file is contained in.
+ * @param fromHash The revision of the left-side of the Diff View.
+ * @param toHash The revision of the right-side of the Diff View.
+ * @param oldFilePath The relative path of the left-side file within the repository.
+ * @param newFilePath The relative path of the right-side file within the repository.
+ * @param type The Git file status of the change.
+ */
 export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileStatus) {
 	if (type !== GitFileStatus.Untracked) {
 		let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = toHash !== UNCOMMITTED ? abbrevCommit(toHash) : 'Present', pathComponents = newFilePath.split('/');
@@ -193,6 +274,9 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 	}
 }
 
+/**
+ * Open the Visual Studio Code Source Control View.
+ */
 export function viewScm(): Thenable<ErrorInfo> {
 	return vscode.commands.executeCommand('workbench.view.scm').then(
 		() => null,
@@ -200,6 +284,13 @@ export function viewScm(): Thenable<ErrorInfo> {
 	);
 }
 
+/**
+ * Open a new terminal and run the specified Git command.
+ * @param cwd The working directory for the terminal.
+ * @param gitPath The path of the Git executable.
+ * @param command The Git command to run.
+ * @param name The name for the terminal.
+ */
 export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command: string, name: string) {
 	let p = process.env['PATH'] || '', sep = isWindows() ? ';' : ':';
 	if (p !== '' && !p.endsWith(sep)) p += sep;
@@ -214,6 +305,10 @@ export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command
 	terminal.show();
 }
 
+/**
+ * Check whether Git Graph is running on a Windows-based platform.
+ * @returns TRUE => Windows-based platform, FALSE => Not a Windows-based platform.
+ */
 function isWindows() {
 	return process.platform === 'win32' || process.env.OSTYPE === 'cygwin' || process.env.OSTYPE === 'msys';
 }
@@ -221,10 +316,18 @@ function isWindows() {
 
 /* Visual Studio Code API Wrappers */
 
+/**
+ * Show a Visual Studio Code Information Message Dialog with the specified message.
+ * @param message The message to show.
+ */
 export function showInformationMessage(message: string) {
 	return vscode.window.showInformationMessage(message).then(() => { }, () => { });
 }
 
+/**
+ * Show a Visual Studio Code Error Message Dialog with the specified message.
+ * @param message The message to show.
+ */
 export function showErrorMessage(message: string) {
 	return vscode.window.showErrorMessage(message).then(() => { }, () => { });
 }
@@ -232,7 +335,13 @@ export function showErrorMessage(message: string) {
 
 /* Promise Methods */
 
-// Evaluate promises in parallel, with at most maxParallel running at any time
+/**
+ * Evaluate promises in parallel, with at most `maxParallel` running at any point in time.
+ * @param data The array of elements to be mapped via promises.
+ * @param maxParallel The maximum number of promises to run at any point in time.
+ * @param createPromise A function that creates a promise from an element of `data`.
+ * @returns A result array evaluated by mapping promises generated from `data`.
+ */
 export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise: (val: X) => Promise<Y>) {
 	return new Promise<Y[]>((resolve, reject) => {
 		if (data.length === 1) {
@@ -275,6 +384,11 @@ export interface GitExecutable {
 	version: string;
 }
 
+/**
+ * Find a Git executable that Git Graph can use.
+ * @param extensionState The Git Graph ExtensionState instance.
+ * @returns A Git executable.
+ */
 export async function findGit(extensionState: ExtensionState) {
 	const lastKnownPath = extensionState.getLastKnownGitPath();
 	if (lastKnownPath !== null) {
@@ -300,7 +414,10 @@ export async function findGit(extensionState: ExtensionState) {
 	}
 }
 
-/* Find Git on Darwin */
+/**
+ * Find a Git executable on a Darwin-based platform that Git Graph can use.
+ * @returns A Git executable.
+ */
 function findGitOnDarwin() {
 	return new Promise<GitExecutable>((resolve, reject) => {
 		cp.exec('which git', (err, stdout) => {
@@ -324,7 +441,10 @@ function findGitOnDarwin() {
 	});
 }
 
-/* Find Git on Windows */
+/**
+ * Find a Git executable on a Windows-based platform that Git Graph can use.
+ * @returns A Git executable.
+ */
 function findGitOnWin32() {
 	return findSystemGitWin32(process.env['ProgramW6432'])
 		.then(undefined, () => findSystemGitWin32(process.env['ProgramFiles(x86)']))
@@ -352,7 +472,11 @@ async function findGitWin32InPath() {
 	return Promise.reject<GitExecutable>();
 }
 
-/* Find Git Helpers */
+/**
+ * Checks whether a path is an executable (a file that's not a symbolic link).
+ * @param path The path to test.
+ * @returns TRUE => Executable, FALSE => Not an Executable.
+ */
 function isExecutable(path: string) {
 	return new Promise<boolean>(resolve => {
 		fs.stat(path, (err, stat) => {
@@ -360,6 +484,12 @@ function isExecutable(path: string) {
 		});
 	});
 }
+
+/**
+ * Gets information about a Git executable.
+ * @param path The path of the Git executable.
+ * @returns The GitExecutable data.
+ */
 export function getGitExecutable(path: string): Promise<GitExecutable> {
 	return new Promise<GitExecutable>((resolve, reject) => {
 		const cmd = cp.spawn(path, ['--version']);
@@ -379,6 +509,12 @@ export function getGitExecutable(path: string): Promise<GitExecutable> {
 
 /* Git Version Handling */
 
+/**
+ * Checks whether a Git executable is at least the specified version.
+ * @param executable The Git executable to check.
+ * @param version The minimum required version.
+ * @returns TRUE => `executable` is at least `version`, FALSE => `executable` is older than `version`.
+ */
 export function isGitAtLeastVersion(executable: GitExecutable, version: string) {
 	const v1 = parseVersion(executable.version);
 	const v2 = parseVersion(version);
@@ -400,6 +536,11 @@ export function isGitAtLeastVersion(executable: GitExecutable, version: string) 
 	return true; // Versions are the same
 }
 
+/**
+ * Parse a version number from a string.
+ * @param version The string version number.
+ * @returns The `major`.`minor`.`patch` version numbers.
+ */
 function parseVersion(version: string) {
 	try {
 		const v = version.split(/[^0-9\.]+/)[0].split('.');
@@ -413,6 +554,12 @@ function parseVersion(version: string) {
 	}
 }
 
+/**
+ * Construct a message that explains to the user that the Git executable is not compatible with a feature.
+ * @param executable The Git executable.
+ * @param version The minimum required version number.
+ * @returns The message for the user.
+ */
 export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string) {
 	return 'A newer version of Git (>= ' + version + ') is required for this feature. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
 }

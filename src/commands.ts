@@ -9,6 +9,9 @@ import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
 
+/**
+ * Manages the registration and execution of Git Graph Commands.
+ */
 export class CommandManager implements vscode.Disposable {
 	private readonly extensionPath: string;
 	private readonly avatarManager: AvatarManager;
@@ -19,6 +22,17 @@ export class CommandManager implements vscode.Disposable {
 	private gitExecutable: GitExecutable | null;
 	private disposables: vscode.Disposable[] = [];
 
+	/**
+	 * Creates the Git Graph Command Manager.
+	 * @param extensionPath The absolute file path of the directory containing the extension.
+	 * @param avatarManger The Git Graph AvatarManager instance.
+	 * @param dataSource The Git Graph DataSource instance.
+	 * @param extensionState The Git Graph ExtensionState instance.
+	 * @param repoManager The Git Graph RepoManager instance.
+	 * @param gitExecutable The Git executable available to Git Graph at startup.
+	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
+	 * @param logger The Git Graph Logger instance.
+	 */
 	constructor(extensionPath: string, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManger;
@@ -41,11 +55,19 @@ export class CommandManager implements vscode.Disposable {
 		}, this.disposables);
 	}
 
+	/**
+	 * Disposes the resources used by the CommandManager.
+	 */
 	public dispose() {
 		this.disposables.forEach((disposable) => disposable.dispose());
 		this.disposables = [];
 	}
 
+	/**
+	 * Register a Git Graph command with Visual Studio Code.
+	 * @param command A unique identifier for the command.
+	 * @param callback A command handler function.
+	 */
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
 		this.disposables.push(vscode.commands.registerCommand(command, callback));
 	}
@@ -53,6 +75,10 @@ export class CommandManager implements vscode.Disposable {
 
 	/* Commands */
 
+	/**
+	 * The method run when the `git-graph.view` command is invoked.
+	 * @param arg An optional argument passed to the command (when invoked from the Visual Studio Code Git Extension).
+	 */
 	private async view(arg: any) {
 		let loadRepo: string | null = null;
 
@@ -72,6 +98,9 @@ export class CommandManager implements vscode.Disposable {
 		GitGraphView.createOrShow(this.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null);
 	}
 
+	/**
+	 * The method run when the `git-graph.addGitRepository` command is invoked.
+	 */
 	private addGitRepository() {
 		if (this.gitExecutable === null) {
 			showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
@@ -96,6 +125,9 @@ export class CommandManager implements vscode.Disposable {
 		}, () => { });
 	}
 
+	/**
+	 * The method run when the `git-graph.removeGitRepository` command is invoked.
+	 */
 	private removeGitRepository() {
 		if (this.gitExecutable === null) {
 			showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
@@ -119,15 +151,24 @@ export class CommandManager implements vscode.Disposable {
 		}, () => { });
 	}
 
+	/**
+	 * The method run when the `git-graph.clearAvatarCache` command is invoked.
+	 */
 	private clearAvatarCache() {
 		this.avatarManager.clearCache();
 	}
 
+	/**
+	 * The method run when the `git-graph.endAllWorkspaceCodeReviews` command is invoked.
+	 */
 	private endAllWorkspaceCodeReviews() {
 		this.extensionState.endAllWorkspaceCodeReviews();
 		showInformationMessage('Ended All Code Reviews in Workspace');
 	}
 
+	/**
+	 * The method run when the `git-graph.endSpecificWorkspaceCodeReview` command is invoked.
+	 */
 	private endSpecificWorkspaceCodeReview() {
 		const codeReviews = this.extensionState.getCodeReviews();
 		if (Object.keys(codeReviews).length === 0) {
@@ -151,6 +192,9 @@ export class CommandManager implements vscode.Disposable {
 		}, () => { });
 	}
 
+	/**
+	 * The method run when the `git-graph.resumeWorkspaceCodeReview` command is invoked.
+	 */
 	private resumeWorkspaceCodeReview() {
 		const codeReviews = this.extensionState.getCodeReviews();
 		if (Object.keys(codeReviews).length === 0) {
@@ -178,6 +222,11 @@ export class CommandManager implements vscode.Disposable {
 
 	/* Helper Methods */
 
+	/**
+	 * Transform a set of Code Reviews into a list of Quick Pick items for use with `vscode.window.showQuickPick`.
+	 * @param codeReviews A set of Code Reviews.
+	 * @returns A list of Quick Pick items.
+	 */
 	private getCodeReviewQuickPickItems(codeReviews: CodeReviews) {
 		return new Promise<CodeReviewQuickPickItem[]>((resolve, reject) => {
 			const enrichedCodeReviews: { repo: string, id: string, review: CodeReviewData, fromCommitHash: string, toCommitHash: string }[] = [];

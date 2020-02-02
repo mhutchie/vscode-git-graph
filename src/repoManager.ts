@@ -28,10 +28,12 @@ export class RepoManager implements vscode.Disposable {
 	private repoEventEmitter: EventEmitter<RepoChangeEvent>;
 	private disposables: vscode.Disposable[] = [];
 
-	private createEventPaths: string[] = [];
-	private changeEventPaths: string[] = [];
+	private createEventQueue: string[] = [];
+	private changeEventQueue: string[] = [];
 	private processCreateEventsTimeout: NodeJS.Timer | null = null;
 	private processChangeEventsTimeout: NodeJS.Timer | null = null;
+	private processingCreateEvents: boolean = false;
+	private processingChangeEvents: boolean = false;
 
 	/**
 	 * Creates the Git Graph Repository Manager, and runs startup tasks.
@@ -489,16 +491,19 @@ export class RepoManager implements vscode.Disposable {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
 		if (path.endsWith('/.git')) path = path.slice(0, -5);
-		if (this.createEventPaths.indexOf(path) > -1) return;
+		if (this.createEventQueue.indexOf(path) > -1) return;
 
-		this.createEventPaths.push(path);
-		if (this.processCreateEventsTimeout !== null) {
-			clearTimeout(this.processCreateEventsTimeout);
+		this.createEventQueue.push(path);
+
+		if (!this.processingCreateEvents) {
+			if (this.processCreateEventsTimeout !== null) {
+				clearTimeout(this.processCreateEventsTimeout);
+			}
+			this.processCreateEventsTimeout = setTimeout(() => {
+				this.processCreateEventsTimeout = null;
+				this.processCreateEvents();
+			}, 1000);
 		}
-		this.processCreateEventsTimeout = setTimeout(() => {
-			this.processCreateEventsTimeout = null;
-			this.processCreateEvents();
-		}, 1000);
 	}
 
 	/**
@@ -509,16 +514,19 @@ export class RepoManager implements vscode.Disposable {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
 		if (path.endsWith('/.git')) path = path.slice(0, -5);
-		if (this.changeEventPaths.indexOf(path) > -1) return;
+		if (this.changeEventQueue.indexOf(path) > -1) return;
 
-		this.changeEventPaths.push(path);
-		if (this.processChangeEventsTimeout !== null) {
-			clearTimeout(this.processChangeEventsTimeout);
+		this.changeEventQueue.push(path);
+
+		if (!this.processingChangeEvents) {
+			if (this.processChangeEventsTimeout !== null) {
+				clearTimeout(this.processChangeEventsTimeout);
+			}
+			this.processChangeEventsTimeout = setTimeout(() => {
+				this.processChangeEventsTimeout = null;
+				this.processChangeEvents();
+			}, 1000);
 		}
-		this.processChangeEventsTimeout = setTimeout(() => {
-			this.processChangeEventsTimeout = null;
-			this.processChangeEvents();
-		}, 1000);
 	}
 
 	/**
@@ -536,13 +544,14 @@ export class RepoManager implements vscode.Disposable {
 	 * Process the queue of file system creation events.
 	 */
 	private async processCreateEvents() {
+		this.processingCreateEvents = true;
 		let path, changes = false;
-		while (path = this.createEventPaths.shift()) {
+		while (path = this.createEventQueue.shift()) {
 			if (await isDirectory(path)) {
 				if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
 			}
 		}
-		this.processCreateEventsTimeout = null;
+		this.processingCreateEvents = false;
 		if (changes) this.sendRepos();
 	}
 
@@ -550,13 +559,14 @@ export class RepoManager implements vscode.Disposable {
 	 * Process the queue of file system change events
 	 */
 	private async processChangeEvents() {
+		this.processingChangeEvents = true;
 		let path, changes = false;
-		while (path = this.changeEventPaths.shift()) {
+		while (path = this.changeEventQueue.shift()) {
 			if (!await doesPathExist(path)) {
 				if (this.removeReposWithinFolder(path)) changes = true;
 			}
 		}
-		this.processChangeEventsTimeout = null;
+		this.processingChangeEvents = false;
 		if (changes) this.sendRepos();
 	}
 }

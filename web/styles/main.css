@@ -614,6 +614,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	margin-right:5px;
 	vertical-align:top;
 	margin-top:7px;
+	cursor:help;
 }
 #commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.findCurrentCommit:hover, #commitTable tr.commit.graphVertexActive, #commitTable tr.commit.dialogActive{
 	background-color:rgba(128,128,128,0.15);

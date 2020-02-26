@@ -702,7 +702,7 @@ class GitGraphView {
 			let message = '<span class="text">' + textFormatter.format(commit.message) + '</span>';
 			let date = formatShortDate(commit.date);
 			let branchLabels = getBranchLabels(commit.heads, commit.remotes);
-			let refBranches = '', refTags = '', j, k, refName, remoteName, refActive, refHtml;
+			let refBranches = '', refTags = '', j, k, refName, remoteName, refActive, refHtml, branchCheckedOutAtCommit: string | null = null;
 
 			for (j = 0; j < branchLabels.heads.length; j++) {
 				refName = escapeHtml(branchLabels.heads[j].name);
@@ -714,6 +714,7 @@ class GitGraphView {
 				}
 				refHtml += '</span>';
 				refBranches = refActive ? refHtml + refBranches : refBranches + refHtml;
+				if (refActive) branchCheckedOutAtCommit = this.gitBranchHead;
 			}
 			for (j = 0; j < branchLabels.remotes.length; j++) {
 				refName = escapeHtml(branchLabels.remotes[j].name);
@@ -730,7 +731,13 @@ class GitGraphView {
 				refBranches = '<span class="gitRef stash" data-name="' + refName + '">' + SVG_ICONS.stash + '<span class="gitRefName" data-fullref="' + refName + '">' + escapeHtml(commit.stash.selector.substring(5)) + '</span></span>' + refBranches;
 			}
 
-			let commitDot = commit.hash === this.commitHead ? '<span class="commitHeadDot"></span>' : '';
+			const commitDot = commit.hash === this.commitHead
+				? '<span class="commitHeadDot" title="' + (branchCheckedOutAtCommit !== null
+					? 'The branch ' + escapeHtml('"' + branchCheckedOutAtCommit + '"') + ' is currently checked out at this commit'
+					: 'This commit is currently checked out'
+				) + '."></span>'
+				: '';
+
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (mutedCommits[i] ? ' mute' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' +
 				(this.config.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +

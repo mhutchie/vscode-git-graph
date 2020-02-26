@@ -295,7 +295,16 @@ class TextFormatter {
 				parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
 			}
 
-			parsed.push({ type: ParsedTextType.Url, url: match.length > 1 ? config.url.replace('$1', match[1]) : config.url, displayText: match[0] });
+			parsed.push({
+				type: ParsedTextType.Url,
+				url: match.length > 1
+					? config.url.replace(/\$([1-9][0-9]*)/g, (placeholder, index) => {
+						const i = parseInt(index);
+						return i < match!.length ? match![i] : placeholder;
+					})
+					: config.url,
+				displayText: match[0]
+			});
 			matchEnd = config.regexp.lastIndex;
 		}
 

@@ -906,6 +906,7 @@ class GitGraphView {
 
 	private getCommitContextMenuActions(target: DialogTarget & CommitTarget): ContextMenuActions {
 		const hash = target.hash, visibility = this.config.contextMenuActionsVisibility.commit;
+		const commit = this.commits[this.commitLookup[hash]];
 		return [[
 			{
 				title: 'Add Tag' + ELLIPSIS,
@@ -1073,6 +1074,13 @@ class GitGraphView {
 				visible: visibility.copyHash,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
+				}
+			},
+			{
+				title: 'Copy Commit Message to Clipboard',
+				visible: visibility.copyMessage,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Commit Message', data: commit.message });
 				}
 			}
 		]];

@@ -202,6 +202,10 @@
 								"copyHash": {
 									"type": "boolean",
 									"title": "Copy Commit Hash to Clipboard"
+								},
+								"copyMessage": {
+									"type": "boolean",
+									"title": "Copy Commit Message to Clipboard"
 								}
 							}
 						},

@@ -913,6 +913,7 @@ class GitGraphView {
 
 	private getCommitContextMenuActions(target: DialogTarget & CommitTarget): ContextMenuActions {
 		const hash = target.hash, visibility = this.config.contextMenuActionsVisibility.commit;
+		const commit = this.commits[this.commitLookup[hash]];
 		return [[
 			{
 				title: 'Add Tag' + ELLIPSIS,
@@ -986,10 +987,10 @@ class GitGraphView {
 				title: 'Cherry Pick' + ELLIPSIS,
 				visible: visibility.cherrypick,
 				onClick: () => {
-					const isMerge = this.commits[this.commitLookup[hash]].parents.length > 1;
+					const isMerge = commit.parents.length > 1;
 					let inputs: DialogInput[] = [];
 					if (isMerge) {
-						let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
+						let options = commit.parents.map((hash, index) => ({
 							name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 							value: (index + 1).toString()
 						}));
@@ -1029,8 +1030,8 @@ class GitGraphView {
 				title: 'Revert' + ELLIPSIS,
 				visible: visibility.revert,
 				onClick: () => {
-					if (this.commits[this.commitLookup[hash]].parents.length > 1) {
-						let options = this.commits[this.commitLookup[hash]].parents.map((hash, index) => ({
+					if (commit.parents.length > 1) {
+						let options = commit.parents.map((hash, index) => ({
 							name: abbrevCommit(hash) + (typeof this.commitLookup[hash] === 'number' ? ': ' + this.commits[this.commitLookup[hash]].message : ''),
 							value: (index + 1).toString()
 						}));
@@ -1080,6 +1081,13 @@ class GitGraphView {
 				visible: visibility.copyHash,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
+				}
+			},
+			{
+				title: 'Copy Commit Subject to Clipboard',
+				visible: visibility.copySubject,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Commit Subject', data: commit.message });
 				}
 			}
 		]];

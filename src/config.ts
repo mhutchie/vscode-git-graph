@@ -72,7 +72,7 @@ class Config {
 		let userConfig = this.config.get('contextMenuActionsVisibility', {});
 		let config = {
 			branch: { checkout: true, rename: true, delete: true, merge: true, rebase: true, push: true, copyName: true },
-			commit: { addTag: true, createBranch: true, checkout: true, cherrypick: true, revert: true, drop: true, merge: true, rebase: true, reset: true, copyHash: true },
+			commit: { addTag: true, createBranch: true, checkout: true, cherrypick: true, revert: true, drop: true, merge: true, rebase: true, reset: true, copyHash: true, copySubject: true },
 			remoteBranch: { checkout: true, delete: true, fetch: true, pull: true, copyName: true },
 			stash: { apply: true, createBranch: true, pop: true, drop: true, copyName: true, copyHash: true },
 			tag: { viewDetails: true, delete: true, push: true, copyName: true },

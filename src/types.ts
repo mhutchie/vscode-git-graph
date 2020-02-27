@@ -231,6 +231,7 @@ export interface ContextMenuActionsVisibility {
 		readonly rebase: boolean;
 		readonly reset: boolean;
 		readonly copyHash: boolean;
+		readonly copySubject: boolean;
 	};
 	readonly remoteBranch: {
 		readonly checkout: boolean;

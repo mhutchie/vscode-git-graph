@@ -77,7 +77,7 @@ export class DataSource implements vscode.Disposable {
 
 		this.gitFormatCommitDetails = [
 			'%H', '%P', // Hash & Parent Information
-			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, useMailmap ? '%cN' : '%cn', // Author / Commit Information
+			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', '%at', useMailmap ? '%cN' : '%cn', useMailmap ? '%cE' : '%ce', '%ct', // Author / Commit Information
 			...(config.showSignatureStatus && this.gitExecutableSupportsGpgInfo ? ['%G?', '%GS', '%GK'] : ['', '', '']), // GPG Key Information
 			'%B' // Body
 		].join(GIT_LOG_SEPARATOR);
@@ -306,8 +306,10 @@ export class DataSource implements vscode.Disposable {
 		]).then((results) => {
 			return {
 				commitDetails: {
-					hash: UNCOMMITTED, parents: [], author: '', email: '', date: 0, committer: '', signature: null, body: '',
-					fileChanges: generateFileChanges(results[0], results[1], results[2])
+					hash: UNCOMMITTED, parents: [],
+					author: '', authorEmail: '', authorDate: 0,
+					committer: '', committerEmail: '', committerDate: 0, signature: null,
+					body: '', fileChanges: generateFileChanges(results[0], results[1], results[2])
 				},
 				error: null
 			};
@@ -1075,17 +1077,19 @@ export class DataSource implements vscode.Disposable {
 				hash: commitInfo[0],
 				parents: commitInfo[1] !== '' ? commitInfo[1].split(' ') : [],
 				author: commitInfo[2],
-				email: commitInfo[3],
-				date: parseInt(commitInfo[4]),
+				authorEmail: commitInfo[3],
+				authorDate: parseInt(commitInfo[4]),
 				committer: commitInfo[5],
-				signature: ['G', 'U', 'X', 'Y', 'R', 'E', 'B'].includes(commitInfo[6])
+				committerEmail: commitInfo[6],
+				committerDate: parseInt(commitInfo[7]),
+				signature: ['G', 'U', 'X', 'Y', 'R', 'E', 'B'].includes(commitInfo[8])
 					? {
-						key: commitInfo[8].trim(),
-						signer: commitInfo[7].trim(),
-						status: <GitSignatureStatus>commitInfo[6]
+						key: commitInfo[10].trim(),
+						signer: commitInfo[9].trim(),
+						status: <GitSignatureStatus>commitInfo[8]
 					}
 					: null,
-				body: removeTrailingBlankLines(commitInfo.slice(9).join(GIT_LOG_SEPARATOR).split(EOL_REGEX)).join('\n'),
+				body: removeTrailingBlankLines(commitInfo.slice(11).join(GIT_LOG_SEPARATOR).split(EOL_REGEX)).join('\n'),
 				fileChanges: []
 			};
 		});

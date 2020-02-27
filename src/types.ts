@@ -33,9 +33,11 @@ export interface GitCommitDetails {
 	readonly hash: string;
 	readonly parents: ReadonlyArray<string>;
 	readonly author: string;
-	readonly email: string;
-	readonly date: number;
+	readonly authorEmail: string;
+	readonly authorDate: number;
 	readonly committer: string;
+	readonly committerEmail: string;
+	readonly committerDate: number;
 	readonly signature: GitCommitSignature | null;
 	readonly body: string;
 	readonly fileChanges: ReadonlyArray<GitFileChange>;

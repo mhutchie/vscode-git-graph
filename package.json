@@ -384,7 +384,7 @@
 						"Use the committer date of a commit"
 					],
 					"default": "Author Date",
-					"description": "Specifies the date type to be displayed throughout Git Graph."
+					"description": "Specifies the date type to be displayed in the \"Date\" column on the Git Graph View."
 				},
 				"git-graph.defaultColumnVisibility": {
 					"type": "object",

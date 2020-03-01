@@ -113,6 +113,17 @@ export const enum GitResetMode {
 	Hard = 'hard'
 }
 
+export interface GitStash {
+	readonly hash: string;
+	readonly baseHash: string;
+	readonly untrackedFilesHash: string | null;
+	readonly selector: string;
+	readonly author: string;
+	readonly email: string;
+	readonly date: number;
+	readonly message: string;
+}
+
 
 /* Git Repo State */
 
@@ -677,6 +688,7 @@ export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 	readonly branches: string[];
 	readonly head: string | null;
 	readonly remotes: string[];
+	readonly stashes: ReadonlyArray<GitStash>;
 	readonly isRepo: boolean;
 }
 
@@ -689,6 +701,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly showTags: boolean;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
+	readonly stashes: ReadonlyArray<GitStash>;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';

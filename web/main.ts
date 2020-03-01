@@ -3,6 +3,7 @@ class GitGraphView {
 	private gitBranches: string[] = [];
 	private gitBranchHead: string | null = null;
 	private gitRemotes: string[] = [];
+	private gitStashes: ReadonlyArray<GG.GitStash> = [];
 	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
@@ -109,7 +110,7 @@ class GitGraphView {
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
-			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, true);
+			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable);
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
@@ -190,6 +191,7 @@ class GitGraphView {
 		this.showRemoteBranchesElem.checked = this.gitRepos[this.currentRepo].showRemoteBranches;
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitRemotes = [];
+		this.gitStashes = [];
 		this.renderFetchButton();
 		this.closeCommitDetails(false);
 		this.settingsWidget.close();
@@ -198,12 +200,17 @@ class GitGraphView {
 		this.refresh(true);
 	}
 
-	private loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], isRepo: boolean) {
+	private loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], stashes: ReadonlyArray<GG.GitStash>, isRepo: boolean) {
+		// Changes to this.gitStashes are reflected as changes to the commits when loadCommits is run
+		this.gitStashes = stashes;
+
 		if (!isRepo || (!this.currentRepoRefreshState.hard && arraysStrictlyEqual(this.gitBranches, branchOptions) && this.gitBranchHead === branchHead && arraysStrictlyEqual(this.gitRemotes, remotes))) {
+			this.saveState();
 			this.finaliseLoadRepoInfo(false, isRepo);
 			return;
 		}
 
+		// Changes to these properties must be indicated as a repository info change
 		this.gitBranches = branchOptions;
 		this.gitBranchHead = branchHead;
 		this.gitRemotes = remotes;
@@ -413,7 +420,7 @@ class GitGraphView {
 		if (msg.error === null) {
 			const refreshState = this.currentRepoRefreshState;
 			if (refreshState.inProgress && refreshState.loadRepoInfoRefreshId === msg.refreshId) {
-				this.loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.isRepo);
+				this.loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.stashes, msg.isRepo);
 			}
 		} else {
 			this.displayLoadDataError('Unable to load Repository Info', msg.error);
@@ -499,7 +506,8 @@ class GitGraphView {
 				? this.config.showTags
 				: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Show,
 			remotes: this.gitRemotes,
-			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes
+			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
+			stashes: this.gitStashes
 		});
 	}
 
@@ -584,6 +592,7 @@ class GitGraphView {
 			gitBranches: this.gitBranches,
 			gitBranchHead: this.gitBranchHead,
 			gitRemotes: this.gitRemotes,
+			gitStashes: this.gitStashes,
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,

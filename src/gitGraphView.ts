@@ -349,7 +349,7 @@ export class GitGraphView implements vscode.Disposable {
 				this.sendMessage({
 					command: 'loadCommits',
 					refreshId: msg.refreshId,
-					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.showTags, msg.remotes, msg.hideRemotes)
+					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showRemoteBranches, msg.showTags, msg.remotes, msg.hideRemotes, msg.stashes)
 				});
 				break;
 			case 'loadRepoInfo':

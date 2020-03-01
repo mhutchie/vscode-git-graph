@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus } from './types';
+import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash } from './types';
 import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -116,11 +116,12 @@ export class DataSource implements vscode.Disposable {
 	public getRepoInfo(repo: string, showRemoteBranches: boolean, hideRemotes: string[]): Promise<GitRepoInfo> {
 		return Promise.all([
 			this.getBranches(repo, showRemoteBranches, hideRemotes),
-			this.getRemotes(repo)
+			this.getRemotes(repo),
+			this.getStashes(repo)
 		]).then((results) => {
-			return { branches: results[0].branches, head: results[0].head, remotes: results[1], error: null };
+			return { branches: results[0].branches, head: results[0].head, remotes: results[1], stashes: results[2], error: null };
 		}).catch((errorMessage) => {
-			return { branches: [], head: null, remotes: [], error: errorMessage };
+			return { branches: [], head: null, remotes: [], stashes: [], error: errorMessage };
 		});
 	}
 
@@ -133,16 +134,16 @@ export class DataSource implements vscode.Disposable {
 	 * @param showTags Are tags are shown.
 	 * @param remotes An array of known remotes.
 	 * @param hideRemotes An array of hidden remotes.
+	 * @param stashes An array of all stashes in the repository.
 	 * @returns The commits in the repository.
 	 */
-	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, showTags: boolean, remotes: string[], hideRemotes: string[]): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showRemoteBranches: boolean, showTags: boolean, remotes: string[], hideRemotes: string[], stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
-			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, config.commitOrdering, remotes, hideRemotes),
-			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
-			this.getStashes(repo)
+			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, config.commitOrdering, remotes, hideRemotes, stashes),
+			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
-			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], stashes: GitStash[] = results[2], i;
+			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
 			if (moreCommitsAvailable) commits.pop();
 
@@ -1171,9 +1172,10 @@ export class DataSource implements vscode.Disposable {
 	 * @param order The order for commits to be returned.
 	 * @param remotes An array of the known remotes.
 	 * @param hideRemotes An array of hidden remotes.
+	 * @param stashes An array of all stashes in the repository.
 	 * @returns An array of commits.
 	 */
-	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, order: CommitOrdering, remotes: string[], hideRemotes: string[]) {
+	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, order: CommitOrdering, remotes: string[], hideRemotes: string[], stashes: ReadonlyArray<GitStash>) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
@@ -1192,6 +1194,11 @@ export class DataSource implements vscode.Disposable {
 					});
 				}
 			}
+
+			// Add the unique list of base hashes of stashes, so that commits only referenced by stashes are displayed
+			const stashBaseHashes = stashes.map((stash) => stash.baseHash);
+			stashBaseHashes.filter((hash, index) => stashBaseHashes.indexOf(hash) === index).forEach((hash) => args.push(hash));
+
 			args.push('HEAD');
 		}
 		args.push('--');
@@ -1596,22 +1603,12 @@ interface GitRefData {
 
 interface GitRepoInfo extends GitBranchData {
 	remotes: string[];
+	stashes: GitStash[];
 }
 
 interface GitRepoSettingsData {
 	settings: GitRepoSettings | null;
 	error: ErrorInfo;
-}
-
-interface GitStash {
-	hash: string;
-	baseHash: string;
-	untrackedFilesHash: string | null;
-	selector: string;
-	author: string;
-	email: string;
-	date: number;
-	message: string;
 }
 
 interface GitStatusFiles {

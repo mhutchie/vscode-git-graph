@@ -929,8 +929,17 @@ class GitGraphView {
 				visible: visibility.addTag,
 				onClick: () => {
 					const dialogConfig = this.config.dialogDefaults.addTag;
+
+					let mostRecentTagsIndex = -1;
+					for (let i = 0; i < this.commits.length; i++) {
+						if (this.commits[i].tags.length > 0 && (mostRecentTagsIndex === -1 || this.commits[i].date > this.commits[mostRecentTagsIndex].date)) {
+							mostRecentTagsIndex = i;
+						}
+					}
+					let mostRecentTags = mostRecentTagsIndex > -1 ? this.commits[mostRecentTagsIndex].tags.map((tag) => '"' + tag.name + '"') : [];
+
 					let inputs: DialogInput[] = [
-						{ type: DialogInputType.TextRef, name: 'Name', default: '' },
+						{ type: DialogInputType.TextRef, name: 'Name', default: '', info: mostRecentTags.length > 0 ? 'The most recent tag' + (mostRecentTags.length > 1 ? 's' : '') + ' in the loaded commits ' + (mostRecentTags.length > 1 ? 'are' : 'is') + ' ' + formatCommaSeparatedList(mostRecentTags) + '.' : undefined },
 						{ type: DialogInputType.Select, name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
 						{ type: DialogInputType.Text, name: 'Message', default: '', placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
 					];

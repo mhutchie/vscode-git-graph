@@ -249,13 +249,15 @@ export class DataSource implements vscode.Disposable {
 	 * Get the commit details for the Commit Details View.
 	 * @param repo The path of the repository.
 	 * @param commitHash The hash of the commit open in the Commit Details View.
+	 * @param hasParents Does the commit have parents
 	 * @returns The commit details.
 	 */
-	public getCommitDetails(repo: string, commitHash: string): Promise<GitCommitDetailsData> {
+	public getCommitDetails(repo: string, commitHash: string, hasParents: boolean): Promise<GitCommitDetailsData> {
+		const fromCommit = commitHash + (hasParents ? '^' : '');
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
-			this.getDiffNameStatus(repo, commitHash, commitHash),
-			this.getDiffNumStat(repo, commitHash, commitHash)
+			this.getDiffNameStatus(repo, fromCommit, commitHash),
+			this.getDiffNumStat(repo, fromCommit, commitHash)
 		]).then((results) => {
 			results[0].fileChanges = generateFileChanges(results[1], results[2], null);
 			return { commitDetails: results[0], error: null };
@@ -1352,9 +1354,9 @@ export class DataSource implements vscode.Disposable {
 	private execDiff(repo: string, fromHash: string, toHash: string, arg: '--numstat' | '--name-status') {
 		let args: string[];
 		if (fromHash === toHash) {
-			args = ['diff-tree', arg, '-r', '-m', '--root', '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
+			args = ['diff-tree', arg, '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
 		} else {
-			args = ['diff', arg, '-m', '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
+			args = ['diff', arg, '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
 			if (toHash !== '') args.push(toHash);
 		}
 

@@ -488,6 +488,7 @@ export interface RequestCodeReviewFileReviewed extends RepoRequest {
 export interface RequestCommitDetails extends RepoRequest {
 	readonly command: 'commitDetails';
 	readonly commitHash: string;
+	readonly hasParents: boolean;
 	readonly stash: GitCommitStash | null; // null => request is for a commit, otherwise => request is for a stash
 	readonly avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	readonly refresh: boolean;

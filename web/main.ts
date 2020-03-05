@@ -548,6 +548,7 @@ class GitGraphView {
 			command: 'commitDetails',
 			repo: this.currentRepo,
 			commitHash: hash,
+			hasParents: commit.parents.length > 0,
 			stash: commit.stash,
 			avatarEmail: this.config.fetchAvatars && hash !== UNCOMMITTED ? commit.email : null,
 			refresh: refresh

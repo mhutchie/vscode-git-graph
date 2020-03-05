@@ -206,7 +206,7 @@ export class GitGraphView implements vscode.Disposable {
 					msg.commitHash === UNCOMMITTED
 						? this.dataSource.getUncommittedDetails(msg.repo)
 						: msg.stash === null
-							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash)
+							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.hasParents)
 							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
 					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
 				]);

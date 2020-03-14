@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DiffSide, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
-import { ErrorInfo, GitFileStatus } from './types';
+import { ErrorInfo, GitFileStatus, PullRequestConfig, PullRequestProvider } from './types';
 
 export const UNCOMMITTED = '*';
 export const UNABLE_TO_FIND_GIT_MSG = 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.';
@@ -205,6 +205,45 @@ export function copyToClipboard(text: string): Thenable<ErrorInfo> {
 	return vscode.env.clipboard.writeText(text).then(
 		() => null,
 		() => 'Visual Studio Code was unable to write to the Clipboard.'
+	);
+}
+
+/**
+ * Construct the URL for creating a new Pull Request, and open it in the users default web browser.
+ * @param config The Pull Request Provider's Configuration.
+ * @param sourceOwner The owner of the repository that is the source of the Pull Request.
+ * @param sourceRepo The name of the repository that is the source of the Pull Request.
+ * @param sourceBranch The source branch the Pull Request should be created from.
+ */
+export function createPullRequest(config: PullRequestConfig, sourceOwner: string, sourceRepo: string, sourceBranch: string) {
+	let templateUrl;
+	switch (config.provider) {
+		case PullRequestProvider.Bitbucket:
+			templateUrl = '$1/$2/$3/pull-requests/new?source=$2/$3::$4&dest=$5/$6::$8';
+			break;
+		case PullRequestProvider.Custom:
+			templateUrl = config.custom.templateUrl;
+			break;
+		case PullRequestProvider.GitHub:
+			templateUrl = '$1/$5/$6/compare/$8...$2:$4';
+			break;
+		case PullRequestProvider.GitLab:
+			templateUrl = '$1/$2/$3/-/merge_requests/new?merge_request[source_branch]=$4&merge_request[target_branch]=$8' +
+				(config.destProjectId !== '' ? '&merge_request[target_project_id]=$7' : '');
+			break;
+	}
+
+	const urlFieldValues = [
+		config.hostRootUrl,
+		sourceOwner, sourceRepo, sourceBranch,
+		config.destOwner, config.destRepo, config.destProjectId, config.destBranch
+	];
+
+	const url = templateUrl.replace(/\$([1-8])/g, (_, index) => urlFieldValues[parseInt(index) - 1]);
+
+	return vscode.env.openExternal(vscode.Uri.parse(url)).then(
+		() => null,
+		() => 'Visual Studio Code was unable to open the Pull Request URL: ' + url
 	);
 }
 

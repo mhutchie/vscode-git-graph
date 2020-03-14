@@ -114,7 +114,8 @@ class GitGraphView {
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable);
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
-				this.settingsWidget.restoreState(prevState.settingsWidget, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, this.gitRepos[this.currentRepo].showTags);
+				const currentRepoState = this.gitRepos[this.currentRepo];
+				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags);
 			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
@@ -142,7 +143,8 @@ class GitGraphView {
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
-			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo].hideRemotes, this.gitRepos[this.currentRepo].issueLinkingConfig, this.gitRepos[this.currentRepo].showTags, true);
+			const currentRepoState = this.gitRepos[this.currentRepo];
+			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, true);
 		});
 	}
 
@@ -463,6 +465,10 @@ class GitGraphView {
 
 	/* Public Get Methods checking the GitGraphView state */
 
+	public getBranches(): ReadonlyArray<string> {
+		return this.gitBranches;
+	}
+
 	public getCommits(): ReadonlyArray<GG.GitCommit> {
 		return this.commits;
 	}
@@ -645,6 +651,13 @@ class GitGraphView {
 	public saveIssueLinkingConfig(repo: string, config: GG.IssueLinkingConfig | null) {
 		if (repo === this.currentRepo) {
 			this.gitRepos[this.currentRepo].issueLinkingConfig = config;
+			this.saveRepoState();
+		}
+	}
+
+	public savePullRequestConfig(repo: string, config: GG.PullRequestConfig | null) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].pullRequestConfig = config;
 			this.saveRepoState();
 		}
 	}
@@ -912,6 +925,18 @@ class GitGraphView {
 			}
 		], [
 			{
+				title: 'Create Pull Request' + ELLIPSIS,
+				visible: visibility.createPullRequest && this.gitRepos[this.currentRepo].pullRequestConfig !== null,
+				onClick: () => {
+					const config = this.gitRepos[this.currentRepo].pullRequestConfig;
+					if (config === null) return;
+					dialog.showCheckbox('Are you sure you want to create a Pull Request for branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Push branch before creating the Pull Request', true, 'Yes, create Pull Request', (push) => {
+						runAction({ command: 'createPullRequest', repo: this.currentRepo, config: config, sourceRemote: config.sourceRemote, sourceOwner: config.sourceOwner, sourceRepo: config.sourceRepo, sourceBranch: refName, push: push }, 'Creating Pull Request');
+					}, target);
+				}
+			}
+		], [
+			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,
 				onClick: () => {
@@ -1146,6 +1171,27 @@ class GitGraphView {
 					], 'Yes, pull', (values) => {
 						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Pulling Branch');
 					}, target);
+				}
+			}
+		], [
+			{
+				title: 'Create Pull Request',
+				visible: visibility.createPullRequest && this.gitRepos[this.currentRepo].pullRequestConfig !== null && branchName !== 'HEAD' &&
+					(this.gitRepos[this.currentRepo].pullRequestConfig!.sourceRemote === remote || this.gitRepos[this.currentRepo].pullRequestConfig!.destRemote === remote),
+				onClick: () => {
+					const config = this.gitRepos[this.currentRepo].pullRequestConfig;
+					if (config === null) return;
+					const isDestRemote = config.destRemote === remote;
+					runAction({
+						command: 'createPullRequest',
+						repo: this.currentRepo,
+						config: config,
+						sourceRemote: isDestRemote ? config.destRemote! : config.sourceRemote,
+						sourceOwner: isDestRemote ? config.destOwner : config.sourceOwner,
+						sourceRepo: isDestRemote ? config.destRepo : config.sourceRepo,
+						sourceBranch: branchName,
+						push: false
+					}, 'Creating Pull Request');
 				}
 			}
 		], [
@@ -2474,6 +2520,13 @@ window.addEventListener('load', () => {
 				break;
 			case 'createBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Create Branch');
+				break;
+			case 'createPullRequest':
+				finishOrDisplayErrors(msg.errors, 'Unable to Create Pull Request', () => {
+					if (msg.push) {
+						gitGraph.refresh(false);
+					}
+				}, true);
 				break;
 			case 'deleteBranch':
 				refreshAndDisplayErrors(msg.errors, 'Unable to Delete Branch');

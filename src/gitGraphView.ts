@@ -7,8 +7,8 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { copyFilePathToClipboard, copyToClipboard, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
 
 /**
  * Manages the Git Graph View.
@@ -244,6 +244,17 @@ export class GitGraphView implements vscode.Disposable {
 				this.sendMessage({
 					command: 'createBranch',
 					error: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash, msg.checkout)
+				});
+				break;
+			case 'createPullRequest':
+				errorInfos = [msg.push ? await this.dataSource.pushBranch(msg.repo, msg.sourceBranch, msg.sourceRemote, true, GitPushBranchMode.Normal) : null];
+				if (errorInfos[0] === null) {
+					errorInfos.push(await createPullRequest(msg.config, msg.sourceOwner, msg.sourceRepo, msg.sourceBranch));
+				}
+				this.sendMessage({
+					command: 'createPullRequest',
+					push: msg.push,
+					errors: errorInfos
 				});
 				break;
 			case 'deleteBranch':
@@ -550,6 +561,7 @@ export class GitGraphView implements vscode.Disposable {
 				contextMenuActionsVisibility: config.contextMenuActionsVisibility,
 				customBranchGlobPatterns: config.customBranchGlobPatterns,
 				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings,
+				customPullRequestProviders: config.customPullRequestProviders,
 				dateFormat: config.dateFormat,
 				defaultColumnVisibility: config.defaultColumnVisibility,
 				defaultFileViewType: config.defaultFileViewType,
@@ -636,7 +648,7 @@ export class GitGraphView implements vscode.Disposable {
 		</html>`;
 	}
 
-	
+
 	/* URI Manipulation Methods */
 
 	/**
@@ -657,7 +669,7 @@ export class GitGraphView implements vscode.Disposable {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));
 	}
 
-	
+
 	/* Response Construction Methods */
 
 	/**

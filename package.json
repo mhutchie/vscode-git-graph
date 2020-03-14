@@ -154,6 +154,10 @@
 									"type": "boolean",
 									"title": "Push Branch..."
 								},
+								"createPullRequest": {
+									"type": "boolean",
+									"title": "Create Pull Request..."
+								},
 								"copyName": {
 									"type": "boolean",
 									"title": "Copy Branch Name to Clipboard"
@@ -227,6 +231,10 @@
 								"pull": {
 									"type": "boolean",
 									"title": "Pull into current branch..."
+								},
+								"createPullRequest": {
+									"type": "boolean",
+									"title": "Create Pull Request"
 								},
 								"copyName": {
 									"type": "boolean",
@@ -332,6 +340,31 @@
 					},
 					"default": [],
 					"description": "An array of Custom Branch Glob Patterns to be shown in the 'Branches' dropdown. Example: [{\"name\": \"Feature Requests\", \"glob\": \"heads/feature/*\"}]"
+				},
+				"git-graph.customPullRequestProviders": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"title": "Pull Request Provider",
+						"required": [
+							"name",
+							"templateUrl"
+						],
+						"properties": {
+							"name": {
+								"type": "string",
+								"title": "Name of the Provider",
+								"description": "A unique, identifying, display name for the provider."
+							},
+							"templateUrl": {
+								"type": "string",
+								"title": "Template URL",
+								"markdownDescription": "A template URL that can be used to create a Pull Request, after the $1 - $8 variables have been substituted to construct the final URL. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)."
+							}
+						}
+					},
+					"default": [],
+					"markdownDescription": "An array of custom Pull Request providers that can be used in the \"Pull Request Creation\" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)."
 				},
 				"git-graph.customEmojiShortcodeMappings": {
 					"type": "array",

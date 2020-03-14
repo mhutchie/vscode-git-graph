@@ -115,7 +115,7 @@ class Dialog {
 		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
-	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, includeLineBreak: boolean = true) {
+	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
 		const multiCheckbox = multiElement && inputs.every((input) => input.type === DialogInputType.Checkbox);
 		const infoColRequired = inputs.some((input) => input.type !== DialogInputType.Checkbox && input.type !== DialogInputType.Radio && input.info);
@@ -143,28 +143,36 @@ class Dialog {
 			inputRowsHtml.join('') +
 			'</table>';
 
-		this.show(DialogType.Form, html, actionName, 'Cancel', () => {
-			if (this.elem === null || this.elem.classList.contains(CLASS_DIALOG_NO_INPUT) || this.elem.classList.contains(CLASS_DIALOG_INPUT_INVALID)) return;
-			const values = inputs.map((input, index) => {
-				if (input.type === DialogInputType.Radio) {
-					// Iterate through all of the radio options to get the checked value
-					const elems = <NodeListOf<HTMLInputElement>>document.getElementsByName('dialogInput' + index);
-					for (let i = 0; i < elems.length; i++) {
-						if (elems[i].checked) {
-							return input.options[parseInt(elems[i].value)].value;
-						}
+		const areFormValuesInvalid = () => this.elem === null || this.elem.classList.contains(CLASS_DIALOG_NO_INPUT) || this.elem.classList.contains(CLASS_DIALOG_INPUT_INVALID);
+		const getFormValues = () => inputs.map((input, index) => {
+			if (input.type === DialogInputType.Radio) {
+				// Iterate through all of the radio options to get the checked value
+				const elems = <NodeListOf<HTMLInputElement>>document.getElementsByName('dialogInput' + index);
+				for (let i = 0; i < elems.length; i++) {
+					if (elems[i].checked) {
+						return input.options[parseInt(elems[i].value)].value;
 					}
-					return input.default; // If no option is checked, return the default value
-				} else {
-					const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
-					return input.type === DialogInputType.Checkbox
-						? elem.checked // Checkboxes return a boolean indicating if the value is checked
-						: elem.value; // All other fields return the value as a string
 				}
-			});
+				return input.default; // If no option is checked, return the default value
+			} else {
+				const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
+				return input.type === DialogInputType.Checkbox
+					? elem.checked // Checkboxes return a boolean indicating if the value is checked
+					: elem.value; // All other fields return the value as a string
+			}
+		});
+
+		this.show(DialogType.Form, html, actionName, secondaryActionName, () => {
+			if (areFormValuesInvalid()) return;
+			const values = getFormValues();
 			this.close();
 			actioned(values);
-		}, null, target);
+		}, secondaryActioned !== null ? () => {
+			if (areFormValuesInvalid()) return;
+			const values = getFormValues();
+			this.close();
+			secondaryActioned(values);
+		} : null, target);
 
 		// Create custom select inputs
 		const selectIds: number[] = [];
@@ -213,7 +221,7 @@ class Dialog {
 		this.show(DialogType.ActionRunning, '<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
 	}
 
-	private show(type: DialogType, html: string, actionName: string | null, dismissName: string, actioned: (() => void) | null, dismissed: (() => void) | null, target: DialogTarget | null) {
+	private show(type: DialogType, html: string, actionName: string | null, secondaryActionName: string, actioned: (() => void) | null, secondaryActioned: (() => void) | null, target: DialogTarget | null) {
 		closeDialogAndContextMenu();
 
 		this.type = type;
@@ -223,7 +231,7 @@ class Dialog {
 		const dialog = document.createElement('div'), dialogContent = document.createElement('div');
 		dialog.className = 'dialog';
 		dialogContent.className = 'dialogContent';
-		dialogContent.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogDismiss" class="roundedBtn">' + dismissName + '</div>';
+		dialogContent.innerHTML = html + '<br>' + (actionName !== null ? '<div id="dialogAction" class="roundedBtn">' + actionName + '</div>' : '') + '<div id="dialogSecondaryAction" class="roundedBtn">' + secondaryActionName + '</div>';
 		dialog.appendChild(dialogContent);
 		this.elem = dialog;
 		document.body.appendChild(dialog);
@@ -238,7 +246,7 @@ class Dialog {
 			document.getElementById('dialogAction')!.addEventListener('click', actioned);
 			this.actioned = actioned;
 		}
-		document.getElementById('dialogDismiss')!.addEventListener('click', dismissed !== null ? dismissed : () => this.close());
+		document.getElementById('dialogSecondaryAction')!.addEventListener('click', secondaryActioned !== null ? secondaryActioned : () => this.close());
 
 		if (this.target !== null && this.target.type !== TargetType.Repo) {
 			alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);

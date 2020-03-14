@@ -143,12 +143,47 @@ export interface IssueLinkingConfig {
 	url: string;
 }
 
+interface PullRequestConfigBase {
+	hostRootUrl: string;
+	sourceRemote: string;
+	sourceOwner: string;
+	sourceRepo: string;
+	destRemote: string | null;
+	destOwner: string;
+	destRepo: string;
+	destProjectId: string; // Only used by GitLab
+	destBranch: string;
+}
+
+export const enum PullRequestProvider {
+	Bitbucket,
+	Custom,
+	GitHub,
+	GitLab
+}
+
+interface PullRequestConfigBuiltIn extends PullRequestConfigBase {
+	provider: Exclude<PullRequestProvider, PullRequestProvider.Custom>;
+	custom: null;
+}
+
+interface PullRequestConfigCustom extends PullRequestConfigBase {
+	provider: PullRequestProvider.Custom;
+	custom: {
+		name: string,
+		templateUrl: string
+	};
+}
+
+export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCustom;
+
 export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
 	fileViewType: FileViewType;
 	issueLinkingConfig: IssueLinkingConfig | null;
+	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
 	showTags: ShowTags;
 	hideRemotes: string[];
@@ -174,6 +209,7 @@ export interface GitGraphViewConfig {
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
 	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
+	readonly customPullRequestProviders: CustomPullRequestProvider[];
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly defaultFileViewType: FileViewType;
@@ -229,6 +265,7 @@ export interface ContextMenuActionsVisibility {
 		readonly merge: boolean;
 		readonly rebase: boolean;
 		readonly push: boolean;
+		readonly createPullRequest: boolean;
 		readonly copyName: boolean;
 	};
 	readonly commit: {
@@ -249,6 +286,7 @@ export interface ContextMenuActionsVisibility {
 		readonly delete: boolean;
 		readonly fetch: boolean;
 		readonly pull: boolean;
+		readonly createPullRequest: boolean;
 		readonly copyName: boolean;
 	};
 	readonly stash: {
@@ -281,6 +319,11 @@ export interface CustomBranchGlobPattern {
 export interface CustomEmojiShortcodeMapping {
 	readonly shortcode: string;
 	readonly emoji: string;
+}
+
+export interface CustomPullRequestProvider {
+	readonly name: string;
+	readonly templateUrl: string;
 }
 
 export interface DateFormat {
@@ -544,6 +587,20 @@ export interface RequestCreateBranch extends RepoRequest {
 }
 export interface ResponseCreateBranch extends ResponseWithErrorInfo {
 	readonly command: 'createBranch';
+}
+
+export interface RequestCreatePullRequest extends RepoRequest {
+	readonly command: 'createPullRequest';
+	readonly config: PullRequestConfig;
+	readonly sourceRemote: string;
+	readonly sourceOwner: string;
+	readonly sourceRepo: string;
+	readonly sourceBranch: string;
+	readonly push: boolean;
+}
+export interface ResponseCreatePullRequest extends ResponseWithMultiErrorInfo {
+	readonly command: 'createPullRequest';
+	readonly push: boolean;
 }
 
 export interface RequestDeleteBranch extends RepoRequest {
@@ -939,6 +996,7 @@ export type RequestMessage =
 	| RequestCopyFilePath
 	| RequestCopyToClipboard
 	| RequestCreateBranch
+	| RequestCreatePullRequest
 	| RequestDeleteBranch
 	| RequestDeleteRemote
 	| RequestDeleteRemoteBranch
@@ -992,6 +1050,7 @@ export type ResponseMessage =
 	| ResponseCopyFilePath
 	| ResponseCopyToClipboard
 	| ResponseCreateBranch
+	| ResponseCreatePullRequest
 	| ResponseDeleteBranch
 	| ResponseDeleteRemote
 	| ResponseDeleteRemoteBranch

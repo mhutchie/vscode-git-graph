@@ -20,6 +20,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	cdvHeight: 250,
 	fileViewType: FileViewType.Default,
 	issueLinkingConfig: null,
+	pullRequestConfig: null,
 	showRemoteBranches: true,
 	showTags: ShowTags.Default,
 	hideRemotes: []

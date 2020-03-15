@@ -1665,7 +1665,7 @@ class GitGraphView {
 			if (dialog.isOpen()) {
 				if (e.key === 'Escape') {
 					dialog.close();
-				} else if (e.key === 'Enter') {
+				} else if (e.keyCode === 13 /* Detects "Enter" (13) except for IME confirmation (229) */) {
 					dialog.submit();
 				}
 			} else if (contextMenu.isOpen()) {

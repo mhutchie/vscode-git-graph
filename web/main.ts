@@ -1665,7 +1665,8 @@ class GitGraphView {
 			if (dialog.isOpen()) {
 				if (e.key === 'Escape') {
 					dialog.close();
-				} else if (e.key === 'Enter') {
+				} else if (e.keyCode ? e.keyCode === 13 : e.key === 'Enter') {
+					// Use keyCode === 13 to detect 'Enter' events if available (for compatibility with IME Keyboards used by Chinese / Japanese / Korean users)
 					dialog.submit();
 				}
 			} else if (contextMenu.isOpen()) {

@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.21.0",
+	"version": "1.22.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -408,7 +408,7 @@
 						"Show relative times, for example \"5 minutes ago\""
 					],
 					"default": "Date & Time",
-					"description": "Specifies the date format to be used in the date column of Git Graph."
+					"description": "Specifies the date format to be used in the \"Date\" column on the Git Graph View."
 				},
 				"git-graph.dateType": {
 					"type": "string",

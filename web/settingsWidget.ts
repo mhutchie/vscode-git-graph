@@ -498,17 +498,17 @@ class SettingsWidget {
 			{
 				type: DialogInputType.Select, name: 'Provider',
 				options: providerOptions, default: defaultProvider,
-				info: 'In addition to the built-in Pull Request providers, custom providers can be configured using the Extension Setting "git-graph.customPullRequestProviders".'
+				info: 'In addition to the built-in publicly hosted Pull Request providers, custom providers can be configured using the Extension Setting "git-graph.customPullRequestProviders" (e.g. for use with privately hosted Pull Request providers).'
 			},
 			{
 				type: DialogInputType.Select, name: 'Source Remote',
 				options: sourceRemoteOptions, default: sourceRemoteIndex.toString(),
-				info: 'The remote that corresponds to the source of the pull request.'
+				info: 'The remote that corresponds to the source of the Pull Request.'
 			},
 			{
 				type: DialogInputType.Select, name: 'Destination Remote',
 				options: destRemoteOptions, default: destRemoteIndex.toString(),
-				info: 'The remote that corresponds to the destination / target of the pull request.'
+				info: 'The remote that corresponds to the destination / target of the Pull Request.'
 			}
 		], 'Next', (values) => {
 			if (this.settings === null) return;
@@ -543,7 +543,7 @@ class SettingsWidget {
 
 			if (config.sourceRemote !== newSourceRemote) {
 				config.sourceRemote = newSourceRemote;
-				const match = newSourceUrl !== null ? newSourceUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/(.*?)(.git|)$/) : null;
+				const match = newSourceUrl !== null ? newSourceUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/) : null;
 				config.sourceOwner = match !== null ? match[2] : '';
 				config.sourceRepo = match !== null ? match[3] : '';
 			}
@@ -555,7 +555,7 @@ class SettingsWidget {
 			if (config.destRemote !== newDestRemote) {
 				config.destRemote = newDestRemote;
 				if (newDestRemote !== null) {
-					const match = newDestUrl !== null ? newDestUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/(.*?)(.git|)$/) : null;
+					const match = newDestUrl !== null ? newDestUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/) : null;
 					config.destOwner = match !== null ? match[2] : '';
 					config.destRepo = match !== null ? match[3] : '';
 					const branches = this.view.getBranches()
@@ -598,14 +598,14 @@ class SettingsWidget {
 		};
 
 		const inputs: DialogInput[] = [
-			{ type: DialogInputType.Text, name: 'Host Root URL', default: config.hostRootUrl, placeholder: null, info: 'The Pull Request provider\'s Host Root Url (e.g. https://github.com).' },
+			{ type: DialogInputType.Text, name: 'Host Root URL', default: config.hostRootUrl, placeholder: null, info: 'The Pull Request provider\'s Host Root URL (e.g. https://github.com).' },
 			{ type: DialogInputType.Text, name: 'Source Owner', default: config.sourceOwner, placeholder: null, info: 'The owner of the repository that is the source of the Pull Request.' },
 			{ type: DialogInputType.Text, name: 'Source Repo', default: config.sourceRepo, placeholder: null, info: 'The name of the repository that is the source of the Pull Request.' },
 			{ type: DialogInputType.Text, name: 'Destination Owner', default: config.destOwner, placeholder: null, info: 'The owner of the repository that is the destination / target of the Pull Request.' },
 			{ type: DialogInputType.Text, name: 'Destination Repo', default: config.destRepo, placeholder: null, info: 'The name of the repository that is the destination / target of the Pull Request.' },
 		];
 		if (config.provider === GG.PullRequestProvider.GitLab) {
-			inputs.push({ type: DialogInputType.Text, name: 'Destination Project ID', default: config.destProjectId, placeholder: null, info: 'The GitLab Project ID of the destination / target of the Pull Request. Leave this field blank to use the default destination / target that is configured in GitLab.' });
+			inputs.push({ type: DialogInputType.Text, name: 'Destination Project ID', default: config.destProjectId, placeholder: null, info: 'The GitLab Project ID of the destination / target of the Pull Request. Leave this field blank to use the default destination / target configured in GitLab.' });
 		}
 		inputs.push(config.destRemote === null || destBranches.length === 0
 			? { type: DialogInputType.Text, name: 'Destination Branch', default: config.destBranch, placeholder: null, info: destBranchInfo }

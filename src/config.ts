@@ -98,18 +98,6 @@ class Config {
 	}
 
 	/**
-	 * Get the value of the `git-graph.customPullRequestProviders` Extension Setting.
-	 */
-	get customPullRequestProviders(): CustomPullRequestProvider[] {
-		let providers = this.config.get('customPullRequestProviders', <any[]>[]);
-		return Array.isArray(providers)
-			? providers
-				.filter((provider) => typeof provider.name === 'string' && typeof provider.templateUrl === 'string')
-				.map((provider) => ({ name: provider.name, templateUrl: provider.templateUrl }))
-			: [];
-	}
-
-	/**
 	 * Get the value of the `git-graph.customEmojiShortcodeMappings` Extension Setting.
 	 */
 	get customEmojiShortcodeMappings(): CustomEmojiShortcodeMapping[] {
@@ -121,6 +109,18 @@ class Config {
 			}
 		}
 		return outMappings;
+	}
+
+	/**
+	 * Get the value of the `git-graph.customPullRequestProviders` Extension Setting.
+	 */
+	get customPullRequestProviders(): CustomPullRequestProvider[] {
+		let providers = this.config.get('customPullRequestProviders', <any[]>[]);
+		return Array.isArray(providers)
+			? providers
+				.filter((provider) => typeof provider.name === 'string' && typeof provider.templateUrl === 'string')
+				.map((provider) => ({ name: provider.name, templateUrl: provider.templateUrl }))
+			: [];
 	}
 
 	/**

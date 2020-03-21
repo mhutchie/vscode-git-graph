@@ -1779,7 +1779,7 @@ class GitGraphView {
 
 				if (eventElem.classList.contains(CLASS_REF_HEAD) || eventElem.classList.contains(CLASS_REF_REMOTE)) {
 					let sourceElem = <HTMLElement>eventElem.children[1];
-					let refName = unescapeHtml(eventElem.dataset.name!), isHead = eventElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = eventTarget.className === 'gitRefHeadRemote';
+					let refName = unescapeHtml(eventElem.dataset.name!), isHead = eventElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = eventTarget.classList.contains('gitRefHeadRemote');
 					if (isHead && isRemoteCombinedWithHead) {
 						refName = unescapeHtml((<HTMLElement>eventTarget).dataset.fullref!);
 						sourceElem = <HTMLElement>eventTarget;
@@ -1826,7 +1826,7 @@ class GitGraphView {
 				} else if (eventElem.classList.contains(CLASS_REF_TAG)) {
 					actions = this.getTagContextMenuActions(eventElem.dataset.tagtype === 'annotated', target);
 				} else {
-					let isHead = eventElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = eventTarget.className === 'gitRefHeadRemote';
+					let isHead = eventElem.classList.contains(CLASS_REF_HEAD), isRemoteCombinedWithHead = eventTarget.classList.contains('gitRefHeadRemote');
 					if (isHead && isRemoteCombinedWithHead) {
 						target.ref = unescapeHtml((<HTMLElement>eventTarget).dataset.fullref!);
 						target.elem = <HTMLElement>eventTarget;

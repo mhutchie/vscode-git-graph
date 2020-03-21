@@ -1,5 +1,24 @@
 # Change Log
 
+## 1.22.0 - 2020-03-21
+* #231 New Command "Git Graph: Resume a specific Code Review in Workspace..." opens the Git Graph View to a Code Review that is already in progress.
+* #248 Added "No Commit" option to the "Merge Branch" & "Merge Commit" Dialogs. The default value of this new option can be set using the Extension Setting `git-graph.dialog.merge.noCommit`. Default: false (disabled)
+* #250 New "Pull Request Creation" Integration automates the opening and pre-filling of a Pull Request form, directly from a branches context menu.
+    * Configured from the Repository Settings Widget.
+        * Support for the publicly hosted Bitbucket, GitHub and GitLab Pull Request providers is built-in.
+        * Custom Pull Request providers can be configured using the Extension Setting `git-graph.customPullRequestProviders` (e.g. for use with privately hosted Pull Request providers). Information on how to configure custom providers is available [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
+    * Once configured, a new "Create Pull Request" option is available on the right click context menus of local and remote branches.
+* #251 Added "Record Origin" option to the "Cherry Pick" Dialog. The default value of this new option can be set using the Extension Setting `git-graph.dialog.cherryPick.recordOrigin`. Default: false (disabled)
+* #253 New Command "Git Graph: End a specific Code Review in Workspace..." ends a specific Code Review without having to first open it in the Git Graph View.
+* #255 Added an information tooltip to the "Name" field on the "Add Tag" Dialog, that indicates the most recent tag in the loaded commits.
+* #259 Added a tooltip to the commit HEAD indicator (hollow circle) in the "Description" column, to explain what it indicates.
+* #262 Issue Linking now supports multiple capturing groups in the "Issue Regex", and corresponding placeholders ($1, $2, etc.) in the "Issue URL".
+* #266 Show stashes that are based on commits on deleted branches.
+* #267 Added new "Copy Commit Subject to Clipboard" action on the commit context menu. Thanks [Doron Guttman (@dguttman-jacada)](https://github.com/dguttman-jacada)!
+* #269 If the author date and commit date are different, both are now shown in the Commit Details View. The committer email is also now shown in the Commit Details View.
+* #274 Fixed the files shown in the Commit Details View for merge commits.
+* Significant code and UI improvements.
+
 ## 1.21.0 - 2020-01-13
 * #225 Configure the local and global Git User Name & Email from the new "User Details" section of the Repository Settings Widget.
 * #239 Added "Force With Lease" option to the "Push Branch" Dialog.

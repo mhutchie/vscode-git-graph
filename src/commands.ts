@@ -189,7 +189,9 @@ export class CommandManager implements vscode.Disposable {
 					}
 				}, () => { });
 			}
-		}, () => { });
+		}, () => {
+			showErrorMessage('An unexpected error occurred while running the command "End a specific Code Review in Workspace...".');
+		});
 	}
 
 	/**
@@ -216,7 +218,9 @@ export class CommandManager implements vscode.Disposable {
 					}
 				});
 			}
-		}, () => { });
+		}, () => {
+			showErrorMessage('An unexpected error occurred while running the command "Resume a specific Code Review in Workspace...".');
+		});
 	}
 
 
@@ -227,50 +231,47 @@ export class CommandManager implements vscode.Disposable {
 	 * @param codeReviews A set of Code Reviews.
 	 * @returns A list of Quick Pick items.
 	 */
-	private getCodeReviewQuickPickItems(codeReviews: CodeReviews) {
-		return new Promise<CodeReviewQuickPickItem[]>((resolve, reject) => {
-			const enrichedCodeReviews: { repo: string, id: string, review: CodeReviewData, fromCommitHash: string, toCommitHash: string }[] = [];
-			const fetchCommits: { repo: string, commitHash: string }[] = [];
+	private getCodeReviewQuickPickItems(codeReviews: CodeReviews): Promise<CodeReviewQuickPickItem[]> {
+		const enrichedCodeReviews: { repo: string, id: string, review: CodeReviewData, fromCommitHash: string, toCommitHash: string }[] = [];
+		const fetchCommits: { repo: string, commitHash: string }[] = [];
 
-			Object.keys(codeReviews).forEach((repo) => {
-				Object.keys(codeReviews[repo]).forEach((id) => {
-					const commitHashes = id.split('-');
-					commitHashes.forEach((commitHash) => fetchCommits.push({ repo: repo, commitHash: commitHash }));
-					enrichedCodeReviews.push({
-						repo: repo, id: id, review: codeReviews[repo][id],
-						fromCommitHash: commitHashes[0], toCommitHash: commitHashes[commitHashes.length > 1 ? 1 : 0]
-					});
+		Object.keys(codeReviews).forEach((repo) => {
+			Object.keys(codeReviews[repo]).forEach((id) => {
+				const commitHashes = id.split('-');
+				commitHashes.forEach((commitHash) => fetchCommits.push({ repo: repo, commitHash: commitHash }));
+				enrichedCodeReviews.push({
+					repo: repo, id: id, review: codeReviews[repo][id],
+					fromCommitHash: commitHashes[0], toCommitHash: commitHashes[commitHashes.length > 1 ? 1 : 0]
 				});
 			});
-
-			Promise.all(fetchCommits.map((fetch) => this.dataSource.getCommitSubject(fetch.repo, fetch.commitHash))).then(
-				(subjects) => {
-					const commitSubjects: { [repo: string]: { [commitHash: string]: string } } = {};
-					subjects.forEach((subject, i) => {
-						if (typeof commitSubjects[fetchCommits[i].repo] === 'undefined') {
-							commitSubjects[fetchCommits[i].repo] = {};
-						}
-						commitSubjects[fetchCommits[i].repo][fetchCommits[i].commitHash] = subject !== null ? subject : '<Unknown Commit Subject>';
-					});
-
-					resolve(enrichedCodeReviews.sort((a, b) => b.review.lastActive - a.review.lastActive).map((codeReview) => {
-						const fromSubject = commitSubjects[codeReview.repo][codeReview.fromCommitHash];
-						const toSubject = commitSubjects[codeReview.repo][codeReview.toCommitHash];
-						const isComparison = codeReview.fromCommitHash !== codeReview.toCommitHash;
-						return {
-							codeReviewRepo: codeReview.repo,
-							codeReviewId: codeReview.id,
-							label: getRepoName(codeReview.repo) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
-							description: getRelativeTimeDiff(Math.round(codeReview.review.lastActive / 1000)),
-							detail: isComparison
-								? abbrevText(fromSubject, 50) + ' ↔ ' + abbrevText(toSubject, 50)
-								: fromSubject
-						};
-					}));
-				},
-				() => reject()
-			);
 		});
+
+		return Promise.all(fetchCommits.map((fetch) => this.dataSource.getCommitSubject(fetch.repo, fetch.commitHash))).then(
+			(subjects) => {
+				const commitSubjects: { [repo: string]: { [commitHash: string]: string } } = {};
+				subjects.forEach((subject, i) => {
+					if (typeof commitSubjects[fetchCommits[i].repo] === 'undefined') {
+						commitSubjects[fetchCommits[i].repo] = {};
+					}
+					commitSubjects[fetchCommits[i].repo][fetchCommits[i].commitHash] = subject !== null ? subject : '<Unknown Commit Subject>';
+				});
+
+				return enrichedCodeReviews.sort((a, b) => b.review.lastActive - a.review.lastActive).map((codeReview) => {
+					const fromSubject = commitSubjects[codeReview.repo][codeReview.fromCommitHash];
+					const toSubject = commitSubjects[codeReview.repo][codeReview.toCommitHash];
+					const isComparison = codeReview.fromCommitHash !== codeReview.toCommitHash;
+					return {
+						codeReviewRepo: codeReview.repo,
+						codeReviewId: codeReview.id,
+						label: getRepoName(codeReview.repo) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
+						description: getRelativeTimeDiff(Math.round(codeReview.review.lastActive / 1000)),
+						detail: isComparison
+							? abbrevText(fromSubject, 50) + ' ↔ ' + abbrevText(toSubject, 50)
+							: fromSubject
+					};
+				});
+			}
+		);
 	}
 }
 

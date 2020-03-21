@@ -44,7 +44,10 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
     * Find Widget allows you to quickly find one or more commits containing a specific phrase (in the commit message / date / author / hash, branch or tag names).
     * Repository Settings Widget:
         * Allows you to view, add, edit, delete, fetch & prune remotes of the repository.
-        * Configure Issue Linking - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.
+        * Configure "Issue Linking" - Converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.
+        * Configure "Pull Request Creation" - Automates the opening and pre-filling of a Pull Request form, directly from a branches context menu.
+            * Support for the publicly hosted Bitbucket, GitHub and GitLab Pull Request providers is built-in.
+            * Custom Pull Request providers can be configured using the Extension Setting `git-graph.customPullRequestProviders` (e.g. for use with privately hosted Pull Request providers). Information on how to configure custom providers is available [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
     * Keyboard Shortcuts (available in the Git Graph View):
         * Up / Down Arrows: When the Commit Details View is open, pressing the up and down arrow keys opens the previous or next commits' Commit Details View.
         * CTRL/CMD + f: Open the Find Widget.
@@ -71,11 +74,12 @@ A summary of the Git Graph extension settings are:
 * **Context Menu Actions Visibility**: Customise which context menu actions are visible. For more information, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
 * **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the "Branches" dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
 * **Custom Emoji Shortcode Mappings**: An array of custom Emoji Shortcode mappings. Example: `[{"shortcode": ":sparkles:", "emoji":"✨"}]`
-* **Date Format**: Specifies the date format to be used in the date column of the graph.
-* **Date Type**: Specifies the date type to be displayed throughout Git Graph, either the author or commit date.
+* **Custom Pull Request Providers**: An array of custom Pull Request providers that can be used in the "Pull Request Creation" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
+* **Date Format**: Specifies the date format to be used in the "Date" column on the Git Graph View.
+* **Date Type**: Specifies the date type to be displayed in the "Date" column on the Git Graph View, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
 * **Default File View Type**: Sets the default type of File View (Tree or List) used in the Commit Details / Comparison Views. This can be overridden per repository using the controls on the right side of the Commit Details / Comparison Views.
-* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Create Branch, Delete Branch, Merge, Pop Stash, Rebase, Reset, and Stash Uncommitted Changes
+* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Merge, Pop Stash, Rebase, Reset, and Stash Uncommitted Changes
 * **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
 * **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8
@@ -112,10 +116,12 @@ This extension consumes the following settings:
 This extension contributes the following commands:
 
 * `git-graph.view`: Git Graph: View Git Graph
-* `git-graph.addGitRepository`: Git Graph: Add Git Repository _(can be used to add sub-repos to Git Graph)_
+* `git-graph.addGitRepository`: Git Graph: Add Git Repository... _(used to add sub-repos to Git Graph)_
 * `git-graph.clearAvatarCache`: Git Graph: Clear Avatar Cache
 * `git-graph.endAllWorkspaceCodeReviews`: Git Graph: End All Code Reviews in Workspace
-* `git-graph.removeGitRepository`: Git Graph: Remove Git Repository _(can be used to remove repositories from Git Graph)_
+* `git-graph.endSpecificWorkspaceCodeReview`: Git Graph: End a specific Code Review in Workspace... _(used to end a specific Code Review without having to first open it in the Git Graph View)_
+* `git-graph.removeGitRepository`: Git Graph: Remove Git Repository... _(used to remove repositories from Git Graph)_
+* `git-graph.resumeWorkspaceCodeReview`: Git Graph: Resume a specific Code Review in Workspace... _(used to open the Git Graph View to a Code Review that is already in progress)_
 
 ## Release Notes
 

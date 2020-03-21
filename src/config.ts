@@ -18,6 +18,20 @@ import {
 	TabIconColourTheme
 } from './types';
 
+const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
+	'Active': vscode.ViewColumn.Active,
+	'Beside': vscode.ViewColumn.Beside,
+	'One': vscode.ViewColumn.One,
+	'Two': vscode.ViewColumn.Two,
+	'Three': vscode.ViewColumn.Three,
+	'Four': vscode.ViewColumn.Four,
+	'Five': vscode.ViewColumn.Five,
+	'Six': vscode.ViewColumn.Six,
+	'Seven': vscode.ViewColumn.Seven,
+	'Eight': vscode.ViewColumn.Eight,
+	'Nine': vscode.ViewColumn.Nine
+};
+
 /**
  * Represents the users configuration of Git Graph Extension Settings.
  */
@@ -307,9 +321,10 @@ class Config {
 	/**
 	 * Get the value of the `git-graph.openDiffTabLocation` Extension Setting.
 	 */
-	get openDiffTabLocation() {
-		return this.config.get<string>('openDiffTabLocation', 'Active') === 'Beside'
-			? vscode.ViewColumn.Beside
+	get openDiffTabLocation(): vscode.ViewColumn {
+		const location = this.config.get<string>('openDiffTabLocation', 'Active');
+		return typeof location === 'string' && typeof VIEW_COLUMN_MAPPING[location] !== 'undefined'
+			? VIEW_COLUMN_MAPPING[location]
 			: vscode.ViewColumn.Active;
 	}
 

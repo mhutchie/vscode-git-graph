@@ -647,14 +647,32 @@
 					"type": "string",
 					"enum": [
 						"Active",
-						"Beside"
+						"Beside",
+						"One",
+						"Two",
+						"Three",
+						"Four",
+						"Five",
+						"Six",
+						"Seven",
+						"Eight",
+						"Nine"
 					],
 					"enumDescriptions": [
-						"Open Visual Studio Code Diff in the Active Pane",
-						"Open Visual Studio Code Diff beside the Active Pane"
+						"Open the Visual Studio Code Diff View in the Active Editor Group.",
+						"Open the Visual Studio Code Diff View beside the Active Editor Group.",
+						"Open the Visual Studio Code Diff View in the First Editor Group.",
+						"Open the Visual Studio Code Diff View in the Second Editor Group.",
+						"Open the Visual Studio Code Diff View in the Third Editor Group.",
+						"Open the Visual Studio Code Diff View in the Fourth Editor Group.",
+						"Open the Visual Studio Code Diff View in the Fifth Editor Group.",
+						"Open the Visual Studio Code Diff View in the Sixth Editor Group.",
+						"Open the Visual Studio Code Diff View in the Seventh Editor Group.",
+						"Open the Visual Studio Code Diff View in the Eighth Editor Group.",
+						"Open the Visual Studio Code Diff View in the Ninth Editor Group."
 					],
 					"default": "Active",
-					"description": "Specifies which pane the Visual Studio Code Diff is opened in."
+					"description": "Specifies which Editor Group the Visual Studio Code Diff View is opened in."
 				},
 				"git-graph.openRepoToHead": {
 					"type": "boolean",

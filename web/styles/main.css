@@ -635,6 +635,18 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	opacity:1;
 }
 
+#commitTable tr.commit.flash{
+	animation:flash-commit 0.75s linear;
+}
+@keyframes flash-commit{
+	0%   {}
+	20%  {background-color:var(--git-graph-flashPrimary);}
+	35%  {background-color:var(--git-graph-flashSecondary);}
+	50%  {background-color:var(--git-graph-flashPrimary);}
+	65%  {background-color:var(--git-graph-flashPrimary);}
+	100% {}
+}
+
 
 /* Ref labels */
 

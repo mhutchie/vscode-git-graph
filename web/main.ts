@@ -1583,13 +1583,26 @@ class GitGraphView {
 		return 2 + (colVisibility.date ? 1 : 0) + (colVisibility.author ? 1 : 0) + (colVisibility.commit ? 1 : 0);
 	}
 
-	public scrollToCommit(hash: string, alwaysCenterCommit: boolean) {
+	/**
+	 * Scroll the view to a commit (if it exists).
+	 * @param hash The hash of the commit to scroll to.
+	 * @param alwaysCenterCommit TRUE => Always scroll the view to be centered on the commit. FALSE => Don't scroll the view if the commit is already within the visible portion of commits.
+	 * @param flash Should the commit flash after it has been scrolled to.
+	 */
+	public scrollToCommit(hash: string, alwaysCenterCommit: boolean, flash: boolean = false) {
 		let elem = findCommitElemWithId(getCommitElems(), this.getCommitId(hash));
 		if (elem === null) return;
 
 		let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
 		if (alwaysCenterCommit || elemTop - 8 < this.viewElem.scrollTop || elemTop + 32 - this.viewElem.clientHeight > this.viewElem.scrollTop) {
 			this.viewElem.scroll(0, this.controlsElem.clientHeight + elem.offsetTop + 12 - this.viewElem.clientHeight / 2);
+		}
+
+		if (flash && !elem.classList.contains('flash')) {
+			elem.classList.add('flash');
+			setTimeout(() => {
+				elem!.classList.remove('flash');
+			}, 850);
 		}
 	}
 
@@ -1617,7 +1630,14 @@ class GitGraphView {
 
 	private observeWebviewStyleChanges() {
 		let fontFamily = getVSCodeStyle(CSS_PROP_FONT_FAMILY), editorFontFamily = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), findMatchColour = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
+
+		const setFlashColour = (colour: string) => {
+			document.body.style.setProperty('--git-graph-flashPrimary', modifyColourOpacity(colour, 0.7));
+			document.body.style.setProperty('--git-graph-flashSecondary', modifyColourOpacity(colour, 0.5));
+		};
+
 		this.findWidget.setColour(findMatchColour);
+		setFlashColour(findMatchColour);
 		(new MutationObserver(() => {
 			let ff = getVSCodeStyle(CSS_PROP_FONT_FAMILY), eff = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), fmc = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
 			if (ff !== fontFamily || eff !== editorFontFamily) {
@@ -1629,6 +1649,7 @@ class GitGraphView {
 			if (fmc !== findMatchColour) {
 				findMatchColour = fmc;
 				this.findWidget.setColour(findMatchColour);
+				setFlashColour(findMatchColour);
 			}
 		})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 	}
@@ -1679,7 +1700,7 @@ class GitGraphView {
 				} else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
 					this.findWidget.show(true);
 				} else if (e.key === 'h' && (e.ctrlKey || e.metaKey) && this.commitHead !== null) {
-					this.scrollToCommit(this.commitHead, true);
+					this.scrollToCommit(this.commitHead, true, true);
 				} else if (e.key === 'Escape' && this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
 				} else if (e.key === 'Escape' && this.findWidget.isVisible()) {

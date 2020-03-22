@@ -31,6 +31,11 @@ class GitGraphView {
 	private scrollTop = 0;
 	private renderedGitBranchHead: string | null = null;
 
+	private lastScrollToStash: {
+		time: number,
+		hash: string | null
+	} = { time: 0, hash: null };
+
 	private readonly findWidget: FindWidget;
 	private readonly settingsWidget: SettingsWidget;
 	private readonly repoDropdown: Dropdown;
@@ -1584,6 +1589,34 @@ class GitGraphView {
 	}
 
 	/**
+	 * Scroll the view to the previous or next stash.
+	 * @param next TRUE => Jump to the next stash, FALSE => Jump to the previous stash.
+	 */
+	private scrollToStash(next: boolean) {
+		const stashCommits = this.commits.filter((commit) => commit.stash !== null);
+		if (stashCommits.length > 0) {
+			const curTime = (new Date()).getTime();
+			if (this.lastScrollToStash.time < curTime - 5000) {
+				// Reset the lastScrollToStash hash if it was more than 5 seconds ago
+				this.lastScrollToStash.hash = null;
+			}
+
+			const lastScrollToStashCommitIndex = this.lastScrollToStash.hash !== null
+				? stashCommits.findIndex((commit) => commit.hash === this.lastScrollToStash.hash)
+				: -1;
+			let scrollToStashCommitIndex = lastScrollToStashCommitIndex + (next ? 1 : -1);
+			if (scrollToStashCommitIndex >= stashCommits.length) {
+				scrollToStashCommitIndex = 0;
+			} else if (scrollToStashCommitIndex < 0) {
+				scrollToStashCommitIndex = stashCommits.length - 1;
+			}
+			this.scrollToCommit(stashCommits[scrollToStashCommitIndex].hash, true, true);
+			this.lastScrollToStash.time = curTime;
+			this.lastScrollToStash.hash = stashCommits[scrollToStashCommitIndex].hash;
+		}
+	}
+
+	/**
 	 * Scroll the view to a commit (if it exists).
 	 * @param hash The hash of the commit to scroll to.
 	 * @param alwaysCenterCommit TRUE => Always scroll the view to be centered on the commit. FALSE => Don't scroll the view if the commit is already within the visible portion of commits.
@@ -1682,7 +1715,12 @@ class GitGraphView {
 	}
 
 	private observeKeyboardEvents() {
-		document.addEventListener('keydown', e => {
+		const handledEvent = (e: KeyboardEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+		};
+
+		document.addEventListener('keydown', (e) => {
 			if (dialog.isOpen()) {
 				if (e.key === 'Escape') {
 					dialog.close();
@@ -1695,12 +1733,20 @@ class GitGraphView {
 					contextMenu.close();
 				}
 			} else {
-				if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-					this.refresh(true);
-				} else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
-					this.findWidget.show(true);
-				} else if (e.key === 'h' && (e.ctrlKey || e.metaKey) && this.commitHead !== null) {
-					this.scrollToCommit(this.commitHead, true, true);
+				if (e.ctrlKey || e.metaKey) {
+					if (e.key === 'r') {
+						this.refresh(true);
+						handledEvent(e);
+					} else if (e.key === 'f') {
+						this.findWidget.show(true);
+						handledEvent(e);
+					} else if (e.key === 'h' && this.commitHead !== null) {
+						this.scrollToCommit(this.commitHead, true, true);
+						handledEvent(e);
+					} else if (e.key.toLowerCase() === 's') {
+						this.scrollToStash(!e.shiftKey);
+						handledEvent(e);
+					}
 				} else if (e.key === 'Escape' && this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
 				} else if (e.key === 'Escape' && this.findWidget.isVisible()) {

@@ -411,6 +411,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.showUntrackedFiles` Extension Setting.
+	 */
+	get showUntrackedFiles() {
+		return !!this.config.get('showUntrackedFiles', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.tabIconColourTheme` Extension Setting.
 	 */
 	get tabIconColourTheme() {

@@ -1308,7 +1308,7 @@ export class DataSource implements vscode.Disposable {
 	 * @returns The number of uncommitted changes.
 	 */
 	private getUncommittedChanges(repo: string) {
-		return this.spawnGit(['status', '--untracked-files', '--porcelain'], repo, (stdout) => {
+		return this.spawnGit(['status', '--untracked-files=' + (getConfig().showUntrackedFiles ? 'all' : 'no'), '--porcelain'], repo, (stdout) => {
 			const numLines = stdout.split(EOL_REGEX).length;
 			return numLines > 1 ? numLines - 1 : 0;
 		});
@@ -1320,7 +1320,7 @@ export class DataSource implements vscode.Disposable {
 	 * @returns The untracked and deleted files.
 	 */
 	private getStatus(repo: string) {
-		return this.spawnGit(['status', '-s', '--untracked-files', '--porcelain', '-z'], repo, (stdout) => {
+		return this.spawnGit(['status', '-s', '--untracked-files=' + (getConfig().showUntrackedFiles ? 'all' : 'no'), '--porcelain', '-z'], repo, (stdout) => {
 			let output = stdout.split('\0'), i = 0;
 			let status: GitStatusFiles = { deleted: [], untracked: [] };
 			let path = '', c1 = '', c2 = '';

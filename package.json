@@ -737,7 +737,12 @@
 				"git-graph.showUncommittedChanges": {
 					"type": "boolean",
 					"default": true,
-					"description": "Show uncommitted changes (set to false to decrease load time on large repositories)."
+					"description": "Show uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View."
+				},
+				"git-graph.showUntrackedFiles": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show untracked files when viewing the uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View."
 				},
 				"git-graph.sourceCodeProviderIntegrationLocation": {
 					"type": "string",

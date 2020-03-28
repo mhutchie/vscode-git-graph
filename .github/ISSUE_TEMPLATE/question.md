@@ -7,7 +7,7 @@ assignees: mhutchie
 
 ---
 
-If you have a simple question, please chat with us on [Gitter](https://gitter.im/mhutchie/vscode-git-graph)! This allows myself and the Git Graph community to answer your question as fast as possible.
+If you have a simple question, please chat with us on [Discord](https://discord.gg/ZRRDYzt)! This allows myself and the Git Graph community to answer your question as fast as possible.
 
 More information for the following topics can be found at the provided links:
 * [Functionality currently available in Git Graph](https://github.com/mhutchie/vscode-git-graph/blob/master/README.md#features)

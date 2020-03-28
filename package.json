@@ -26,7 +26,7 @@
 	"bugs": {
 		"url": "https://github.com/mhutchie/vscode-git-graph/issues"
 	},
-	"qna": "https://gitter.im/mhutchie/vscode-git-graph",
+	"qna": "https://github.com/mhutchie/vscode-git-graph/wiki/Support-Resources",
 	"license": "SEE LICENSE IN 'LICENSE'",
 	"icon": "resources/icon.png",
 	"engines": {

@@ -120,7 +120,7 @@ class GitGraphView {
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
 				const currentRepoState = this.gitRepos[this.currentRepo];
-				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags);
+				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs);
 			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
@@ -149,7 +149,7 @@ class GitGraphView {
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
 			const currentRepoState = this.gitRepos[this.currentRepo];
-			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, true);
+			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, true);
 		});
 	}
 
@@ -512,10 +512,13 @@ class GitGraphView {
 			refreshId: ++this.currentRepoRefreshState.loadCommitsRefreshId,
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
-			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
 			showTags: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Default
 				? this.config.showTags
 				: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Show,
+			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
+			includeCommitsMentionedByReflogs: this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Default
+				? this.config.includeCommitsMentionedByReflogs
+				: this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Enabled,
 			remotes: this.gitRemotes,
 			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
 			stashes: this.gitStashes
@@ -663,6 +666,13 @@ class GitGraphView {
 	public savePullRequestConfig(repo: string, config: GG.PullRequestConfig | null) {
 		if (repo === this.currentRepo) {
 			this.gitRepos[this.currentRepo].pullRequestConfig = config;
+			this.saveRepoState();
+		}
+	}
+
+	public saveIncludeCommitsMentionedByReflogsConfig(repo: string, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
 			this.saveRepoState();
 		}
 	}

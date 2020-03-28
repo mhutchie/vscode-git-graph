@@ -270,6 +270,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.includeCommitsMentionedByReflogs` Extension Setting.
+	 */
+	get includeCommitsMentionedByReflogs() {
+		return !!this.config.get('includeCommitsMentionedByReflogs', false);
+	}
+
+	/**
 	 * Get the value of the `git-graph.initialLoadCommits` Extension Setting.
 	 */
 	get initialLoadCommits() {

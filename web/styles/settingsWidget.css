@@ -41,6 +41,10 @@
 .settingsSection.centered{
 	text-align:center;
 }
+.settingsSection.general{
+	padding-left:11px;
+	padding-right:11px;
+}
 
 .settingsSection h3{
 	position:relative;
@@ -235,4 +239,15 @@
 }
 .settingsWidget.loading #settingsLoading{
 	display:block;
+}
+
+.settingsWidget .settingsWidgetInfo{
+	cursor:help;
+}
+.settingsWidget .settingsWidgetInfo > svg{
+	width:15px !important;
+	height:15px !important;
+	margin-top:-2px;
+	margin-left:5px;
+	vertical-align:middle;
 }

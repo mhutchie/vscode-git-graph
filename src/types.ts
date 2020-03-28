@@ -182,6 +182,7 @@ export interface GitRepoState {
 	cdvDivider: number;
 	cdvHeight: number;
 	fileViewType: FileViewType;
+	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
 	issueLinkingConfig: IssueLinkingConfig | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
@@ -219,6 +220,7 @@ export interface GitGraphViewConfig {
 	readonly graphColours: string[];
 	readonly graphStyle: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
@@ -397,6 +399,12 @@ export const enum FileViewType {
 export const enum GraphStyle {
 	Rounded,
 	Angular
+}
+
+export const enum IncludeCommitsMentionedByReflogs {
+	Default,
+	Enabled,
+	Disabled
 }
 
 export const enum RefLabelAlignment {
@@ -755,8 +763,9 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly refreshId: number;
 	readonly branches: string[] | null; // null => Show All
 	readonly maxCommits: number;
-	readonly showRemoteBranches: boolean;
 	readonly showTags: boolean;
+	readonly showRemoteBranches: boolean;
+	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
 	readonly stashes: ReadonlyArray<GitStash>;

@@ -607,6 +607,11 @@
 					"default": "rounded",
 					"description": "Specifies the style of the graph."
 				},
+				"git-graph.includeCommitsMentionedByReflogs": {
+					"type": "boolean",
+					"default": false,
+					"description": "Include commits only mentioned by reflogs in the Git Graph View (only applies when showing all branches). This can be overridden per repository in the Git Graph View's Repository Settings Widget."
+				},
 				"git-graph.initialLoadCommits": {
 					"type": "number",
 					"default": 300,

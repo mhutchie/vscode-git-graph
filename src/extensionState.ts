@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { Event } from './event';
-import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, ShowTags } from './types';
+import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, ShowTags } from './types';
 import { getPathFromStr, GitExecutable } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
@@ -19,6 +19,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	cdvDivider: 0.5,
 	cdvHeight: 250,
 	fileViewType: FileViewType.Default,
+	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
 	issueLinkingConfig: null,
 	pullRequestConfig: null,
 	showRemoteBranches: true,

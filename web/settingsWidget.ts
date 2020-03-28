@@ -14,6 +14,7 @@ class SettingsWidget {
 	private issueLinkingConfig: GG.IssueLinkingConfig | null = null;
 	private pullRequestConfig: GG.PullRequestConfig | null = null;
 	private showTags: GG.ShowTags | null = null;
+	private includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs | null = null;
 
 	private settings: GG.GitRepoSettings | null = null;
 
@@ -37,7 +38,7 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
-	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, transition: boolean) {
+	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, transition: boolean) {
 		if (this.visible) return;
 		this.visible = true;
 		this.loading = true;
@@ -46,6 +47,7 @@ class SettingsWidget {
 		this.issueLinkingConfig = issueLinkingConfig;
 		this.pullRequestConfig = pullRequestConfig;
 		this.showTags = showTags;
+		this.includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
 		alterClass(this.widgetElem, CLASS_TRANSITION, transition);
 		this.widgetElem.classList.add(CLASS_ACTIVE);
 		this.requestSettings();
@@ -67,6 +69,7 @@ class SettingsWidget {
 		this.issueLinkingConfig = null;
 		this.pullRequestConfig = null;
 		this.showTags = null;
+		this.includeCommitsMentionedByReflogs = null;
 		this.settings = null;
 		this.widgetElem.classList.add(CLASS_TRANSITION);
 		this.widgetElem.classList.remove(CLASS_ACTIVE);
@@ -87,10 +90,10 @@ class SettingsWidget {
 		};
 	}
 
-	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags) {
+	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs) {
 		if (!state.visible || state.repo === null) return;
 		this.settings = state.settings;
-		this.show(state.repo, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, false);
+		this.show(state.repo, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, includeCommitsMentionedByReflogs, false);
 	}
 
 	public isVisible() {
@@ -125,8 +128,10 @@ class SettingsWidget {
 
 	private render() {
 		if (this.settings !== null) {
-			let html = '<div class="settingsSection centered"><h3>General</h3>';
-			html += '<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label></div>';
+			let html = '<div class="settingsSection general"><h3>General</h3>' +
+				'<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label><br/>' +
+				'<label id="settingsIncludeCommitsMentionedByReflogs"><input type="checkbox" id="settingsIncludeCommitsMentionedByReflogsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Include commits only mentioned by reflogs</label><span class="settingsWidgetInfo" title="Only applies when showing all branches.">' + SVG_ICONS.info + '</span>' +
+				'</div>';
 
 			html += '<div class="settingsSection centered"><h3>User Details</h3>';
 			const userName = this.settings.user.name, userEmail = this.settings.user.email;
@@ -135,14 +140,14 @@ class SettingsWidget {
 			if (userNameSet || userEmailSet) {
 				const escapedUserName = escapeHtml(userName.local ?? userName.global ?? 'Not Set');
 				const escapedUserEmail = escapeHtml(userEmail.local ?? userEmail.global ?? 'Not Set');
-				html += '<table>';
-				html += '<tr><td class="left">User Name:</td><td class="leftWithEllipsis" title="' + escapedUserName + (userNameSet ? ' (' + (userName.local !== null ? 'Local' : 'Global') + ')' : '') + '">' + escapedUserName + '</td></tr>';
-				html += '<tr><td class="left">User Email:</td><td class="leftWithEllipsis" title="' + escapedUserEmail + (userEmailSet ? ' (' + (userEmail.local !== null ? 'Local' : 'Global') + ')' : '') + '">' + escapedUserEmail + '</td></tr>';
-				html += '</table>';
-				html += '<div class="settingsSectionButtons"><div id="editUserDetails" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removeUserDetails" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
+				html += '<table>' +
+					'<tr><td class="left">User Name:</td><td class="leftWithEllipsis" title="' + escapedUserName + (userNameSet ? ' (' + (userName.local !== null ? 'Local' : 'Global') + ')' : '') + '">' + escapedUserName + '</td></tr>' +
+					'<tr><td class="left">User Email:</td><td class="leftWithEllipsis" title="' + escapedUserEmail + (userEmailSet ? ' (' + (userEmail.local !== null ? 'Local' : 'Global') + ')' : '') + '">' + escapedUserEmail + '</td></tr>' +
+					'</table>' +
+					'<div class="settingsSectionButtons"><div id="editUserDetails" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removeUserDetails" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
-				html += '<span>User Details (such as name and email) are used by Git to record the Author and Committer of commit objects.</span>';
-				html += '<div class="settingsSectionButtons"><div id="editUserDetails" class="addBtn">' + SVG_ICONS.close + 'Add User Details</div></div>';
+				html += '<span>User Details (such as name and email) are used by Git to record the Author and Committer of commit objects.</span>' +
+					'<div class="settingsSectionButtons"><div id="editUserDetails" class="addBtn">' + SVG_ICONS.close + 'Add User Details</div></div>';
 			}
 			html += '</div>';
 
@@ -212,9 +217,23 @@ class SettingsWidget {
 				: this.showTags === GG.ShowTags.Show;
 			showTagsElem.addEventListener('change', () => {
 				if (this.repo === null) return;
-				const value = (<HTMLInputElement>document.getElementById('settingsShowTagsCheckbox')).checked;
-				this.showTags = value ? GG.ShowTags.Show : GG.ShowTags.Hide;
+				const elem = <HTMLInputElement | null>document.getElementById('settingsShowTagsCheckbox');
+				if (elem === null) return;
+				this.showTags = elem.checked ? GG.ShowTags.Show : GG.ShowTags.Hide;
 				this.view.saveShowTagsConfig(this.repo, this.showTags);
+				this.view.refresh(true);
+			});
+
+			const includeCommitsMentionedByReflogsElem = <HTMLInputElement>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
+			includeCommitsMentionedByReflogsElem.checked = this.includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Default
+				? initialState.config.includeCommitsMentionedByReflogs
+				: this.includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Enabled;
+			includeCommitsMentionedByReflogsElem.addEventListener('change', () => {
+				if (this.repo === null) return;
+				const elem = <HTMLInputElement | null>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
+				if (elem === null) return;
+				this.includeCommitsMentionedByReflogs = elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled;
+				this.view.saveIncludeCommitsMentionedByReflogsConfig(this.repo, this.includeCommitsMentionedByReflogs);
 				this.view.refresh(true);
 			});
 
@@ -576,7 +595,7 @@ class SettingsWidget {
 	private showCreatePullRequestIntegrationDialog2(config: GG.PullRequestConfig) {
 		if (this.settings === null) return;
 
-		const destBranches = config.destRemote !== null 
+		const destBranches = config.destRemote !== null
 			? this.view.getBranches()
 				.filter((branch) => branch.startsWith('remotes/' + config.destRemote + '/') && branch !== ('remotes/' + config.destRemote + '/HEAD'))
 				.map((branch) => branch.substring(config.destRemote!.length + 9))

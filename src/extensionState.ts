@@ -65,7 +65,10 @@ export class ExtensionState implements vscode.Disposable {
 			} else {
 				fs.mkdir(this.globalStoragePath, () => {
 					fs.mkdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err) => {
-						if (!err) this.avatarStorageAvailable = true;
+						if (!err || err.code === 'EEXIST') {
+							// The directory was created, or it already exists
+							this.avatarStorageAvailable = true;
+						}
 					});
 				});
 			}

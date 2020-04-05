@@ -3,6 +3,8 @@
 node_modules/*/*.md
 out/askpass/*.d.ts
 out/askpass/*.js.map
+out/life-cycle/*.d.ts
+out/life-cycle/*.js.map
 out/*.d.ts
 out/*.js.map
 resources/demo.gif

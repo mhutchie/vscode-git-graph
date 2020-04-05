@@ -6,6 +6,7 @@ import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { EventEmitter } from './event';
 import { ExtensionState } from './extensionState';
+import { onStartUp } from './life-cycle/startup';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
@@ -79,6 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	logger.log('Started Git Graph - Ready to use!');
 
 	extensionState.expireOldCodeReviews();
+	onStartUp(context).catch(() => { });
 }
 
 /**

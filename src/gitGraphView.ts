@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewScm } from './utils';
+import { copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
 
 /**
  * Manages the Git Graph View.
@@ -504,6 +504,12 @@ export class GitGraphView implements vscode.Disposable {
 				this.sendMessage({
 					command: 'viewDiff',
 					error: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+				});
+				break;
+			case 'viewFileAtRevision':
+				this.sendMessage({
+					command: 'viewFileAtRevision',
+					error: await viewFileAtRevision(msg.repo, msg.hash, msg.filePath)
 				});
 				break;
 			case 'viewScm':

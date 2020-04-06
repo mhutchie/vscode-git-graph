@@ -313,6 +313,19 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 	}
 }
 
+export async function viewFileAtRevision(repo: string, hash: string, filePath: string) {
+	const pathComponents = filePath.split('/');
+	const title = abbrevCommit(hash) + ': ' + pathComponents[pathComponents.length - 1];
+
+	return vscode.commands.executeCommand('vscode.open', encodeDiffDocUri(repo, filePath, hash, GitFileStatus.Modified, DiffSide.New).with({ path: title }), {
+		preview: true,
+		viewColumn: getConfig().openDiffTabLocation
+	}).then(
+		() => null,
+		() => 'Visual Studio Code was unable to open ' + filePath + ' at commit ' + abbrevCommit(hash) + '.'
+	);
+}
+
 /**
  * Open the Visual Studio Code Source Control View.
  */

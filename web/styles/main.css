@@ -530,7 +530,7 @@ body #view{
 	margin-left:8px;
 	opacity:0;
 }
-.fileTreeFileAction.openGitFile{
+.fileTreeFileAction.viewGitFileAtRevision, .fileTreeFileAction.openGitFile{
 	margin-left:6px;
 }
 .fileTreeFileRecord:hover .fileTreeFileAction{
@@ -547,7 +547,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .fileTreeFileAction svg,
 .fileTreeFileAction.copyGitFile svg{
 	top:3px;
 }
-.fileTreeFileAction.openGitFile svg{
+.fileTreeFileAction.viewGitFileAtRevision svg, .fileTreeFileAction.openGitFile svg{
 	top:4px;
 }
 .fileTreeFolder:hover svg.openFolderIcon, .fileTreeFolder:hover svg.closedFolderIcon, .fileTreeFileRecord:hover svg.fileIcon, .fileTreeFileRecord:hover #cdvLastFileViewed svg, .fileTreeRepo:hover svg, .fileTreeFileAction:hover svg{

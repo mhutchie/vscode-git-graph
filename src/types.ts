@@ -983,6 +983,15 @@ export interface ResponseViewDiff extends ResponseWithErrorInfo {
 	readonly command: 'viewDiff';
 }
 
+export interface RequestViewFileAtRevision extends RepoRequest {
+	readonly command: 'viewFileAtRevision';
+	readonly hash: string;
+	readonly filePath: string;
+}
+export interface ResponseViewFileAtRevision extends ResponseWithErrorInfo {
+	readonly command: 'viewFileAtRevision';
+}
+
 export interface RequestViewScm extends BaseMessage {
 	readonly command: 'viewScm';
 }
@@ -1043,6 +1052,7 @@ export type RequestMessage =
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestViewDiff
+	| RequestViewFileAtRevision
 	| RequestViewScm;
 
 export type ResponseMessage =
@@ -1094,4 +1104,5 @@ export type ResponseMessage =
 	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseViewDiff
+	| ResponseViewFileAtRevision
 	| ResponseViewScm;

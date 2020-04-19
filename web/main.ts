@@ -961,6 +961,13 @@ class GitGraphView {
 			}
 		], [
 			{
+				title: 'Create Archive',
+				visible: visibility.createArchive,
+				onClick: () => {
+					runAction({ command: 'createArchive', repo: this.currentRepo, ref: refName }, 'Creating Archive');
+				}
+			},
+			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,
 				onClick: () => {
@@ -1220,6 +1227,13 @@ class GitGraphView {
 			}
 		], [
 			{
+				title: 'Create Archive',
+				visible: visibility.createArchive,
+				onClick: () => {
+					runAction({ command: 'createArchive', repo: this.currentRepo, ref: refName }, 'Creating Archive');
+				}
+			},
+			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,
 				onClick: () => {
@@ -1340,6 +1354,13 @@ class GitGraphView {
 				}
 			}
 		], [
+			{
+				title: 'Create Archive',
+				visible: visibility.createArchive,
+				onClick: () => {
+					runAction({ command: 'createArchive', repo: this.currentRepo, ref: tagName }, 'Creating Archive');
+				}
+			},
 			{
 				title: 'Copy Tag Name to Clipboard',
 				visible: visibility.copyName,
@@ -2625,6 +2646,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'copyToClipboard':
 				finishOrDisplayError(msg.error, 'Unable to Copy ' + msg.type + ' to Clipboard');
+				break;
+			case 'createArchive':
+				finishOrDisplayError(msg.error, 'Unable to Create Archive', true);
 				break;
 			case 'createBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Create Branch');

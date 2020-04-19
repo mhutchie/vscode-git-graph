@@ -158,6 +158,10 @@
 									"type": "boolean",
 									"title": "Create Pull Request..."
 								},
+								"createArchive": {
+									"type": "boolean",
+									"title": "Create Archive"
+								},
 								"copyName": {
 									"type": "boolean",
 									"title": "Copy Branch Name to Clipboard"
@@ -236,6 +240,10 @@
 									"type": "boolean",
 									"title": "Create Pull Request"
 								},
+								"createArchive": {
+									"type": "boolean",
+									"title": "Create Archive"
+								},
 								"copyName": {
 									"type": "boolean",
 									"title": "Copy Branch Name to Clipboard"
@@ -285,6 +293,10 @@
 								"push": {
 									"type": "boolean",
 									"title": "Push Tag..."
+								},
+								"createArchive": {
+									"type": "boolean",
+									"title": "Create Archive"
 								},
 								"copyName": {
 									"type": "boolean",

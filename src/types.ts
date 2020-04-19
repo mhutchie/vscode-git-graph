@@ -270,6 +270,7 @@ export interface ContextMenuActionsVisibility {
 		readonly rebase: boolean;
 		readonly push: boolean;
 		readonly createPullRequest: boolean;
+		readonly createArchive: boolean;
 		readonly copyName: boolean;
 	};
 	readonly commit: {
@@ -291,6 +292,7 @@ export interface ContextMenuActionsVisibility {
 		readonly fetch: boolean;
 		readonly pull: boolean;
 		readonly createPullRequest: boolean;
+		readonly createArchive: boolean;
 		readonly copyName: boolean;
 	};
 	readonly stash: {
@@ -305,6 +307,7 @@ export interface ContextMenuActionsVisibility {
 		readonly viewDetails: boolean;
 		readonly delete: boolean;
 		readonly push: boolean;
+		readonly createArchive: boolean;
 		readonly copyName: boolean;
 	};
 	readonly uncommittedChanges: {
@@ -593,6 +596,14 @@ export interface RequestCopyToClipboard extends BaseMessage {
 export interface ResponseCopyToClipboard extends ResponseWithErrorInfo {
 	readonly command: 'copyToClipboard';
 	readonly type: string;
+}
+
+export interface RequestCreateArchive extends RepoRequest {
+	readonly command: 'createArchive';
+	readonly ref: string;
+}
+export interface ResponseCreateArchive extends ResponseWithErrorInfo {
+	readonly command: 'createArchive';
 }
 
 export interface RequestCreateBranch extends RepoRequest {
@@ -1023,6 +1034,7 @@ export type RequestMessage =
 	| RequestCompareCommits
 	| RequestCopyFilePath
 	| RequestCopyToClipboard
+	| RequestCreateArchive
 	| RequestCreateBranch
 	| RequestCreatePullRequest
 	| RequestDeleteBranch
@@ -1078,6 +1090,7 @@ export type ResponseMessage =
 	| ResponseCommitDetails
 	| ResponseCopyFilePath
 	| ResponseCopyToClipboard
+	| ResponseCreateArchive
 	| ResponseCreateBranch
 	| ResponseCreatePullRequest
 	| ResponseDeleteBranch

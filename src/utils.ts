@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
+import { DataSource } from './dataSource';
 import { DiffSide, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { ErrorInfo, GitFileStatus, PullRequestConfig, PullRequestProvider } from './types';
@@ -187,6 +188,36 @@ export function getRepoName(path: string) {
 
 
 /* Visual Studio Code Command Wrappers */
+
+/**
+ * Create an archive of a repository at a specific reference, and save to disk.
+ * @param repo The path of the repository.
+ * @param ref The reference of the revision to archive.
+ * @param dataSource The DataSource instance that can be used to create the archive.
+ * @returns The ErrorInfo from the executed command.
+ */
+export function archive(repo: string, ref: string, dataSource: DataSource): Thenable<ErrorInfo> {
+	return vscode.window.showSaveDialog({
+		defaultUri: vscode.Uri.file(repo),
+		saveLabel: 'Create Archive',
+		filters: { 'TAR Archive': ['tar'], 'ZIP Archive': ['zip'] }
+	}).then(
+		(uri) => {
+			if (uri) {
+				const extension = uri.fsPath.substring(uri.fsPath.lastIndexOf('.') + 1).toLowerCase();
+				if (extension === 'tar' || extension === 'zip') {
+					return dataSource.archive(repo, ref, uri.fsPath, extension);
+				} else {
+					return 'Invalid file extension "*.' + extension + '". The archive file must have a *.tar or *.zip extension.';
+				}
+			} else {
+				return 'No file name was provided for the archive.';
+			}
+		},
+		() => 'Visual Studio Code was unable to display the save dialog.'
+	);
+}
+
 
 /**
  * Copy the path of a file in a repository to the clipboard.

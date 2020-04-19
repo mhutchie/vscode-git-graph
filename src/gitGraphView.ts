@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
 
 /**
  * Manages the Git Graph View.
@@ -238,6 +238,12 @@ export class GitGraphView implements vscode.Disposable {
 					command: 'copyToClipboard',
 					type: msg.type,
 					error: await copyToClipboard(msg.data)
+				});
+				break;
+			case 'createArchive':
+				this.sendMessage({
+					command: 'createArchive',
+					error: await archive(msg.repo, msg.ref, this.dataSource)
 				});
 				break;
 			case 'createBranch':

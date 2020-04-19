@@ -856,6 +856,21 @@ export class DataSource implements vscode.Disposable {
 	}
 
 
+	/* Git Action Methods - Branches & Tags */
+
+	/**
+	 * Create an archive of a repository at a specific reference, and save to disk.
+	 * @param repo The path of the repository.
+	 * @param ref The reference of the revision to archive.
+	 * @param outputFilePath The file path that the archive should be saved to.
+	 * @param type The type of archive.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public archive(repo: string, ref: string, outputFilePath: string, type: 'tar' | 'zip') {
+		return this.runGitCommand(['archive', '--format=' + type, '-o', outputFilePath, ref], repo);
+	}
+
+
 	/* Git Action Methods - Commits */
 
 	/**

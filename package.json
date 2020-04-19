@@ -648,6 +648,11 @@
 					"default": true,
 					"description": "Display merge commits with a muted text color."
 				},
+				"git-graph.onlyFollowFirstParent": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Only follow the first parent of commits when discovering the commits to load in the Git Graph View. See [--first-parent](https://git-scm.com/docs/git-log#Documentation/git-log.txt---first-parent) to find out more about this setting."
+				},
 				"git-graph.openDiffTabLocation": {
 					"type": "string",
 					"enum": [

@@ -15,6 +15,7 @@ class SettingsWidget {
 	private pullRequestConfig: GG.PullRequestConfig | null = null;
 	private showTags: GG.ShowTags | null = null;
 	private includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs | null = null;
+	private onlyFollowFirstParent: GG.OnlyFollowFirstParent | null = null;
 
 	private settings: GG.GitRepoSettings | null = null;
 
@@ -38,7 +39,7 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
-	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, transition: boolean) {
+	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent, transition: boolean) {
 		if (this.visible) return;
 		this.visible = true;
 		this.loading = true;
@@ -48,6 +49,7 @@ class SettingsWidget {
 		this.pullRequestConfig = pullRequestConfig;
 		this.showTags = showTags;
 		this.includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
+		this.onlyFollowFirstParent = onlyFollowFirstParent;
 		alterClass(this.widgetElem, CLASS_TRANSITION, transition);
 		this.widgetElem.classList.add(CLASS_ACTIVE);
 		this.requestSettings();
@@ -70,6 +72,7 @@ class SettingsWidget {
 		this.pullRequestConfig = null;
 		this.showTags = null;
 		this.includeCommitsMentionedByReflogs = null;
+		this.onlyFollowFirstParent = null;
 		this.settings = null;
 		this.widgetElem.classList.add(CLASS_TRANSITION);
 		this.widgetElem.classList.remove(CLASS_ACTIVE);
@@ -90,10 +93,10 @@ class SettingsWidget {
 		};
 	}
 
-	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs) {
+	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
 		if (!state.visible || state.repo === null) return;
 		this.settings = state.settings;
-		this.show(state.repo, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, includeCommitsMentionedByReflogs, false);
+		this.show(state.repo, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, includeCommitsMentionedByReflogs, onlyFollowFirstParent, false);
 	}
 
 	public isVisible() {
@@ -131,6 +134,7 @@ class SettingsWidget {
 			let html = '<div class="settingsSection general"><h3>General</h3>' +
 				'<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label><br/>' +
 				'<label id="settingsIncludeCommitsMentionedByReflogs"><input type="checkbox" id="settingsIncludeCommitsMentionedByReflogsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Include commits only mentioned by reflogs</label><span class="settingsWidgetInfo" title="Only applies when showing all branches.">' + SVG_ICONS.info + '</span>' +
+				'<label id="settingsOnlyFollowFirstParent"><input type="checkbox" id="settingsOnlyFollowFirstParentCheckbox" tabindex="-1"><span class="customCheckbox"></span>Only follow the first parent of commits</label><span class="settingsWidgetInfo" title="Instead of following all parents of commits, only follow the first parent when discovering the commits to load.">' + SVG_ICONS.info + '</span>' +
 				'</div>';
 
 			html += '<div class="settingsSection centered"><h3>User Details</h3>';
@@ -212,9 +216,7 @@ class SettingsWidget {
 			this.contentsElem.innerHTML = html;
 
 			const showTagsElem = <HTMLInputElement>document.getElementById('settingsShowTagsCheckbox');
-			showTagsElem.checked = this.showTags === GG.ShowTags.Default
-				? initialState.config.showTags
-				: this.showTags === GG.ShowTags.Show;
+			showTagsElem.checked = getShowTags(this.showTags!);
 			showTagsElem.addEventListener('change', () => {
 				if (this.repo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsShowTagsCheckbox');
@@ -225,15 +227,24 @@ class SettingsWidget {
 			});
 
 			const includeCommitsMentionedByReflogsElem = <HTMLInputElement>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
-			includeCommitsMentionedByReflogsElem.checked = this.includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Default
-				? initialState.config.includeCommitsMentionedByReflogs
-				: this.includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Enabled;
+			includeCommitsMentionedByReflogsElem.checked = getIncludeCommitsMentionedByReflogs(this.includeCommitsMentionedByReflogs!);
 			includeCommitsMentionedByReflogsElem.addEventListener('change', () => {
 				if (this.repo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
 				if (elem === null) return;
 				this.includeCommitsMentionedByReflogs = elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled;
 				this.view.saveIncludeCommitsMentionedByReflogsConfig(this.repo, this.includeCommitsMentionedByReflogs);
+				this.view.refresh(true);
+			});
+
+			const settingsOnlyFollowFirstParentElem = <HTMLInputElement>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
+			settingsOnlyFollowFirstParentElem.checked = getOnlyFollowFirstParent(this.onlyFollowFirstParent!);
+			settingsOnlyFollowFirstParentElem.addEventListener('change', () => {
+				if (this.repo === null) return;
+				const elem = <HTMLInputElement | null>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
+				if (elem === null) return;
+				this.onlyFollowFirstParent = elem.checked ? GG.OnlyFollowFirstParent.Enabled : GG.OnlyFollowFirstParent.Disabled;
+				this.view.saveOnlyFollowFirstParentConfig(this.repo, this.onlyFollowFirstParent);
 				this.view.refresh(true);
 			});
 

@@ -326,6 +326,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.onlyFollowFirstParent` Extension Setting.
+	 */
+	get onlyFollowFirstParent() {
+		return !!this.config.get('onlyFollowFirstParent', false);
+	}
+
+	/**
 	 * Get the value of the `git-graph.openDiffTabLocation` Extension Setting.
 	 */
 	get openDiffTabLocation(): vscode.ViewColumn {

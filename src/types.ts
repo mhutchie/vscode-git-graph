@@ -183,6 +183,7 @@ export interface GitRepoState {
 	cdvHeight: number;
 	fileViewType: FileViewType;
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
+	onlyFollowFirstParent: OnlyFollowFirstParent;
 	issueLinkingConfig: IssueLinkingConfig | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
@@ -226,6 +227,7 @@ export interface GitGraphViewConfig {
 	readonly loadMoreCommitsAutomatically: boolean;
 	readonly muteCommitsNotAncestorsOfHead: boolean;
 	readonly muteMergeCommits: boolean;
+	readonly onlyFollowFirstParent: boolean;
 	readonly openRepoToHead: boolean;
 	readonly showCurrentBranchByDefault: boolean;
 	readonly showTags: boolean;
@@ -402,6 +404,12 @@ export const enum GraphStyle {
 }
 
 export const enum IncludeCommitsMentionedByReflogs {
+	Default,
+	Enabled,
+	Disabled
+}
+
+export const enum OnlyFollowFirstParent {
 	Default,
 	Enabled,
 	Disabled
@@ -766,6 +774,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly showTags: boolean;
 	readonly showRemoteBranches: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
+	readonly onlyFollowFirstParent: boolean;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
 	readonly stashes: ReadonlyArray<GitStash>;
@@ -776,6 +785,7 @@ export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly commits: GitCommit[];
 	readonly head: string | null;
 	readonly moreCommitsAvailable: boolean;
+	readonly onlyFollowFirstParent: boolean;
 }
 
 export interface RequestLoadRepos extends BaseMessage {

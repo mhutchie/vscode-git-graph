@@ -50,6 +50,7 @@ declare global {
 		readonly currentBranches: string[] | null;
 		readonly moreCommitsAvailable: boolean;
 		readonly maxCommits: number;
+		readonly onlyFollowFirstParent: boolean;
 		readonly expandedCommit: ExpandedCommit | null;
 		readonly scrollTop: number;
 		readonly findWidget: FindWidgetState;

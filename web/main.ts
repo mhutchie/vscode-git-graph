@@ -7,6 +7,7 @@ class GitGraphView {
 	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
+	private onlyFollowFirstParent: boolean = false;
 	private avatars: AvatarImageCollection = {};
 	private currentBranches: string[] | null = null;
 
@@ -116,11 +117,11 @@ class GitGraphView {
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
-			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable);
+			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
 				const currentRepoState = this.gitRepos[this.currentRepo];
-				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs);
+				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent);
 			}
 			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
 		}
@@ -149,7 +150,7 @@ class GitGraphView {
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
 			const currentRepoState = this.gitRepos[this.currentRepo];
-			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, true);
+			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
 		});
 	}
 
@@ -281,8 +282,8 @@ class GitGraphView {
 		}
 	}
 
-	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean) {
-		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.commitHead === commitHead && commits.length > 0 && arraysEqual(this.commits, commits, (a, b) =>
+	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean, onlyFollowFirstParent: boolean) {
+		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.onlyFollowFirstParent === onlyFollowFirstParent && this.commitHead === commitHead && commits.length > 0 && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
 			arraysEqual(a.tags, b.tags, (a, b) => a.name === b.name && a.annotated === b.annotated) &&
@@ -316,6 +317,7 @@ class GitGraphView {
 		const currentRepoLoading = this.currentRepoLoading;
 		this.currentRepoLoading = false;
 		this.moreCommitsAvailable = moreAvailable;
+		this.onlyFollowFirstParent = onlyFollowFirstParent;
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.commitLookup = {};
@@ -346,7 +348,7 @@ class GitGraphView {
 
 		this.saveState();
 
-		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
+		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup, this.onlyFollowFirstParent);
 		this.render();
 
 		if (currentRepoLoading && this.config.openRepoToHead && this.commitHead !== null) {
@@ -416,7 +418,7 @@ class GitGraphView {
 		this.renderedGitBranchHead = null;
 		this.closeCommitDetails(false);
 		this.saveState();
-		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup);
+		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup, this.onlyFollowFirstParent);
 		this.tableElem.innerHTML = '';
 		this.footerElem.innerHTML = '';
 		this.renderGraph();
@@ -437,7 +439,7 @@ class GitGraphView {
 		if (msg.error === null) {
 			const refreshState = this.currentRepoRefreshState;
 			if (refreshState.inProgress && refreshState.loadCommitsRefreshId === msg.refreshId) {
-				this.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable);
+				this.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.onlyFollowFirstParent);
 			}
 		} else {
 			const error = this.gitBranches.length === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
@@ -496,31 +498,30 @@ class GitGraphView {
 	/* Requests */
 
 	private requestLoadRepoInfo() {
+		const repoState = this.gitRepos[this.currentRepo];
 		sendMessage({
 			command: 'loadRepoInfo',
 			repo: this.currentRepo,
 			refreshId: ++this.currentRepoRefreshState.loadRepoInfoRefreshId,
-			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
-			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes
+			showRemoteBranches: repoState.showRemoteBranches,
+			hideRemotes: repoState.hideRemotes
 		});
 	}
 
 	private requestLoadCommits() {
+		const repoState = this.gitRepos[this.currentRepo];
 		sendMessage({
 			command: 'loadCommits',
 			repo: this.currentRepo,
 			refreshId: ++this.currentRepoRefreshState.loadCommitsRefreshId,
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
-			showTags: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Default
-				? this.config.showTags
-				: this.gitRepos[this.currentRepo].showTags === GG.ShowTags.Show,
-			showRemoteBranches: this.gitRepos[this.currentRepo].showRemoteBranches,
-			includeCommitsMentionedByReflogs: this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Default
-				? this.config.includeCommitsMentionedByReflogs
-				: this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs === GG.IncludeCommitsMentionedByReflogs.Enabled,
+			showTags: getShowTags(repoState.showTags),
+			showRemoteBranches: repoState.showRemoteBranches,
+			includeCommitsMentionedByReflogs: getIncludeCommitsMentionedByReflogs(repoState.includeCommitsMentionedByReflogs),
+			onlyFollowFirstParent: getOnlyFollowFirstParent(repoState.onlyFollowFirstParent),
 			remotes: this.gitRemotes,
-			hideRemotes: this.gitRepos[this.currentRepo].hideRemotes,
+			hideRemotes: repoState.hideRemotes,
 			stashes: this.gitStashes
 		});
 	}
@@ -614,6 +615,7 @@ class GitGraphView {
 			currentBranches: this.currentBranches,
 			moreCommitsAvailable: this.moreCommitsAvailable,
 			maxCommits: this.maxCommits,
+			onlyFollowFirstParent: this.onlyFollowFirstParent,
 			expandedCommit: expandedCommit,
 			scrollTop: this.scrollTop,
 			findWidget: this.findWidget.getState(),
@@ -673,6 +675,13 @@ class GitGraphView {
 	public saveIncludeCommitsMentionedByReflogsConfig(repo: string, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs) {
 		if (repo === this.currentRepo) {
 			this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
+			this.saveRepoState();
+		}
+	}
+
+	public saveOnlyFollowFirstParentConfig(repo: string, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].onlyFollowFirstParent = onlyFollowFirstParent;
 			this.saveRepoState();
 		}
 	}
@@ -3021,6 +3030,27 @@ function getChildByPathSegment(folder: FileTreeFolder, pathSeg: string) {
 		cur = (<FileTreeFolder>cur).contents[comps[i]];
 	}
 	return cur;
+}
+
+
+/* Repository State Helpers */
+
+function getShowTags(repoValue: GG.ShowTags) {
+	return repoValue === GG.ShowTags.Default
+		? initialState.config.showTags
+		: repoValue === GG.ShowTags.Show;
+}
+
+function getIncludeCommitsMentionedByReflogs(repoValue: GG.IncludeCommitsMentionedByReflogs) {
+	return repoValue === GG.IncludeCommitsMentionedByReflogs.Default
+		? initialState.config.includeCommitsMentionedByReflogs
+		: repoValue === GG.IncludeCommitsMentionedByReflogs.Enabled;
+}
+
+function getOnlyFollowFirstParent(repoValue: GG.OnlyFollowFirstParent) {
+	return repoValue === GG.OnlyFollowFirstParent.Default
+		? initialState.config.onlyFollowFirstParent
+		: repoValue === GG.OnlyFollowFirstParent.Enabled;
 }
 
 

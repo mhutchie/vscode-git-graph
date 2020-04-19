@@ -345,6 +345,7 @@ class Graph {
 	private commits: ReadonlyArray<GG.GitCommit> = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
+	private onlyFollowFirstParent: boolean = false;
 	private expandedCommitIndex: number = -1;
 
 	private readonly viewElem: HTMLElement;
@@ -388,10 +389,11 @@ class Graph {
 
 	/* Graph Operations */
 
-	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }) {
+	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean) {
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.commitLookup = commitLookup;
+		this.onlyFollowFirstParent = onlyFollowFirstParent;
 		this.vertices = [];
 		this.branches = [];
 		this.availableColours = [];
@@ -409,8 +411,8 @@ class Graph {
 					// Parent is the <commitLookup[parentHash]>th vertex
 					this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
 					this.vertices[commitLookup[parentHash]].addChild(this.vertices[i]);
-				} else {
-					// Parent is not one of the vertices of the graph
+				} else if (!this.onlyFollowFirstParent || j === 0) {
+					// Parent is not one of the vertices of the graph, and the parent isn't being hidden by the onlyFollowFirstParent condition.
 					this.vertices[i].addParent(nullVertex);
 				}
 			}
@@ -536,7 +538,8 @@ class Graph {
 		// Mute any merge commits if the Extension Setting is enabled
 		if (this.config.muteMergeCommits) {
 			for (let i = 0; i < this.commits.length; i++) {
-				if (this.commits[i].parents.length > 1 && this.commits[i].stash === null) {
+				if (this.vertices[i].isMerge() && this.commits[i].stash === null) {
+					// The commit is a merge, and is not a stash
 					muted[i] = true;
 				}
 			}

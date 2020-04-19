@@ -36,33 +36,32 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger.logError(UNABLE_TO_FIND_GIT_MSG);
 	}
 
-	const dataSource = new DataSource(gitExecutable, onDidChangeGitExecutable, logger);
+	const configurationEmitter = new EventEmitter<vscode.ConfigurationChangeEvent>();
+	const onDidChangeConfiguration = configurationEmitter.subscribe;
+
+	const dataSource = new DataSource(gitExecutable, onDidChangeConfiguration, onDidChangeGitExecutable, logger);
 	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
-	const repoManager = new RepoManager(dataSource, extensionState, logger);
-	const statusBarItem = new StatusBarItem(repoManager, logger);
+	const repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration, logger);
+	const statusBarItem = new StatusBarItem(repoManager, onDidChangeConfiguration, logger);
 	const commandManager = new CommandManager(context.extensionPath, avatarManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);
 
 	context.subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource)),
-		vscode.workspace.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration('git-graph.showStatusBarItem')) {
-				statusBarItem.refresh();
-			} else if (e.affectsConfiguration('git-graph.dateType') || e.affectsConfiguration('git-graph.showSignatureStatus') || e.affectsConfiguration('git-graph.useMailmap')) {
-				dataSource.generateGitCommandFormats();
-			} else if (e.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
-				repoManager.maxDepthOfRepoSearchChanged();
-			} else if (e.affectsConfiguration('git.path')) {
+		vscode.workspace.onDidChangeConfiguration((event) => {
+			if (event.affectsConfiguration('git-graph')) {
+				configurationEmitter.emit(event);
+			} else if (event.affectsConfiguration('git.path')) {
 				const path = getConfig().gitPath;
 				if (path === null) return;
 
 				getGitExecutable(path).then((gitExecutable) => {
 					gitExecutableEmitter.emit(gitExecutable);
-					let msg = 'Git Graph is now using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')';
+					const msg = 'Git Graph is now using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')';
 					showInformationMessage(msg);
 					logger.log(msg);
 					repoManager.searchWorkspaceForRepos();
 				}, () => {
-					let msg = 'The new value of "git.path" (' + path + ') does not match the path and filename of a valid Git executable.';
+					const msg = 'The new value of "git.path" (' + path + ') does not match the path and filename of a valid Git executable.';
 					showErrorMessage(msg);
 					logger.logError(msg);
 				});
@@ -73,6 +72,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		repoManager,
 		avatarManager,
 		dataSource,
+		configurationEmitter,
 		extensionState,
 		gitExecutableEmitter,
 		logger

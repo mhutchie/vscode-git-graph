@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { getConfig } from './config';
+import { Event } from './event';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 
@@ -18,7 +19,7 @@ export class StatusBarItem implements vscode.Disposable {
 	 * @param repoManager The Git Graph RepoManager instance.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(repoManager: RepoManager, logger: Logger) {
+	constructor(repoManager: RepoManager, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, logger: Logger) {
 		this.logger = logger;
 
 		const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
@@ -30,6 +31,12 @@ export class StatusBarItem implements vscode.Disposable {
 
 		repoManager.onDidChangeRepos((event) => {
 			this.setNumRepos(event.numRepos);
+		}, this.disposables);
+
+		onDidChangeConfiguration((event) => {
+			if (event.affectsConfiguration('git-graph.showStatusBarItem')) {
+				this.refresh();
+			}
 		}, this.disposables);
 
 		this.setNumRepos(Object.keys(repoManager.getRepos()).length);
@@ -55,7 +62,7 @@ export class StatusBarItem implements vscode.Disposable {
 	/** 
 	 * Show or hide the Status Bar Item according to the configured value of `git-graph.showStatusBarItem`, and the number of repositories known to Git Graph.
 	 */
-	public refresh() {
+	private refresh() {
 		const shouldBeVisible = getConfig().showStatusBarItem && this.numRepos > 0;
 		if (this.isVisible !== shouldBeVisible) {
 			if (shouldBeVisible) {

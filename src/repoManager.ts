@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { EventEmitter } from './event';
+import { Event, EventEmitter } from './event';
 import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { GitRepoSet, GitRepoState } from './types';
@@ -41,7 +41,7 @@ export class RepoManager implements vscode.Disposable {
 	 * @param extensionState The Git Graph ExtensionState instance.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
+	constructor(dataSource: DataSource, extensionState: ExtensionState, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, logger: Logger) {
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.logger = logger;
@@ -72,6 +72,12 @@ export class RepoManager implements vscode.Disposable {
 			}),
 			this.repoEventEmitter
 		);
+
+		onDidChangeConfiguration((event) => {
+			if (event.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
+				this.maxDepthOfRepoSearchChanged();
+			}
+		}, this.disposables);
 	}
 
 	/**
@@ -96,7 +102,7 @@ export class RepoManager implements vscode.Disposable {
 	/**
 	 * Apply the new value of `git-graph.maxDepthOfRepoSearch` to the RepoManager.
 	 */
-	public maxDepthOfRepoSearchChanged() {
+	private maxDepthOfRepoSearchChanged() {
 		const newDepth = getConfig().maxDepthOfRepoSearch;
 		if (newDepth > this.maxDepthOfRepoSearch) {
 			this.maxDepthOfRepoSearch = newDepth;

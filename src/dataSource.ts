@@ -36,13 +36,19 @@ export class DataSource implements vscode.Disposable {
 	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
+	constructor(gitExecutable: GitExecutable | null, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
 		this.logger = logger;
 		this.setGitExecutable(gitExecutable);
 
 		const askpassManager = new AskpassManager();
 		this.askpassEnv = askpassManager.getEnv();
 		this.disposables.push(askpassManager);
+
+		onDidChangeConfiguration((event) => {
+			if (event.affectsConfiguration('git-graph.dateType') || event.affectsConfiguration('git-graph.showSignatureStatus') || event.affectsConfiguration('git-graph.useMailmap')) {
+				this.generateGitCommandFormats();
+			}
+		}, this.disposables);
 
 		onDidChangeGitExecutable((gitExecutable) => {
 			this.setGitExecutable(gitExecutable);
@@ -70,7 +76,7 @@ export class DataSource implements vscode.Disposable {
 	/**
 	 * Generate the format strings used by various Git commands.
 	 */
-	public generateGitCommandFormats() {
+	private generateGitCommandFormats() {
 		const config = getConfig();
 		const dateType = config.dateType === DateType.Author ? '%at' : '%ct';
 		const useMailmap = config.useMailmap;

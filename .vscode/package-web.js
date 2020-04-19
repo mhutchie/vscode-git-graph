@@ -1,8 +1,9 @@
 const cp = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
-const MEDIA_DIRECTORY = './media/';
-const STYLES_DIRECTORY = './web/styles/';
+const MEDIA_DIRECTORY = './media';
+const STYLES_DIRECTORY = './web/styles';
 
 const MAIN_CSS_FILE = 'main.css';
 const MAIN_JS_FILE = 'main.js';
@@ -16,35 +17,39 @@ const DEBUG = process.argv.length > 2 && process.argv[2] === 'debug';
 
 
 // Determine the JS files to be packaged. The order is: utils.ts, *.ts, and then main.ts
-let packageJsFiles = [MEDIA_DIRECTORY + UTILS_JS_FILE];
-fs.readdirSync(MEDIA_DIRECTORY).forEach(filename => {
-	if (filename.endsWith('.js') && filename !== OUTPUT_MIN_JS_FILE && filename !== UTILS_JS_FILE && filename !== MAIN_JS_FILE) packageJsFiles.push(MEDIA_DIRECTORY + filename);
+let packageJsFiles = [path.join(MEDIA_DIRECTORY, UTILS_JS_FILE)];
+fs.readdirSync(MEDIA_DIRECTORY).forEach((fileName) => {
+	if (fileName.endsWith('.js') && fileName !== OUTPUT_MIN_JS_FILE && fileName !== UTILS_JS_FILE && fileName !== MAIN_JS_FILE) {
+		packageJsFiles.push(path.join(MEDIA_DIRECTORY, fileName));
+	}
 });
-packageJsFiles.push(MEDIA_DIRECTORY + MAIN_JS_FILE);
+packageJsFiles.push(path.join(MEDIA_DIRECTORY, MAIN_JS_FILE));
 
 // Determine the CSS files to be packaged. The order is: main.css, and then *.css
-let packageCssFiles = [STYLES_DIRECTORY + MAIN_CSS_FILE];
-fs.readdirSync(STYLES_DIRECTORY).forEach(filename => {
-	if (filename.endsWith('.css') && filename !== MAIN_CSS_FILE) packageCssFiles.push(STYLES_DIRECTORY + filename);
+let packageCssFiles = [path.join(STYLES_DIRECTORY, MAIN_CSS_FILE)];
+fs.readdirSync(STYLES_DIRECTORY).forEach((fileName) => {
+	if (fileName.endsWith('.css') && fileName !== MAIN_CSS_FILE) {
+		packageCssFiles.push(path.join(STYLES_DIRECTORY, fileName));
+	}
 });
 
 // Log packaging information
+console.log('Packaging Mode = ' + (DEBUG ? "DEBUG" : "PRODUCTION"));
 console.log('Packaging CSS files: ' + packageCssFiles.join(', '));
 console.log('Packaging JS files: ' + packageJsFiles.join(', '));
-if (DEBUG) console.log('Debug Mode = ON');
 
 
 // Combine the JS files into an IIFE, with a single "use strict" directive
 let jsFileContents = '';
-packageJsFiles.forEach(filename => {
-	jsFileContents += fs.readFileSync(filename).toString().replace('"use strict";\r\n', '') + '\r\n';
-	fs.unlinkSync(filename);
+packageJsFiles.forEach((fileName) => {
+	jsFileContents += fs.readFileSync(fileName).toString().replace('"use strict";\r\n', '') + '\r\n';
+	fs.unlinkSync(fileName);
 });
-fs.writeFileSync(MEDIA_DIRECTORY + OUTPUT_TMP_JS_FILE, '"use strict";\r\n(function(document, window){\r\n' + jsFileContents + '})(document, window);\r\n');
+fs.writeFileSync(path.join(MEDIA_DIRECTORY, OUTPUT_TMP_JS_FILE), '"use strict";\r\n(function(document, window){\r\n' + jsFileContents + '})(document, window);\r\n');
 
 
 // Run uglifyjs with the required arguments
-cp.exec('uglifyjs ' + MEDIA_DIRECTORY + OUTPUT_TMP_JS_FILE + ' ' + (DEBUG ? '-b' : '--mangle') + ' --output ' + MEDIA_DIRECTORY + OUTPUT_MIN_JS_FILE, (err, stdout, stderr) => {
+cp.exec('uglifyjs ' + path.join(MEDIA_DIRECTORY, OUTPUT_TMP_JS_FILE) + ' ' + (DEBUG ? '-b' : '--mangle') + ' --output ' + path.join(MEDIA_DIRECTORY, OUTPUT_MIN_JS_FILE), (err, stdout, stderr) => {
 	if (err) {
 		console.log('ERROR:');
 		console.log(err);
@@ -56,14 +61,14 @@ cp.exec('uglifyjs ' + MEDIA_DIRECTORY + OUTPUT_TMP_JS_FILE + ' ' + (DEBUG ? '-b'
 	} else {
 		console.log('');
 		if (stdout !== '') console.log(stdout);
-		fs.unlinkSync(MEDIA_DIRECTORY + OUTPUT_TMP_JS_FILE);
+		fs.unlinkSync(path.join(MEDIA_DIRECTORY, OUTPUT_TMP_JS_FILE));
 	}
 });
 
 // Combine the CSS files
 let cssFileContents = '';
-packageCssFiles.forEach(filename => {
-	let contents = fs.readFileSync(filename).toString();
+packageCssFiles.forEach((fileName) => {
+	let contents = fs.readFileSync(fileName).toString();
 	if (DEBUG) {
 		cssFileContents += contents + '\r\n';
 	} else {
@@ -82,4 +87,4 @@ packageCssFiles.forEach(filename => {
 		cssFileContents += lines.join('');
 	}
 });
-fs.writeFileSync(MEDIA_DIRECTORY + OUTPUT_MIN_CSS_FILE, cssFileContents);
+fs.writeFileSync(path.join(MEDIA_DIRECTORY, OUTPUT_MIN_CSS_FILE), cssFileContents);

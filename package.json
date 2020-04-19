@@ -806,7 +806,7 @@
 		"compile-web": "tsc -p ./web && node ./.vscode/package-web.js",
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",
 		"package": "npm run clean && vsce package",
-		"package-and-install": "npm run clean && vsce package && node ./.vscode/install-package.js"
+		"package-and-install": "npm run package && node ./.vscode/install-package.js"
 	},
 	"dependencies": {
 		"iconv-lite": "0.5.0"

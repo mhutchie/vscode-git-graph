@@ -7,6 +7,8 @@ out/*.d.ts
 out/*.js.map
 resources/demo.gif
 src/
+tests/
 web/
 .gitignore
+jest.config.js
 tslint.json

@@ -818,14 +818,18 @@
 		"compile-web": "tsc -p ./web && node ./.vscode/package-web.js",
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",
 		"package": "npm run clean && vsce package",
-		"package-and-install": "npm run package && node ./.vscode/install-package.js"
+		"package-and-install": "npm run package && node ./.vscode/install-package.js",
+		"test": "jest --verbose"
 	},
 	"dependencies": {
 		"iconv-lite": "0.5.0"
 	},
 	"devDependencies": {
+		"@types/jest": "^25.2.1",
 		"@types/node": "^8.10.25",
 		"@types/vscode": "1.31.0",
+		"jest": "^25.4.0",
+		"ts-jest": "^25.4.0",
 		"tslint": "^5.12.1",
 		"typescript": "3.7.2",
 		"uglify-js": "^3.4.9"

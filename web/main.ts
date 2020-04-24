@@ -1436,8 +1436,9 @@ class GitGraphView {
 				if (this.gitBranches.includes(newBranch)) {
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch, target);
-					}, 'Check out the existing branch', () => {
+					}, 'Check out the existing branch and pull changes', () => {
 						this.checkoutBranchAction(newBranch, null, null, target);
+						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: newBranch, remote: remote, createNewCommit: false, squash: false }, 'Pulling Branch');
 					}, target);
 				} else {
 					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName }, 'Checking out Branch');

@@ -573,6 +573,30 @@ class Graph {
 		return muted;
 	}
 
+	public getFirstParentIndex(i: number) {
+		const parents = this.vertices[i].getParents();
+		return parents.length > 0 ? parents[0].id : -1;
+	}
+
+	public getFirstChildIndex(i: number) {
+		const children = this.vertices[i].getChildren();
+		if (children.length > 0) {
+			// The vertex has children
+			const branch = this.vertices[i].getBranch();
+			let childOnSameBranch;
+			if (branch !== null && (childOnSameBranch = children.find((child) => child.isOnThisBranch(branch)))) {
+				// If a child could be found on the same branch as the vertex
+				return childOnSameBranch.id;
+			} else {
+				// No child could be found on the same branch as the vertex
+				return Math.max(...children.map((child) => child.id));
+			}
+		} else {
+			// The vertex has no children
+			return -1;
+		}
+	}
+
 
 	/* Width Adjustment Methods */
 

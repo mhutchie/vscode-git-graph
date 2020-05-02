@@ -1772,41 +1772,51 @@ class GitGraphView {
 				if (e.key === 'Escape') {
 					contextMenu.close();
 				}
-			} else {
+			} else if (this.expandedCommit !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+				let curHashIndex = this.commitLookup[this.expandedCommit.commitHash], newHashIndex = -1;
+
 				if (e.ctrlKey || e.metaKey) {
-					if (e.key === 'r') {
-						this.refresh(true);
-						handledEvent(e);
-					} else if (e.key === 'f') {
-						this.findWidget.show(true);
-						handledEvent(e);
-					} else if (e.key === 'h' && this.commitHead !== null) {
-						this.scrollToCommit(this.commitHead, true, true);
-						handledEvent(e);
-					} else if (e.key.toLowerCase() === 's') {
-						this.scrollToStash(!e.shiftKey);
-						handledEvent(e);
+					// Up / Down navigates according to the order of commits on the branch
+					if (e.key === 'ArrowUp') {
+						newHashIndex = this.graph.getFirstChildIndex(curHashIndex);
+					} else if (e.key === 'ArrowDown') {
+						newHashIndex = this.graph.getFirstParentIndex(curHashIndex);
 					}
-				} else if (e.key === 'Escape' && this.settingsWidget.isVisible()) {
+				} else {
+					// Up / Down navigates according to the order of commits in the table
+					if (e.key === 'ArrowUp' && curHashIndex > 0) {
+						newHashIndex = curHashIndex - 1;
+					} else if (e.key === 'ArrowDown' && curHashIndex < this.commits.length - 1) {
+						newHashIndex = curHashIndex + 1;
+					}
+				}
+
+				if (newHashIndex > -1) {
+					handledEvent(e);
+					const elem = findCommitElemWithId(getCommitElems(), newHashIndex);
+					if (elem !== null) this.loadCommitDetails(elem);
+				}
+			} else if (e.ctrlKey || e.metaKey) {
+				if (e.key === 'r') {
+					this.refresh(true);
+					handledEvent(e);
+				} else if (e.key === 'f') {
+					this.findWidget.show(true);
+					handledEvent(e);
+				} else if (e.key === 'h' && this.commitHead !== null) {
+					this.scrollToCommit(this.commitHead, true, true);
+					handledEvent(e);
+				} else if (e.key.toLowerCase() === 's') {
+					this.scrollToStash(!e.shiftKey);
+					handledEvent(e);
+				}
+			} else if (e.key === 'Escape') {
+				if (this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
-				} else if (e.key === 'Escape' && this.findWidget.isVisible()) {
+				} else if (this.findWidget.isVisible()) {
 					this.findWidget.close();
-				} else if (this.expandedCommit !== null) { // Commit Details View is open
-					if (e.key === 'Escape') {
-						this.closeCommitDetails(true);
-					} else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-						let curHashIndex = this.commitLookup[this.expandedCommit.commitHash], newHashIndex = -1;
-						if (e.key === 'ArrowUp' && curHashIndex > 0) {
-							newHashIndex = curHashIndex - 1;
-						} else if (e.key === 'ArrowDown' && curHashIndex < this.commits.length - 1) {
-							newHashIndex = curHashIndex + 1;
-						}
-						if (newHashIndex > -1) {
-							e.preventDefault();
-							let elem = findCommitElemWithId(getCommitElems(), newHashIndex);
-							if (elem !== null) this.loadCommitDetails(elem);
-						}
-					}
+				} else if (this.expandedCommit !== null) {
+					this.closeCommitDetails(true);
 				}
 			}
 		});

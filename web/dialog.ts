@@ -441,6 +441,7 @@ class CustomSelect {
 				optionsElem.style.top = (currentElemRect.top - dialogElemRect.top + currentElemRect.height - 2) + 'px';
 				optionsElem.style.left = (currentElemRect.left - dialogElemRect.left - 1) + 'px';
 				optionsElem.style.width = currentElemRect.width + 'px';
+				optionsElem.style.maxHeight = Math.max(document.body.clientHeight - currentElemRect.top - currentElemRect.height - 2, 50) + 'px';
 				if (this.optionsElem === null) {
 					optionsElem.className = 'customSelectOptions';
 					this.optionsElem = optionsElem;

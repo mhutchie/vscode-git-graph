@@ -1123,7 +1123,7 @@ class GitGraphView {
 				title: 'Drop' + ELLIPSIS,
 				visible: visibility.drop && this.graph.dropCommitPossible(this.commitLookup[hash]),
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+					dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?' + (this.onlyFollowFirstParent ? '<br/><i>Note: By enabling "Only follow the first parent of commits", some commits may have been hidden from the Git Graph View that could affect the outcome of performing this action.</i>' : ''), () => {
 						runAction({ command: 'dropCommit', repo: this.currentRepo, commitHash: hash }, 'Dropping Commit');
 					}, target);
 				}
@@ -1663,7 +1663,7 @@ class GitGraphView {
 	 * @param flash Should the commit flash after it has been scrolled to.
 	 */
 	public scrollToCommit(hash: string, alwaysCenterCommit: boolean, flash: boolean = false) {
-		let elem = findCommitElemWithId(getCommitElems(), this.getCommitId(hash));
+		const elem = findCommitElemWithId(getCommitElems(), this.getCommitId(hash));
 		if (elem === null) return;
 
 		let elemTop = this.controlsElem.clientHeight + elem.offsetTop;
@@ -1674,7 +1674,7 @@ class GitGraphView {
 		if (flash && !elem.classList.contains('flash')) {
 			elem.classList.add('flash');
 			setTimeout(() => {
-				elem!.classList.remove('flash');
+				elem.classList.remove('flash');
 			}, 850);
 		}
 	}

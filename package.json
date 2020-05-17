@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.22.0",
+	"version": "1.23.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -744,7 +744,7 @@
 				"git-graph.showStatusBarItem": {
 					"type": "boolean",
 					"default": true,
-					"description": "Show a Status Bar item which opens Git Graph when clicked."
+					"description": "Show a Status Bar Item that opens the Git Graph View when clicked."
 				},
 				"git-graph.showTags": {
 					"type": "boolean",

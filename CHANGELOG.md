@@ -1,5 +1,21 @@
 # Change Log
 
+## 1.23.0 - 2020-05-24
+* #89 Added a new "Include commits only mentioned by reflogs" option to the Git Graph View's Repository Settings Widget. The default value can be defined globally for all repositories using the new Extension Setting `git-graph.includeCommitsMentionedByReflogs`. Default: false (disabled)
+* #201 New Keyboard Shortcuts in the Git Graph View for scrolling to stashes:
+    * `CTRL/CMD + S`: Scrolls the Git Graph View to the first (or next) stash in the loaded commits.
+    * `CTRL/CMD + SHIFT + S`: Scrolls the Git Graph View to the last (or previous) stash in the loaded commits.
+* #277 Open the Visual Studio Code Diff View from the Git Graph View in a specific Editor Group. Previously `git-graph.openDiffTabLocation` only supported `Active` & `Beside`, now it additionally supports `One`, `Two`, `Three`, ... , `Nine`.
+* #279 Support Chinese / Japanese / Korean IME Keyboard Enter Events on Mac's for dialog submission. Thanks [Kazuma Ebina (@kazuma1989)](https://github.com/kazuma1989)!
+* #283 After the Keyboard Shortcut `CTRL + H` is run in the Git Graph View to scroll to the HEAD commit, the commit now momentarily flashes to draw attention to it.
+* #285 Added a new Extension Setting `git-graph.showUntrackedFiles`, that controls whether untracked files are included in the uncommitted changes on the Git Graph View. Default: true (enabled)
+* #286 Added a "View File at Revision" button for each file displayed in the Commit Details / Comparison Views.
+* #287 Added a new "Only follow the first parent of commits" option to the Git Graph View's Repository Settings Widget. The default value can be defined globally for all repositories using the new Extension Setting `git-graph.onlyFollowFirstParent`. Default: false (disabled)
+* #292 Create a *.tar or *.zip archive of the repository at any branch or tag from the corresponding context menu.
+* #299 Previously when the Commit Details View was open on a commit, `Up` / `Down` keystrokes would open the Commit Details View on the commit directly above or below it on the Git Graph View. This is now augmented with `CTRL/CMD + Up` / `CTRL/CMD + Down` keystrokes, that open the Commit Details View on its child or parent commit on the same branch.
+* #303 Added scroll bar support to dropdown menus on dialogs, to prevent dropdowns with many items overflowing off the bottom of the Git Graph View.
+* Various code and UI improvements.
+
 ## 1.22.0 - 2020-03-21
 * #231 New Command "Git Graph: Resume a specific Code Review in Workspace..." opens the Git Graph View to a Code Review that is already in progress.
 * #248 Added "No Commit" option to the "Merge Branch" & "Merge Commit" Dialogs. The default value of this new option can be set using the Extension Setting `git-graph.dialog.merge.noCommit`. Default: false (disabled)

@@ -174,9 +174,14 @@ export class GitGraphView implements vscode.Disposable {
 				});
 				break;
 			case 'checkoutBranch':
+				errorInfos = [await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)];
+				if (errorInfos[0] === null && msg.pullFromRemoteAfterwards !== null) {
+					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.branchName, msg.pullFromRemoteAfterwards, false, false));
+				}
 				this.sendMessage({
 					command: 'checkoutBranch',
-					error: await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)
+					pullFromRemoteAfterwards: msg.pullFromRemoteAfterwards,
+					errors: errorInfos
 				});
 				break;
 			case 'checkoutCommit':

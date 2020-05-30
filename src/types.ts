@@ -509,9 +509,11 @@ export interface RequestCheckoutBranch extends RepoRequest {
 	readonly command: 'checkoutBranch';
 	readonly branchName: string;
 	readonly remoteBranch: string | null;
+	readonly pullFromRemoteAfterwards: string | null; // String => The remote to pull from, NULL => Don't pull after checking out
 }
-export interface ResponseCheckoutBranch extends ResponseWithErrorInfo {
+export interface ResponseCheckoutBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'checkoutBranch';
+	readonly pullFromRemoteAfterwards: string | null; // String => The remote to pull from, NULL => Don't pull after checking out
 }
 
 export interface RequestCheckoutCommit extends RepoRequest {

@@ -1434,17 +1434,18 @@ class GitGraphView {
 		if (remote !== null) {
 			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substring(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
 				if (this.gitBranches.includes(newBranch)) {
+					const canPullFromRemote = remote !== '';
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch, target);
-					}, 'Check out the existing branch', () => {
-						this.checkoutBranchAction(newBranch, null, null, target);
+					}, 'Checkout the existing branch' + (canPullFromRemote ? ' & pull changes' : ''), () => {
+						runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: null, pullFromRemoteAfterwards: canPullFromRemote ? remote : null }, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
 					}, target);
 				} else {
-					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName }, 'Checking out Branch');
+					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName, pullFromRemoteAfterwards: null }, 'Checking out Branch');
 				}
 			}, target);
 		} else {
-			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null }, 'Checking out Branch');
+			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null, pullFromRemoteAfterwards: null }, 'Checking out Branch');
 		}
 	}
 
@@ -2624,7 +2625,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Create Branch from Stash');
 				break;
 			case 'checkoutBranch':
-				refreshOrDisplayError(msg.error, 'Unable to Checkout Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Checkout Branch' + (msg.pullFromRemoteAfterwards ? ' & Pull Changes' : ''));
 				break;
 			case 'checkoutCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Checkout Commit');

@@ -372,7 +372,7 @@ export class GitGraphView implements vscode.Disposable {
 					command: 'loadCommits',
 					refreshId: msg.refreshId,
 					onlyFollowFirstParent: msg.onlyFollowFirstParent,
-					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.remotes, msg.hideRemotes, msg.stashes)
+					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
 				});
 				break;
 			case 'loadRepoInfo':
@@ -576,6 +576,7 @@ export class GitGraphView implements vscode.Disposable {
 				branchLabelsAlignedToGraph: refLabelAlignment === RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight,
 				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels,
 				commitDetailsViewLocation: config.commitDetailsViewLocation,
+				commitOrdering: config.commitOrdering,
 				contextMenuActionsVisibility: config.contextMenuActionsVisibility,
 				customBranchGlobPatterns: config.customBranchGlobPatterns,
 				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings,

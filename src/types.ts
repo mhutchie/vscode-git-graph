@@ -181,6 +181,7 @@ export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
+	commitOrdering: RepoCommitOrdering;
 	fileViewType: FileViewType;
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
 	onlyFollowFirstParent: OnlyFollowFirstParent;
@@ -208,6 +209,7 @@ export interface GitGraphViewConfig {
 	readonly branchLabelsAlignedToGraph: boolean;
 	readonly combineLocalAndRemoteBranchLabels: boolean;
 	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
 	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
@@ -422,6 +424,13 @@ export const enum RefLabelAlignment {
 	Normal,
 	BranchesOnLeftAndTagsOnRight,
 	BranchesAlignedToGraphAndTagsOnRight
+}
+
+export const enum RepoCommitOrdering {
+	Default = 'default',
+	Date = 'date',
+	AuthorDate = 'author-date',
+	Topological = 'topo'
 }
 
 export const enum ShowTags {
@@ -788,6 +797,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly showRemoteBranches: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly onlyFollowFirstParent: boolean;
+	readonly commitOrdering: CommitOrdering;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
 	readonly stashes: ReadonlyArray<GitStash>;

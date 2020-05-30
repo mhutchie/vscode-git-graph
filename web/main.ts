@@ -520,6 +520,7 @@ class GitGraphView {
 			showRemoteBranches: repoState.showRemoteBranches,
 			includeCommitsMentionedByReflogs: getIncludeCommitsMentionedByReflogs(repoState.includeCommitsMentionedByReflogs),
 			onlyFollowFirstParent: getOnlyFollowFirstParent(repoState.onlyFollowFirstParent),
+			commitOrdering: getCommitOrdering(repoState.commitOrdering),
 			remotes: this.gitRemotes,
 			hideRemotes: repoState.hideRemotes,
 			stashes: this.gitStashes
@@ -649,6 +650,13 @@ class GitGraphView {
 			fileChangesScrollTop: 0
 		};
 		this.saveState();
+	}
+
+	public saveCommitOrdering(repo: string, commitOrdering: GG.RepoCommitOrdering) {
+		if (repo === this.currentRepo) {
+			this.gitRepos[this.currentRepo].commitOrdering = commitOrdering;
+			this.saveRepoState();
+		}
 	}
 
 	public saveHiddenRemotes(repo: string, hideRemotes: string[]) {
@@ -1585,32 +1593,61 @@ class GitGraphView {
 
 		colHeadersElem.addEventListener('contextmenu', (e: MouseEvent) => {
 			e.stopPropagation();
+
 			const toggleColumnState = (col: number, defaultWidth: number) => {
 				columnWidths[col] = columnWidths[col] !== COLUMN_HIDDEN ? COLUMN_HIDDEN : columnWidths[0] === COLUMN_AUTO ? COLUMN_AUTO : defaultWidth - COLUMN_LEFT_RIGHT_PADDING;
 				this.saveColumnWidths(columnWidths);
-				contextMenu.close();
 				this.render();
 			};
-			contextMenu.show([[
-				{
-					title: 'Date',
-					visible: true,
-					checked: columnWidths[2] !== COLUMN_HIDDEN,
-					onClick: () => toggleColumnState(2, 128)
-				},
-				{
-					title: 'Author',
-					visible: true,
-					checked: columnWidths[3] !== COLUMN_HIDDEN,
-					onClick: () => toggleColumnState(3, 128)
-				},
-				{
-					title: 'Commit',
-					visible: true,
-					checked: columnWidths[4] !== COLUMN_HIDDEN,
-					onClick: () => toggleColumnState(4, 80)
-				}
-			]], true, null, e);
+
+			const commitOrdering = getCommitOrdering(this.gitRepos[this.currentRepo].commitOrdering);
+			const changeCommitOrdering = (repoCommitOrdering: GG.RepoCommitOrdering) => {
+				this.saveCommitOrdering(this.currentRepo, repoCommitOrdering);
+				this.refresh(true);
+			};
+
+			contextMenu.show([
+				[
+					{
+						title: 'Date',
+						visible: true,
+						checked: columnWidths[2] !== COLUMN_HIDDEN,
+						onClick: () => toggleColumnState(2, 128)
+					},
+					{
+						title: 'Author',
+						visible: true,
+						checked: columnWidths[3] !== COLUMN_HIDDEN,
+						onClick: () => toggleColumnState(3, 128)
+					},
+					{
+						title: 'Commit',
+						visible: true,
+						checked: columnWidths[4] !== COLUMN_HIDDEN,
+						onClick: () => toggleColumnState(4, 80)
+					}
+				],
+				[
+					{
+						title: 'Commit Timestamp Order',
+						visible: true,
+						checked: commitOrdering === GG.CommitOrdering.Date,
+						onClick: () => changeCommitOrdering(GG.RepoCommitOrdering.Date)
+					},
+					{
+						title: 'Author Timestamp Order',
+						visible: true,
+						checked: commitOrdering === GG.CommitOrdering.AuthorDate,
+						onClick: () => changeCommitOrdering(GG.RepoCommitOrdering.AuthorDate)
+					},
+					{
+						title: 'Topological Order',
+						visible: true,
+						checked: commitOrdering === GG.CommitOrdering.Topological,
+						onClick: () => changeCommitOrdering(GG.RepoCommitOrdering.Topological)
+					}
+				]
+			], true, null, e);
 		});
 	}
 
@@ -3069,6 +3106,19 @@ function getChildByPathSegment(folder: FileTreeFolder, pathSeg: string) {
 
 
 /* Repository State Helpers */
+
+function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering {
+	switch (repoValue) {
+		case GG.RepoCommitOrdering.Default:
+			return initialState.config.commitOrdering;
+		case GG.RepoCommitOrdering.Date:
+			return GG.CommitOrdering.Date;
+		case GG.RepoCommitOrdering.AuthorDate:
+			return GG.CommitOrdering.AuthorDate;
+		case GG.RepoCommitOrdering.Topological:
+			return GG.CommitOrdering.Topological;
+	}
+}
 
 function getShowTags(repoValue: GG.ShowTags) {
 	return repoValue === GG.ShowTags.Default

@@ -75,10 +75,8 @@ describe('Event Emitter', () => {
 		emitter.emit(5);
 
 		// Assert
-		expect(mockSubscriber1.mock.calls.length).toBe(1);
-		expect(mockSubscriber1.mock.calls[0][0]).toBe(5);
-		expect(mockSubscriber2.mock.calls.length).toBe(1);
-		expect(mockSubscriber2.mock.calls[0][0]).toBe(5);
+		expect(mockSubscriber1).toHaveBeenCalledWith(5);
+		expect(mockSubscriber2).toHaveBeenCalledWith(5);
 
 		// Teardown
 		emitter.dispose();

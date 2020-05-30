@@ -37,7 +37,7 @@ class MockDate extends RealDate {
 	}
 }
 
-export function beforeEach() {
+beforeEach(() => {
 	// Reset now to its initial value
 	now = InitialNow;
 
@@ -48,11 +48,11 @@ export function beforeEach() {
 			return new MockDate(now * 1000);
 		}
 	} as DateConstructor;
-}
+});
 
-export function afterEach() {
+afterEach(() => {
 	Date = RealDate;
-}
+});
 
 export function setCurrentTime(newNow: number) {
 	now = newNow;

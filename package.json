@@ -819,7 +819,8 @@
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",
 		"package": "npm run clean && vsce package",
 		"package-and-install": "npm run package && node ./.vscode/install-package.js",
-		"test": "jest --verbose"
+		"test": "jest --verbose",
+		"test-and-report-coverage": "jest --verbose --coverage"
 	},
 	"dependencies": {
 		"iconv-lite": "0.5.0"

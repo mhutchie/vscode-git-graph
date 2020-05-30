@@ -1,5 +1,6 @@
 .github/
 .vscode/
+coverage/
 node_modules/*/*.md
 out/**/*.d.ts
 out/**/*.js.map

@@ -568,6 +568,11 @@
 					"default": true,
 					"description": "Default state of the \"Include Untracked\" checkbox."
 				},
+				"git-graph.enhancedAccessibility": {
+					"type": "boolean",
+					"default": false,
+					"description": "Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default."
+				},
 				"git-graph.fetchAndPrune": {
 					"type": "boolean",
 					"default": false,

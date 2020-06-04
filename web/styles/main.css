@@ -574,8 +574,11 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 .fileTreeFile.gitDiffPossible{
 	cursor:pointer;
 }
-.fileTreeFileAddDel{
+.fileTreeFileAddDel, .fileTreeFileType{
 	margin-left:8px;
+}
+.fileTreeFileType{
+	cursor:help;
 }
 .fileTreeFileAdd, .fileTreeFileDel{
 	padding:0 3px;

@@ -585,6 +585,7 @@ export class GitGraphView implements vscode.Disposable {
 				defaultColumnVisibility: config.defaultColumnVisibility,
 				defaultFileViewType: config.defaultFileViewType,
 				dialogDefaults: config.dialogDefaults,
+				enhancedAccessibility: config.enhancedAccessibility,
 				fetchAndPrune: config.fetchAndPrune,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
 				graphColours: config.graphColours,

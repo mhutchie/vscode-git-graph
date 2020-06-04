@@ -218,6 +218,7 @@ export interface GitGraphViewConfig {
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly defaultFileViewType: FileViewType;
 	readonly dialogDefaults: DialogDefaults;
+	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
 	readonly graphColours: string[];

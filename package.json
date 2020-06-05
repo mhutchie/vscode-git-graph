@@ -30,7 +30,7 @@
 	"license": "SEE LICENSE IN 'LICENSE'",
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.31.0"
+		"vscode": "^1.38.0"
 	},
 	"extensionKind": [
 		"workspace"
@@ -833,7 +833,7 @@
 	"devDependencies": {
 		"@types/jest": "^25.2.1",
 		"@types/node": "^8.10.25",
-		"@types/vscode": "1.31.0",
+		"@types/vscode": "1.38.0",
 		"jest": "^25.4.0",
 		"ts-jest": "^25.4.0",
 		"tslint": "^5.12.1",

@@ -92,8 +92,11 @@ export class GitGraphView implements vscode.Disposable {
 			retainContextWhenHidden: config.retainContextWhenHidden
 		});
 		this.panel.iconPath = config.tabIconColourTheme === TabIconColourTheme.Colour
-			? this.getUri('resources', 'webview-icon.svg')
-			: { light: this.getUri('resources', 'webview-icon-light.svg'), dark: this.getUri('resources', 'webview-icon-dark.svg') };
+			? this.getResourcesUri('webview-icon.svg')
+			: {
+				light: this.getResourcesUri('webview-icon-light.svg'),
+				dark: this.getResourcesUri('webview-icon-dark.svg')
+			};
 
 		// Dispose this Git Graph View when the Webview is disposed
 		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
@@ -660,7 +663,7 @@ export class GitGraphView implements vscode.Disposable {
 		<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src vscode-resource: 'unsafe-inline'; script-src vscode-resource: 'nonce-${nonce}'; img-src data:;">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src data:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('out.min.css')}">
 				<title>Git Graph</title>
@@ -674,18 +677,27 @@ export class GitGraphView implements vscode.Disposable {
 	/* URI Manipulation Methods */
 
 	/**
-	 * Get a URI for a media file included in the extension.
+	 * Get a WebviewUri for a media file included in the extension.
 	 * @param file The file name in the `media` directory.
-	 * @returns The URI.
+	 * @returns The WebviewUri.
 	 */
 	private getMediaUri(file: string) {
-		return this.getUri('media', file).with({ scheme: 'vscode-resource' });
+		return this.panel.webview.asWebviewUri(this.getUri('media', file));
 	}
 
 	/**
-	 * Get a URI for a file included in the extension.
+	 * Get a File Uri for a resource file included in the extension.
+	 * @param file The file name in the `resource` directory.
+	 * @returns The Uri.
+	 */
+	private getResourcesUri(file: string) {
+		return this.getUri('resources', file);
+	}
+
+	/**
+	 * Get a File Uri for a file included in the extension.
 	 * @param pathComps The path components relative to the root directory of the extension.
-	 * @returns The URI.
+	 * @returns The File Uri.
 	 */
 	private getUri(...pathComps: string[]) {
 		return vscode.Uri.file(path.join(this.extensionPath, ...pathComps));

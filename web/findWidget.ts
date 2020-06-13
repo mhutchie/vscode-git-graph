@@ -36,12 +36,13 @@ class FindWidget {
 		this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
 		let keyupTimeout: NodeJS.Timer | null = null;
 		this.inputElem.addEventListener('keyup', (e) => {
-			if (e.key === 'Enter' && this.text !== '') {
+			if ((e.keyCode ? e.keyCode === 13 : e.key === 'Enter') && this.text !== '') {
 				if (e.shiftKey) {
 					this.prev();
 				} else {
 					this.next();
 				}
+				handledEvent(e);
 			} else {
 				if (keyupTimeout !== null) clearTimeout(keyupTimeout);
 				keyupTimeout = setTimeout(() => {

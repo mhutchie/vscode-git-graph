@@ -375,16 +375,18 @@ class CustomSelect {
 		};
 		document.addEventListener('click', this.clickHandler, true);
 
-		currentElem.addEventListener('keydown', e => {
+		currentElem.addEventListener('keydown', (e) => {
 			if (this.open && e.key === 'Tab') {
 				this.render(false);
 			} else if (this.open && (e.key === 'Enter' || e.key === 'Escape')) {
 				this.render(false);
-				e.stopPropagation();
+				handledEvent(e);
 			} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
 				this.setSelectedItem(this.selectedItem > 0 ? this.selectedItem - 1 : this.data.options.length - 1);
+				handledEvent(e);
 			} else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
 				this.setSelectedItem(this.selectedItem < this.data.options.length - 1 ? this.selectedItem + 1 : 0);
+				handledEvent(e);
 			}
 		});
 

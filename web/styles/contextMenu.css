@@ -8,11 +8,13 @@
 	margin:0;
 	padding:4px 0;
 	z-index:10;
+	-webkit-user-select:none;
 	user-select:none;
 }
 
 .contextMenu li{
 	cursor:default;
+	-webkit-user-select:none;
 	user-select:none;
 }
 
@@ -43,6 +45,7 @@
 	top:50%;
 	margin-top:-8px;
 	left:15px;
+	-webkit-user-select:none;
 	user-select:none;
 }
 

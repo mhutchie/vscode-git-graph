@@ -1495,7 +1495,7 @@ class GitGraphView {
 				cols[i].style.width = columnWidths[parseInt(cols[i].dataset.col!)] + 'px';
 			}
 			this.tableElem.className = 'fixedLayout';
-			this.tableElem.style.cssText = '';
+			this.tableElem.style.removeProperty(CSS_PROP_LIMIT_GRAPH_WIDTH);
 			this.graph.limitMaxWidth(columnWidths[0] + COLUMN_LEFT_RIGHT_PADDING);
 		};
 
@@ -1526,10 +1526,10 @@ class GitGraphView {
 				this.graph.limitMaxWidth(maxWidth);
 				graphWidth = maxWidth;
 				this.tableElem.className += ' limitGraphWidth';
-				this.tableElem.style.cssText = '--limitGraphWidth:' + maxWidth + 'px;';
+				this.tableElem.style.setProperty(CSS_PROP_LIMIT_GRAPH_WIDTH, maxWidth + 'px');
 			} else {
 				this.graph.limitMaxWidth(-1);
-				this.tableElem.style.cssText = '';
+				this.tableElem.style.removeProperty(CSS_PROP_LIMIT_GRAPH_WIDTH);
 			}
 
 			if (colWidth < Math.max(graphWidth, 64)) {
@@ -1592,7 +1592,7 @@ class GitGraphView {
 		});
 
 		colHeadersElem.addEventListener('contextmenu', (e: MouseEvent) => {
-			e.stopPropagation();
+			handledEvent(e);
 
 			const toggleColumnState = (col: number, defaultWidth: number) => {
 				columnWidths[col] = columnWidths[col] !== COLUMN_HIDDEN ? COLUMN_HIDDEN : columnWidths[0] === COLUMN_AUTO ? COLUMN_AUTO : defaultWidth - COLUMN_LEFT_RIGHT_PADDING;
@@ -1793,22 +1793,20 @@ class GitGraphView {
 	}
 
 	private observeKeyboardEvents() {
-		const handledEvent = (e: KeyboardEvent) => {
-			e.preventDefault();
-			e.stopPropagation();
-		};
-
 		document.addEventListener('keydown', (e) => {
 			if (dialog.isOpen()) {
 				if (e.key === 'Escape') {
 					dialog.close();
+					handledEvent(e);
 				} else if (e.keyCode ? e.keyCode === 13 : e.key === 'Enter') {
 					// Use keyCode === 13 to detect 'Enter' events if available (for compatibility with IME Keyboards used by Chinese / Japanese / Korean users)
 					dialog.submit();
+					handledEvent(e);
 				}
 			} else if (contextMenu.isOpen()) {
 				if (e.key === 'Escape') {
 					contextMenu.close();
+					handledEvent(e);
 				}
 			} else if (this.expandedCommit !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
 				let curHashIndex = this.commitLookup[this.expandedCommit.commitHash], newHashIndex = -1;
@@ -1851,10 +1849,13 @@ class GitGraphView {
 			} else if (e.key === 'Escape') {
 				if (this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
+					handledEvent(e);
 				} else if (this.findWidget.isVisible()) {
 					this.findWidget.close();
+					handledEvent(e);
 				} else if (this.expandedCommit !== null) {
 					this.closeCommitDetails(true);
+					handledEvent(e);
 				}
 			}
 		});
@@ -1963,7 +1964,7 @@ class GitGraphView {
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
 				// .gitRef was right clicked
-				e.stopPropagation();
+				handledEvent(e);
 				const commitElem = <HTMLElement>eventElem.closest('.commit')!;
 				const commit = this.getCommitOfElem(commitElem);
 				if (commit === null) return;
@@ -2000,7 +2001,7 @@ class GitGraphView {
 
 			} else if ((eventElem = <HTMLElement>eventTarget.closest('.commit')) !== null) {
 				// .commit was right clicked
-				e.stopPropagation();
+				handledEvent(e);
 				const commit = this.getCommitOfElem(eventElem);
 				if (commit === null) return;
 

@@ -91,6 +91,7 @@ const ID_EVENT_CAPTURE_ELEM = 'eventCaptureElem';
 const CSS_PROP_FONT_FAMILY = '--vscode-font-family';
 const CSS_PROP_EDITOR_FONT_FAMILY = '--vscode-editor-font-family';
 const CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND = '--vscode-editor-findMatchHighlightBackground';
+const CSS_PROP_LIMIT_GRAPH_WIDTH = '--limitGraphWidth';
 
 const ATTR_ERROR = 'data-error';
 
@@ -463,6 +464,11 @@ function getChildUl(elem: HTMLElement) {
 
 function getCommitElems() {
 	return <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+}
+
+function handledEvent(event: Event) {
+	event.preventDefault();
+	event.stopPropagation();
 }
 
 

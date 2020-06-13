@@ -24,6 +24,7 @@ body #view{
 	left:0;
 	right:0;
 	bottom:0;
+	background-color:var(--vscode-editor-background);
 	overflow-x:hidden;
 	overflow-y:auto;
 }
@@ -381,6 +382,7 @@ body #view{
 	width:50%;
 	padding:10px;
 	text-overflow:ellipsis;
+	-webkit-user-select:text;
 	user-select:text;
 }
 
@@ -440,10 +442,13 @@ body #view{
 	-webkit-margin-after:0;
 	-webkit-margin-start:0px;
 	-webkit-margin-end:0px;
-	-webkit-padding-start:30px;
+	-webkit-padding-start:25px;
+	margin:0;
+	padding:0 0 0 25px;
 }
 #cdvFiles > ul{
 	-webkit-padding-start:10px;
+	padding:0 0 0 10px;
 }
 #cdvFiles li{
 	margin-top:4px;
@@ -456,6 +461,7 @@ body #view{
 	left:0;
 	right:0;
 	padding:10px;
+	-webkit-user-select:none;
 	user-select:none;
 	text-align:center;
 	line-height:24px;
@@ -746,6 +752,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	text-align:center;
 	font-weight:700;
 	font-size:13px;
+	-webkit-user-select:none;
 	user-select:none;
 }
 
@@ -778,6 +785,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	height:20px;
 	margin-top:-10px;
 	cursor:pointer;
+	-webkit-user-select:none;
 	user-select:none;
 }
 #findBtn{
@@ -893,6 +901,7 @@ a:hover, span.internalUrl:hover {
 a:focus, span.internalUrl:focus{
 	outline:1px solid var(--vscode-focusBorder);
 	outline-offset:-1px;
+	-webkit-user-select:none;
 	user-select:none;
 }
 
@@ -969,5 +978,6 @@ label > input[type=radio]:checked ~ .customRadio:after{
 /* General */
 
 #commitGraph, #commitTable th, #commitTable td, .gitRef, #loadingHeader, .unselectable, .roundedBtn, #controls label{
+	-webkit-user-select:none;
 	user-select:none;
 }

@@ -621,12 +621,12 @@ export class GitGraphView implements vscode.Disposable {
 		}
 
 		if (this.dataSource.isGitExecutableUnknown()) {
-			body = `<body class="unableToLoad" style="${colorVars}">
+			body = `<body class="unableToLoad">
 			<h2>Unable to load Git Graph</h2>
 			<p class="unableToLoadMessage">${UNABLE_TO_FIND_GIT_MSG}</p>
 			</body>`;
 		} else if (numRepos > 0) {
-			body = `<body style="${colorVars}">
+			body = `<body>
 			<div id="view">
 				<div id="controls">
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoDropdown" class="dropdown"></div></span>
@@ -645,10 +645,10 @@ export class GitGraphView implements vscode.Disposable {
 			</div>
 			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var globalState = ${JSON.stringify(globalState)}, initialState = ${JSON.stringify(initialState)};</script>
-			<script src="${this.getMediaUri('out.min.js')}"></script>
+			<script nonce="${nonce}" src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {
-			body = `<body class="unableToLoad" style="${colorVars}">
+			body = `<body class="unableToLoad">
 			<h2>Unable to load Git Graph</h2>
 			<p class="unableToLoadMessage">No Git repositories were found in the current workspace when it was last scanned by Git Graph.</p>
 			<p>If your repositories are in subfolders of the open workspace folder(s), make sure you have set the Git Graph Setting "git-graph.maxDepthOfRepoSearch" appropriately (read the <a href="https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">documentation</a> for more information).</p>
@@ -663,11 +663,11 @@ export class GitGraphView implements vscode.Disposable {
 		<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src data:;">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${standardiseCspSource(this.panel.webview.cspSource)} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link rel="stylesheet" type="text/css" href="${this.getMediaUri('out.min.css')}">
 				<title>Git Graph</title>
-				<style>${colorParams}</style>
+				<style>body{${colorVars}} ${colorParams}</style>
 			</head>
 			${body}
 		</html>`;
@@ -727,5 +727,22 @@ export class GitGraphView implements vscode.Disposable {
 	 */
 	public respondWithAvatar(email: string, image: string) {
 		this.sendMessage({ command: 'fetchAvatar', email: email, image: image });
+	}
+}
+
+/**
+ * Standardise the CSP Source provided by Visual Studio Code for use with the Webview. It is idempotent unless called with http/https URI's, in which case it keeps only the authority portion of the http/https URI. This is necessary to be compatible with some web browser environments.
+ * @param cspSource The value provide by Visual Studio Code.
+ * @returns The standardised CSP Source.
+ */
+export function standardiseCspSource(cspSource: string) {
+	if (cspSource.startsWith('http://') || cspSource.startsWith('https://')) {
+		const pathIndex = cspSource.indexOf('/', 8), queryIndex = cspSource.indexOf('?', 8), fragmentIndex = cspSource.indexOf('#', 8);
+		let endOfAuthorityIndex = pathIndex;
+		if (queryIndex > -1 && (queryIndex < endOfAuthorityIndex || endOfAuthorityIndex === -1)) endOfAuthorityIndex = queryIndex;
+		if (fragmentIndex > -1 && (fragmentIndex < endOfAuthorityIndex || endOfAuthorityIndex === -1)) endOfAuthorityIndex = fragmentIndex;
+		return endOfAuthorityIndex > -1 ? cspSource.substring(0, endOfAuthorityIndex) : cspSource;
+	} else {
+		return cspSource;
 	}
 }

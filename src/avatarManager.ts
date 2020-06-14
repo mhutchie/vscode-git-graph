@@ -510,17 +510,17 @@ interface AvatarRequestItem {
 }
 
 interface GitHubRemoteSource {
-	type: 'github';
-	owner: string;
-	repo: string;
+	readonly type: 'github';
+	readonly owner: string;
+	readonly repo: string;
 }
 
 interface GitLabRemoteSource {
-	type: 'gitlab';
+	readonly type: 'gitlab';
 }
 
 interface GravatarRemoteSource {
-	type: 'gravatar';
+	readonly type: 'gravatar';
 }
 
 type RemoteSource = GitHubRemoteSource | GitLabRemoteSource | GravatarRemoteSource;

@@ -463,8 +463,8 @@ export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise
 // https://github.com/microsoft/vscode/blob/473af338e1bd9ad4d9853933da1cd9d5d9e07dc9/extensions/git/src/git.ts#L44-L135
 
 export interface GitExecutable {
-	path: string;
-	version: string;
+	readonly path: string;
+	readonly version: string;
 }
 
 /**

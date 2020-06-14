@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
-import { RepoManager } from './repoManager';
+import { RepoChangeEvent } from './repoManager';
 
 /**
  * Manages the Git Graph Status Bar Item, which allows users to open the Git Graph View from the Visual Studio Code Status Bar.
@@ -19,7 +19,7 @@ export class StatusBarItem implements vscode.Disposable {
 	 * @param repoManager The Git Graph RepoManager instance.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(repoManager: RepoManager, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, logger: Logger) {
+	constructor(initialNumRepos: number, onDidChangeRepos: Event<RepoChangeEvent>, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, logger: Logger) {
 		this.logger = logger;
 
 		const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
@@ -29,7 +29,7 @@ export class StatusBarItem implements vscode.Disposable {
 		this.statusBarItem = statusBarItem;
 		this.disposables.push(statusBarItem);
 
-		repoManager.onDidChangeRepos((event) => {
+		onDidChangeRepos((event) => {
 			this.setNumRepos(event.numRepos);
 		}, this.disposables);
 
@@ -39,7 +39,7 @@ export class StatusBarItem implements vscode.Disposable {
 			}
 		}, this.disposables);
 
-		this.setNumRepos(Object.keys(repoManager.getRepos()).length);
+		this.setNumRepos(initialNumRepos);
 	}
 
 	/**

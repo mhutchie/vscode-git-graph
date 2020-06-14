@@ -4,86 +4,58 @@ jest.mock('vscode', () => vscode, { virtual: true });
 
 import { Logger, maskEmail } from '../src/logger';
 
+let outputChannel = vscode.mocks.outputChannel;
+
 beforeEach(() => {
 	jest.clearAllMocks();
-	date.beforeEach();
-});
-
-afterEach(() => {
-	date.afterEach();
 });
 
 describe('Logger', () => {
-	it('Should create an output channel, and dispose it on dispose', () => {
-		// Run
-		const logger = new Logger();
+	let logger: Logger;
+	beforeEach(() => {
+		logger = new Logger();
+	});
+	afterEach(() => {
+		logger.dispose();
+	});
 
-		// Assert
-		expect(vscode.window.createOutputChannel).toHaveBeenCalledWith('Git Graph');
-
+	it('Should create and dispose an output channel', () => {
 		// Run
 		logger.dispose();
 
 		// Assert
-		expect(vscode.OutputChannel.dispose).toBeCalledTimes(1);
-	});
-
-	it('Should create an output channel, and dispose it on dispose', () => {
-		// Run
-		const logger = new Logger();
-
-		// Assert
 		expect(vscode.window.createOutputChannel).toHaveBeenCalledWith('Git Graph');
-
-		// Run
-		logger.dispose();
-
-		// Assert
-		expect(vscode.OutputChannel.dispose).toBeCalledTimes(1);
+		expect(outputChannel.dispose).toBeCalledTimes(1);
 	});
 
-	it('Should log message to the Output Channel', () => {
-		// Setup
-		const logger = new Logger();
-
+	it('Should log a message to the Output Channel', () => {
 		// Run
 		logger.log('Test');
 
 		// Assert
-		expect(vscode.OutputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.000] Test');
-
-		// Teardown
-		logger.dispose();
+		expect(outputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.000] Test');
 	});
 
-	it('Should log command to the Output Channel', () => {
+	it('Should log a command to the Output Channel', () => {
 		// Setup
-		const logger = new Logger();
 		date.setCurrentTime(1587559258.1);
 
 		// Run
 		logger.logCmd('git', ['--arg1', '--arg2', '--format="format-string"', '--arg3', 'arg with spaces']);
 
 		// Assert
-		expect(vscode.OutputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.100] > git --arg1 --arg2 --format=... --arg3 "arg with spaces"');
-
-		// Teardown
-		logger.dispose();
+		expect(outputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.100] > git --arg1 --arg2 --format=... --arg3 "arg with spaces"');
 	});
 
-	it('Should log error to the Output Channel', () => {
+	it('Should log an error to the Output Channel', () => {
 		// Setup
-		const logger = new Logger();
 		date.setCurrentTime(1587559258.01);
 
 		// Run
 		logger.logError('Test');
 
 		// Assert
-		expect(vscode.OutputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.010] ERROR: Test');
-
-		// Teardown
-		logger.dispose();
+		expect(outputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.010] ERROR: Test');
 	});
 });
 

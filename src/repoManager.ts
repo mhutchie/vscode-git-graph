@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
 
-interface RepoChangeEvent {
+export interface RepoChangeEvent {
 	repos: GitRepoSet;
 	numRepos: number;
 	loadRepo: string | null;
@@ -200,6 +200,14 @@ export class RepoManager implements vscode.Disposable {
 	}
 
 	/**
+	 * Get the number of all known repositories in the current workspace.
+	 * @returns The number of repositories.
+	 */
+	public getNumRepos() {
+		return Object.keys(this.repos).length;
+	}
+
+	/**
 	 * Get the repository that contains the specified file.
 	 * @param path The path of the file.
 	 * @returns The path of the repository containing the file, or NULL if no known repository contains the file.
@@ -318,7 +326,7 @@ export class RepoManager implements vscode.Disposable {
 	private sendRepos(loadRepo: string | null = null) {
 		this.repoEventEmitter.emit({
 			repos: this.getRepos(),
-			numRepos: Object.keys(this.repos).length,
+			numRepos: this.getNumRepos(),
 			loadRepo: loadRepo
 		});
 	}

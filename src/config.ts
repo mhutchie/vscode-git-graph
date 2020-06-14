@@ -230,6 +230,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.enhancedAccessibility` Extension Setting.
+	 */
+	get enhancedAccessibility() {
+		return !!this.config.get('enhancedAccessibility', false);
+	}
+
+	/**
 	 * Get the value of the `git-graph.fetchAndPrune` Extension Setting.
 	 */
 	get fetchAndPrune() {

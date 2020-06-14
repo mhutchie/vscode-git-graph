@@ -181,6 +181,7 @@ export interface GitRepoState {
 	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
+	commitOrdering: RepoCommitOrdering;
 	fileViewType: FileViewType;
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
 	onlyFollowFirstParent: OnlyFollowFirstParent;
@@ -208,6 +209,7 @@ export interface GitGraphViewConfig {
 	readonly branchLabelsAlignedToGraph: boolean;
 	readonly combineLocalAndRemoteBranchLabels: boolean;
 	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
 	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
@@ -216,6 +218,7 @@ export interface GitGraphViewConfig {
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly defaultFileViewType: FileViewType;
 	readonly dialogDefaults: DialogDefaults;
+	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
 	readonly graphColours: string[];
@@ -424,6 +427,13 @@ export const enum RefLabelAlignment {
 	BranchesAlignedToGraphAndTagsOnRight
 }
 
+export const enum RepoCommitOrdering {
+	Default = 'default',
+	Date = 'date',
+	AuthorDate = 'author-date',
+	Topological = 'topo'
+}
+
 export const enum ShowTags {
 	Default,
 	Show,
@@ -509,9 +519,17 @@ export interface RequestCheckoutBranch extends RepoRequest {
 	readonly command: 'checkoutBranch';
 	readonly branchName: string;
 	readonly remoteBranch: string | null;
+	readonly pullAfterwards: {
+		readonly branchName: string;
+		readonly remote: string;
+	} | null; // NULL => Don't pull after checking out
 }
-export interface ResponseCheckoutBranch extends ResponseWithErrorInfo {
+export interface ResponseCheckoutBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'checkoutBranch';
+	readonly pullAfterwards: {
+		readonly branchName: string;
+		readonly remote: string;
+	} | null; // NULL => Don't pull after checking out
 }
 
 export interface RequestCheckoutCommit extends RepoRequest {
@@ -786,6 +804,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly showRemoteBranches: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly onlyFollowFirstParent: boolean;
+	readonly commitOrdering: CommitOrdering;
 	readonly remotes: string[];
 	readonly hideRemotes: string[];
 	readonly stashes: ReadonlyArray<GitStash>;

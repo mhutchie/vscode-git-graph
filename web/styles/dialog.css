@@ -30,6 +30,7 @@
 	padding-top:8px;
 	text-align:left;
 	white-space:nowrap;
+	-webkit-user-select:none;
 	user-select:none;
 }
 
@@ -60,6 +61,7 @@
 }
 
 .dialogContent .dialogFormCheckbox > label, .dialogContent .dialogFormRadio > label{
+	-webkit-user-select:none;
 	user-select:none;
 	cursor:pointer;
 }
@@ -206,6 +208,7 @@
 	text-overflow:ellipsis;
 	white-space:nowrap;
 	overflow:hidden;
+	-webkit-user-select:none;
 	user-select:none;
 	cursor:pointer;
 }
@@ -252,6 +255,7 @@
 	background-color:rgba(127,127,127,0.05);
 	overflow:hidden;
 	word-wrap:break-word;
+	-webkit-user-select:none;
 	user-select:none;
 	cursor:pointer;
 }

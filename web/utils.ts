@@ -38,7 +38,7 @@ const SVG_ICONS = {
 	inconclusive: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 13 13"><path fill-rule="evenodd" d="M 6.5,0 C 2.91,0 0,2.91 0,6.5 0,10.09 2.91,13 6.5,13 10.09,13 13,10.09 13,6.5 13,2.91 10.09,0 6.5,0 Z m 0.03,2.35 v 0 c 0.47,0 0.88,0.05 1.24,0.14 0.36,0.1 0.67,0.23 0.93,0.41 0.24,0.18 0.43,0.4 0.58,0.67 0.14,0.27 0.2,0.58 0.2,0.93 0,0.23 0,0.45 -0.09,0.63 C 9.3,5.31 9.14,5.49 9.05,5.62 8.91,5.79 8.9,5.82 8.7,6.02 8.53,6.2 8.35,6.36 8.15,6.5 8.03,6.6 7.94,6.7 7.85,6.79 7.77,6.88 7.7,6.97 7.65,7.08 7.6,7.18 7.56,7.29 7.53,7.4 7.5,7.52 7.5,7.54 7.5,7.67 H 5.75 c 0,-0.23 0,-0.33 0.03,-0.51 C 5.81,6.96 5.86,6.78 5.93,6.61 5.99,6.46 6.08,6.31 6.2,6.16 6.32,6.02 6.44,5.89 6.64,5.76 6.93,5.56 7.02,5.44 7.15,5.21 7.28,4.98 7.36,4.81 7.36,4.58 7.36,4.29 7.3,4.1 7.15,3.96 7.01,3.82 6.82,3.76 6.53,3.76 6.43,3.76 6.33,3.78 6.21,3.81 6.09,3.84 6.03,3.9 5.94,3.98 5.86,4.05 5.79,4.1 5.73,4.19 5.66,4.27 5.63,4.38 5.64,4.49 H 3.52 C 3.52,4.09 3.66,3.9 3.81,3.61 3.96,3.32 4.18,3.07 4.44,2.89 4.71,2.71 5.02,2.58 5.38,2.49 5.75,2.4 6.14,2.35 6.53,2.35 Z M 6.14,8.72 H 7.2 c 0.3,0 0.53,0.24 0.53,0.53 v 1.07 0 c 0,0.3 -0.23,0.53 -0.53,0.53 H 6.14 c -0.29,0 -0.53,-0.24 -0.53,-0.53 V 9.25 c 0,-0.3 0.25,-0.53 0.53,-0.53 z"/></svg>'
 };
 
-const EMOJI_MAPPINGS: { [shortcode: string]: string } = { 'alembic': '⚗', 'alien': '👽', 'ambulance': '🚑', 'apple': '🍎', 'arrow_down': '⬇️', 'arrow_up': '⬆️', 'art': '🎨', 'beers': '🍻', 'bento': '🍱', 'bookmark': '🔖', 'books': '📚', 'boom': '💥', 'bug': '🐛', 'building_construction': '🏗', 'bulb': '💡', 'busts_in_silhouette': '👥', 'camera_flash': '📸', 'card_file_box': '🗃', 'card_index': '📇', 'chart_with_upwards_trend': '📈', 'checkered_flag': '🏁', 'children_crossing': '🚸', 'clown_face': '🤡', 'construction': '🚧', 'construction_worker': '👷', 'egg': '🥚', 'exclamation': '❗', 'fire': '🔥', 'globe_with_meridians': '🌐', 'green_apple': '🍏', 'green_heart': '💚', 'hammer': '🔨', 'heavy_check_mark': '✔️', 'heavy_minus_sign': '➖', 'heavy_plus_sign': '➕', 'iphone': '📱', 'label': '🏷️', 'lipstick': '💄', 'lock': '🔒', 'loud_sound': '🔊', 'mag': '🔍', 'mute': '🔇', 'new': '🆕', 'ok_hand': '👌', 'package': '📦', 'page_facing_up': '📄', 'pencil': '📝', 'pencil2': '✏️', 'penguin': '🐧', 'poop': '💩', 'pushpin': '📌', 'racehorse': '🐎', 'recycle': '♻️', 'rewind': '⏪', 'robot': '🤖', 'rocket': '🚀', 'rotating_light': '🚨', 'see_no_evil': '🙈', 'shirt': '👕', 'sparkles': '✨', 'speech_balloon': '💬', 'tada': '🎉', 'triangular_ruler': '📐', 'truck': '🚚', 'twisted_rightwards_arrows': '🔀', 'video_game': '🎮', 'whale': '🐳', 'wheel_of_dharma': '☸️', 'wheelchair': '♿️', 'white_check_mark': '✅', 'wrench': '🔧', 'zap': '⚡️' };
+const EMOJI_MAPPINGS: { [shortcode: string]: string } = { 'alembic': '⚗', 'alien': '👽', 'ambulance': '🚑', 'apple': '🍎', 'arrow_down': '⬇️', 'arrow_up': '⬆️', 'art': '🎨', 'beers': '🍻', 'bento': '🍱', 'bookmark': '🔖', 'books': '📚', 'boom': '💥', 'bug': '🐛', 'building_construction': '🏗', 'bulb': '💡', 'busts_in_silhouette': '👥', 'camera_flash': '📸', 'card_file_box': '🗃', 'card_index': '📇', 'chart_with_upwards_trend': '📈', 'checkered_flag': '🏁', 'children_crossing': '🚸', 'clown_face': '🤡', 'construction': '🚧', 'construction_worker': '👷', 'dizzy': '💫', 'egg': '🥚', 'exclamation': '❗', 'fire': '🔥', 'globe_with_meridians': '🌐', 'goal_net': '🥅', 'green_apple': '🍏', 'green_heart': '💚', 'hammer': '🔨', 'heavy_check_mark': '✔️', 'heavy_minus_sign': '➖', 'heavy_plus_sign': '➕', 'iphone': '📱', 'label': '🏷️', 'lipstick': '💄', 'lock': '🔒', 'loud_sound': '🔊', 'mag': '🔍', 'mute': '🔇', 'new': '🆕', 'ok_hand': '👌', 'package': '📦', 'page_facing_up': '📄', 'pencil': '📝', 'pencil2': '✏️', 'penguin': '🐧', 'poop': '💩', 'pushpin': '📌', 'racehorse': '🐎', 'recycle': '♻️', 'rewind': '⏪', 'robot': '🤖', 'rocket': '🚀', 'rotating_light': '🚨', 'see_no_evil': '🙈', 'seedling': '🌱', 'shirt': '👕', 'sparkles': '✨', 'speech_balloon': '💬', 'tada': '🎉', 'triangular_flag_on_post': '🚩', 'triangular_ruler': '📐', 'truck': '🚚', 'twisted_rightwards_arrows': '🔀', 'video_game': '🎮', 'wastebasket': '🗑', 'whale': '🐳', 'wheel_of_dharma': '☸️', 'wheelchair': '♿️', 'white_check_mark': '✅', 'wrench': '🔧', 'zap': '⚡️' };
 const EMOJI_SHORTCODE_REGEX = /:([A-Za-z0-9-_]+):/g;
 
 const ENCLOSING_GROUPS: { [close: string]: string } = { ')': '(', ']': '[', '}': '{', '>': '<' };
@@ -91,6 +91,7 @@ const ID_EVENT_CAPTURE_ELEM = 'eventCaptureElem';
 const CSS_PROP_FONT_FAMILY = '--vscode-font-family';
 const CSS_PROP_EDITOR_FONT_FAMILY = '--vscode-editor-font-family';
 const CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND = '--vscode-editor-findMatchHighlightBackground';
+const CSS_PROP_LIMIT_GRAPH_WIDTH = '--limitGraphWidth';
 
 const ATTR_ERROR = 'data-error';
 
@@ -463,6 +464,11 @@ function getChildUl(elem: HTMLElement) {
 
 function getCommitElems() {
 	return <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
+}
+
+function handledEvent(event: Event) {
+	event.preventDefault();
+	event.stopPropagation();
 }
 
 

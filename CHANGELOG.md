@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.24.0 - 2020-06-14
+* #271 Support for Visual Studio Code in Web Browsers. Git Graph officially supports Visual Studio Code in Microsoft's Visual Studio Codespaces in the Google Chrome browser, however the underlying changes allow Git Graph to be supported in most third-party Visual Studio Code browser-based platforms, and in most popular web browsers.
+* #297 When checking out a remote branch & the specified branch name already exists locally, the dialog option to "Checkout the existing branch" has been replaced with "Checkout the existing branch & pull changes".
+* #304 Override the globally configured commit ordering (configured by `git-graph.commitOrdering`) per repository from the Git Graph View Column Header context menu.
+* #305 Upgraded the minimum version requirement of Visual Studio Code from 1.31.0 to 1.38.0. This change has been needed for some time, however I now have to make this change due to Visual Studio Code decreasing support for older Webview integrations for all extensions. Almost all users of Git Graph will be unaffected by this change. If you are one of the few Git Graph users who use a version of Visual Studio Code older than 1.38.0, please upgrade Visual Studio Code to continue receiving updates to Git Graph. 
+* #316 Include built-in support for several new emoji shortcodes recently added to [gitmoji](https://gitmoji.carloscuesta.me/).
+* #319 Added a new Extension Setting `git-graph.enhancedAccessibility`, that enables visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default. Default: false (disabled)
+* Various code improvements.
+
 ## 1.23.0 - 2020-05-24
 * #89 Added a new "Include commits only mentioned by reflogs" option to the Git Graph View's Repository Settings Widget. The default value can be defined globally for all repositories using the new Extension Setting `git-graph.includeCommitsMentionedByReflogs`. Default: false (disabled)
 * #201 New Keyboard Shortcuts in the Git Graph View for scrolling to stashes:

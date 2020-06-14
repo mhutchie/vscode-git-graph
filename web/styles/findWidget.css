@@ -68,6 +68,7 @@
 	line-height:17px;
 	font-size:11px;
 	cursor:pointer;
+	-webkit-user-select:none;
 	user-select:none;
 	text-align:center;
 	color:var(--vscode-input-foreground);
@@ -90,6 +91,7 @@
 
 #findPosition, #findPrev, #findNext, #findClose{
 	display:inline-block;
+	-webkit-user-select:none;
 	user-select:none;
 }
 #findPosition{

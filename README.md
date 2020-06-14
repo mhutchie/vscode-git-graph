@@ -84,6 +84,7 @@ A summary of the Git Graph extension settings are:
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
 * **Default File View Type**: Sets the default type of File View (Tree or List) used in the Commit Details / Comparison Views. This can be overridden per repository using the controls on the right side of the Commit Details / Comparison Views.
 * **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Merge, Pop Stash, Rebase, Reset, and Stash Uncommitted Changes
+* **Enhanced Accessibility**: Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default. Default: false (disabled)
 * **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
 * **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8

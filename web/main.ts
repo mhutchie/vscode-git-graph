@@ -1446,14 +1446,14 @@ class GitGraphView {
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch, target);
 					}, 'Checkout the existing branch' + (canPullFromRemote ? ' & pull changes' : ''), () => {
-						runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: null, pullFromRemoteAfterwards: canPullFromRemote ? remote : null }, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
+						runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: null, pullAfterwards: canPullFromRemote ? { branchName: refName.substring(remote.length + 1), remote: remote } : null }, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
 					}, target);
 				} else {
-					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName, pullFromRemoteAfterwards: null }, 'Checking out Branch');
+					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName, pullAfterwards: null }, 'Checking out Branch');
 				}
 			}, target);
 		} else {
-			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null, pullFromRemoteAfterwards: null }, 'Checking out Branch');
+			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null, pullAfterwards: null }, 'Checking out Branch');
 		}
 	}
 
@@ -2663,7 +2663,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Create Branch from Stash');
 				break;
 			case 'checkoutBranch':
-				refreshAndDisplayErrors(msg.errors, 'Unable to Checkout Branch' + (msg.pullFromRemoteAfterwards ? ' & Pull Changes' : ''));
+				refreshAndDisplayErrors(msg.errors, 'Unable to Checkout Branch' + (msg.pullAfterwards !== null ? ' & Pull Changes' : ''));
 				break;
 			case 'checkoutCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Checkout Commit');

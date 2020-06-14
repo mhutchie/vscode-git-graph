@@ -178,12 +178,12 @@ export class GitGraphView implements vscode.Disposable {
 				break;
 			case 'checkoutBranch':
 				errorInfos = [await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)];
-				if (errorInfos[0] === null && msg.pullFromRemoteAfterwards !== null) {
-					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.branchName, msg.pullFromRemoteAfterwards, false, false));
+				if (errorInfos[0] === null && msg.pullAfterwards !== null) {
+					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.pullAfterwards.branchName, msg.pullAfterwards.remote, false, false));
 				}
 				this.sendMessage({
 					command: 'checkoutBranch',
-					pullFromRemoteAfterwards: msg.pullFromRemoteAfterwards,
+					pullAfterwards: msg.pullAfterwards,
 					errors: errorInfos
 				});
 				break;

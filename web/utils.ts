@@ -138,7 +138,7 @@ function pad2(i: number) {
 	return i > 9 ? i : '0' + i;
 }
 
-function registerCustomEmojiMappings(mappings: GG.CustomEmojiShortcodeMapping[]) {
+function registerCustomEmojiMappings(mappings: ReadonlyArray<GG.CustomEmojiShortcodeMapping>) {
 	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
 	for (let i = 0; i < mappings.length; i++) {
 		if (validShortcodeRegex.test(mappings[i].shortcode)) {

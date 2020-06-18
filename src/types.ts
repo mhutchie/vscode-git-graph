@@ -98,7 +98,7 @@ export interface GitRepoSettings {
 			readonly global: string | null
 		}
 	};
-	readonly remotes: GitRepoSettingsRemote[];
+	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 }
 
 export interface GitRepoSettingsRemote {
@@ -211,9 +211,9 @@ export interface GitGraphViewConfig {
 	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
 	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
-	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
-	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
-	readonly customPullRequestProviders: CustomPullRequestProvider[];
+	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
+	readonly customEmojiShortcodeMappings: ReadonlyArray<CustomEmojiShortcodeMapping>;
+	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly defaultFileViewType: FileViewType;
@@ -221,7 +221,7 @@ export interface GitGraphViewConfig {
 	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
-	readonly graphColours: string[];
+	readonly graphColours: ReadonlyArray<string>;
 	readonly graphStyle: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
 	readonly includeCommitsMentionedByReflogs: boolean;
@@ -593,7 +593,7 @@ export interface ResponseCompareCommits extends ResponseWithErrorInfo {
 	readonly command: 'compareCommits';
 	readonly commitHash: string;
 	readonly compareWithHash: string;
-	readonly fileChanges: GitFileChange[];
+	readonly fileChanges: ReadonlyArray<GitFileChange>;
 	readonly codeReview: CodeReview | null;
 	readonly refresh: boolean;
 }
@@ -652,7 +652,7 @@ export interface RequestDeleteBranch extends RepoRequest {
 	readonly command: 'deleteBranch';
 	readonly branchName: string;
 	readonly forceDelete: boolean;
-	readonly deleteOnRemotes: string[];
+	readonly deleteOnRemotes: ReadonlyArray<string>;
 }
 export interface ResponseDeleteBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'deleteBranch';
@@ -783,14 +783,14 @@ export interface RequestLoadRepoInfo extends RepoRequest {
 	readonly command: 'loadRepoInfo';
 	readonly refreshId: number;
 	readonly showRemoteBranches: boolean;
-	readonly hideRemotes: string[];
+	readonly hideRemotes: ReadonlyArray<string>;
 }
 export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 	readonly command: 'loadRepoInfo';
 	readonly refreshId: number;
-	readonly branches: string[];
+	readonly branches: ReadonlyArray<string>;
 	readonly head: string | null;
-	readonly remotes: string[];
+	readonly remotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
 	readonly isRepo: boolean;
 }
@@ -798,15 +798,15 @@ export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 export interface RequestLoadCommits extends RepoRequest {
 	readonly command: 'loadCommits';
 	readonly refreshId: number;
-	readonly branches: string[] | null; // null => Show All
+	readonly branches: ReadonlyArray<string> | null; // null => Show All
 	readonly maxCommits: number;
 	readonly showTags: boolean;
 	readonly showRemoteBranches: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly onlyFollowFirstParent: boolean;
 	readonly commitOrdering: CommitOrdering;
-	readonly remotes: string[];
-	readonly hideRemotes: string[];
+	readonly remotes: ReadonlyArray<string>;
+	readonly hideRemotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {

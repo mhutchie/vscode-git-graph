@@ -40,9 +40,9 @@ declare global {
 		readonly currentRepo: string;
 		readonly currentRepoLoading: boolean;
 		readonly gitRepos: GG.GitRepoSet;
-		readonly gitBranches: string[];
+		readonly gitBranches: ReadonlyArray<string>;
 		readonly gitBranchHead: string | null;
-		readonly gitRemotes: string[];
+		readonly gitRemotes: ReadonlyArray<string>;
 		readonly gitStashes: ReadonlyArray<GG.GitStash>;
 		readonly commits: GG.GitCommit[];
 		readonly commitHead: string | null;

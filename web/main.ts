@@ -1,8 +1,8 @@
 class GitGraphView {
 	private gitRepos: GG.GitRepoSet;
-	private gitBranches: string[] = [];
+	private gitBranches: ReadonlyArray<string> = [];
 	private gitBranchHead: string | null = null;
-	private gitRemotes: string[] = [];
+	private gitRemotes: ReadonlyArray<string> = [];
 	private gitStashes: ReadonlyArray<GG.GitStash> = [];
 	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
@@ -161,7 +161,7 @@ class GitGraphView {
 		this.gitRepos = repos;
 		this.saveState();
 
-		let repoPaths = Object.keys(repos), newRepo: string;
+		let repoPaths: ReadonlyArray<string> = Object.keys(repos), newRepo: string;
 		if (loadViewTo !== null && this.currentRepo !== loadViewTo.repo && typeof repos[loadViewTo.repo] !== 'undefined') {
 			newRepo = loadViewTo.repo;
 		} else if (typeof repos[this.currentRepo] === 'undefined') {
@@ -208,7 +208,7 @@ class GitGraphView {
 		this.refresh(true);
 	}
 
-	private loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], stashes: ReadonlyArray<GG.GitStash>, isRepo: boolean) {
+	private loadRepoInfo(branchOptions: ReadonlyArray<string>, branchHead: string | null, remotes: ReadonlyArray<string>, stashes: ReadonlyArray<GG.GitStash>, isRepo: boolean) {
 		// Changes to this.gitStashes are reflected as changes to the commits when loadCommits is run
 		this.gitStashes = stashes;
 
@@ -3158,7 +3158,7 @@ function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
 }
 
-function getRepoDropdownOptions(repos: string[]) {
+function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes

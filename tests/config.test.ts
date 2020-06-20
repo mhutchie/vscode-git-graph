@@ -286,6 +286,7 @@ describe('Config', () => {
 			expect(value.remoteBranch.checkout).toBe(true);
 			expect(value.remoteBranch.delete).toBe(true);
 			expect(value.remoteBranch.fetch).toBe(true);
+			expect(value.remoteBranch.merge).toBe(true);
 			expect(value.remoteBranch.pull).toBe(true);
 			expect(value.remoteBranch.createPullRequest).toBe(true);
 			expect(value.remoteBranch.createArchive).toBe(true);
@@ -339,6 +340,7 @@ describe('Config', () => {
 			expect(value.remoteBranch.checkout).toBe(true);
 			expect(value.remoteBranch.delete).toBe(true);
 			expect(value.remoteBranch.fetch).toBe(true);
+			expect(value.remoteBranch.merge).toBe(true);
 			expect(value.remoteBranch.pull).toBe(true);
 			expect(value.remoteBranch.createPullRequest).toBe(true);
 			expect(value.remoteBranch.createArchive).toBe(true);
@@ -404,6 +406,7 @@ describe('Config', () => {
 			expect(value.remoteBranch.checkout).toBe(true);
 			expect(value.remoteBranch.delete).toBe(true);
 			expect(value.remoteBranch.fetch).toBe(false);
+			expect(value.remoteBranch.merge).toBe(true);
 			expect(value.remoteBranch.pull).toBe(true);
 			expect(value.remoteBranch.createPullRequest).toBe(true);
 			expect(value.remoteBranch.createArchive).toBe(true);

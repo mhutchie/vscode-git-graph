@@ -918,11 +918,11 @@ class GitGraphView {
 			}, {
 				title: 'Merge into current branch' + ELLIPSIS,
 				visible: visibility.merge && this.gitBranchHead !== refName,
-				onClick: () => this.mergeAction(refName, refName, GG.ActionOn.Branch, target)
+				onClick: () => this.mergeAction(refName, refName, GG.MergeActionOn.Branch, target)
 			}, {
 				title: 'Rebase current branch on Branch' + ELLIPSIS,
 				visible: visibility.rebase && this.gitBranchHead !== refName,
-				onClick: () => this.rebaseAction(refName, refName, GG.ActionOn.Branch, target)
+				onClick: () => this.rebaseAction(refName, refName, GG.RebaseActionOn.Branch, target)
 			}, {
 				title: 'Push Branch' + ELLIPSIS,
 				visible: visibility.push && this.gitRemotes.length > 0,
@@ -1140,11 +1140,11 @@ class GitGraphView {
 			{
 				title: 'Merge into current branch' + ELLIPSIS,
 				visible: visibility.merge,
-				onClick: () => this.mergeAction(hash, abbrevCommit(hash), GG.ActionOn.Commit, target)
+				onClick: () => this.mergeAction(hash, abbrevCommit(hash), GG.MergeActionOn.Commit, target)
 			}, {
 				title: 'Rebase current branch on this Commit' + ELLIPSIS,
 				visible: visibility.rebase,
-				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), GG.ActionOn.Commit, target)
+				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), GG.RebaseActionOn.Commit, target)
 			}, {
 				title: 'Reset current branch to this Commit' + ELLIPSIS,
 				visible: visibility.reset,
@@ -1200,6 +1200,10 @@ class GitGraphView {
 						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
 					}, target);
 				}
+			}, {
+				title: 'Merge into current branch' + ELLIPSIS,
+				visible: visibility.merge,
+				onClick: () => this.mergeAction(refName, refName, GG.MergeActionOn.RemoteTrackingBranch, target)
 			}, {
 				title: 'Pull into current branch' + ELLIPSIS,
 				visible: visibility.pull && remote !== '',
@@ -1461,21 +1465,21 @@ class GitGraphView {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
 	}
 
-	private mergeAction(obj: string, name: string, actionOn: GG.ActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
+	private mergeAction(obj: string, name: string, actionOn: GG.MergeActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
 		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
 			{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
 			{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.merge.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this ' + actionOn.toLowerCase() + '.' },
 			{ type: DialogInputType.Checkbox, name: 'No Commit', value: this.config.dialogDefaults.merge.noCommit, info: 'The changes of the merge will be staged but not committed, so that you can review and/or modify the merge result before committing.' }
-		], 'Yes, merge ' + actionOn.toLowerCase(), (values) => {
+		], 'Yes, merge', (values) => {
 			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, actionOn: actionOn, createNewCommit: <boolean>values[0], squash: <boolean>values[1], noCommit: <boolean>values[2] }, 'Merging ' + actionOn);
 		}, target);
 	}
 
-	private rebaseAction(obj: string, name: string, actionOn: GG.ActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
+	private rebaseAction(obj: string, name: string, actionOn: GG.RebaseActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
 		dialog.showForm('Are you sure you want to rebase the current branch on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
 			{ type: DialogInputType.Checkbox, name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
 			{ type: DialogInputType.Checkbox, name: 'Ignore Date', value: this.config.dialogDefaults.rebase.ignoreDate, info: 'Only applicable to a non-interactive rebase.' }
-		], 'Yes, rebase on ' + actionOn.toLowerCase(), (values) => {
+		], 'Yes, rebase', (values) => {
 			let interactive = <boolean>values[0];
 			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, actionOn: actionOn, ignoreDate: <boolean>values[1], interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + actionOn);
 		}, target);

@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash } from './types';
+import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn } from './types';
 import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -813,13 +813,13 @@ export class DataSource implements vscode.Disposable {
 	 * Merge a branch or commit into the current branch.
 	 * @param repo The path of the repository.
 	 * @param obj The object to be merged into the current branch.
-	 * @param actionOn Is the merge on a branch or commit.
+	 * @param actionOn Is the merge on a branch, remote-tracking branch or commit.
 	 * @param createNewCommit Is `--no-ff` enabled.
 	 * @param squash Is `--squash` enabled.
 	 * @param noCommit Is `--no-commit` enabled.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public async merge(repo: string, obj: string, actionOn: ActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
+	public async merge(repo: string, obj: string, actionOn: MergeActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
 		let args = ['merge', obj];
 
 		if (squash) args.push('--squash');
@@ -845,14 +845,14 @@ export class DataSource implements vscode.Disposable {
 	 * @param interactive Should the rebase be performed interactively.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public rebase(repo: string, obj: string, actionOn: ActionOn, ignoreDate: boolean, interactive: boolean) {
+	public rebase(repo: string, obj: string, actionOn: RebaseActionOn, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
 			return new Promise<ErrorInfo>(resolve => {
 				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
 
 				runGitCommandInNewTerminal(repo, this.gitExecutable.path,
-					'rebase --interactive ' + (actionOn === ActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
-					'Git Rebase on "' + (actionOn === ActionOn.Branch ? obj : abbrevCommit(obj)) + '"');
+					'rebase --interactive ' + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
+					'Git Rebase on "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"');
 				setTimeout(() => resolve(null), 1000);
 			});
 		} else {

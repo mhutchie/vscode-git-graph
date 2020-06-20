@@ -232,6 +232,10 @@
 									"type": "boolean",
 									"title": "Fetch into local branch..."
 								},
+								"merge": {
+									"type": "boolean",
+									"title": "Merge into current branch..."
+								},
 								"pull": {
 									"type": "boolean",
 									"title": "Pull into current branch..."

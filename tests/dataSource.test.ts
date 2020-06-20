@@ -10,7 +10,7 @@ import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
 import { EventEmitter } from '../src/event';
 import { Logger } from '../src/logger';
-import { ActionOn, GitConfigLocation, GitPushBranchMode, GitResetMode } from '../src/types';
+import { GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn } from '../src/types';
 import * as utils from '../src/utils';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
@@ -1773,7 +1773,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, false, false);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, false, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1786,7 +1786,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, true, false, false);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, false, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1801,7 +1801,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, true, false);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1811,6 +1811,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge branch \'develop\''], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should merge a remote-tracking branch into the current branch (squash and staged changes exist)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.merge('/path/to/repo', 'origin/develop', MergeActionOn.RemoteTrackingBranch, false, true, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'origin/develop', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge remote-tracking branch \'origin/develop\''], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should merge a commit into the current branch (squash and staged changes exist)', async () => {
 			// Setup
 			mockGitSuccessOnce();
@@ -1818,7 +1835,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', ActionOn.Commit, false, true, false);
+			const result = await dataSource.merge('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', MergeActionOn.Commit, false, true, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1834,7 +1851,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, true, false);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1848,7 +1865,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, false, true);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, false, true);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1861,7 +1878,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, true, true);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, true);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1874,7 +1891,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, true, true, true);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, true, true);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1887,7 +1904,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, true, false);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -1901,7 +1918,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.merge('/path/to/repo', 'develop', ActionOn.Branch, false, true, false);
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -1918,7 +1935,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', ActionOn.Branch, false, false);
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1930,7 +1947,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', ActionOn.Branch, true, false);
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, true, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1942,7 +1959,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', ActionOn.Branch, false, false);
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -1954,7 +1971,7 @@ describe('DataSource', () => {
 			spyOnRunGitCommandInNewTerminal.mockReturnValueOnce();
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', ActionOn.Branch, false, true);
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1967,7 +1984,7 @@ describe('DataSource', () => {
 			spyOnRunGitCommandInNewTerminal.mockReturnValueOnce();
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', ActionOn.Commit, false, true);
+			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
 
 			// Assert
 			expect(result).toBe(null);
@@ -1980,7 +1997,7 @@ describe('DataSource', () => {
 			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', ActionOn.Commit, false, true);
+			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
 
 			// Assert
 			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');

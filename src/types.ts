@@ -293,6 +293,7 @@ export interface ContextMenuActionsVisibility {
 		readonly checkout: boolean;
 		readonly delete: boolean;
 		readonly fetch: boolean;
+		readonly merge: boolean;
 		readonly pull: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
@@ -462,11 +463,6 @@ export interface ResponseWithErrorInfo extends BaseMessage {
 
 export interface ResponseWithMultiErrorInfo extends BaseMessage {
 	readonly errors: ErrorInfo[];
-}
-
-export const enum ActionOn {
-	Branch = 'Branch',
-	Commit = 'Commit'
 }
 
 export type ErrorInfo = string | null; // null => no error, otherwise => error message
@@ -829,17 +825,22 @@ export interface ResponseLoadRepos extends BaseMessage {
 	readonly loadViewTo: LoadGitGraphViewTo;
 }
 
+export const enum MergeActionOn {
+	Branch = 'Branch',
+	RemoteTrackingBranch = 'Remote-tracking Branch',
+	Commit = 'Commit'
+}
 export interface RequestMerge extends RepoRequest {
 	readonly command: 'merge';
 	readonly obj: string;
-	readonly actionOn: ActionOn;
+	readonly actionOn: MergeActionOn;
 	readonly createNewCommit: boolean;
 	readonly squash: boolean;
 	readonly noCommit: boolean;
 }
 export interface ResponseMerge extends ResponseWithErrorInfo {
 	readonly command: 'merge';
-	readonly actionOn: ActionOn;
+	readonly actionOn: MergeActionOn;
 }
 
 export interface RequestOpenExtensionSettings extends BaseMessage {
@@ -914,16 +915,20 @@ export interface ResponsePushTag extends ResponseWithErrorInfo {
 	readonly command: 'pushTag';
 }
 
+export const enum RebaseActionOn {
+	Branch = 'Branch',
+	Commit = 'Commit'
+}
 export interface RequestRebase extends RepoRequest {
 	readonly command: 'rebase';
 	readonly obj: string;
-	readonly actionOn: ActionOn;
+	readonly actionOn: RebaseActionOn;
 	readonly ignoreDate: boolean;
 	readonly interactive: boolean;
 }
 export interface ResponseRebase extends ResponseWithErrorInfo {
 	readonly command: 'rebase';
-	readonly actionOn: ActionOn;
+	readonly actionOn: RebaseActionOn;
 	readonly interactive: boolean;
 }
 

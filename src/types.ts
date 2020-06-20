@@ -368,6 +368,7 @@ export interface DialogDefaults {
 		readonly reinstateIndex: boolean
 	};
 	readonly cherryPick: {
+		readonly noCommit: boolean,
 		readonly recordOrigin: boolean
 	};
 	readonly createBranch: {

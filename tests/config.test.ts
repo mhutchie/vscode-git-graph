@@ -836,6 +836,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -857,6 +858,7 @@ describe('Config', () => {
 					reinstateIndex: true
 				},
 				cherryPick: {
+					noCommit: true,
 					recordOrigin: true
 				},
 				createBranch: {
@@ -906,6 +908,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -927,6 +930,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -976,6 +980,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -997,6 +1002,7 @@ describe('Config', () => {
 					reinstateIndex: true
 				},
 				cherryPick: {
+					noCommit: true,
 					recordOrigin: true
 				},
 				createBranch: {
@@ -1046,6 +1052,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -1067,6 +1074,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -1116,6 +1124,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -1137,6 +1146,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -1180,6 +1190,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -1201,6 +1212,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {

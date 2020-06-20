@@ -197,6 +197,7 @@ class Config {
 				reinstateIndex: !!this.config.get('dialog.applyStash.reinstateIndex', false)
 			},
 			cherryPick: {
+				noCommit: !!this.config.get('dialog.cherryPick.noCommit', false),
 				recordOrigin: !!this.config.get('dialog.cherryPick.recordOrigin', false)
 			},
 			createBranch: {

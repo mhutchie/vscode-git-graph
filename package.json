@@ -494,6 +494,11 @@
 					"default": false,
 					"description": "Default state of the \"Reinstate Index\" checkbox."
 				},
+				"git-graph.dialog.cherryPick.noCommit": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"No Commit\" checkbox."
+				},
 				"git-graph.dialog.cherryPick.recordOrigin": {
 					"type": "boolean",
 					"default": false,

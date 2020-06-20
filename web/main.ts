@@ -1093,7 +1093,7 @@ class GitGraphView {
 					}, {
 						type: DialogInputType.Checkbox,
 						name: 'No Commit',
-						value: false,
+						value: this.config.dialogDefaults.cherryPick.noCommit,
 						info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.'
 					});
 

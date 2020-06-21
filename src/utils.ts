@@ -604,7 +604,7 @@ export function isGitAtLeastVersion(executable: GitExecutable, version: string) 
 
 	if (v1 === null || v2 === null) {
 		// Unable to parse a version number
-		return false;
+		return true;
 	}
 
 	if (v1.major > v2.major) return true; // Git major version is newer
@@ -625,16 +625,18 @@ export function isGitAtLeastVersion(executable: GitExecutable, version: string) 
  * @returns The `major`.`minor`.`patch` version numbers.
  */
 function parseVersion(version: string) {
-	try {
-		const v = version.split(/[^0-9\.]+/)[0].split('.');
-		return {
-			major: v.length > 0 ? parseInt(v[0], 10) : 0,
-			minor: v.length > 1 ? parseInt(v[1], 10) : 0,
-			patch: v.length > 2 ? parseInt(v[2], 10) : 0
-		};
-	} catch (_) {
+	const match = version.trim().match(/^[0-9]+(\.[0-9]+|)(\.[0-9]+|)/);
+	if (match === null) {
+		// Unable to find a valid version number
 		return null;
 	}
+
+	const comps = match[0].split('.');
+	return {
+		major: parseInt(comps[0], 10),
+		minor: comps.length > 1 ? parseInt(comps[1], 10) : 0,
+		patch: comps.length > 2 ? parseInt(comps[2], 10) : 0
+	};
 }
 
 /**

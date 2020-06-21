@@ -1,3 +1,4 @@
+import * as date from './mocks/date';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('../src/askpass/askpassManager');
@@ -10,7 +11,7 @@ import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
 import { EventEmitter } from '../src/event';
 import { Logger } from '../src/logger';
-import { GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn } from '../src/types';
+import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn } from '../src/types';
 import * as utils from '../src/utils';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
@@ -136,8 +137,8 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce(
-				'98adab72e57a098a45cc36e43a6c0fda95c44f8bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbb30d6d4d14462e09515df02a8635e83b4278c8b1 26970361eca306caa6d6bed3baf022dbd8fa404cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{0}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbMichael HutchisonXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592306634XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on develop: b30d6d4 y\n' +
-				'0fc3e571c275213de2b3bca9c85e852323056121XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb9157723d0856bd828800ff185ee72658ee51d19f d45009bc4224537e97b0e52883ea7ae657928fcf 9d81ce0a6cf64b6651bacd7a6c3a6ca90fd63235XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{1}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbMichael HutchisonXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592135134XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on master: 9157723 y\n'
+				'98adab72e57a098a45cc36e43a6c0fda95c44f8bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbb30d6d4d14462e09515df02a8635e83b4278c8b1 26970361eca306caa6d6bed3baf022dbd8fa404cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{0}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592306634XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on develop: b30d6d4 y\n' +
+				'0fc3e571c275213de2b3bca9c85e852323056121XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb9157723d0856bd828800ff185ee72658ee51d19f d45009bc4224537e97b0e52883ea7ae657928fcf 9d81ce0a6cf64b6651bacd7a6c3a6ca90fd63235XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{1}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592135134XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on master: 9157723 y\n'
 			);
 
 			// Run
@@ -150,7 +151,7 @@ describe('DataSource', () => {
 				remotes: ['origin'],
 				stashes: [
 					{
-						author: 'Michael Hutchison',
+						author: 'Test Author',
 						baseHash: 'b30d6d4d14462e09515df02a8635e83b4278c8b1',
 						date: 1592306634,
 						email: 'test@mhutchie.com',
@@ -160,7 +161,7 @@ describe('DataSource', () => {
 						untrackedFilesHash: null
 					},
 					{
-						author: 'Michael Hutchison',
+						author: 'Test Author',
 						baseHash: '9157723d0856bd828800ff185ee72658ee51d19f',
 						date: 1592135134,
 						email: 'test@mhutchie.com',
@@ -202,7 +203,7 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should return the repository info (when show remote branches is FALSE)', async () => {
+		it('Should return the repository info (using commit date)', async () => {
 			// Setup
 			mockGitSuccessOnce(
 				'* develop\n' +
@@ -210,8 +211,40 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
-			workspaceConfiguration.get.mockReturnValueOnce('Author Date');
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce('Commit Date'); // dateType
+			workspaceConfiguration.get.mockReturnValueOnce(false); // useMailmap
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showSignatureStatus
+
+			// Run
+			onDidChangeConfiguration.emit({
+				affectsConfiguration: (section) => section === 'git-graph.dateType'
+			});
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				branches: ['develop', 'master'],
+				head: 'develop',
+				remotes: ['origin'],
+				stashes: [],
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '--no-color'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the repository info (using mailmap)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'* develop\n' +
+				'  master\n'
+			);
+			mockGitSuccessOnce('origin\n');
+			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce('Author Date'); // dateType
+			workspaceConfiguration.get.mockReturnValueOnce(true); // useMailmap
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showSignatureStatus
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -324,13 +357,2414 @@ describe('DataSource', () => {
 		});
 	});
 
+	describe('getCommits', () => {
+		it('Should return the commits (show all branches)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }, { name: 'other-remote/master', remote: null }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (master & develop branches)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', ['master', 'develop'], 300, true, true, false, false, CommitOrdering.AuthorDate, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--author-date-order', 'master', 'develop', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (no more commits)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 2, true, true, false, false, CommitOrdering.Topological, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: true,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=3', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--topo-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (HEAD is not in the commits)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (showUncommittedChanges === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showUncommittedChanges
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (showUntrackedFiles === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (1)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=no', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (showTags === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, false, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (showCommitsOnlyReferencedByTags === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (showRemoteBranches === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, false, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '--heads', '--tags', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (includeCommitsMentionedByReflogs === TRUE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, true, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--reflog', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (onlyFollowFirstParent === TRUE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, true, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--first-parent', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (hiding the remote branches from a hidden remote)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin', 'other-remote'], ['other-remote'], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--glob=refs/remotes/origin', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (stash returned in git log commits)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c HEAD\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], [
+				{
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					baseHash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+					untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f',
+					selector: 'refs/stash@{0}',
+					author: 'Test Stash Author',
+					email: 'test-stash@mhutchie.com',
+					date: 1587559258,
+					message: 'WIP'
+				}
+			]);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'WIP',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: {
+							baseHash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+							selector: 'refs/stash@{0}',
+							untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f'
+						}
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['master', 'develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (stashes are based on different commits returned by git log)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], [
+				{
+					hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+					baseHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f',
+					selector: 'refs/stash@{0}',
+					author: 'Test Stash Author',
+					email: 'test-stash@mhutchie.com',
+					date: 1587559258,
+					message: 'WIP 1'
+				},
+				{
+					hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+					baseHash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+					untrackedFilesHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a',
+					selector: 'refs/stash@{1}',
+					author: 'Test Stash Author',
+					email: 'test-stash@mhutchie.com',
+					date: 1587559258,
+					message: 'WIP 2'
+				}
+			]);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: 'Test Stash Author',
+						email: 'test-stash@mhutchie.com',
+						date: 1587559258,
+						message: 'WIP 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: {
+							baseHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+							selector: 'refs/stash@{0}',
+							untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f'
+						}
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Stash Author',
+						email: 'test-stash@mhutchie.com',
+						date: 1587559258,
+						message: 'WIP 2',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: {
+							baseHash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+							selector: 'refs/stash@{1}',
+							untrackedFilesHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a'
+						}
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (stashes are based on a commit returned by git log)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], [
+				{
+					hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+					baseHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f',
+					selector: 'refs/stash@{0}',
+					author: 'Test Stash Author',
+					email: 'test-stash@mhutchie.com',
+					date: 1587559261,
+					message: 'WIP 1'
+				},
+				{
+					hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+					baseHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					untrackedFilesHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a',
+					selector: 'refs/stash@{1}',
+					author: 'Test Stash Author',
+					email: 'test-stash@mhutchie.com',
+					date: 1587559260,
+					message: 'WIP 2'
+				}
+			]);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: 'Test Stash Author',
+						email: 'test-stash@mhutchie.com',
+						date: 1587559261,
+						message: 'WIP 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: {
+							baseHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+							selector: 'refs/stash@{0}',
+							untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f'
+						}
+					},
+					{
+						hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: 'Test Stash Author',
+						email: 'test-stash@mhutchie.com',
+						date: 1587559260,
+						message: 'WIP 2',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: {
+							baseHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+							selector: 'refs/stash@{1}',
+							untrackedFilesHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a'
+						}
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (stash isn\'t based on a commit returned by git log)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], [
+				{
+					hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+					baseHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a',
+					untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f',
+					selector: 'refs/stash@{0}',
+					author: 'Test Stash Author',
+					email: 'test-stash@mhutchie.com',
+					date: 1587559258,
+					message: 'WIP 1'
+				}
+			]);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commits (no uncommitted changes)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce('');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return no commits (when in an empty repository)', async () => {
+			// Setup
+			mockGitSuccessOnce('\n');
+			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [],
+				head: null,
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+		});
+
+		it('Should return the commits (ignoring invalid show-ref records)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/invalid/master\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUncommittedChanges
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [{ name: 'origin/master', remote: 'origin' }, { name: 'other-remote/master', remote: null }],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git (when thrown by git log)', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [],
+				head: null,
+				moreCommitsAvailable: false,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by git show-ref)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showCommitsOnlyReferencedByTags
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [],
+				head: null,
+				moreCommitsAvailable: false,
+				error: 'error message'
+			});
+		});
+	});
+
+	describe('getCommitDetails', () => {
+		it('Should return the commit details', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commit details (commit doesn\'t have parents)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: [],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--name-status', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--numstat', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commit details (including signature status)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbGXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest Signer <test-signer@mhutchie.com> XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb0123456789ABCDEFXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			workspaceConfiguration.get.mockReturnValueOnce('Author Date'); // dateType
+			workspaceConfiguration.get.mockReturnValueOnce(false); // useMailmap
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showSignatureStatus
+
+			// Run
+			onDidChangeConfiguration.emit({
+				affectsConfiguration: (section) => section === 'git-graph.showSignatureStatus'
+			});
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: {
+						key: '0123456789ABCDEF',
+						signer: 'Test Signer <test-signer@mhutchie.com>',
+						status: 'G'
+					},
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%G?XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GSXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GKXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commit details (without signature status if not available)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			workspaceConfiguration.get.mockReturnValueOnce('Author Date'); // dateType
+			workspaceConfiguration.get.mockReturnValueOnce(false); // useMailmap
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showSignatureStatus
+
+			// Run
+			onDidChangeGitExecutable.emit({
+				path: '/path/to/git',
+				version: '2.3.0'
+			});
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commit details (using mailmap)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			workspaceConfiguration.get.mockReturnValueOnce('Author Date'); // dateType
+			workspaceConfiguration.get.mockReturnValueOnce(true); // useMailmap
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showSignatureStatus
+
+			// Run
+			onDidChangeConfiguration.emit({
+				affectsConfiguration: (section) => section === 'git-graph.useMailmap'
+			});
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commit details (handling unknown Git file status returned by git diff --name-status)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'X', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the commit details (handling unexpected response format returned by git diff --numstat)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: null,
+							deletions: null,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: null,
+							deletions: null,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git (when thrown by git show)', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by git diff-tree --name-status)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitThrowingErrorOnce();
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by git diff-tree --numstat)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+	});
+
+	describe('getStashDetails', () => {
+		it('Should return the stash details', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: null
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the stash details (including untracked files)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3 c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', 'D', 'dir/other-deleted.txt', 'A', 'dir/added.txt', ''].join('\0'));
+			mockGitSuccessOnce(['c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', '0	0	dir/other-deleted.txt', '4	0	dir/added.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3', 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						},
+						{
+							additions: 4,
+							deletions: 0,
+							newFilePath: 'dir/added.txt',
+							oldFilePath: 'dir/added.txt',
+							type: 'U'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--name-status', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--numstat', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git (when thrown by git show)', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: null
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by git diff-tree --name-status)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitThrowingErrorOnce();
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: null
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by git diff-tree --numstat)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: null
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by untracked git diff-tree --name-status)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitThrowingErrorOnce();
+			mockGitSuccessOnce(['c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', '0	0	dir/other-deleted.txt', '4	0	dir/added.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message thrown by git (when thrown by untracked git diff-tree --numstat)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', 'D', 'dir/other-deleted.txt', 'A', 'dir/added.txt', ''].join('\0'));
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.getStashDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', {
+				selector: 'refs/stash@{0}',
+				baseHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+				untrackedFilesHash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+			});
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: null,
+				error: 'error message'
+			});
+		});
+	});
+
 	describe('getUncommittedDetails', () => {
 		it('Should return the uncommitted changes', async () => {
 			// Setup
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -387,12 +2821,67 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '-s', '--untracked-files=all', '--porcelain', '-z'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the uncommitted changes (showUntrackedFiles === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt'].join('\0'));
+			workspaceConfiguration.get.mockReturnValueOnce(false); // showUntrackedFiles
+
+			// Run
+			const result = await dataSource.getUncommittedDetails('/path/to/repo');
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: utils.UNCOMMITTED,
+					parents: [],
+					author: '',
+					authorEmail: '',
+					authorDate: 0,
+					committer: '',
+					committerEmail: '',
+					committerDate: 0,
+					signature: null,
+					body: '',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '-s', '--untracked-files=no', '--porcelain', '-z'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return the uncommitted changes (halting invalid git status response)', async () => {
 			// Setup
 			mockGitSuccessOnce(['M', 'dir/modified.txt', ''].join('\0'));
 			mockGitSuccessOnce(['1	1	dir/modified.txt', '1	1	modified.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', ' D ', 'M  dir/modified.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -436,7 +2925,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -453,7 +2942,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -488,7 +2977,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['M', 'dir/modified.txt', 'R051', 'dir/renamed-old.txt', 'dir/renamed-new.txt', 'A', 'added.txt', ''].join('\0'));
 			mockGitSuccessOnce(['1	1	dir/modified.txt', '1	2	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', '2	0	added.txt', ''].join('\0'));
 			mockGitSuccessOnce(['MM dir/modified.txt', 'A  added.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getCommitComparison('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED);
@@ -578,7 +3067,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce(['1	1	dir/modified.txt', '1	2	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', '2	0	added.txt', ''].join('\0'));
 			mockGitSuccessOnce(['MM dir/modified.txt', 'A  added.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getCommitComparison('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED);
@@ -595,7 +3084,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['M', 'dir/modified.txt', 'R051', 'dir/renamed-old.txt', 'dir/renamed-new.txt', 'A', 'added.txt', ''].join('\0'));
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce(['MM dir/modified.txt', 'A  added.txt', '?? untracked.txt'].join('\0'));
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // showUntrackedFiles
 
 			// Run
 			const result = await dataSource.getCommitComparison('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED);
@@ -627,7 +3116,7 @@ describe('DataSource', () => {
 		it('Should return the file contents', async () => {
 			// Setup
 			mockGitSuccessOnce('File contents.\n');
-			workspaceConfiguration.get.mockReturnValueOnce('cp1252');
+			workspaceConfiguration.get.mockReturnValueOnce('cp1252'); // fileEncoding
 			const spyOnDecode = jest.spyOn(iconv, 'decode');
 
 			// Run
@@ -642,7 +3131,7 @@ describe('DataSource', () => {
 		it('Should return the file contents (falling back to utf8 if the encoding is unknown)', async () => {
 			// Setup
 			mockGitSuccessOnce('File contents.\n');
-			workspaceConfiguration.get.mockReturnValueOnce('xyz');
+			workspaceConfiguration.get.mockReturnValueOnce('xyz'); // fileEncoding
 			const spyOnDecode = jest.spyOn(iconv, 'decode');
 
 			// Run
@@ -814,7 +3303,7 @@ describe('DataSource', () => {
 	describe('getTagDetails', () => {
 		it('Should return the tags details', async () => {
 			// Setup
-			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbMichael HutchisonXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<mhutchie@16right.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
+			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
 
 			// Run
 			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
@@ -822,8 +3311,8 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				tagHash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
-				name: 'Michael Hutchison',
-				email: 'mhutchie@16right.com',
+				name: 'Test Tagger',
+				email: 'test@mhutchie.com',
 				date: 1587559258,
 				message: 'tag-message',
 				error: null
@@ -833,7 +3322,7 @@ describe('DataSource', () => {
 
 		it('Should return the tags details (when email isn\'t enclosed by <>)', async () => {
 			// Setup
-			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbMichael HutchisonXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbmhutchie@16right.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
+			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
 
 			// Run
 			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
@@ -841,8 +3330,8 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				tagHash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
-				name: 'Michael Hutchison',
-				email: 'mhutchie@16right.com',
+				name: 'Test Tagger',
+				email: 'test@mhutchie.com',
 				date: 1587559258,
 				message: 'tag-message',
 				error: null
@@ -2244,11 +4733,11 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Michael Hutchison', GitConfigLocation.Global);
+			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['config', '--global', 'user.name', 'Michael Hutchison'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['config', '--global', 'user.name', 'Test User Name'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should set a local config value', async () => {
@@ -2256,11 +4745,11 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Michael Hutchison', GitConfigLocation.Local);
+			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Local);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['config', '--local', 'user.name', 'Michael Hutchison'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['config', '--local', 'user.name', 'Test User Name'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should set a system config value', async () => {
@@ -2268,11 +4757,11 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Michael Hutchison', GitConfigLocation.System);
+			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.System);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['config', '--system', 'user.name', 'Michael Hutchison'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['config', '--system', 'user.name', 'Test User Name'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -2280,7 +4769,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Michael Hutchison', GitConfigLocation.Global);
+			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -2567,6 +5056,21 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe('A newer version of Git (>= 2.13.2) is required for this feature. Git 2.13.1 is currently installed. Please install a newer version of Git to use this feature.');
+		});
+	});
+
+	describe('onDidChangeConfiguration', () => {
+		it('Should not trigger Git command formats to be regenerated if they are unaffected by the change', () => {
+			// Setup
+			const spyOnGenerateGitCommandFormats = jest.spyOn(dataSource as any, 'generateGitCommandFormats');
+
+			// Run
+			onDidChangeConfiguration.emit({
+				affectsConfiguration: (section) => section === 'git-graph.autoCenterCommitDetailsView'
+			});
+
+			// Assert
+			expect(spyOnGenerateGitCommandFormats).toHaveBeenCalledTimes(0);
 		});
 	});
 

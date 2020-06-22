@@ -602,6 +602,7 @@ export class GitGraphView implements vscode.Disposable {
 				muteMergeCommits: config.muteMergeCommits,
 				onlyFollowFirstParent: config.onlyFollowFirstParent,
 				openRepoToHead: config.openRepoToHead,
+				repoDropdownOrder: config.repoDropdownOrder,
 				showCurrentBranchByDefault: config.showCurrentBranchByDefault,
 				showTags: config.showTags,
 				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal

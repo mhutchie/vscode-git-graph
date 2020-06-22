@@ -2,7 +2,7 @@ import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
-import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RefLabelAlignment, TabIconColourTheme } from '../src/types';
+import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RefLabelAlignment, RepoDropdownOrder, TabIconColourTheme } from '../src/types';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -2436,6 +2436,56 @@ describe('Config', () => {
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('referenceLabelAlignment', 'Normal');
 			expect(value).toBe(RefLabelAlignment.Normal);
+		});
+	});
+
+	describe('repoDropdownOrder', () => {
+		it('Should return RepoDropdownOrder.Name when the configuration value is "Name"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Name');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.Name);
+		});
+
+		it('Should return RepoDropdownOrder.FullPath when the configuration value is "Full Path"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Full Path');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.FullPath);
+		});
+
+		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.FullPath);
+		});
+
+		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.FullPath);
 		});
 	});
 

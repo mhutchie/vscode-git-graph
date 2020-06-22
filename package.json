@@ -735,6 +735,19 @@
 					"default": "Normal",
 					"description": "Specifies how branch and tag reference labels are aligned for each commit."
 				},
+				"git-graph.repositoryDropdownOrder": {
+					"type": "string",
+					"enum": [
+						"Full Path",
+						"Name"
+					],
+					"enumDescriptions": [
+						"Sort repositories alphabetically by the full path of the repository.",
+						"Sort repositories alphabetically by the name of the repository."
+					],
+					"default": "Full Path",
+					"description": "Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace)."
+				},
 				"git-graph.retainContextWhenHidden": {
 					"type": "boolean",
 					"default": true,

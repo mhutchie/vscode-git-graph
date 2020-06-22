@@ -232,6 +232,7 @@ export interface GitGraphViewConfig {
 	readonly muteMergeCommits: boolean;
 	readonly onlyFollowFirstParent: boolean;
 	readonly openRepoToHead: boolean;
+	readonly repoDropdownOrder: RepoDropdownOrder;
 	readonly showCurrentBranchByDefault: boolean;
 	readonly showTags: boolean;
 	readonly tagLabelsOnRight: boolean;
@@ -434,6 +435,11 @@ export const enum RepoCommitOrdering {
 	Date = 'date',
 	AuthorDate = 'author-date',
 	Topological = 'topo'
+}
+
+export const enum RepoDropdownOrder {
+	FullPath,
+	Name
 }
 
 export const enum ShowTags {

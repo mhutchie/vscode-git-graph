@@ -192,7 +192,7 @@ export class RepoManager implements vscode.Disposable {
 	 * @returns The set of repositories.
 	 */
 	public getRepos() {
-		let repoPaths = Object.keys(this.repos).sort(), repos: GitRepoSet = {};
+		let repoPaths = Object.keys(this.repos).sort((a, b) => a.localeCompare(b)), repos: GitRepoSet = {};
 		for (let i = 0; i < repoPaths.length; i++) {
 			repos[repoPaths[i]] = this.repos[repoPaths[i]];
 		}

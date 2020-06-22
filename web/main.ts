@@ -3099,7 +3099,7 @@ function getFilesInTree(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFi
 
 function sortFolderKeys(folder: FileTreeFolder) {
 	let keys = Object.keys(folder.contents);
-	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
+	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name.localeCompare(folder.contents[b].name));
 	return keys;
 }
 
@@ -3243,7 +3243,9 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 		options.push({ name: names[i], value: repos[i], hint: hint });
 	}
 
-	return options;
+	return initialState.config.repoDropdownOrder === GG.RepoDropdownOrder.Name
+		? options.sort((a, b) => a.name !== b.name ? a.name.localeCompare(b.name) : a.value.localeCompare(b.value))
+		: options;
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {

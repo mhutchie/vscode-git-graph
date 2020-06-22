@@ -15,6 +15,7 @@ import {
 	GitResetMode,
 	GraphStyle,
 	RefLabelAlignment,
+	RepoDropdownOrder,
 	TabIconColourTheme
 } from './types';
 
@@ -374,6 +375,15 @@ class Config {
 			: configValue === 'Branches (aligned to the graph) & Tags (on the right)'
 				? RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight
 				: RefLabelAlignment.Normal;
+	}
+
+	/**
+	 * Get the value of the `git-graph.repositoryDropdownOrder` Extension Setting.
+	 */
+	get repoDropdownOrder(): RepoDropdownOrder {
+		return this.config.get<string>('repositoryDropdownOrder', 'Full Path') === 'Name'
+			? RepoDropdownOrder.Name
+			: RepoDropdownOrder.FullPath;
 	}
 
 	/**

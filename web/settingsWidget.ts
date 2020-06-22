@@ -518,7 +518,7 @@ class SettingsWidget {
 			}
 			defaultProvider = providerOptions.find((provider) => provider.name === config.custom.name)!.value;
 		}
-		providerOptions.sort((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0);
+		providerOptions.sort((a, b) => a.name.localeCompare(b.name));
 
 		let sourceRemoteOptions = this.settings.remotes.map((remote, index) => ({ name: remote.name, value: index.toString() }));
 		let destRemoteOptions = sourceRemoteOptions.map((option) => option);

@@ -273,7 +273,7 @@ class SettingsWidget {
 					if (this.settings === null) return;
 					const userName = this.settings.user.name, userEmail = this.settings.user.email;
 					const isGlobal = userName.local === null && userEmail.local === null;
-					dialog.showConfirmation('Are you sure you want to remove the <b>' + (isGlobal ? 'globally' : 'locally') + ' configured</b> user name and email, which are used by Git to record the Author and Committer of commit objects?', () => {
+					dialog.showConfirmation('Are you sure you want to remove the <b>' + (isGlobal ? 'globally' : 'locally') + ' configured</b> user name and email, which are used by Git to record the Author and Committer of commit objects?', 'Yes, remove', () => {
 						runAction({
 							command: 'deleteUserDetails',
 							repo: this.repo!,
@@ -308,7 +308,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, delete', () => {
 					runAction({ command: 'deleteRemote', repo: this.repo!, name: remote.name }, 'Deleting Remote');
 				}, { type: TargetType.Repo });
 			});
@@ -317,7 +317,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('pruneRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, prune', () => {
 					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
 				}, { type: TargetType.Repo });
 			});
@@ -350,7 +350,7 @@ class SettingsWidget {
 
 			if (this.issueLinkingConfig !== null || globalState.issueLinkingConfig !== null) {
 				document.getElementById('removeIssueLinking')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', () => {
+					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', 'Yes, remove', () => {
 						this.setIssueLinkingConfig(null, this.issueLinkingConfig === null);
 					}, null);
 				});
@@ -394,7 +394,7 @@ class SettingsWidget {
 
 			if (pullRequestConfig !== null) {
 				document.getElementById('removePullRequestIntegration')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove the configured "Pull Request Creation" Integration?', () => {
+					dialog.showConfirmation('Are you sure you want to remove the configured "Pull Request Creation" Integration?', 'Yes, remove', () => {
 						this.setPullRequestConfig(null);
 					}, null);
 				});

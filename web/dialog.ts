@@ -80,10 +80,10 @@ class Dialog {
 	private type: DialogType | null = null;
 	private customSelects: ReadonlyArray<CustomSelect> = [];
 
-	public showConfirmation(message: string, confirmed: () => void, target: DialogTarget | null) {
-		this.show(DialogType.Form, message, 'Yes', 'No', () => {
+	public showConfirmation(message: string, actionName: string, actioned: () => void, target: DialogTarget | null) {
+		this.show(DialogType.Form, message, actionName, 'Cancel', () => {
 			this.close();
-			confirmed();
+			actioned();
 		}, null, target);
 	}
 

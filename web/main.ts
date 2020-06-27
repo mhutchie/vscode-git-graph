@@ -1813,7 +1813,8 @@ class GitGraphView {
 					handledEvent(e);
 				}
 			} else if (this.expandedCommit !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-				let curHashIndex = this.commitLookup[this.expandedCommit.commitHash], newHashIndex = -1;
+				const curHashIndex = this.commitLookup[this.expandedCommit.commitHash];
+				let newHashIndex = -1;
 
 				if (e.ctrlKey || e.metaKey) {
 					// Up / Down navigates according to the order of commits on the branch
@@ -1837,18 +1838,21 @@ class GitGraphView {
 					if (elem !== null) this.loadCommitDetails(elem);
 				}
 			} else if (e.ctrlKey || e.metaKey) {
-				if (e.key === 'r') {
-					this.refresh(true);
-					handledEvent(e);
-				} else if (e.key === 'f') {
-					this.findWidget.show(true);
-					handledEvent(e);
-				} else if (e.key === 'h' && this.commitHead !== null) {
-					this.scrollToCommit(this.commitHead, true, true);
-					handledEvent(e);
-				} else if (e.key.toLowerCase() === 's') {
+				const key = e.key.toLowerCase();
+				if (key === 's') {
 					this.scrollToStash(!e.shiftKey);
 					handledEvent(e);
+				} else if (!e.shiftKey) {
+					if (key === 'r') {
+						this.refresh(true);
+						handledEvent(e);
+					} else if (key === 'f') {
+						this.findWidget.show(true);
+						handledEvent(e);
+					} else if (key === 'h' && this.commitHead !== null) {
+						this.scrollToCommit(this.commitHead, true, true);
+						handledEvent(e);
+					}
 				}
 			} else if (e.key === 'Escape') {
 				if (this.settingsWidget.isVisible()) {

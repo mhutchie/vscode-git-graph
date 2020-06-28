@@ -448,6 +448,11 @@ export const enum ShowTags {
 	Hide
 }
 
+export const enum SquashMessageFormat {
+	Default,
+	GitSquashMsg
+}
+
 export const enum TabIconColourTheme {
 	Colour,
 	Grey

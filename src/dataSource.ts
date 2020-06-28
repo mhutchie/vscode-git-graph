@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn } from './types';
+import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
 import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -781,18 +781,16 @@ export class DataSource implements vscode.Disposable {
 	 * @param squash Is `--squash` enabled if a merge is required.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public async pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
+	public pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
 		let args = ['pull', remote, branchName];
 		if (squash) args.push('--squash');
 		else if (createNewCommit) args.push('--no-ff');
 
-		let pullStatus = await this.runGitCommand(args, repo);
-		if (pullStatus === null && squash) {
-			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge branch \'' + remote + '/' + branchName + '\''], repo);
-			}
-		}
-		return pullStatus;
+		return this.runGitCommand(args, repo).then((pullStatus) => {
+			return pullStatus === null && squash
+				? this.commitSquashIfStagedChangesExist(repo, remote + '/' + branchName, MergeActionOn.Branch, getConfig().squashPullMessageFormat)
+				: pullStatus;
+		});
 	}
 
 	/**
@@ -819,7 +817,7 @@ export class DataSource implements vscode.Disposable {
 	 * @param noCommit Is `--no-commit` enabled.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public async merge(repo: string, obj: string, actionOn: MergeActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
+	public merge(repo: string, obj: string, actionOn: MergeActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
 		let args = ['merge', obj];
 
 		if (squash) args.push('--squash');
@@ -827,13 +825,11 @@ export class DataSource implements vscode.Disposable {
 
 		if (noCommit) args.push('--no-commit');
 
-		let mergeStatus = await this.runGitCommand(args, repo);
-		if (mergeStatus === null && squash && !noCommit) {
-			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\''], repo);
-			}
-		}
-		return mergeStatus;
+		return this.runGitCommand(args, repo).then((mergeStatus) => {
+			return mergeStatus === null && squash && !noCommit
+				? this.commitSquashIfStagedChangesExist(repo, obj, actionOn, getConfig().squashMergeMessageFormat)
+				: mergeStatus;
+		});
 	}
 
 	/**
@@ -1370,6 +1366,30 @@ export class DataSource implements vscode.Disposable {
 
 
 	/* Private Utils */
+
+	/**
+	 * Check if there are staged changes that resulted from a squash merge, and if so, commit them.
+	 * @param repo The path of the repository.
+	 * @param obj The object being squash merged into the current branch.
+	 * @param actionOn Is the merge on a branch, remote-tracking branch or commit.
+	 * @param squashMessageFormat The format to be used in the commit message of the squash.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	private commitSquashIfStagedChangesExist(repo: string, obj: string, actionOn: MergeActionOn, squashMessageFormat: SquashMessageFormat): Promise<ErrorInfo> {
+		return this.areStagedChanges(repo).then((changes) => {
+			if (changes) {
+				let args = ['commit'];
+				if (squashMessageFormat === SquashMessageFormat.Default) {
+					args.push('-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\'');
+				} else {
+					args.push('--no-edit');
+				}
+				return this.runGitCommand(args, repo);
+			} else {
+				return null;
+			}
+		});
+	}
 
 	/**
 	 * Get the diff between two revisions.

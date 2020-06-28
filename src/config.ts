@@ -16,6 +16,7 @@ import {
 	GraphStyle,
 	RefLabelAlignment,
 	RepoDropdownOrder,
+	SquashMessageFormat,
 	TabIconColourTheme
 } from './types';
 
@@ -442,6 +443,24 @@ class Config {
 		return !!this.config.get('showUntrackedFiles', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.dialog.merge.squashMessageFormat` Extension Setting.
+	 */
+	get squashMergeMessageFormat() {
+		return this.config.get<string>('dialog.merge.squashMessageFormat', 'Default') === 'Git SQUASH_MSG'
+			? SquashMessageFormat.GitSquashMsg
+			: SquashMessageFormat.Default;
+	}
+
+	/**
+	 * Get the value of the `git-graph.dialog.pullBranch.squashMessageFormat` Extension Setting.
+	 */
+	get squashPullMessageFormat() {
+		return this.config.get<string>('dialog.pullBranch.squashMessageFormat', 'Default') === 'Git SQUASH_MSG'
+			? SquashMessageFormat.GitSquashMsg
+			: SquashMessageFormat.Default;
+	}
+	
 	/**
 	 * Get the value of the `git-graph.tabIconColourTheme` Extension Setting.
 	 */

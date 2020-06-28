@@ -2,7 +2,7 @@ import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
-import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RefLabelAlignment, RepoDropdownOrder, TabIconColourTheme } from '../src/types';
+import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RefLabelAlignment, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -2982,6 +2982,106 @@ describe('Config', () => {
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('showUntrackedFiles', true);
 			expect(value).toBe(true);
+		});
+	});
+
+	describe('squashMergeMessageFormat', () => {
+		it('Should return SquashMessageFormat.Default when the configuration value is "Default"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Default');
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return SquashMessageFormat.GitSquashMsg when the configuration value is "Git SQUASH_MSG"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG');
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.GitSquashMsg);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+	});
+
+	describe('squashPullMessageFormat', () => {
+		it('Should return SquashMessageFormat.Default when the configuration value is "Default"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Default');
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return SquashMessageFormat.GitSquashMsg when the configuration value is "Git SQUASH_MSG"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG');
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.GitSquashMsg);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
 		});
 	});
 

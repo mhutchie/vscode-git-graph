@@ -4159,6 +4159,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4206,6 +4207,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, true);
@@ -4218,6 +4220,24 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge branch \'origin/master\''], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should pull a remote branch into the current branch (squash and staged changes exist, dialog.pullBranch.squashMessageFormat === "Git SQUASH_MSG")', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG'); // dialog.pullBranch.squashMessageFormat
+
+			// Run
+			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '--no-edit'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git (when pull fails)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
@@ -4228,6 +4248,21 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toBe('error message');
 			expect(spyOnSpawn).toBeCalledTimes(1);
+		});
+
+		it('Should return an error message thrown by git (when commit fails)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+
+			// Run
+			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
+
+			// Assert
+			expect(result).toBe('error message');
+			expect(spyOnSpawn).toBeCalledTimes(3);
 		});
 	});
 
@@ -4288,6 +4323,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4305,6 +4341,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'origin/develop', MergeActionOn.RemoteTrackingBranch, false, true, false);
@@ -4322,6 +4359,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', MergeActionOn.Commit, false, true, false);
@@ -4332,6 +4370,24 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge commit \'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b\''], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should merge a branch into the current branch (squash and staged changes exist, dialog.merge.squashMessageFormat === "Git SQUASH_MSG")', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG'); // dialog.merge.squashMessageFormat
+
+			// Run
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '--no-edit'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should merge a branch into the current branch (squash and no staged changes)', async () => {

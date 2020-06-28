@@ -216,6 +216,10 @@ class Config {
 			popStash: {
 				reinstateIndex: !!this.config.get('dialog.popStash.reinstateIndex', false)
 			},
+			pullBranch: {
+				noFastForward: !!this.config.get('dialog.pullBranch.noFastForward', false),
+				squash: !!this.config.get('dialog.pullBranch.squashCommits', false)
+			},
 			rebase: {
 				ignoreDate: !!this.config.get('dialog.rebase.ignoreDate', true),
 				interactive: !!this.config.get('dialog.rebase.launchInteractiveRebase', false)

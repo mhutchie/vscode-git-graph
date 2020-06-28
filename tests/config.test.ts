@@ -844,6 +844,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -874,6 +876,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: true
+				},
+				pullBranch: {
+					noFastForward: true,
+					squash: true
 				},
 				rebase: {
 					ignoreDate: true,
@@ -916,6 +922,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -946,6 +954,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: false,
@@ -988,6 +1000,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1018,6 +1032,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: true
+				},
+				pullBranch: {
+					noFastForward: true,
+					squash: true
 				},
 				rebase: {
 					ignoreDate: true,
@@ -1060,6 +1078,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1090,6 +1110,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: false,
@@ -1132,6 +1156,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1162,6 +1188,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: true,
@@ -1198,6 +1228,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1228,6 +1260,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: true,

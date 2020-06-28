@@ -1209,8 +1209,8 @@ class GitGraphView {
 				visible: visibility.pull && remote !== '',
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
-						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: false },
-						{ type: DialogInputType.Checkbox, name: 'Squash commits', value: false }
+						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.pullBranch.noFastForward },
+						{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.pullBranch.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this remote branch.' }
 					], 'Yes, pull', (values) => {
 						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Pulling Branch');
 					}, target);
@@ -1450,7 +1450,20 @@ class GitGraphView {
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch, target);
 					}, 'Checkout the existing branch' + (canPullFromRemote ? ' & pull changes' : ''), () => {
-						runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: null, pullAfterwards: canPullFromRemote ? { branchName: refName.substring(remote.length + 1), remote: remote } : null }, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
+						runAction({
+							command: 'checkoutBranch',
+							repo: this.currentRepo,
+							branchName: newBranch,
+							remoteBranch: null,
+							pullAfterwards: canPullFromRemote
+								? {
+									branchName: refName.substring(remote.length + 1),
+									remote: remote,
+									createNewCommit: this.config.dialogDefaults.pullBranch.noFastForward,
+									squash: this.config.dialogDefaults.pullBranch.squash
+								}
+								: null
+						}, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
 					}, target);
 				} else {
 					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName, pullAfterwards: null }, 'Checking out Branch');

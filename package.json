@@ -547,6 +547,16 @@
 					"default": false,
 					"description": "Default state of the \"Reinstate Index\" checkbox."
 				},
+				"git-graph.dialog.pullBranch.noFastForward": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Create a new commit even if fast-forward is possible\" checkbox."
+				},
+				"git-graph.dialog.pullBranch.squashCommits": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Squash Commits\" checkbox."
+				},
 				"git-graph.dialog.pullBranch.squashMessageFormat": {
 					"type": "string",
 					"enum": [

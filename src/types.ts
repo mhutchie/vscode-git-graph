@@ -386,6 +386,10 @@ export interface DialogDefaults {
 	readonly popStash: {
 		readonly reinstateIndex: boolean
 	};
+	readonly pullBranch: {
+		readonly noFastForward: boolean,
+		readonly squash: boolean
+	};
 	readonly rebase: {
 		readonly ignoreDate: boolean,
 		readonly interactive: boolean
@@ -530,6 +534,8 @@ export interface RequestCheckoutBranch extends RepoRequest {
 	readonly pullAfterwards: {
 		readonly branchName: string;
 		readonly remote: string;
+		readonly createNewCommit: boolean;
+		readonly squash: boolean;
 	} | null; // NULL => Don't pull after checking out
 }
 export interface ResponseCheckoutBranch extends ResponseWithMultiErrorInfo {

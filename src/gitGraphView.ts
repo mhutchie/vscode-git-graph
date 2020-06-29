@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, getRepoName, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
 
 /**
  * Manages the Git Graph View.
@@ -422,6 +422,12 @@ export class GitGraphView implements vscode.Disposable {
 					error: await openFile(msg.repo, msg.filePath)
 				});
 				break;
+			case 'openTerminal':
+				this.sendMessage({
+					command: 'openTerminal',
+					error: await this.dataSource.openGitTerminal(msg.repo, null, getRepoName(msg.repo))
+				});
+				break;
 			case 'popStash':
 				this.sendMessage({
 					command: 'popStash',
@@ -634,6 +640,7 @@ export class GitGraphView implements vscode.Disposable {
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchDropdown" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Remote Branches</label>
 					<div id="findBtn" title="Find"></div>
+					<div id="terminalBtn" title="Open a Terminal for this Repository"></div>
 					<div id="settingsBtn" title="Repository Settings"></div>
 					<div id="fetchBtn"></div>
 					<div id="refreshBtn"></div>

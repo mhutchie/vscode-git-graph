@@ -4512,28 +4512,28 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a branch in a terminal', async () => {
 			// Setup
-			const spyOnRunGitCommandInNewTerminal = jest.spyOn(utils, 'runGitCommandInNewTerminal');
-			spyOnRunGitCommandInNewTerminal.mockReturnValueOnce();
+			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
+			spyOnOpenGitTerminal.mockReturnValueOnce();
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnRunGitCommandInNewTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive develop', 'Git Rebase on "develop"');
+			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive develop', 'Rebase on "develop"');
 		});
 
 		it('Should launch the interactive rebase of the current branch on a commit in a terminal', async () => {
 			// Setup
-			const spyOnRunGitCommandInNewTerminal = jest.spyOn(utils, 'runGitCommandInNewTerminal');
-			spyOnRunGitCommandInNewTerminal.mockReturnValueOnce();
+			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
+			spyOnOpenGitTerminal.mockReturnValueOnce();
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnRunGitCommandInNewTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'Git Rebase on "1a2b3c4d"');
+			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'Rebase on "1a2b3c4d"');
 		});
 
 		it('Should return the "Unable to Find Git" error message when no git executable is known', async () => {

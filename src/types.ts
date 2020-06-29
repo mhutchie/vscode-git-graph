@@ -876,6 +876,13 @@ export interface ResponseOpenFile extends ResponseWithErrorInfo {
 	readonly command: 'openFile';
 }
 
+export interface RequestOpenTerminal extends RepoRequest {
+	readonly command: 'openTerminal';
+}
+export interface ResponseOpenTerminal extends ResponseWithErrorInfo {
+	readonly command: 'openTerminal';
+}
+
 export interface RequestPopStash extends RepoRequest {
 	readonly command: 'popStash';
 	readonly selector: string;
@@ -1099,6 +1106,7 @@ export type RequestMessage =
 	| RequestMerge
 	| RequestOpenExtensionSettings
 	| RequestOpenFile
+	| RequestOpenTerminal
 	| RequestPopStash
 	| RequestPruneRemote
 	| RequestPullBranch
@@ -1154,6 +1162,7 @@ export type ResponseMessage =
 	| ResponseMerge
 	| ResponseOpenExtensionSettings
 	| ResponseOpenFile
+	| ResponseOpenTerminal
 	| ResponsePopStash
 	| ResponsePruneRemote
 	| ResponsePullBranch

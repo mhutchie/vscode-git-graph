@@ -368,23 +368,29 @@ export function viewScm(): Thenable<ErrorInfo> {
 }
 
 /**
- * Open a new terminal and run the specified Git command.
+ * Open a new terminal, set up the Git executable, and optionally run a command.
  * @param cwd The working directory for the terminal.
  * @param gitPath The path of the Git executable.
- * @param command The Git command to run.
+ * @param command The command to run.
  * @param name The name for the terminal.
  */
-export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command: string, name: string) {
+export function openGitTerminal(cwd: string, gitPath: string, command: string | null, name: string) {
 	let p = process.env['PATH'] || '', sep = isWindows() ? ';' : ':';
 	if (p !== '' && !p.endsWith(sep)) p += sep;
 	p += path.dirname(gitPath);
 
-	let options: vscode.TerminalOptions = { cwd: cwd, name: name, env: { 'PATH': p } };
-	let shell = getConfig().integratedTerminalShell;
+	const options: vscode.TerminalOptions = {
+		cwd: cwd,
+		name: 'Git Graph: ' + name,
+		env: { 'PATH': p }
+	};
+	const shell = getConfig().integratedTerminalShell;
 	if (shell !== '') options.shellPath = shell;
 
-	let terminal = vscode.window.createTerminal(options);
-	terminal.sendText('git ' + command);
+	const terminal = vscode.window.createTerminal(options);
+	if (command !== null) {
+		terminal.sendText('git ' + command);
+	}
 	terminal.show();
 }
 

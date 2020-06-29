@@ -8,7 +8,7 @@ import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
-import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, openGitTerminal, realpath, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -843,14 +843,11 @@ export class DataSource implements vscode.Disposable {
 	 */
 	public rebase(repo: string, obj: string, actionOn: RebaseActionOn, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
-			return new Promise<ErrorInfo>(resolve => {
-				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
-
-				runGitCommandInNewTerminal(repo, this.gitExecutable.path,
-					'rebase --interactive ' + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
-					'Git Rebase on "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"');
-				setTimeout(() => resolve(null), 1000);
-			});
+			return this.openGitTerminal(
+				repo,
+				'rebase --interactive ' + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
+				'Rebase on "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"'
+			);
 		} else {
 			let args = ['rebase', obj];
 			if (ignoreDate) args.push('--ignore-date');
@@ -1050,6 +1047,27 @@ export class DataSource implements vscode.Disposable {
 		if (includeUntracked) args.push('--include-untracked');
 		if (message !== '') args.push('--message', message);
 		return this.runGitCommand(args, repo);
+	}
+
+
+	/* Public Utils */
+
+	/**
+	 * Open a new terminal, set up the Git executable, and optionally run a command.
+	 * @param repo The path of the repository.
+	 * @param command The command to run.
+	 * @param name The name for the terminal.
+	 * @returns The ErrorInfo from opening the terminal.
+	 */
+	public openGitTerminal(repo: string, command: string | null, name: string) {
+		return new Promise<ErrorInfo>((resolve) => {
+			if (this.gitExecutable === null) {
+				resolve(UNABLE_TO_FIND_GIT_MSG);
+			} else {
+				openGitTerminal(repo, this.gitExecutable.path, command, name);
+				setTimeout(() => resolve(null), 1000);
+			}
+		});
 	}
 
 

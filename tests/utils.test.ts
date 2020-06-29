@@ -14,7 +14,7 @@ import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, pathWithTrailingSlash, realpath, resolveToSymbolicPath, runGitCommandInNewTerminal, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 
 let extensionContext = vscode.mocks.extensionContext;
 let terminal = vscode.mocks.terminal;
@@ -1187,7 +1187,7 @@ describe('viewScm', () => {
 	});
 });
 
-describe('runGitCommandInNewTerminal', () => {
+describe('openGitTerminal', () => {
 	let ostype: string | undefined, path: string | undefined, platform: NodeJS.Platform;
 	beforeEach(() => {
 		ostype = process.env.OSTYPE;
@@ -1203,12 +1203,12 @@ describe('runGitCommandInNewTerminal', () => {
 		Object.defineProperty(process, 'platform', { value: platform });
 	});
 
-	it('Should open a new terminal and run the git command', () => {
+	it('Should open a new terminal', () => {
 		// Setup
 		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', null, 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1216,7 +1216,26 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable:/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
+		});
+		expect(terminal.sendText).toHaveBeenCalledTimes(0);
+		expect(terminal.show).toHaveBeenCalled();
+	});
+
+	it('Should open a new terminal and run the git command', () => {
+		// Setup
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
+
+		// Run
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+
+		// Assert
+		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
+			cwd: '/path/to/repo',
+			env: {
+				PATH: '/path/to/executable:/path/to/git'
+			},
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1228,7 +1247,7 @@ describe('runGitCommandInNewTerminal', () => {
 		process.env.PATH = '';
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1236,7 +1255,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1247,7 +1266,7 @@ describe('runGitCommandInNewTerminal', () => {
 		workspaceConfiguration.get.mockReturnValueOnce('/path/to/shell'); // integratedTerminalShell
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1255,7 +1274,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable:/path/to/git'
 			},
-			name: 'Name',
+			name: 'Git Graph: Name',
 			shellPath: '/path/to/shell'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
@@ -1268,7 +1287,7 @@ describe('runGitCommandInNewTerminal', () => {
 		Object.defineProperty(process, 'platform', { value: 'win32' });
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1276,7 +1295,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable;/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1288,7 +1307,7 @@ describe('runGitCommandInNewTerminal', () => {
 		process.env.OSTYPE = 'cygwin';
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1296,7 +1315,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable;/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1308,7 +1327,7 @@ describe('runGitCommandInNewTerminal', () => {
 		process.env.OSTYPE = 'msys';
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1316,7 +1335,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable;/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1955,7 +1974,7 @@ describe('isGitAtLeastVersion', () => {
 		expect(result2).toBe(true);
 	});
 
-	it('Should return TRUE if executable version is invalid', ()=>{
+	it('Should return TRUE if executable version is invalid', () => {
 		// Run
 		const result = isGitAtLeastVersion({ version: 'a2.4.6', path: '' }, '1.4.6');
 
@@ -1963,7 +1982,7 @@ describe('isGitAtLeastVersion', () => {
 		expect(result).toBe(true);
 	});
 
-	it('Should return TRUE if version is invalid', ()=>{
+	it('Should return TRUE if version is invalid', () => {
 		// Run
 		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, 'a1.4.6');
 

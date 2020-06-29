@@ -1816,6 +1816,7 @@ describe('Config', () => {
 			// Run
 			const value = config.integratedTerminalShell;
 
+			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('integratedTerminalShell', '');
 			expect(value).toBe('/path/to/shell');
 		});

@@ -139,7 +139,7 @@ class GitGraphView {
 			this.requestLoadRepoInfoAndCommits(false, false);
 		}
 
-		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!;
+		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => {
@@ -151,6 +151,10 @@ class GitGraphView {
 		settingsBtn.addEventListener('click', () => {
 			const currentRepoState = this.gitRepos[this.currentRepo];
 			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
+		});
+		terminalBtn.innerHTML = SVG_ICONS.terminal;
+		terminalBtn.addEventListener('click', () => {
+			runAction({ command: 'openTerminal', repo: this.currentRepo }, 'Opening Terminal');
 		});
 	}
 
@@ -2798,6 +2802,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'openFile':
 				finishOrDisplayError(msg.error, 'Unable to Open File');
+				break;
+			case 'openTerminal':
+				finishOrDisplayError(msg.error, 'Unable to Open Terminal', true);
 				break;
 			case 'popStash':
 				refreshOrDisplayError(msg.error, 'Unable to Pop Stash');

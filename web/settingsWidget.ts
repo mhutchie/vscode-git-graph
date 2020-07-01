@@ -222,7 +222,7 @@ class SettingsWidget {
 				const elem = <HTMLInputElement | null>document.getElementById('settingsShowTagsCheckbox');
 				if (elem === null) return;
 				this.showTags = elem.checked ? GG.ShowTags.Show : GG.ShowTags.Hide;
-				this.view.saveShowTagsConfig(this.repo, this.showTags);
+				this.view.saveRepoStateValue(this.repo, 'showTags', this.showTags);
 				this.view.refresh(true);
 			});
 
@@ -233,7 +233,7 @@ class SettingsWidget {
 				const elem = <HTMLInputElement | null>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
 				if (elem === null) return;
 				this.includeCommitsMentionedByReflogs = elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled;
-				this.view.saveIncludeCommitsMentionedByReflogsConfig(this.repo, this.includeCommitsMentionedByReflogs);
+				this.view.saveRepoStateValue(this.repo, 'includeCommitsMentionedByReflogs', this.includeCommitsMentionedByReflogs);
 				this.view.refresh(true);
 			});
 
@@ -244,7 +244,7 @@ class SettingsWidget {
 				const elem = <HTMLInputElement | null>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
 				if (elem === null) return;
 				this.onlyFollowFirstParent = elem.checked ? GG.OnlyFollowFirstParent.Enabled : GG.OnlyFollowFirstParent.Disabled;
-				this.view.saveOnlyFollowFirstParentConfig(this.repo, this.onlyFollowFirstParent);
+				this.view.saveRepoStateValue(this.repo, 'onlyFollowFirstParent', this.onlyFollowFirstParent);
 				this.view.refresh(true);
 			});
 
@@ -333,7 +333,7 @@ class SettingsWidget {
 				} else {
 					this.hideRemotes.splice(this.hideRemotes.indexOf(remote), 1);
 				}
-				this.view.saveHiddenRemotes(this.repo, this.hideRemotes);
+				this.view.saveRepoStateValue(this.repo, 'hideRemotes', this.hideRemotes);
 				this.view.refresh(true);
 			});
 
@@ -423,12 +423,12 @@ class SettingsWidget {
 		if (global) {
 			if (this.issueLinkingConfig !== null) {
 				this.issueLinkingConfig = null;
-				this.view.saveIssueLinkingConfig(this.repo, null);
+				this.view.saveRepoStateValue(this.repo, 'issueLinkingConfig', null);
 			}
 			this.view.updateGlobalViewState('issueLinkingConfig', config);
 		} else {
 			this.issueLinkingConfig = config;
-			this.view.saveIssueLinkingConfig(this.repo, config);
+			this.view.saveRepoStateValue(this.repo, 'issueLinkingConfig', config);
 		}
 
 		this.view.refresh(true);
@@ -438,7 +438,7 @@ class SettingsWidget {
 	private setPullRequestConfig(config: GG.PullRequestConfig | null) {
 		if (this.repo === null) return;
 		this.pullRequestConfig = config;
-		this.view.savePullRequestConfig(this.repo, config);
+		this.view.saveRepoStateValue(this.repo, 'pullRequestConfig', config);
 		this.render();
 	}
 

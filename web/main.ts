@@ -264,7 +264,7 @@ class GitGraphView {
 		let hiddenRemotes = this.gitRepos[this.currentRepo].hideRemotes;
 		let hideRemotes = hiddenRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
 		if (hiddenRemotes.length !== hideRemotes.length) {
-			this.saveHiddenRemotes(this.currentRepo, hideRemotes);
+			this.saveRepoStateValue(this.currentRepo, 'hideRemotes', hideRemotes);
 		}
 
 		this.finaliseLoadRepoInfo(true, isRepo);
@@ -656,51 +656,9 @@ class GitGraphView {
 		this.saveState();
 	}
 
-	public saveCommitOrdering(repo: string, commitOrdering: GG.RepoCommitOrdering) {
+	public saveRepoStateValue<K extends keyof GG.GitRepoState>(repo: string, key: K, value: GG.GitRepoState[K]) {
 		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].commitOrdering = commitOrdering;
-			this.saveRepoState();
-		}
-	}
-
-	public saveHiddenRemotes(repo: string, hideRemotes: string[]) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].hideRemotes = hideRemotes;
-			this.saveRepoState();
-		}
-	}
-
-	public saveIssueLinkingConfig(repo: string, config: GG.IssueLinkingConfig | null) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].issueLinkingConfig = config;
-			this.saveRepoState();
-		}
-	}
-
-	public savePullRequestConfig(repo: string, config: GG.PullRequestConfig | null) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].pullRequestConfig = config;
-			this.saveRepoState();
-		}
-	}
-
-	public saveIncludeCommitsMentionedByReflogsConfig(repo: string, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
-			this.saveRepoState();
-		}
-	}
-
-	public saveOnlyFollowFirstParentConfig(repo: string, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].onlyFollowFirstParent = onlyFollowFirstParent;
-			this.saveRepoState();
-		}
-	}
-
-	public saveShowTagsConfig(repo: string, showTags: GG.ShowTags) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].showTags = showTags;
+			this.gitRepos[this.currentRepo][key] = value;
 			this.saveRepoState();
 		}
 	}
@@ -1623,7 +1581,7 @@ class GitGraphView {
 
 			const commitOrdering = getCommitOrdering(this.gitRepos[this.currentRepo].commitOrdering);
 			const changeCommitOrdering = (repoCommitOrdering: GG.RepoCommitOrdering) => {
-				this.saveCommitOrdering(this.currentRepo, repoCommitOrdering);
+				this.saveRepoStateValue(this.currentRepo, 'commitOrdering', repoCommitOrdering);
 				this.refresh(true);
 			};
 

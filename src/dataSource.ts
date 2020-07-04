@@ -8,7 +8,7 @@ import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
-import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, openGitTerminal, realpath, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -1463,37 +1463,10 @@ export class DataSource implements vscode.Disposable {
 		return new Promise<T>((resolve, reject) => {
 			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
 
-			const cmd = cp.spawn(this.gitExecutable.path, args, {
+			resolveSpawnOutput(cp.spawn(this.gitExecutable.path, args, {
 				cwd: repo,
 				env: Object.assign({}, process.env, this.askpassEnv)
-			});
-
-			Promise.all([
-				new Promise<{ code: number, error: Error | null }>((resolve) => {
-					// status promise
-					let resolved = false;
-					cmd.on('error', (error) => {
-						resolve({ code: -1, error: error });
-						resolved = true;
-					});
-					cmd.on('exit', (code) => {
-						if (resolved) return;
-						resolve({ code: code, error: null });
-					});
-				}),
-				new Promise<Buffer>((resolve) => {
-					// stdout promise
-					let buffers: Buffer[] = [];
-					cmd.stdout.on('data', (b: Buffer) => { buffers.push(b); });
-					cmd.stdout.on('close', () => resolve(Buffer.concat(buffers)));
-				}),
-				new Promise<string>((resolve) => {
-					// stderr promise
-					let stderr = '';
-					cmd.stderr.on('data', (d) => { stderr += d; });
-					cmd.stderr.on('close', () => resolve(stderr));
-				})
-			]).then(values => {
+			})).then((values) => {
 				let status = values[0], stdout = values[1];
 				if (status.code === 0) {
 					resolve(resolveValue(stdout));

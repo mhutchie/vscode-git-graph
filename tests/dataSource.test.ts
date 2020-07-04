@@ -1,4 +1,5 @@
 import * as date from './mocks/date';
+import { mockSpyOnSpawn } from './mocks/spawn';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('../src/askpass/askpassManager');
@@ -46,28 +47,8 @@ describe('DataSource', () => {
 		dataSource.dispose();
 	});
 
-	type OnCallbacks = { [event: string]: (...args: any[]) => void };
-
-	const mockSpyOnSpawn = (callback: (onCallbacks: OnCallbacks, stderrOnCallbacks: OnCallbacks, stdoutOnCallbacks: OnCallbacks) => void) => {
-		spyOnSpawn.mockImplementationOnce(() => {
-			let onCallbacks: OnCallbacks = {}, stderrOnCallbacks: OnCallbacks = {}, stdoutOnCallbacks: OnCallbacks = {};
-			setTimeout(() => {
-				callback(onCallbacks, stderrOnCallbacks, stdoutOnCallbacks);
-			}, 1);
-			return {
-				on: (event: string, callback: (...args: any[]) => void) => onCallbacks[event] = callback,
-				stderr: {
-					on: (event: string, callback: (...args: any[]) => void) => stderrOnCallbacks[event] = callback,
-				},
-				stdout: {
-					on: (event: string, callback: (...args: any[]) => void) => stdoutOnCallbacks[event] = callback,
-				}
-			};
-		});
-	};
-
 	const mockGitSuccessOnce = (stdout?: string) => {
-		mockSpyOnSpawn((onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
 			if (stdout) stdoutOnCallbacks['data'](Buffer.from(stdout));
 			stdoutOnCallbacks['close']();
 			stderrOnCallbacks['close']();
@@ -76,7 +57,7 @@ describe('DataSource', () => {
 	};
 
 	const mockGitThrowingErrorOnce = (errorMessage?: string) => {
-		mockSpyOnSpawn((onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
 			stdoutOnCallbacks['close']();
 			stderrOnCallbacks['data']((errorMessage || 'error message') + '\n');
 			stderrOnCallbacks['close']();
@@ -5145,7 +5126,7 @@ describe('DataSource', () => {
 
 		it('Should resolve child process promise only once with cp error', async () => {
 			// Setup
-			mockSpyOnSpawn((onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
 				stdoutOnCallbacks['close']();
 				stderrOnCallbacks['close']();
 				onCallbacks['error'](new Error('error message\r\nsecond line'));
@@ -5161,7 +5142,7 @@ describe('DataSource', () => {
 
 		it('Should return an empty error message thrown by git', async () => {
 			// Setup
-			mockSpyOnSpawn((onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
 				stdoutOnCallbacks['close']();
 				stderrOnCallbacks['close']();
 				onCallbacks['exit'](1);

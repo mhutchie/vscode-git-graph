@@ -1,4 +1,5 @@
 import * as date from './mocks/date';
+import { mockSpyOnSpawn } from './mocks/spawn';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('../src/dataSource');
@@ -14,7 +15,7 @@ import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 
 let extensionContext = vscode.mocks.extensionContext;
 let terminal = vscode.mocks.terminal;
@@ -44,33 +45,20 @@ beforeEach(() => {
 	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
-type OnCallbacks = { [event: string]: (...args: any[]) => void };
-
-const mockSpyOnSpawn = (callback: (onCallbacks: OnCallbacks, stdoutOnCallbacks: OnCallbacks) => void) => {
-	spyOnSpawn.mockImplementationOnce(() => {
-		let onCallbacks: OnCallbacks = {}, stdoutOnCallbacks: OnCallbacks = {};
-		setTimeout(() => {
-			callback(onCallbacks, stdoutOnCallbacks);
-		}, 1);
-		return {
-			on: (event: string, callback: (...args: any[]) => void) => onCallbacks[event] = callback,
-			stdout: {
-				on: (event: string, callback: (...args: any[]) => void) => stdoutOnCallbacks[event] = callback,
-			}
-		};
-	});
-};
-
 const mockSpawnGitVersionSuccessOnce = () => {
-	mockSpyOnSpawn((onCallbacks, stdoutOnCallbacks) => {
-		stdoutOnCallbacks['data']('git ');
-		stdoutOnCallbacks['data']('version 1.2.3');
+	mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+		stdoutOnCallbacks['data'](Buffer.from('git '));
+		stdoutOnCallbacks['data'](Buffer.from('version 1.2.3'));
+		stdoutOnCallbacks['close']();
+		stderrOnCallbacks['close']();
 		onCallbacks['exit'](0);
 	});
 };
 
 const mockSpawnGitVersionThrowingErrorOnce = () => {
-	mockSpyOnSpawn((onCallbacks) => {
+	mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+		stdoutOnCallbacks['close']();
+		stderrOnCallbacks['close']();
 		onCallbacks['error']();
 	});
 };
@@ -1450,6 +1438,48 @@ describe('evalPromises', () => {
 	});
 });
 
+describe('resolveSpawnOutput', () => {
+	it('Should resolve child process promise only once (error event first)', async () => {
+		// Setup
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['error']('error');
+			onCallbacks['exit'](0);
+		});
+
+		// Run
+		const result = await resolveSpawnOutput(cp.spawn('/path/to/git', ['arg0', 'arg1']));
+
+		// Assert
+		expect(result).toStrictEqual([
+			{ code: -1, error: 'error' },
+			expect.any(Buffer),
+			''
+		]);
+	});
+
+	it('Should resolve child process promise only once (exit event first)', async () => {
+		// Setup
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['exit'](1);
+			onCallbacks['error']('error');
+		});
+
+		// Run
+		const result = await resolveSpawnOutput(cp.spawn('/path/to/git', ['arg0', 'arg1']));
+
+		// Assert
+		expect(result).toStrictEqual([
+			{ code: 1, error: null },
+			expect.any(Buffer),
+			''
+		]);
+	});
+});
+
 describe('findGit', () => {
 	let onDidChangeGitExecutable: EventEmitter<GitExecutable>, extensionState: ExtensionState, platform: NodeJS.Platform;
 	beforeAll(() => {
@@ -1875,7 +1905,9 @@ describe('getGitExecutable', () => {
 	it('Should reject when the command exits with a non-zero exit code', async () => {
 		// Setup
 		let rejected = false;
-		mockSpyOnSpawn((onCallbacks) => {
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
 			onCallbacks['exit'](1);
 		});
 

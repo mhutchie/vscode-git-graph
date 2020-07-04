@@ -459,6 +459,42 @@ export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise
 	});
 }
 
+/**
+ * Resolve the output of a spawned child process.
+ * @param cmd The Child Process.
+ * @returns Promise that resolves to [{code, error}, stdout, stderr]
+ */
+export function resolveSpawnOutput(cmd: cp.ChildProcess) {
+	return Promise.all([
+		new Promise<{ code: number, error: Error | null }>((resolve) => {
+			// status promise
+			let resolved = false;
+			cmd.on('error', (error) => {
+				if (resolved) return;
+				resolve({ code: -1, error: error });
+				resolved = true;
+			});
+			cmd.on('exit', (code) => {
+				if (resolved) return;
+				resolve({ code: code, error: null });
+				resolved = true;
+			});
+		}),
+		new Promise<Buffer>((resolve) => {
+			// stdout promise
+			let buffers: Buffer[] = [];
+			cmd.stdout.on('data', (b: Buffer) => { buffers.push(b); });
+			cmd.stdout.on('close', () => resolve(Buffer.concat(buffers)));
+		}),
+		new Promise<string>((resolve) => {
+			// stderr promise
+			let stderr = '';
+			cmd.stderr.on('data', (d) => { stderr += d; });
+			cmd.stderr.on('close', () => resolve(stderr));
+		})
+	]);
+}
+
 
 /* Find Git Executable */
 
@@ -579,17 +615,13 @@ function isExecutable(path: string) {
  * @param path The path of the Git executable.
  * @returns The GitExecutable data.
  */
-export function getGitExecutable(path: string): Promise<GitExecutable> {
+export function getGitExecutable(path: string) {
 	return new Promise<GitExecutable>((resolve, reject) => {
-		const cmd = cp.spawn(path, ['--version']);
-		let stdout = '';
-		cmd.stdout.on('data', (d) => { stdout += d; });
-		cmd.on('error', () => reject());
-		cmd.on('exit', (code) => {
-			if (code) {
+		resolveSpawnOutput(cp.spawn(path, ['--version'])).then((values) => {
+			if (values[0].code) {
 				reject();
 			} else {
-				resolve({ path: path, version: stdout.trim().replace(/^git version /, '') });
+				resolve({ path: path, version: values[1].toString().trim().replace(/^git version /, '') });
 			}
 		});
 	});

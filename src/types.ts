@@ -221,6 +221,7 @@ export interface GitGraphViewConfig {
 	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
+	readonly fileTreeCompactFolders: boolean;
 	readonly graphColours: ReadonlyArray<string>;
 	readonly graphStyle: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };

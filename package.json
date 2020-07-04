@@ -110,6 +110,11 @@
 					"default": "date",
 					"markdownDescription": "Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option."
 				},
+				"git-graph.commitDetailsViewFileTreeCompactFolders": {
+					"type": "boolean",
+					"default": true,
+					"description": "Render the File Tree in the Commit Details / Comparison View in a compacted form, such that folders with a single child folder are compressed into a single combined folder element."
+				},
 				"git-graph.commitDetailsViewLocation": {
 					"type": "string",
 					"enum": [

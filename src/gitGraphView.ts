@@ -597,6 +597,7 @@ export class GitGraphView implements vscode.Disposable {
 				enhancedAccessibility: config.enhancedAccessibility,
 				fetchAndPrune: config.fetchAndPrune,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
+				fileTreeCompactFolders: config.fileTreeCompactFolders,
 				graphColours: config.graphColours,
 				graphStyle: config.graphStyle,
 				grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },

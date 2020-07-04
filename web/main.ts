@@ -2891,21 +2891,32 @@ window.addEventListener('load', () => {
 function generateFileViewHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, type: GG.FileViewType, isUncommitted: boolean) {
 	return type === GG.FileViewType.List
 		? generateFileListHtml(folder, gitFiles, lastViewedFile, isUncommitted)
-		: generateFileTreeHtml(folder, gitFiles, lastViewedFile, isUncommitted);
+		: generateFileTreeHtml(folder, gitFiles, lastViewedFile, isUncommitted, true);
 }
 
-function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean) {
-	let html = (folder.name !== '' ? '<span class="fileTreeFolder' + (folder.reviewed ? '' : ' pendingReview') + '" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(folder.name) + '</span></span>' : '') + '<ul class="fileTreeFolderContents' + (!folder.open ? ' hidden' : '') + '">';
-	let keys = sortFolderKeys(folder);
-	for (let i = 0; i < keys.length; i++) {
-		let cur = folder.contents[keys[i]];
-		if (cur.type === 'folder') {
-			html += '<li' + (cur.open ? '' : ' class="closed"') + ' data-pathseg="' + encodeURIComponent(cur.name) + '">' + generateFileTreeHtml(cur, gitFiles, lastViewedFile, isUncommitted) + '</li>';
-		} else {
-			html += generateFileTreeLeafHtml(cur.name, cur, gitFiles, lastViewedFile, isUncommitted);
-		}
-	}
-	return html + '</ul>';
+function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean, topLevelFolder: boolean): string {
+	const curFolderInfo = topLevelFolder || !initialState.config.fileTreeCompactFolders
+		? { folder: folder, name: folder.name, pathSeg: folder.name }
+		: getCurrentFolderInfo(folder, folder.name, folder.name);
+
+	const children = sortFolderKeys(curFolderInfo.folder).map((key) => {
+		const cur = curFolderInfo.folder.contents[key];
+		return cur.type === 'folder'
+			? generateFileTreeHtml(cur, gitFiles, lastViewedFile, isUncommitted, false)
+			: generateFileTreeLeafHtml(cur.name, cur, gitFiles, lastViewedFile, isUncommitted);
+	});
+
+	return (topLevelFolder ? '' : '<li' + (curFolderInfo.folder.open ? '' : ' class="closed"') + ' data-pathseg="' + encodeURIComponent(curFolderInfo.pathSeg) + '"><span class="fileTreeFolder' + (curFolderInfo.folder.reviewed ? '' : ' pendingReview') + '" title="./' + escapeHtml(curFolderInfo.folder.folderPath) + '" data-folderpath="' + encodeURIComponent(curFolderInfo.folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (curFolderInfo.folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(curFolderInfo.name) + '</span></span>') +
+		'<ul class="fileTreeFolderContents' + (curFolderInfo.folder.open ? '' : ' hidden') + '">' + children.join('') + '</ul>' +
+		(topLevelFolder ? '' : '</li>');
+}
+
+function getCurrentFolderInfo(folder: FileTreeFolder, name: string, pathSeg: string): { folder: FileTreeFolder, name: string, pathSeg: string } {
+	const keys = Object.keys(folder.contents);
+	let child: FileTreeNode;
+	return keys.length === 1 && (child = folder.contents[keys[0]]).type === 'folder'
+		? getCurrentFolderInfo(<FileTreeFolder>child, name + ' / ' + child.name, pathSeg + '/' + child.name)
+		: { folder: folder, name: name, pathSeg: pathSeg };
 }
 
 function generateFileListHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean) {

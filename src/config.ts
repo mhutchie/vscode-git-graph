@@ -265,6 +265,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.commitDetailsViewFileTreeCompactFolders` Extension Setting.
+	 */
+	get fileTreeCompactFolders() {
+		return !!this.config.get('commitDetailsViewFileTreeCompactFolders', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.graphColours` Extension Setting.
 	 */
 	get graphColours() {

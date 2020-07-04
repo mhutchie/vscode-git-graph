@@ -1618,6 +1618,68 @@ describe('Config', () => {
 		});
 	});
 
+	describe('fileTreeCompactFolders', () => {
+		it('Should return TRUE when the configuration value is TRUE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(true);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(false);
+		});
+
+		it('Should return TRUE when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(false);
+		});
+
+		it('Should return the default value (TRUE) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(true);
+		});
+	});
+
 	describe('graphColours', () => {
 		it('Should return a filtered array of colours based on the configuration value', () => {
 			// Setup

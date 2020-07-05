@@ -1917,6 +1917,22 @@ describe('getGitExecutable', () => {
 		// Assert
 		expect(rejected).toBe(true);
 	});
+
+	it('Should reject when the command exits with a signal', async () => {
+		// Setup
+		let rejected = false;
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['exit'](null, 'signal');
+		});
+
+		// Run
+		await getGitExecutable('/path/to/git').catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
+	});
 });
 
 describe('isGitAtLeastVersion', () => {

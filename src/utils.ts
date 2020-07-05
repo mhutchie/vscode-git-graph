@@ -618,10 +618,10 @@ function isExecutable(path: string) {
 export function getGitExecutable(path: string) {
 	return new Promise<GitExecutable>((resolve, reject) => {
 		resolveSpawnOutput(cp.spawn(path, ['--version'])).then((values) => {
-			if (values[0].code) {
-				reject();
-			} else {
+			if (values[0].code === 0) {
 				resolve({ path: path, version: values[1].toString().trim().replace(/^git version /, '') });
+			} else {
+				reject();
 			}
 		});
 	});

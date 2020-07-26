@@ -1,8 +1,8 @@
 class GitGraphView {
 	private gitRepos: GG.GitRepoSet;
-	private gitBranches: string[] = [];
+	private gitBranches: ReadonlyArray<string> = [];
 	private gitBranchHead: string | null = null;
-	private gitRemotes: string[] = [];
+	private gitRemotes: ReadonlyArray<string> = [];
 	private gitStashes: ReadonlyArray<GG.GitStash> = [];
 	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
@@ -139,7 +139,7 @@ class GitGraphView {
 			this.requestLoadRepoInfoAndCommits(false, false);
 		}
 
-		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!;
+		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => {
@@ -152,6 +152,10 @@ class GitGraphView {
 			const currentRepoState = this.gitRepos[this.currentRepo];
 			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
 		});
+		terminalBtn.innerHTML = SVG_ICONS.terminal;
+		terminalBtn.addEventListener('click', () => {
+			runAction({ command: 'openTerminal', repo: this.currentRepo }, 'Opening Terminal');
+		});
 	}
 
 
@@ -161,7 +165,7 @@ class GitGraphView {
 		this.gitRepos = repos;
 		this.saveState();
 
-		let repoPaths = Object.keys(repos), newRepo: string;
+		let repoPaths: ReadonlyArray<string> = Object.keys(repos), newRepo: string;
 		if (loadViewTo !== null && this.currentRepo !== loadViewTo.repo && typeof repos[loadViewTo.repo] !== 'undefined') {
 			newRepo = loadViewTo.repo;
 		} else if (typeof repos[this.currentRepo] === 'undefined') {
@@ -208,7 +212,7 @@ class GitGraphView {
 		this.refresh(true);
 	}
 
-	private loadRepoInfo(branchOptions: string[], branchHead: string | null, remotes: string[], stashes: ReadonlyArray<GG.GitStash>, isRepo: boolean) {
+	private loadRepoInfo(branchOptions: ReadonlyArray<string>, branchHead: string | null, remotes: ReadonlyArray<string>, stashes: ReadonlyArray<GG.GitStash>, isRepo: boolean) {
 		// Changes to this.gitStashes are reflected as changes to the commits when loadCommits is run
 		this.gitStashes = stashes;
 
@@ -260,7 +264,7 @@ class GitGraphView {
 		let hiddenRemotes = this.gitRepos[this.currentRepo].hideRemotes;
 		let hideRemotes = hiddenRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
 		if (hiddenRemotes.length !== hideRemotes.length) {
-			this.saveHiddenRemotes(this.currentRepo, hideRemotes);
+			this.saveRepoStateValue(this.currentRepo, 'hideRemotes', hideRemotes);
 		}
 
 		this.finaliseLoadRepoInfo(true, isRepo);
@@ -652,51 +656,9 @@ class GitGraphView {
 		this.saveState();
 	}
 
-	public saveCommitOrdering(repo: string, commitOrdering: GG.RepoCommitOrdering) {
+	public saveRepoStateValue<K extends keyof GG.GitRepoState>(repo: string, key: K, value: GG.GitRepoState[K]) {
 		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].commitOrdering = commitOrdering;
-			this.saveRepoState();
-		}
-	}
-
-	public saveHiddenRemotes(repo: string, hideRemotes: string[]) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].hideRemotes = hideRemotes;
-			this.saveRepoState();
-		}
-	}
-
-	public saveIssueLinkingConfig(repo: string, config: GG.IssueLinkingConfig | null) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].issueLinkingConfig = config;
-			this.saveRepoState();
-		}
-	}
-
-	public savePullRequestConfig(repo: string, config: GG.PullRequestConfig | null) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].pullRequestConfig = config;
-			this.saveRepoState();
-		}
-	}
-
-	public saveIncludeCommitsMentionedByReflogsConfig(repo: string, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
-			this.saveRepoState();
-		}
-	}
-
-	public saveOnlyFollowFirstParentConfig(repo: string, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].onlyFollowFirstParent = onlyFollowFirstParent;
-			this.saveRepoState();
-		}
-	}
-
-	public saveShowTagsConfig(repo: string, showTags: GG.ShowTags) {
-		if (repo === this.currentRepo) {
-			this.gitRepos[this.currentRepo].showTags = showTags;
+			this.gitRepos[this.currentRepo][key] = value;
 			this.saveRepoState();
 		}
 	}
@@ -918,11 +880,11 @@ class GitGraphView {
 			}, {
 				title: 'Merge into current branch' + ELLIPSIS,
 				visible: visibility.merge && this.gitBranchHead !== refName,
-				onClick: () => this.mergeAction(refName, refName, GG.ActionOn.Branch, target)
+				onClick: () => this.mergeAction(refName, refName, GG.MergeActionOn.Branch, target)
 			}, {
 				title: 'Rebase current branch on Branch' + ELLIPSIS,
 				visible: visibility.rebase && this.gitBranchHead !== refName,
-				onClick: () => this.rebaseAction(refName, refName, GG.ActionOn.Branch, target)
+				onClick: () => this.rebaseAction(refName, refName, GG.RebaseActionOn.Branch, target)
 			}, {
 				title: 'Push Branch' + ELLIPSIS,
 				visible: visibility.push && this.gitRemotes.length > 0,
@@ -1093,7 +1055,7 @@ class GitGraphView {
 					}, {
 						type: DialogInputType.Checkbox,
 						name: 'No Commit',
-						value: false,
+						value: this.config.dialogDefaults.cherryPick.noCommit,
 						info: 'Cherry picked changes will be staged but not committed, so that you can select and commit specific parts of this commit.'
 					});
 
@@ -1122,7 +1084,7 @@ class GitGraphView {
 							runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: parseInt(parentIndex) }, 'Reverting Commit');
 						}, target);
 					} else {
-						dialog.showConfirmation('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', () => {
+						dialog.showConfirmation('Are you sure you want to revert commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'Yes, revert', () => {
 							runAction({ command: 'revertCommit', repo: this.currentRepo, commitHash: hash, parentIndex: 0 }, 'Reverting Commit');
 						}, target);
 					}
@@ -1131,7 +1093,7 @@ class GitGraphView {
 				title: 'Drop' + ELLIPSIS,
 				visible: visibility.drop && this.graph.dropCommitPossible(this.commitLookup[hash]),
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?' + (this.onlyFollowFirstParent ? '<br/><i>Note: By enabling "Only follow the first parent of commits", some commits may have been hidden from the Git Graph View that could affect the outcome of performing this action.</i>' : ''), () => {
+					dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?' + (this.onlyFollowFirstParent ? '<br/><i>Note: By enabling "Only follow the first parent of commits", some commits may have been hidden from the Git Graph View that could affect the outcome of performing this action.</i>' : ''), 'Yes, drop', () => {
 						runAction({ command: 'dropCommit', repo: this.currentRepo, commitHash: hash }, 'Dropping Commit');
 					}, target);
 				}
@@ -1140,11 +1102,11 @@ class GitGraphView {
 			{
 				title: 'Merge into current branch' + ELLIPSIS,
 				visible: visibility.merge,
-				onClick: () => this.mergeAction(hash, abbrevCommit(hash), GG.ActionOn.Commit, target)
+				onClick: () => this.mergeAction(hash, abbrevCommit(hash), GG.MergeActionOn.Commit, target)
 			}, {
 				title: 'Rebase current branch on this Commit' + ELLIPSIS,
 				visible: visibility.rebase,
-				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), GG.ActionOn.Commit, target)
+				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), GG.RebaseActionOn.Commit, target)
 			}, {
 				title: 'Reset current branch to this Commit' + ELLIPSIS,
 				visible: visibility.reset,
@@ -1188,7 +1150,7 @@ class GitGraphView {
 				title: 'Delete Remote Branch' + ELLIPSIS,
 				visible: visibility.delete && remote !== '',
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', () => {
+					dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Yes, delete', () => {
 						runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: branchName, remote: remote }, 'Deleting Remote Branch');
 					}, target);
 				}
@@ -1196,17 +1158,21 @@ class GitGraphView {
 				title: 'Fetch into local branch' + ELLIPSIS,
 				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', () => {
+					dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Yes, fetch', () => {
 						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
 					}, target);
 				}
+			}, {
+				title: 'Merge into current branch' + ELLIPSIS,
+				visible: visibility.merge,
+				onClick: () => this.mergeAction(refName, refName, GG.MergeActionOn.RemoteTrackingBranch, target)
 			}, {
 				title: 'Pull into current branch' + ELLIPSIS,
 				visible: visibility.pull && remote !== '',
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
-						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: false },
-						{ type: DialogInputType.Checkbox, name: 'Squash commits', value: false }
+						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.pullBranch.noFastForward },
+						{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.pullBranch.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this remote branch.' }
 					], 'Yes, pull', (values) => {
 						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Pulling Branch');
 					}, target);
@@ -1292,7 +1258,7 @@ class GitGraphView {
 				title: 'Drop Stash' + ELLIPSIS,
 				visible: visibility.drop,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', () => {
+					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', 'Yes, drop', () => {
 						runAction({ command: 'dropStash', repo: this.currentRepo, selector: selector }, 'Dropping Stash');
 					}, target);
 				}
@@ -1339,7 +1305,7 @@ class GitGraphView {
 							this.deleteTagAction(tagName, deleteOnRemote ? this.gitRemotes[0] : null);
 						}, target);
 					} else {
-						dialog.showConfirmation(message, () => {
+						dialog.showConfirmation(message, 'Yes, delete', () => {
 							this.deleteTagAction(tagName, null);
 						}, target);
 					}
@@ -1349,7 +1315,7 @@ class GitGraphView {
 				visible: visibility.push && this.gitRemotes.length > 0,
 				onClick: () => {
 					if (this.gitRemotes.length === 1) {
-						dialog.showConfirmation('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', () => {
+						dialog.showConfirmation('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', 'Yes, push', () => {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[0] }, 'Pushing Tag');
 						}, target);
 					} else if (this.gitRemotes.length > 1) {
@@ -1446,7 +1412,20 @@ class GitGraphView {
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
 						this.checkoutBranchAction(refName, remote, newBranch, target);
 					}, 'Checkout the existing branch' + (canPullFromRemote ? ' & pull changes' : ''), () => {
-						runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: null, pullAfterwards: canPullFromRemote ? { branchName: refName.substring(remote.length + 1), remote: remote } : null }, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
+						runAction({
+							command: 'checkoutBranch',
+							repo: this.currentRepo,
+							branchName: newBranch,
+							remoteBranch: null,
+							pullAfterwards: canPullFromRemote
+								? {
+									branchName: refName.substring(remote.length + 1),
+									remote: remote,
+									createNewCommit: this.config.dialogDefaults.pullBranch.noFastForward,
+									squash: this.config.dialogDefaults.pullBranch.squash
+								}
+								: null
+						}, 'Checking out Branch' + (canPullFromRemote ? ' & Pulling Changes' : ''));
 					}, target);
 				} else {
 					runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: newBranch, remoteBranch: refName, pullAfterwards: null }, 'Checking out Branch');
@@ -1461,21 +1440,21 @@ class GitGraphView {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
 	}
 
-	private mergeAction(obj: string, name: string, actionOn: GG.ActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
+	private mergeAction(obj: string, name: string, actionOn: GG.MergeActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
 		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
 			{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
 			{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.merge.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this ' + actionOn.toLowerCase() + '.' },
 			{ type: DialogInputType.Checkbox, name: 'No Commit', value: this.config.dialogDefaults.merge.noCommit, info: 'The changes of the merge will be staged but not committed, so that you can review and/or modify the merge result before committing.' }
-		], 'Yes, merge ' + actionOn.toLowerCase(), (values) => {
+		], 'Yes, merge', (values) => {
 			runAction({ command: 'merge', repo: this.currentRepo, obj: obj, actionOn: actionOn, createNewCommit: <boolean>values[0], squash: <boolean>values[1], noCommit: <boolean>values[2] }, 'Merging ' + actionOn);
 		}, target);
 	}
 
-	private rebaseAction(obj: string, name: string, actionOn: GG.ActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
+	private rebaseAction(obj: string, name: string, actionOn: GG.RebaseActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
 		dialog.showForm('Are you sure you want to rebase the current branch on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
 			{ type: DialogInputType.Checkbox, name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
 			{ type: DialogInputType.Checkbox, name: 'Ignore Date', value: this.config.dialogDefaults.rebase.ignoreDate, info: 'Only applicable to a non-interactive rebase.' }
-		], 'Yes, rebase on ' + actionOn.toLowerCase(), (values) => {
+		], 'Yes, rebase', (values) => {
 			let interactive = <boolean>values[0];
 			runAction({ command: 'rebase', repo: this.currentRepo, obj: obj, actionOn: actionOn, ignoreDate: <boolean>values[1], interactive: interactive }, interactive ? 'Launching Interactive Rebase' : 'Rebasing on ' + actionOn);
 		}, target);
@@ -1602,7 +1581,7 @@ class GitGraphView {
 
 			const commitOrdering = getCommitOrdering(this.gitRepos[this.currentRepo].commitOrdering);
 			const changeCommitOrdering = (repoCommitOrdering: GG.RepoCommitOrdering) => {
-				this.saveCommitOrdering(this.currentRepo, repoCommitOrdering);
+				this.saveRepoStateValue(this.currentRepo, 'commitOrdering', repoCommitOrdering);
 				this.refresh(true);
 			};
 
@@ -1809,7 +1788,8 @@ class GitGraphView {
 					handledEvent(e);
 				}
 			} else if (this.expandedCommit !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-				let curHashIndex = this.commitLookup[this.expandedCommit.commitHash], newHashIndex = -1;
+				const curHashIndex = this.commitLookup[this.expandedCommit.commitHash];
+				let newHashIndex = -1;
 
 				if (e.ctrlKey || e.metaKey) {
 					// Up / Down navigates according to the order of commits on the branch
@@ -1833,18 +1813,21 @@ class GitGraphView {
 					if (elem !== null) this.loadCommitDetails(elem);
 				}
 			} else if (e.ctrlKey || e.metaKey) {
-				if (e.key === 'r') {
-					this.refresh(true);
-					handledEvent(e);
-				} else if (e.key === 'f') {
-					this.findWidget.show(true);
-					handledEvent(e);
-				} else if (e.key === 'h' && this.commitHead !== null) {
-					this.scrollToCommit(this.commitHead, true, true);
-					handledEvent(e);
-				} else if (e.key.toLowerCase() === 's') {
+				const key = e.key.toLowerCase();
+				if (key === 's') {
 					this.scrollToStash(!e.shiftKey);
 					handledEvent(e);
+				} else if (!e.shiftKey) {
+					if (key === 'r') {
+						this.refresh(true);
+						handledEvent(e);
+					} else if (key === 'f') {
+						this.findWidget.show(true);
+						handledEvent(e);
+					} else if (key === 'h' && this.commitHead !== null) {
+						this.scrollToCommit(this.commitHead, true, true);
+						handledEvent(e);
+					}
 				}
 			} else if (e.key === 'Escape') {
 				if (this.settingsWidget.isVisible()) {
@@ -2778,6 +2761,9 @@ window.addEventListener('load', () => {
 			case 'openFile':
 				finishOrDisplayError(msg.error, 'Unable to Open File');
 				break;
+			case 'openTerminal':
+				finishOrDisplayError(msg.error, 'Unable to Open Terminal', true);
+				break;
 			case 'popStash':
 				refreshOrDisplayError(msg.error, 'Unable to Pop Stash');
 				break;
@@ -2905,21 +2891,32 @@ window.addEventListener('load', () => {
 function generateFileViewHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, type: GG.FileViewType, isUncommitted: boolean) {
 	return type === GG.FileViewType.List
 		? generateFileListHtml(folder, gitFiles, lastViewedFile, isUncommitted)
-		: generateFileTreeHtml(folder, gitFiles, lastViewedFile, isUncommitted);
+		: generateFileTreeHtml(folder, gitFiles, lastViewedFile, isUncommitted, true);
 }
 
-function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean) {
-	let html = (folder.name !== '' ? '<span class="fileTreeFolder' + (folder.reviewed ? '' : ' pendingReview') + '" data-folderpath="' + encodeURIComponent(folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(folder.name) + '</span></span>' : '') + '<ul class="fileTreeFolderContents' + (!folder.open ? ' hidden' : '') + '">';
-	let keys = sortFolderKeys(folder);
-	for (let i = 0; i < keys.length; i++) {
-		let cur = folder.contents[keys[i]];
-		if (cur.type === 'folder') {
-			html += '<li' + (cur.open ? '' : ' class="closed"') + ' data-pathseg="' + encodeURIComponent(cur.name) + '">' + generateFileTreeHtml(cur, gitFiles, lastViewedFile, isUncommitted) + '</li>';
-		} else {
-			html += generateFileTreeLeafHtml(cur.name, cur, gitFiles, lastViewedFile, isUncommitted);
-		}
-	}
-	return html + '</ul>';
+function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean, topLevelFolder: boolean): string {
+	const curFolderInfo = topLevelFolder || !initialState.config.fileTreeCompactFolders
+		? { folder: folder, name: folder.name, pathSeg: folder.name }
+		: getCurrentFolderInfo(folder, folder.name, folder.name);
+
+	const children = sortFolderKeys(curFolderInfo.folder).map((key) => {
+		const cur = curFolderInfo.folder.contents[key];
+		return cur.type === 'folder'
+			? generateFileTreeHtml(cur, gitFiles, lastViewedFile, isUncommitted, false)
+			: generateFileTreeLeafHtml(cur.name, cur, gitFiles, lastViewedFile, isUncommitted);
+	});
+
+	return (topLevelFolder ? '' : '<li' + (curFolderInfo.folder.open ? '' : ' class="closed"') + ' data-pathseg="' + encodeURIComponent(curFolderInfo.pathSeg) + '"><span class="fileTreeFolder' + (curFolderInfo.folder.reviewed ? '' : ' pendingReview') + '" title="./' + escapeHtml(curFolderInfo.folder.folderPath) + '" data-folderpath="' + encodeURIComponent(curFolderInfo.folder.folderPath) + '"><span class="fileTreeFolderIcon">' + (curFolderInfo.folder.open ? SVG_ICONS.openFolder : SVG_ICONS.closedFolder) + '</span><span class="gitFolderName">' + escapeHtml(curFolderInfo.name) + '</span></span>') +
+		'<ul class="fileTreeFolderContents' + (curFolderInfo.folder.open ? '' : ' hidden') + '">' + children.join('') + '</ul>' +
+		(topLevelFolder ? '' : '</li>');
+}
+
+function getCurrentFolderInfo(folder: FileTreeFolder, name: string, pathSeg: string): { folder: FileTreeFolder, name: string, pathSeg: string } {
+	const keys = Object.keys(folder.contents);
+	let child: FileTreeNode;
+	return keys.length === 1 && (child = folder.contents[keys[0]]).type === 'folder'
+		? getCurrentFolderInfo(<FileTreeFolder>child, name + ' / ' + child.name, pathSeg + '/' + child.name)
+		: { folder: folder, name: name, pathSeg: pathSeg };
 }
 
 function generateFileListHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean) {
@@ -3095,7 +3092,7 @@ function getFilesInTree(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFi
 
 function sortFolderKeys(folder: FileTreeFolder) {
 	let keys = Object.keys(folder.contents);
-	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name < folder.contents[b].name ? -1 : folder.contents[a].name > folder.contents[b].name ? 1 : 0);
+	keys.sort((a, b) => folder.contents[a].type !== 'file' && folder.contents[b].type === 'file' ? -1 : folder.contents[a].type === 'file' && folder.contents[b].type !== 'file' ? 1 : folder.contents[a].name.localeCompare(folder.contents[b].name));
 	return keys;
 }
 
@@ -3158,7 +3155,7 @@ function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
 }
 
-function getRepoDropdownOptions(repos: string[]) {
+function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
@@ -3239,7 +3236,9 @@ function getRepoDropdownOptions(repos: string[]) {
 		options.push({ name: names[i], value: repos[i], hint: hint });
 	}
 
-	return options;
+	return initialState.config.repoDropdownOrder === GG.RepoDropdownOrder.Name
+		? options.sort((a, b) => a.name !== b.name ? a.name.localeCompare(b.name) : a.value.localeCompare(b.value))
+		: options;
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {

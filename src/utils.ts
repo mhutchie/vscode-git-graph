@@ -368,23 +368,29 @@ export function viewScm(): Thenable<ErrorInfo> {
 }
 
 /**
- * Open a new terminal and run the specified Git command.
+ * Open a new terminal, set up the Git executable, and optionally run a command.
  * @param cwd The working directory for the terminal.
  * @param gitPath The path of the Git executable.
- * @param command The Git command to run.
+ * @param command The command to run.
  * @param name The name for the terminal.
  */
-export function runGitCommandInNewTerminal(cwd: string, gitPath: string, command: string, name: string) {
+export function openGitTerminal(cwd: string, gitPath: string, command: string | null, name: string) {
 	let p = process.env['PATH'] || '', sep = isWindows() ? ';' : ':';
 	if (p !== '' && !p.endsWith(sep)) p += sep;
 	p += path.dirname(gitPath);
 
-	let options: vscode.TerminalOptions = { cwd: cwd, name: name, env: { 'PATH': p } };
-	let shell = getConfig().integratedTerminalShell;
+	const options: vscode.TerminalOptions = {
+		cwd: cwd,
+		name: 'Git Graph: ' + name,
+		env: { 'PATH': p }
+	};
+	const shell = getConfig().integratedTerminalShell;
 	if (shell !== '') options.shellPath = shell;
 
-	let terminal = vscode.window.createTerminal(options);
-	terminal.sendText('git ' + command);
+	const terminal = vscode.window.createTerminal(options);
+	if (command !== null) {
+		terminal.sendText('git ' + command);
+	}
 	terminal.show();
 }
 
@@ -453,6 +459,42 @@ export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise
 	});
 }
 
+/**
+ * Resolve the output of a spawned child process.
+ * @param cmd The Child Process.
+ * @returns Promise that resolves to [{code, error}, stdout, stderr]
+ */
+export function resolveSpawnOutput(cmd: cp.ChildProcess) {
+	return Promise.all([
+		new Promise<{ code: number, error: Error | null }>((resolve) => {
+			// status promise
+			let resolved = false;
+			cmd.on('error', (error) => {
+				if (resolved) return;
+				resolve({ code: -1, error: error });
+				resolved = true;
+			});
+			cmd.on('exit', (code) => {
+				if (resolved) return;
+				resolve({ code: code, error: null });
+				resolved = true;
+			});
+		}),
+		new Promise<Buffer>((resolve) => {
+			// stdout promise
+			let buffers: Buffer[] = [];
+			cmd.stdout.on('data', (b: Buffer) => { buffers.push(b); });
+			cmd.stdout.on('close', () => resolve(Buffer.concat(buffers)));
+		}),
+		new Promise<string>((resolve) => {
+			// stderr promise
+			let stderr = '';
+			cmd.stderr.on('data', (d) => { stderr += d; });
+			cmd.stderr.on('close', () => resolve(stderr));
+		})
+	]);
+}
+
 
 /* Find Git Executable */
 
@@ -463,8 +505,8 @@ export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise
 // https://github.com/microsoft/vscode/blob/473af338e1bd9ad4d9853933da1cd9d5d9e07dc9/extensions/git/src/git.ts#L44-L135
 
 export interface GitExecutable {
-	path: string;
-	version: string;
+	readonly path: string;
+	readonly version: string;
 }
 
 /**
@@ -573,17 +615,13 @@ function isExecutable(path: string) {
  * @param path The path of the Git executable.
  * @returns The GitExecutable data.
  */
-export function getGitExecutable(path: string): Promise<GitExecutable> {
+export function getGitExecutable(path: string) {
 	return new Promise<GitExecutable>((resolve, reject) => {
-		const cmd = cp.spawn(path, ['--version']);
-		let stdout = '';
-		cmd.stdout.on('data', (d) => { stdout += d; });
-		cmd.on('error', () => reject());
-		cmd.on('exit', (code) => {
-			if (code) {
-				reject();
+		resolveSpawnOutput(cp.spawn(path, ['--version'])).then((values) => {
+			if (values[0].code === 0) {
+				resolve({ path: path, version: values[1].toString().trim().replace(/^git version /, '') });
 			} else {
-				resolve({ path: path, version: stdout.trim().replace(/^git version /, '') });
+				reject();
 			}
 		});
 	});
@@ -604,7 +642,7 @@ export function isGitAtLeastVersion(executable: GitExecutable, version: string) 
 
 	if (v1 === null || v2 === null) {
 		// Unable to parse a version number
-		return false;
+		return true;
 	}
 
 	if (v1.major > v2.major) return true; // Git major version is newer
@@ -625,16 +663,18 @@ export function isGitAtLeastVersion(executable: GitExecutable, version: string) 
  * @returns The `major`.`minor`.`patch` version numbers.
  */
 function parseVersion(version: string) {
-	try {
-		const v = version.split(/[^0-9\.]+/)[0].split('.');
-		return {
-			major: v.length > 0 ? parseInt(v[0], 10) : 0,
-			minor: v.length > 1 ? parseInt(v[1], 10) : 0,
-			patch: v.length > 2 ? parseInt(v[2], 10) : 0
-		};
-	} catch (_) {
+	const match = version.trim().match(/^[0-9]+(\.[0-9]+|)(\.[0-9]+|)/);
+	if (match === null) {
+		// Unable to find a valid version number
 		return null;
 	}
+
+	const comps = match[0].split('.');
+	return {
+		major: parseInt(comps[0], 10),
+		minor: comps.length > 1 ? parseInt(comps[1], 10) : 0,
+		patch: comps.length > 2 ? parseInt(comps[2], 10) : 0
+	};
 }
 
 /**

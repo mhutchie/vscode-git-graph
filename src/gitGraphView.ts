@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, getRepoName, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
 
 /**
  * Manages the Git Graph View.
@@ -179,7 +179,7 @@ export class GitGraphView implements vscode.Disposable {
 			case 'checkoutBranch':
 				errorInfos = [await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)];
 				if (errorInfos[0] === null && msg.pullAfterwards !== null) {
-					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.pullAfterwards.branchName, msg.pullAfterwards.remote, false, false));
+					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.pullAfterwards.branchName, msg.pullAfterwards.remote, msg.pullAfterwards.createNewCommit, msg.pullAfterwards.squash));
 				}
 				this.sendMessage({
 					command: 'checkoutBranch',
@@ -422,6 +422,12 @@ export class GitGraphView implements vscode.Disposable {
 					error: await openFile(msg.repo, msg.filePath)
 				});
 				break;
+			case 'openTerminal':
+				this.sendMessage({
+					command: 'openTerminal',
+					error: await this.dataSource.openGitTerminal(msg.repo, null, getRepoName(msg.repo))
+				});
+				break;
 			case 'popStash':
 				this.sendMessage({
 					command: 'popStash',
@@ -591,6 +597,7 @@ export class GitGraphView implements vscode.Disposable {
 				enhancedAccessibility: config.enhancedAccessibility,
 				fetchAndPrune: config.fetchAndPrune,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
+				fileTreeCompactFolders: config.fileTreeCompactFolders,
 				graphColours: config.graphColours,
 				graphStyle: config.graphStyle,
 				grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },
@@ -602,6 +609,7 @@ export class GitGraphView implements vscode.Disposable {
 				muteMergeCommits: config.muteMergeCommits,
 				onlyFollowFirstParent: config.onlyFollowFirstParent,
 				openRepoToHead: config.openRepoToHead,
+				repoDropdownOrder: config.repoDropdownOrder,
 				showCurrentBranchByDefault: config.showCurrentBranchByDefault,
 				showTags: config.showTags,
 				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal
@@ -633,6 +641,7 @@ export class GitGraphView implements vscode.Disposable {
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchDropdown" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Remote Branches</label>
 					<div id="findBtn" title="Find"></div>
+					<div id="terminalBtn" title="Open a Terminal for this Repository"></div>
 					<div id="settingsBtn" title="Repository Settings"></div>
 					<div id="fetchBtn"></div>
 					<div id="refreshBtn"></div>

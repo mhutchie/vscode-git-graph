@@ -746,7 +746,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	left:0;
 	right:0;
 	top:0;
-	padding:4px 102px 4px 0;
+	padding:4px 132px 4px 0;
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	line-height:32px;
 	text-align:center;
@@ -778,7 +778,7 @@ body.tagLabelsRightAligned .gitRef.tag{
 	max-width:40vw;
 }
 
-#findBtn, #settingsBtn, #fetchBtn, #refreshBtn{
+#findBtn, #terminalBtn, #settingsBtn, #fetchBtn, #refreshBtn{
 	position:absolute;
 	top:50%;
 	width:20px;
@@ -789,6 +789,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 	user-select:none;
 }
 #findBtn{
+	right:100px;
+}
+#terminalBtn{
 	right:70px;
 }
 #settingsBtn{
@@ -804,25 +807,25 @@ body.tagLabelsRightAligned .gitRef.tag{
 #refreshBtn.refreshing{
 	cursor:default;
 }
-#findBtn svg, #settingsBtn svg, #fetchBtn svg, #refreshBtn svg{
+#findBtn svg, #terminalBtn svg, #settingsBtn svg, #fetchBtn svg, #refreshBtn svg{
 	position:absolute;
 	fill:var(--vscode-editor-foreground);
 	opacity:0.8;
 	stroke:var(--vscode-editor-foreground);
-	stroke-opacity:0.4;
+	stroke-opacity:0.5;
 	stroke-width:0;
 }
-#findBtn:hover svg, #settingsBtn:hover svg, #fetchBtn:hover svg, #refreshBtn:hover svg{
+#findBtn svg, #terminalBtn svg{
+	stroke-width:0.5px;
+}
+#findBtn:hover svg, #terminalBtn:hover svg, #settingsBtn:hover svg, #fetchBtn:hover svg, #refreshBtn:hover svg{
 	opacity:1;
 	stroke-width:0.5px;
 }
-#findBtn svg{
+#findBtn:hover svg, #terminalBtn:hover svg{
 	stroke-width:1px;
 }
-#findBtn svg:hover{
-	stroke-width:1.5px;
-}
-#findBtn svg, #settingsBtn svg, #fetchBtn svg{
+#findBtn svg, #terminalBtn svg, #settingsBtn svg, #fetchBtn svg{
 	left:1px;
 	top:1px;
 	width:18px !important;
@@ -843,9 +846,12 @@ body.tagLabelsRightAligned .gitRef.tag{
 }
 
 #controls.fetchSupported{
-	padding-right:132px;
+	padding-right:162px;
 }
 #controls.fetchSupported #findBtn{
+	right:130px;
+}
+#controls.fetchSupported #terminalBtn{
 	right:100px;
 }
 #controls.fetchSupported #settingsBtn{

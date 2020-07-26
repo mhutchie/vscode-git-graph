@@ -7,7 +7,7 @@ interface ContextMenuAction {
 	readonly checked?: boolean; // Required in checked context menus
 }
 
-type ContextMenuActions = ContextMenuAction[][];
+type ContextMenuActions = ReadonlyArray<ReadonlyArray<ContextMenuAction>>;
 
 type ContextMenuTarget = {
 	type: TargetType.Commit | TargetType.Ref;

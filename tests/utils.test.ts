@@ -1,24 +1,30 @@
 import * as date from './mocks/date';
+import { mockSpyOnSpawn } from './mocks/spawn';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('../src/dataSource');
+jest.mock('../src/extensionState');
 jest.mock('../src/logger');
 
 import * as cp from 'child_process';
 import * as fs from 'fs';
+import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
 import { EventEmitter } from '../src/event';
+import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, pathWithTrailingSlash, realpath, resolveToSymbolicPath, runGitCommandInNewTerminal, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 
+let extensionContext = vscode.mocks.extensionContext;
 let terminal = vscode.mocks.terminal;
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;
 let logger: Logger;
 let dataSource: DataSource;
+let spyOnSpawn: jest.SpyInstance;
 
 beforeAll(() => {
 	onDidChangeConfiguration = new EventEmitter<ConfigurationChangeEvent>();
@@ -36,7 +42,26 @@ afterAll(() => {
 
 beforeEach(() => {
 	jest.clearAllMocks();
+	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
+
+const mockSpawnGitVersionSuccessOnce = () => {
+	mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+		stdoutOnCallbacks['data'](Buffer.from('git '));
+		stdoutOnCallbacks['data'](Buffer.from('version 1.2.3'));
+		stdoutOnCallbacks['close']();
+		stderrOnCallbacks['close']();
+		onCallbacks['exit'](0);
+	});
+};
+
+const mockSpawnGitVersionThrowingErrorOnce = () => {
+	mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+		stdoutOnCallbacks['close']();
+		stderrOnCallbacks['close']();
+		onCallbacks['error']();
+	});
+};
 
 describe('getPathFromUri', () => {
 	it('Doesn\'t affect paths using "/" as the separator', () => {
@@ -265,18 +290,18 @@ describe('resolveToSymbolicPath', () => {
 describe('abbrevCommit', () => {
 	it('Truncates a commit hash to eight characters', () => {
 		// Run
-		const abbrev = abbrevCommit('70b7e1f4ff418f7ae790005ee5315bba50c16d9c');
+		const abbrev = abbrevCommit('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f');
 
 		// Assert
-		expect(abbrev).toBe('70b7e1f4');
+		expect(abbrev).toBe('1a2b3c4d');
 	});
 
 	it('Doesn\'t truncate commit hashes less than eight characters', () => {
 		// Run
-		const abbrev = abbrevCommit('70b7e1');
+		const abbrev = abbrevCommit('1a2b3c');
 
 		// Assert
-		expect(abbrev).toBe('70b7e1');
+		expect(abbrev).toBe('1a2b3c');
 	});
 });
 
@@ -472,11 +497,11 @@ describe('archive', () => {
 		spyOnArchive.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe(null);
-		expect(spyOnArchive).toBeCalledWith('/repo/path', 'abcdef', '/archive/file/destination.tar', 'tar');
+		expect(spyOnArchive).toBeCalledWith('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/archive/file/destination.tar', 'tar');
 	});
 
 	it('Should trigger the creation of the archive (TAR)', async () => {
@@ -486,11 +511,11 @@ describe('archive', () => {
 		spyOnArchive.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe(null);
-		expect(spyOnArchive).toBeCalledWith('/repo/path', 'abcdef', '/archive/file/destination.TAR', 'tar');
+		expect(spyOnArchive).toBeCalledWith('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/archive/file/destination.TAR', 'tar');
 	});
 
 	it('Should trigger the creation of the archive (zip)', async () => {
@@ -500,11 +525,11 @@ describe('archive', () => {
 		spyOnArchive.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe(null);
-		expect(spyOnArchive).toBeCalledWith('/repo/path', 'abcdef', '/archive/file/destination.zip', 'zip');
+		expect(spyOnArchive).toBeCalledWith('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/archive/file/destination.zip', 'zip');
 	});
 
 	it('Should trigger the creation of the archive (ZIP)', async () => {
@@ -514,11 +539,11 @@ describe('archive', () => {
 		spyOnArchive.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe(null);
-		expect(spyOnArchive).toBeCalledWith('/repo/path', 'abcdef', '/archive/file/destination.ZIP', 'zip');
+		expect(spyOnArchive).toBeCalledWith('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/archive/file/destination.ZIP', 'zip');
 	});
 
 	it('Should return an error message when the specified archive destination has an invalid file extension', async () => {
@@ -526,7 +551,7 @@ describe('archive', () => {
 		vscode.window.showSaveDialog.mockResolvedValueOnce(vscode.Uri.file('/archive/file/destination.txt'));
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe('Invalid file extension "*.txt". The archive file must have a *.tar or *.zip extension.');
@@ -537,7 +562,7 @@ describe('archive', () => {
 		vscode.window.showSaveDialog.mockResolvedValueOnce(undefined);
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe('No file name was provided for the archive.');
@@ -548,7 +573,7 @@ describe('archive', () => {
 		vscode.window.showSaveDialog.mockRejectedValueOnce(undefined);
 
 		// Run
-		const result = await archive('/repo/path', 'abcdef', dataSource);
+		const result = await archive('/repo/path', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to display the save dialog.');
@@ -828,14 +853,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', 'abcdef123456', 'abcdef123456', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
 		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9hZGRlZC50eHQiLCJjb21taXQiOiJhYmNkZWYxMjM0NTYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(title).toBe('added.txt (Added in abcdef12)');
+		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9hZGRlZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(title).toBe('added.txt (Added in 1a2b3c4d)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -848,14 +873,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', 'abcdef123456', 'abcdef123456', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiJhYmNkZWYxMjM0NTZeIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiJhYmNkZWYxMjM0NTYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(title).toBe('modified.txt (abcdef12^ ↔ abcdef12)');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmZeIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
+		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(title).toBe('modified.txt (1a2b3c4d^ ↔ 1a2b3c4d)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -868,14 +893,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', 'abcdef123456', 'abcdef123456', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6ImFiY2RlZjEyMzQ1Nl4iLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2Zl4iLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
 		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(title).toBe('deleted.txt (Deleted in abcdef12)');
+		expect(title).toBe('deleted.txt (Deleted in 1a2b3c4d)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -888,14 +913,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '123456abcdef', 'abcdef123456', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
 		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9hZGRlZC50eHQiLCJjb21taXQiOiJhYmNkZWYxMjM0NTYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(title).toBe('added.txt (Added between 123456ab & abcdef12)');
+		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9hZGRlZC50eHQiLCJjb21taXQiOiJhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
+		expect(title).toBe('added.txt (Added between 1a2b3c4d & a1b2c3d4)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -908,14 +933,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '123456abcdef', 'abcdef123456', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxMjM0NTZhYmNkZWYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiJhYmNkZWYxMjM0NTYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(title).toBe('modified.txt (123456ab ↔ abcdef12)');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiJhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
+		expect(title).toBe('modified.txt (1a2b3c4d ↔ a1b2c3d4)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -928,14 +953,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '123456abcdef', 'abcdef123456', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjEyMzQ1NmFiY2RlZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
 		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(title).toBe('deleted.txt (Deleted between 123456ab & abcdef12)');
+		expect(title).toBe('deleted.txt (Deleted between 1a2b3c4d & a1b2c3d4)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -948,14 +973,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '123456abcdef', UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
 		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
 		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/added.txt');
-		expect(title).toBe('added.txt (Added between 123456ab & Present)');
+		expect(title).toBe('added.txt (Added between 1a2b3c4d & Present)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -968,14 +993,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '123456abcdef', UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxMjM0NTZhYmNkZWYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
 		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/modified.txt');
-		expect(title).toBe('modified.txt (123456ab ↔ Present)');
+		expect(title).toBe('modified.txt (1a2b3c4d ↔ Present)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -988,14 +1013,14 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '123456abcdef', UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjEyMzQ1NmFiY2RlZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
 		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(title).toBe('deleted.txt (Deleted between 123456ab & Present)');
+		expect(title).toBe('deleted.txt (Deleted between 1a2b3c4d & Present)');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -1068,7 +1093,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', 'abcdef123456', 'abcdef123456', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable load the diff editor for subfolder/modified.txt.');
@@ -1100,12 +1125,12 @@ describe('viewFileAtRevision', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewFileAtRevision('/path/to/repo', 'abcdef123456', 'subfolder/file.txt');
+		const result = await viewFileAtRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/file.txt');
 
 		// Assert
 		const [command, uri, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.open');
-		expect(uri.toString()).toBe('git-graph://abcdef12: file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9maWxlLnR4dCIsImNvbW1pdCI6ImFiY2RlZjEyMzQ1NiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
+		expect(uri.toString()).toBe('git-graph://1a2b3c4d: file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9maWxlLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -1118,10 +1143,10 @@ describe('viewFileAtRevision', () => {
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await viewFileAtRevision('/path/to/repo', 'abcdef123456', 'subfolder/file.txt');
+		const result = await viewFileAtRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/file.txt');
 
 		// Assert
-		expect(result).toBe('Visual Studio Code was unable to open subfolder/file.txt at commit abcdef12.');
+		expect(result).toBe('Visual Studio Code was unable to open subfolder/file.txt at commit 1a2b3c4d.');
 	});
 });
 
@@ -1150,7 +1175,7 @@ describe('viewScm', () => {
 	});
 });
 
-describe('runGitCommandInNewTerminal', () => {
+describe('openGitTerminal', () => {
 	let ostype: string | undefined, path: string | undefined, platform: NodeJS.Platform;
 	beforeEach(() => {
 		ostype = process.env.OSTYPE;
@@ -1166,12 +1191,12 @@ describe('runGitCommandInNewTerminal', () => {
 		Object.defineProperty(process, 'platform', { value: platform });
 	});
 
-	it('Should open a new terminal and run the git command', () => {
+	it('Should open a new terminal', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', null, 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1179,7 +1204,26 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable:/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
+		});
+		expect(terminal.sendText).toHaveBeenCalledTimes(0);
+		expect(terminal.show).toHaveBeenCalled();
+	});
+
+	it('Should open a new terminal and run the git command', () => {
+		// Setup
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
+
+		// Run
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+
+		// Assert
+		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
+			cwd: '/path/to/repo',
+			env: {
+				PATH: '/path/to/executable:/path/to/git'
+			},
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1187,11 +1231,11 @@ describe('runGitCommandInNewTerminal', () => {
 
 	it('Should open a new terminal and run the git command (with initially empty PATH)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		process.env.PATH = '';
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1199,7 +1243,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1207,10 +1251,10 @@ describe('runGitCommandInNewTerminal', () => {
 
 	it('Should open a new terminal and run the git command (with specific shell path)', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce('/path/to/shell');
+		workspaceConfiguration.get.mockReturnValueOnce('/path/to/shell'); // integratedTerminalShell
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1218,7 +1262,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable:/path/to/git'
 			},
-			name: 'Name',
+			name: 'Git Graph: Name',
 			shellPath: '/path/to/shell'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
@@ -1227,11 +1271,11 @@ describe('runGitCommandInNewTerminal', () => {
 
 	it('Should open a new terminal and run the git command (platform: win32)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		Object.defineProperty(process, 'platform', { value: 'win32' });
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1239,7 +1283,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable;/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1247,11 +1291,11 @@ describe('runGitCommandInNewTerminal', () => {
 
 	it('Should open a new terminal and run the git command (ostype: cygwin)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		process.env.OSTYPE = 'cygwin';
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1259,7 +1303,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable;/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1267,11 +1311,11 @@ describe('runGitCommandInNewTerminal', () => {
 
 	it('Should open a new terminal and run the git command (ostype: msys)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		process.env.OSTYPE = 'msys';
 
 		// Run
-		runGitCommandInNewTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
+		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
 		// Assert
 		expect(vscode.window.createTerminal).toHaveBeenCalledWith({
@@ -1279,7 +1323,7 @@ describe('runGitCommandInNewTerminal', () => {
 			env: {
 				PATH: '/path/to/executable;/path/to/git'
 			},
-			name: 'Name'
+			name: 'Git Graph: Name'
 		});
 		expect(terminal.sendText).toHaveBeenCalledWith('git rebase');
 		expect(terminal.show).toHaveBeenCalled();
@@ -1394,27 +1438,452 @@ describe('evalPromises', () => {
 	});
 });
 
-describe('getGitExecutable', () => {
-	let child: cp.ChildProcess;
-	let onCallbacks: { [event: string]: (...args: any[]) => void } = {}, stdoutOnCallbacks: { [event: string]: (...args: any[]) => void } = {};
-	beforeEach(() => {
-		child = {
-			on: (event: string, callback: (...args: any[]) => void) => onCallbacks[event] = callback,
-			stdout: {
-				on: (event: string, callback: (...args: any[]) => void) => stdoutOnCallbacks[event] = callback,
-			}
-		} as unknown as cp.ChildProcess;
-		jest.spyOn(cp, 'spawn').mockReturnValueOnce(child);
+describe('resolveSpawnOutput', () => {
+	it('Should resolve child process promise only once (error event first)', async () => {
+		// Setup
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['error']('error');
+			onCallbacks['exit'](0);
+		});
+
+		// Run
+		const result = await resolveSpawnOutput(cp.spawn('/path/to/git', ['arg0', 'arg1']));
+
+		// Assert
+		expect(result).toStrictEqual([
+			{ code: -1, error: 'error' },
+			expect.any(Buffer),
+			''
+		]);
 	});
 
-	it('Should return the git version information', async () => {
-		// Run
-		const resultPromise = getGitExecutable('/path/to/git');
-		stdoutOnCallbacks['data']('git ');
-		stdoutOnCallbacks['data']('version 1.2.3');
-		onCallbacks['exit'](0);
-		const result = await resultPromise;
+	it('Should resolve child process promise only once (exit event first)', async () => {
+		// Setup
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['exit'](1);
+			onCallbacks['error']('error');
+		});
 
+		// Run
+		const result = await resolveSpawnOutput(cp.spawn('/path/to/git', ['arg0', 'arg1']));
+
+		// Assert
+		expect(result).toStrictEqual([
+			{ code: 1, error: null },
+			expect.any(Buffer),
+			''
+		]);
+	});
+});
+
+describe('findGit', () => {
+	let onDidChangeGitExecutable: EventEmitter<GitExecutable>, extensionState: ExtensionState, platform: NodeJS.Platform;
+	beforeAll(() => {
+		onDidChangeGitExecutable = new EventEmitter<GitExecutable>();
+	});
+	afterAll(() => {
+		onDidChangeGitExecutable.dispose();
+	});
+	beforeEach(() => {
+		extensionState = new ExtensionState(extensionContext, onDidChangeGitExecutable.subscribe);
+		platform = process.platform;
+		Object.defineProperty(process, 'platform', { value: 'y' });
+	});
+	afterEach(() => {
+		extensionState.dispose();
+		Object.defineProperty(process, 'platform', { value: platform });
+	});
+
+	it('Should use the last known Git executable path if it still exists', async () => {
+		// Setup
+		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce('/path/to/git');
+		mockSpawnGitVersionSuccessOnce();
+
+		// Run
+		const result = await findGit(extensionState);
+
+		// Assert
+		expect(result).toStrictEqual({
+			path: '/path/to/git',
+			version: '1.2.3'
+		});
+		expect(spyOnSpawn).toHaveBeenCalledWith('/path/to/git', ['--version']);
+	});
+
+	it('Should use the users git.path if the last known Git executable path no longer exists', async () => {
+		// Setup
+		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce('/path/to/not-git');
+		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // gitPath
+		mockSpawnGitVersionThrowingErrorOnce();
+		mockSpawnGitVersionSuccessOnce();
+
+		// Run
+		const result = await findGit(extensionState);
+
+		// Assert
+		expect(result).toStrictEqual({
+			path: '/path/to/git',
+			version: '1.2.3'
+		});
+		expect(spyOnSpawn).toHaveBeenCalledWith('/path/to/git', ['--version']);
+	});
+
+	it('Should use the users git.path if there is no last known Git executable path', async () => {
+		// Setup
+		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
+		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // gitPath
+		mockSpawnGitVersionSuccessOnce();
+
+		// Run
+		const result = await findGit(extensionState);
+
+		// Assert
+		expect(result).toStrictEqual({
+			path: '/path/to/git',
+			version: '1.2.3'
+		});
+		expect(spyOnSpawn).toHaveBeenCalledWith('/path/to/git', ['--version']);
+	});
+
+	describe('process.platform === \'darwin\'', () => {
+		let spyOnExec: jest.SpyInstance;
+		beforeEach(() => {
+			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
+			workspaceConfiguration.get.mockReturnValueOnce(null); // gitPath
+			Object.defineProperty(process, 'platform', { value: 'darwin' });
+			spyOnExec = jest.spyOn(cp, 'exec');
+		});
+
+		it('Should find and return the Git executable using "which git"', async () => {
+			// Setup
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
+				expect(command).toBe('which git');
+				callback(null, '/path/to/git', '');
+			});
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(result).toStrictEqual({
+				path: '/path/to/git',
+				version: '1.2.3'
+			});
+		});
+
+		it('Should find and return the Git executable using when XCode & Git are installed', async () => {
+			// Setup
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
+				expect(command).toBe('which git');
+				callback(null, '/usr/bin/git', '');
+			});
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null) => void) => {
+				expect(command).toBe('xcode-select -p');
+				callback(null);
+			});
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(result).toStrictEqual({
+				path: '/usr/bin/git',
+				version: '1.2.3'
+			});
+		});
+
+		it('Should reject when "which git" throws an error', async () => {
+			// Setup
+			let rejected = false;
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
+				expect(command).toBe('which git');
+				callback(new Error(), '', '');
+			});
+
+			// Run
+			await findGit(extensionState).catch(() => rejected = true);
+
+			// Assert
+			expect(rejected).toBe(true);
+		});
+
+		it('Should reject when "which git" succeeds, but failed to get Git executable', async () => {
+			// Setup
+			let rejected = false;
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
+				expect(command).toBe('which git');
+				callback(null, '/path/to/git', '');
+			});
+			mockSpawnGitVersionThrowingErrorOnce();
+
+			// Run
+			await findGit(extensionState).catch(() => rejected = true);
+
+			// Assert
+			expect(rejected).toBe(true);
+		});
+
+		it('Should reject when "xcode-select -p" fails with exit code 2', async () => {
+			// Setup
+			let rejected = false;
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
+				expect(command).toBe('which git');
+				callback(null, '/usr/bin/git', '');
+			});
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null) => void) => {
+				expect(command).toBe('xcode-select -p');
+				callback(null);
+			});
+			mockSpawnGitVersionThrowingErrorOnce();
+
+			// Run
+			await findGit(extensionState).catch(() => rejected = true);
+
+			// Assert
+			expect(rejected).toBe(true);
+		});
+
+		it('Should reject when "xcode-select -p" succeeds, but failed to get Git executable', async () => {
+			// Setup
+			let rejected = false;
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
+				expect(command).toBe('which git');
+				callback(null, '/usr/bin/git', '');
+			});
+			spyOnExec.mockImplementationOnce((command: string, callback: (error: Error | null) => void) => {
+				expect(command).toBe('xcode-select -p');
+				callback({ code: 2 } as any);
+			});
+
+			// Run
+			await findGit(extensionState).catch(() => rejected = true);
+
+			// Assert
+			expect(rejected).toBe(true);
+		});
+	});
+
+	describe('process.platform === \'win32\'', () => {
+		let programW6432: string | undefined, programFilesX86: string | undefined, programFiles: string | undefined, localAppData: string | undefined, envPath: string | undefined;
+		beforeEach(() => {
+			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
+			workspaceConfiguration.get.mockReturnValueOnce(null); // gitPath
+			programW6432 = process.env['ProgramW6432'];
+			programFilesX86 = process.env['ProgramFiles(x86)'];
+			programFiles = process.env['ProgramFiles'];
+			localAppData = process.env['LocalAppData'];
+			envPath = process.env['PATH'];
+			Object.defineProperty(process, 'platform', { value: 'win32' });
+		});
+		afterEach(() => {
+			process.env['ProgramW6432'] = programW6432;
+			process.env['ProgramFiles(x86)'] = programFilesX86;
+			process.env['ProgramFiles'] = programFiles;
+			process.env['LocalAppData'] = localAppData;
+			process.env['PATH'] = envPath;
+		});
+
+		it('Should find Git in ProgramW6432', async () => {
+			// Setup
+			process.env['ProgramW6432'] = 'c:/path/to/ProgramW6432';
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe('c:/path/to/ProgramW6432/Git/cmd/git.exe');
+			expect(result.version).toBe('1.2.3');
+		});
+
+		it('Should find Git in ProgramFiles(x86)', async () => {
+			// Setup
+			process.env['ProgramFiles(x86)'] = 'c:/path/to/ProgramFilesX86';
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe('c:/path/to/ProgramFilesX86/Git/cmd/git.exe');
+			expect(result.version).toBe('1.2.3');
+		});
+
+		it('Should find Git in ProgramFiles', async () => {
+			// Setup
+			process.env['ProgramFiles'] = 'c:/path/to/ProgramFiles';
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe('c:/path/to/ProgramFiles/Git/cmd/git.exe');
+			expect(result.version).toBe('1.2.3');
+		});
+
+		it('Should find Git in LocalAppData', async () => {
+			// Setup
+			process.env['LocalAppData'] = 'c:/path/to/LocalAppData';
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe('c:/path/to/LocalAppData/Programs/Git/cmd/git.exe');
+			expect(result.version).toBe('1.2.3');
+		});
+
+		it('Should find Git in PATH (isFile)', async () => {
+			// Setup
+			process.env['PATH'] = 'c:/path/to/git-dir';
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			const spyOnStat = jest.spyOn(fs, 'stat');
+			spyOnStat.mockImplementation((statPath, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+				callback(null, { isFile: () => getPathFromStr(statPath as string) === 'c:/path/to/git-dir/git.exe', isSymbolicLink: () => false } as any);
+			});
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe('c:/path/to/git-dir/git.exe');
+			expect(result.version).toBe('1.2.3');
+
+			// Teardown
+			spyOnStat.mockReset();
+		});
+
+		it('Should find Git in PATH (isSymbolicLink)', async () => {
+			// Setup
+			delete process.env['LocalAppData'];
+			process.env['PATH'] = 'c:/path/to/git-dir';
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			const spyOnStat = jest.spyOn(fs, 'stat');
+			spyOnStat.mockImplementation((statPath, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+				callback(null, { isFile: () => false, isSymbolicLink: () => getPathFromStr(statPath as string) === 'c:/path/to/git-dir/git.exe' } as any);
+			});
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe('c:/path/to/git-dir/git.exe');
+			expect(result.version).toBe('1.2.3');
+
+			// Teardown
+			spyOnStat.mockReset();
+		});
+
+		it('Should find Git in CWD', async () => {
+			// Setup
+			delete process.env['PATH'];
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			const spyOnStat = jest.spyOn(fs, 'stat');
+			const gitPath = getPathFromStr(path.join(process.cwd(), 'git.exe'));
+			spyOnStat.mockImplementation((statPath, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+				callback(null, { isFile: () => getPathFromStr(statPath as string) === gitPath, isSymbolicLink: () => false } as any);
+			});
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(getPathFromStr(result.path)).toBe(gitPath);
+			expect(result.version).toBe('1.2.3');
+
+			// Teardown
+			spyOnStat.mockReset();
+		});
+
+		it('Should reject when Git executable not in PATH', async () => {
+			// Setup
+			let rejected = false;
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			mockSpawnGitVersionThrowingErrorOnce();
+			const spyOnStat = jest.spyOn(fs, 'stat');
+			spyOnStat.mockImplementation((_, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+				callback(null, { isFile: () => false, isSymbolicLink: () => false } as any);
+			});
+
+			// Run
+			await findGit(extensionState).catch(() => rejected = true);
+
+			// Assert
+			expect(rejected).toBe(true);
+		});
+	});
+
+	describe('process.platform === \'unknown\'', () => {
+		beforeEach(() => {
+			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
+			workspaceConfiguration.get.mockReturnValueOnce(null); // gitPath
+			Object.defineProperty(process, 'platform', { value: 'unknown' });
+		});
+
+		it('Should return the Git executable', async () => {
+			// Setup
+			mockSpawnGitVersionSuccessOnce();
+
+			// Run
+			const result = await findGit(extensionState);
+
+			// Assert
+			expect(result).toStrictEqual({
+				path: 'git',
+				version: '1.2.3'
+			});
+		});
+
+		it('Should reject when the Git executable doesn\'t exist', async () => {
+			// Setup
+			let rejected = false;
+			mockSpawnGitVersionThrowingErrorOnce();
+
+			// Run
+			await findGit(extensionState).catch(() => rejected = true);
+
+			// Assert
+			expect(rejected).toBe(true);
+		});
+	});
+});
+
+describe('getGitExecutable', () => {
+	it('Should return the git version information', async () => {
+		// Setup
+		mockSpawnGitVersionSuccessOnce();
+
+		// Run
+		const result = await getGitExecutable('/path/to/git');
+
+		// Assert
 		expect(result).toStrictEqual({
 			path: '/path/to/git',
 			version: '1.2.3'
@@ -1424,24 +1893,44 @@ describe('getGitExecutable', () => {
 	it('Should reject when an error is thrown', async () => {
 		// Setup
 		let rejected = false;
+		mockSpawnGitVersionThrowingErrorOnce();
 
 		// Run
-		const resultPromise = getGitExecutable('/path/to/git');
-		onCallbacks['error']();
-		await resultPromise.catch(() => rejected = true);
+		await getGitExecutable('/path/to/git').catch(() => rejected = true);
 
+		// Assert
 		expect(rejected).toBe(true);
 	});
 
 	it('Should reject when the command exits with a non-zero exit code', async () => {
 		// Setup
 		let rejected = false;
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['exit'](1);
+		});
 
 		// Run
-		const resultPromise = getGitExecutable('/path/to/git');
-		onCallbacks['exit'](1);
-		await resultPromise.catch(() => rejected = true);
+		await getGitExecutable('/path/to/git').catch(() => rejected = true);
 
+		// Assert
+		expect(rejected).toBe(true);
+	});
+
+	it('Should reject when the command exits with a signal', async () => {
+		// Setup
+		let rejected = false;
+		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
+			stdoutOnCallbacks['close']();
+			stderrOnCallbacks['close']();
+			onCallbacks['exit'](null, 'signal');
+		});
+
+		// Run
+		await getGitExecutable('/path/to/git').catch(() => rejected = true);
+
+		// Assert
 		expect(rejected).toBe(true);
 	});
 });
@@ -1449,7 +1938,7 @@ describe('getGitExecutable', () => {
 describe('isGitAtLeastVersion', () => {
 	it('Should correctly determine major newer', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '1.4.6');
+		const result = isGitAtLeastVersion({ version: '2.4.6.windows.0', path: '' }, '1.4.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -1457,7 +1946,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine major older', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '3.4.6');
+		const result = isGitAtLeastVersion({ version: '2.4.6.windows.0', path: '' }, '3.4.6');
 
 		// Assert
 		expect(result).toBe(false);
@@ -1465,7 +1954,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine minor newer', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '2.3.6');
+		const result = isGitAtLeastVersion({ version: '2.4.6 (Apple Git-122.3)', path: '' }, '2.3.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -1473,7 +1962,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine minor older', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '2.5.6');
+		const result = isGitAtLeastVersion({ version: '2.4.6 (Apple Git-122.3)', path: '' }, '2.5.6');
 
 		// Assert
 		expect(result).toBe(false);
@@ -1514,6 +2003,36 @@ describe('isGitAtLeastVersion', () => {
 	it('Should correctly determine major newer if missing minor & patch versions', () => {
 		// Run
 		const result = isGitAtLeastVersion({ version: '2', path: '' }, '1');
+
+		// Assert
+		expect(result).toBe(true);
+	});
+
+	it('Should only use the valid portion of the version number to compute the result', () => {
+		// Run
+		const result1 = isGitAtLeastVersion({ version: '2.4..6-windows.0', path: '' }, '2.4.1');
+
+		// Assert
+		expect(result1).toBe(false);
+
+		// Run
+		const result2 = isGitAtLeastVersion({ version: '2.4..6-windows.0', path: '' }, '2.4.0');
+
+		// Assert
+		expect(result2).toBe(true);
+	});
+
+	it('Should return TRUE if executable version is invalid', () => {
+		// Run
+		const result = isGitAtLeastVersion({ version: 'a2.4.6', path: '' }, '1.4.6');
+
+		// Assert
+		expect(result).toBe(true);
+	});
+
+	it('Should return TRUE if version is invalid', () => {
+		// Run
+		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, 'a1.4.6');
 
 		// Assert
 		expect(result).toBe(true);

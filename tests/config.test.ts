@@ -2,7 +2,7 @@ import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
-import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RefLabelAlignment, TabIconColourTheme } from '../src/types';
+import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RefLabelAlignment, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -286,6 +286,7 @@ describe('Config', () => {
 			expect(value.remoteBranch.checkout).toBe(true);
 			expect(value.remoteBranch.delete).toBe(true);
 			expect(value.remoteBranch.fetch).toBe(true);
+			expect(value.remoteBranch.merge).toBe(true);
 			expect(value.remoteBranch.pull).toBe(true);
 			expect(value.remoteBranch.createPullRequest).toBe(true);
 			expect(value.remoteBranch.createArchive).toBe(true);
@@ -339,6 +340,7 @@ describe('Config', () => {
 			expect(value.remoteBranch.checkout).toBe(true);
 			expect(value.remoteBranch.delete).toBe(true);
 			expect(value.remoteBranch.fetch).toBe(true);
+			expect(value.remoteBranch.merge).toBe(true);
 			expect(value.remoteBranch.pull).toBe(true);
 			expect(value.remoteBranch.createPullRequest).toBe(true);
 			expect(value.remoteBranch.createArchive).toBe(true);
@@ -404,6 +406,7 @@ describe('Config', () => {
 			expect(value.remoteBranch.checkout).toBe(true);
 			expect(value.remoteBranch.delete).toBe(true);
 			expect(value.remoteBranch.fetch).toBe(false);
+			expect(value.remoteBranch.merge).toBe(true);
 			expect(value.remoteBranch.pull).toBe(true);
 			expect(value.remoteBranch.createPullRequest).toBe(true);
 			expect(value.remoteBranch.createArchive).toBe(true);
@@ -833,6 +836,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -840,6 +844,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -854,6 +860,7 @@ describe('Config', () => {
 					reinstateIndex: true
 				},
 				cherryPick: {
+					noCommit: true,
 					recordOrigin: true
 				},
 				createBranch: {
@@ -869,6 +876,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: true
+				},
+				pullBranch: {
+					noFastForward: true,
+					squash: true
 				},
 				rebase: {
 					ignoreDate: true,
@@ -903,6 +914,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -910,6 +922,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -924,6 +938,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -939,6 +954,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: false,
@@ -973,6 +992,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -980,6 +1000,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -994,6 +1016,7 @@ describe('Config', () => {
 					reinstateIndex: true
 				},
 				cherryPick: {
+					noCommit: true,
 					recordOrigin: true
 				},
 				createBranch: {
@@ -1009,6 +1032,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: true
+				},
+				pullBranch: {
+					noFastForward: true,
+					squash: true
 				},
 				rebase: {
 					ignoreDate: true,
@@ -1043,6 +1070,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -1050,6 +1078,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1064,6 +1094,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -1079,6 +1110,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: false,
@@ -1113,6 +1148,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -1120,6 +1156,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1134,6 +1172,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -1149,6 +1188,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: true,
@@ -1177,6 +1220,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.pushToRemote', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.addTag.type', 'Annotated');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.applyStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
@@ -1184,6 +1228,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.popStash.reinstateIndex', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.noFastForward', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashCommits', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.ignoreDate', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.rebase.launchInteractiveRebase', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
@@ -1198,6 +1244,7 @@ describe('Config', () => {
 					reinstateIndex: false
 				},
 				cherryPick: {
+					noCommit: false,
 					recordOrigin: false
 				},
 				createBranch: {
@@ -1213,6 +1260,10 @@ describe('Config', () => {
 				},
 				popStash: {
 					reinstateIndex: false
+				},
+				pullBranch: {
+					noFastForward: false,
+					squash: false
 				},
 				rebase: {
 					ignoreDate: true,
@@ -1567,6 +1618,68 @@ describe('Config', () => {
 		});
 	});
 
+	describe('fileTreeCompactFolders', () => {
+		it('Should return TRUE when the configuration value is TRUE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(true);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(false);
+		});
+
+		it('Should return TRUE when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(false);
+		});
+
+		it('Should return the default value (TRUE) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.fileTreeCompactFolders;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('commitDetailsViewFileTreeCompactFolders', true);
+			expect(value).toBe(true);
+		});
+	});
+
 	describe('graphColours', () => {
 		it('Should return a filtered array of colours based on the configuration value', () => {
 			// Setup
@@ -1765,6 +1878,7 @@ describe('Config', () => {
 			// Run
 			const value = config.integratedTerminalShell;
 
+			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('integratedTerminalShell', '');
 			expect(value).toBe('/path/to/shell');
 		});
@@ -2424,6 +2538,56 @@ describe('Config', () => {
 		});
 	});
 
+	describe('repoDropdownOrder', () => {
+		it('Should return RepoDropdownOrder.Name when the configuration value is "Name"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Name');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.Name);
+		});
+
+		it('Should return RepoDropdownOrder.FullPath when the configuration value is "Full Path"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Full Path');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.FullPath);
+		});
+
+		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.FullPath);
+		});
+
+		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(value).toBe(RepoDropdownOrder.FullPath);
+		});
+	});
+
 	describe('retainContextWhenHidden', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
@@ -2917,6 +3081,106 @@ describe('Config', () => {
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('showUntrackedFiles', true);
 			expect(value).toBe(true);
+		});
+	});
+
+	describe('squashMergeMessageFormat', () => {
+		it('Should return SquashMessageFormat.Default when the configuration value is "Default"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Default');
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return SquashMessageFormat.GitSquashMsg when the configuration value is "Git SQUASH_MSG"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG');
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.GitSquashMsg);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.squashMergeMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+	});
+
+	describe('squashPullMessageFormat', () => {
+		it('Should return SquashMessageFormat.Default when the configuration value is "Default"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Default');
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return SquashMessageFormat.GitSquashMsg when the configuration value is "Git SQUASH_MSG"', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG');
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.GitSquashMsg);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
+		});
+
+		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.squashPullMessageFormat;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', 'Default');
+			expect(value).toBe(SquashMessageFormat.Default);
 		});
 	});
 

@@ -98,7 +98,7 @@ export interface GitRepoSettings {
 			readonly global: string | null
 		}
 	};
-	readonly remotes: GitRepoSettingsRemote[];
+	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 }
 
 export interface GitRepoSettingsRemote {
@@ -211,9 +211,9 @@ export interface GitGraphViewConfig {
 	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
 	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
-	readonly customBranchGlobPatterns: CustomBranchGlobPattern[];
-	readonly customEmojiShortcodeMappings: CustomEmojiShortcodeMapping[];
-	readonly customPullRequestProviders: CustomPullRequestProvider[];
+	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
+	readonly customEmojiShortcodeMappings: ReadonlyArray<CustomEmojiShortcodeMapping>;
+	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly defaultFileViewType: FileViewType;
@@ -221,7 +221,8 @@ export interface GitGraphViewConfig {
 	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
-	readonly graphColours: string[];
+	readonly fileTreeCompactFolders: boolean;
+	readonly graphColours: ReadonlyArray<string>;
 	readonly graphStyle: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
 	readonly includeCommitsMentionedByReflogs: boolean;
@@ -232,6 +233,7 @@ export interface GitGraphViewConfig {
 	readonly muteMergeCommits: boolean;
 	readonly onlyFollowFirstParent: boolean;
 	readonly openRepoToHead: boolean;
+	readonly repoDropdownOrder: RepoDropdownOrder;
 	readonly showCurrentBranchByDefault: boolean;
 	readonly showTags: boolean;
 	readonly tagLabelsOnRight: boolean;
@@ -293,6 +295,7 @@ export interface ContextMenuActionsVisibility {
 		readonly checkout: boolean;
 		readonly delete: boolean;
 		readonly fetch: boolean;
+		readonly merge: boolean;
 		readonly pull: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
@@ -367,6 +370,7 @@ export interface DialogDefaults {
 		readonly reinstateIndex: boolean
 	};
 	readonly cherryPick: {
+		readonly noCommit: boolean,
 		readonly recordOrigin: boolean
 	};
 	readonly createBranch: {
@@ -382,6 +386,10 @@ export interface DialogDefaults {
 	};
 	readonly popStash: {
 		readonly reinstateIndex: boolean
+	};
+	readonly pullBranch: {
+		readonly noFastForward: boolean,
+		readonly squash: boolean
 	};
 	readonly rebase: {
 		readonly ignoreDate: boolean,
@@ -434,10 +442,20 @@ export const enum RepoCommitOrdering {
 	Topological = 'topo'
 }
 
+export const enum RepoDropdownOrder {
+	FullPath,
+	Name
+}
+
 export const enum ShowTags {
 	Default,
 	Show,
 	Hide
+}
+
+export const enum SquashMessageFormat {
+	Default,
+	GitSquashMsg
 }
 
 export const enum TabIconColourTheme {
@@ -462,11 +480,6 @@ export interface ResponseWithErrorInfo extends BaseMessage {
 
 export interface ResponseWithMultiErrorInfo extends BaseMessage {
 	readonly errors: ErrorInfo[];
-}
-
-export const enum ActionOn {
-	Branch = 'Branch',
-	Commit = 'Commit'
 }
 
 export type ErrorInfo = string | null; // null => no error, otherwise => error message
@@ -522,6 +535,8 @@ export interface RequestCheckoutBranch extends RepoRequest {
 	readonly pullAfterwards: {
 		readonly branchName: string;
 		readonly remote: string;
+		readonly createNewCommit: boolean;
+		readonly squash: boolean;
 	} | null; // NULL => Don't pull after checking out
 }
 export interface ResponseCheckoutBranch extends ResponseWithMultiErrorInfo {
@@ -593,7 +608,7 @@ export interface ResponseCompareCommits extends ResponseWithErrorInfo {
 	readonly command: 'compareCommits';
 	readonly commitHash: string;
 	readonly compareWithHash: string;
-	readonly fileChanges: GitFileChange[];
+	readonly fileChanges: ReadonlyArray<GitFileChange>;
 	readonly codeReview: CodeReview | null;
 	readonly refresh: boolean;
 }
@@ -652,7 +667,7 @@ export interface RequestDeleteBranch extends RepoRequest {
 	readonly command: 'deleteBranch';
 	readonly branchName: string;
 	readonly forceDelete: boolean;
-	readonly deleteOnRemotes: string[];
+	readonly deleteOnRemotes: ReadonlyArray<string>;
 }
 export interface ResponseDeleteBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'deleteBranch';
@@ -783,14 +798,14 @@ export interface RequestLoadRepoInfo extends RepoRequest {
 	readonly command: 'loadRepoInfo';
 	readonly refreshId: number;
 	readonly showRemoteBranches: boolean;
-	readonly hideRemotes: string[];
+	readonly hideRemotes: ReadonlyArray<string>;
 }
 export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 	readonly command: 'loadRepoInfo';
 	readonly refreshId: number;
-	readonly branches: string[];
+	readonly branches: ReadonlyArray<string>;
 	readonly head: string | null;
-	readonly remotes: string[];
+	readonly remotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
 	readonly isRepo: boolean;
 }
@@ -798,15 +813,15 @@ export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 export interface RequestLoadCommits extends RepoRequest {
 	readonly command: 'loadCommits';
 	readonly refreshId: number;
-	readonly branches: string[] | null; // null => Show All
+	readonly branches: ReadonlyArray<string> | null; // null => Show All
 	readonly maxCommits: number;
 	readonly showTags: boolean;
 	readonly showRemoteBranches: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly onlyFollowFirstParent: boolean;
 	readonly commitOrdering: CommitOrdering;
-	readonly remotes: string[];
-	readonly hideRemotes: string[];
+	readonly remotes: ReadonlyArray<string>;
+	readonly hideRemotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
@@ -829,17 +844,22 @@ export interface ResponseLoadRepos extends BaseMessage {
 	readonly loadViewTo: LoadGitGraphViewTo;
 }
 
+export const enum MergeActionOn {
+	Branch = 'Branch',
+	RemoteTrackingBranch = 'Remote-tracking Branch',
+	Commit = 'Commit'
+}
 export interface RequestMerge extends RepoRequest {
 	readonly command: 'merge';
 	readonly obj: string;
-	readonly actionOn: ActionOn;
+	readonly actionOn: MergeActionOn;
 	readonly createNewCommit: boolean;
 	readonly squash: boolean;
 	readonly noCommit: boolean;
 }
 export interface ResponseMerge extends ResponseWithErrorInfo {
 	readonly command: 'merge';
-	readonly actionOn: ActionOn;
+	readonly actionOn: MergeActionOn;
 }
 
 export interface RequestOpenExtensionSettings extends BaseMessage {
@@ -855,6 +875,13 @@ export interface RequestOpenFile extends RepoRequest {
 }
 export interface ResponseOpenFile extends ResponseWithErrorInfo {
 	readonly command: 'openFile';
+}
+
+export interface RequestOpenTerminal extends RepoRequest {
+	readonly command: 'openTerminal';
+}
+export interface ResponseOpenTerminal extends ResponseWithErrorInfo {
+	readonly command: 'openTerminal';
 }
 
 export interface RequestPopStash extends RepoRequest {
@@ -914,16 +941,20 @@ export interface ResponsePushTag extends ResponseWithErrorInfo {
 	readonly command: 'pushTag';
 }
 
+export const enum RebaseActionOn {
+	Branch = 'Branch',
+	Commit = 'Commit'
+}
 export interface RequestRebase extends RepoRequest {
 	readonly command: 'rebase';
 	readonly obj: string;
-	readonly actionOn: ActionOn;
+	readonly actionOn: RebaseActionOn;
 	readonly ignoreDate: boolean;
 	readonly interactive: boolean;
 }
 export interface ResponseRebase extends ResponseWithErrorInfo {
 	readonly command: 'rebase';
-	readonly actionOn: ActionOn;
+	readonly actionOn: RebaseActionOn;
 	readonly interactive: boolean;
 }
 
@@ -1076,6 +1107,7 @@ export type RequestMessage =
 	| RequestMerge
 	| RequestOpenExtensionSettings
 	| RequestOpenFile
+	| RequestOpenTerminal
 	| RequestPopStash
 	| RequestPruneRemote
 	| RequestPullBranch
@@ -1131,6 +1163,7 @@ export type ResponseMessage =
 	| ResponseMerge
 	| ResponseOpenExtensionSettings
 	| ResponseOpenFile
+	| ResponseOpenTerminal
 	| ResponsePopStash
 	| ResponsePruneRemote
 	| ResponsePullBranch

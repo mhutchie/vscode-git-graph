@@ -5,7 +5,7 @@ interface DropdownOption {
 }
 
 class Dropdown {
-	private options: DropdownOption[] = [];
+	private options: ReadonlyArray<DropdownOption> = [];
 	private optionsSelected: boolean[] = [];
 	private lastSelected: number = 0;
 	private numSelected: number = 0;
@@ -80,7 +80,7 @@ class Dropdown {
 		this.filterInput.addEventListener('keyup', () => this.filter());
 	}
 
-	public setOptions(options: DropdownOption[], optionsSelected: string[]) {
+	public setOptions(options: ReadonlyArray<DropdownOption>, optionsSelected: string[]) {
 		this.options = options;
 		this.optionsSelected = [];
 		this.numSelected = 0;

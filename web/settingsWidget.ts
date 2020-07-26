@@ -222,7 +222,7 @@ class SettingsWidget {
 				const elem = <HTMLInputElement | null>document.getElementById('settingsShowTagsCheckbox');
 				if (elem === null) return;
 				this.showTags = elem.checked ? GG.ShowTags.Show : GG.ShowTags.Hide;
-				this.view.saveShowTagsConfig(this.repo, this.showTags);
+				this.view.saveRepoStateValue(this.repo, 'showTags', this.showTags);
 				this.view.refresh(true);
 			});
 
@@ -233,7 +233,7 @@ class SettingsWidget {
 				const elem = <HTMLInputElement | null>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
 				if (elem === null) return;
 				this.includeCommitsMentionedByReflogs = elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled;
-				this.view.saveIncludeCommitsMentionedByReflogsConfig(this.repo, this.includeCommitsMentionedByReflogs);
+				this.view.saveRepoStateValue(this.repo, 'includeCommitsMentionedByReflogs', this.includeCommitsMentionedByReflogs);
 				this.view.refresh(true);
 			});
 
@@ -244,7 +244,7 @@ class SettingsWidget {
 				const elem = <HTMLInputElement | null>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
 				if (elem === null) return;
 				this.onlyFollowFirstParent = elem.checked ? GG.OnlyFollowFirstParent.Enabled : GG.OnlyFollowFirstParent.Disabled;
-				this.view.saveOnlyFollowFirstParentConfig(this.repo, this.onlyFollowFirstParent);
+				this.view.saveRepoStateValue(this.repo, 'onlyFollowFirstParent', this.onlyFollowFirstParent);
 				this.view.refresh(true);
 			});
 
@@ -273,7 +273,7 @@ class SettingsWidget {
 					if (this.settings === null) return;
 					const userName = this.settings.user.name, userEmail = this.settings.user.email;
 					const isGlobal = userName.local === null && userEmail.local === null;
-					dialog.showConfirmation('Are you sure you want to remove the <b>' + (isGlobal ? 'globally' : 'locally') + ' configured</b> user name and email, which are used by Git to record the Author and Committer of commit objects?', () => {
+					dialog.showConfirmation('Are you sure you want to remove the <b>' + (isGlobal ? 'globally' : 'locally') + ' configured</b> user name and email, which are used by Git to record the Author and Committer of commit objects?', 'Yes, remove', () => {
 						runAction({
 							command: 'deleteUserDetails',
 							repo: this.repo!,
@@ -308,7 +308,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, delete', () => {
 					runAction({ command: 'deleteRemote', repo: this.repo!, name: remote.name }, 'Deleting Remote');
 				}, { type: TargetType.Repo });
 			});
@@ -317,7 +317,7 @@ class SettingsWidget {
 			});
 			addListenerToClass('pruneRemote', 'click', (e) => {
 				let remote = this.getRemoteForBtnEvent(e);
-				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', () => {
+				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, prune', () => {
 					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
 				}, { type: TargetType.Repo });
 			});
@@ -333,7 +333,7 @@ class SettingsWidget {
 				} else {
 					this.hideRemotes.splice(this.hideRemotes.indexOf(remote), 1);
 				}
-				this.view.saveHiddenRemotes(this.repo, this.hideRemotes);
+				this.view.saveRepoStateValue(this.repo, 'hideRemotes', this.hideRemotes);
 				this.view.refresh(true);
 			});
 
@@ -350,7 +350,7 @@ class SettingsWidget {
 
 			if (this.issueLinkingConfig !== null || globalState.issueLinkingConfig !== null) {
 				document.getElementById('removeIssueLinking')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', () => {
+					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', 'Yes, remove', () => {
 						this.setIssueLinkingConfig(null, this.issueLinkingConfig === null);
 					}, null);
 				});
@@ -394,7 +394,7 @@ class SettingsWidget {
 
 			if (pullRequestConfig !== null) {
 				document.getElementById('removePullRequestIntegration')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove the configured "Pull Request Creation" Integration?', () => {
+					dialog.showConfirmation('Are you sure you want to remove the configured "Pull Request Creation" Integration?', 'Yes, remove', () => {
 						this.setPullRequestConfig(null);
 					}, null);
 				});
@@ -423,12 +423,12 @@ class SettingsWidget {
 		if (global) {
 			if (this.issueLinkingConfig !== null) {
 				this.issueLinkingConfig = null;
-				this.view.saveIssueLinkingConfig(this.repo, null);
+				this.view.saveRepoStateValue(this.repo, 'issueLinkingConfig', null);
 			}
 			this.view.updateGlobalViewState('issueLinkingConfig', config);
 		} else {
 			this.issueLinkingConfig = config;
-			this.view.saveIssueLinkingConfig(this.repo, config);
+			this.view.saveRepoStateValue(this.repo, 'issueLinkingConfig', config);
 		}
 
 		this.view.refresh(true);
@@ -438,7 +438,7 @@ class SettingsWidget {
 	private setPullRequestConfig(config: GG.PullRequestConfig | null) {
 		if (this.repo === null) return;
 		this.pullRequestConfig = config;
-		this.view.savePullRequestConfig(this.repo, config);
+		this.view.saveRepoStateValue(this.repo, 'pullRequestConfig', config);
 		this.render();
 	}
 
@@ -518,7 +518,7 @@ class SettingsWidget {
 			}
 			defaultProvider = providerOptions.find((provider) => provider.name === config.custom.name)!.value;
 		}
-		providerOptions.sort((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0);
+		providerOptions.sort((a, b) => a.name.localeCompare(b.name));
 
 		let sourceRemoteOptions = this.settings.remotes.map((remote, index) => ({ name: remote.name, value: index.toString() }));
 		let destRemoteOptions = sourceRemoteOptions.map((option) => option);

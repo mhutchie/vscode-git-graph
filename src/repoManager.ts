@@ -9,9 +9,9 @@ import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
 
 export interface RepoChangeEvent {
-	repos: GitRepoSet;
-	numRepos: number;
-	loadRepo: string | null;
+	readonly repos: GitRepoSet;
+	readonly numRepos: number;
+	readonly loadRepo: string | null;
 }
 
 /**
@@ -24,12 +24,12 @@ export class RepoManager implements vscode.Disposable {
 	private repos: GitRepoSet;
 	private ignoredRepos: string[];
 	private maxDepthOfRepoSearch: number;
-	private folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
-	private repoEventEmitter: EventEmitter<RepoChangeEvent>;
+	private readonly folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
+	private readonly repoEventEmitter: EventEmitter<RepoChangeEvent>;
 	private disposables: vscode.Disposable[] = [];
 
-	private createEventQueue: string[] = [];
-	private changeEventQueue: string[] = [];
+	private readonly createEventQueue: string[] = [];
+	private readonly changeEventQueue: string[] = [];
 	private processCreateEventsTimeout: NodeJS.Timer | null = null;
 	private processChangeEventsTimeout: NodeJS.Timer | null = null;
 	private processingCreateEvents: boolean = false;
@@ -192,7 +192,7 @@ export class RepoManager implements vscode.Disposable {
 	 * @returns The set of repositories.
 	 */
 	public getRepos() {
-		let repoPaths = Object.keys(this.repos).sort(), repos: GitRepoSet = {};
+		let repoPaths = Object.keys(this.repos).sort((a, b) => a.localeCompare(b)), repos: GitRepoSet = {};
 		for (let i = 0; i < repoPaths.length; i++) {
 			repos[repoPaths[i]] = this.repos[repoPaths[i]];
 		}

@@ -15,6 +15,8 @@ import {
 	GitResetMode,
 	GraphStyle,
 	RefLabelAlignment,
+	RepoDropdownOrder,
+	SquashMessageFormat,
 	TabIconColourTheme
 } from './types';
 
@@ -88,7 +90,7 @@ class Config {
 		let config = {
 			branch: { checkout: true, rename: true, delete: true, merge: true, rebase: true, push: true, createPullRequest: true, createArchive: true, copyName: true },
 			commit: { addTag: true, createBranch: true, checkout: true, cherrypick: true, revert: true, drop: true, merge: true, rebase: true, reset: true, copyHash: true, copySubject: true },
-			remoteBranch: { checkout: true, delete: true, fetch: true, pull: true, createPullRequest: true, createArchive: true, copyName: true },
+			remoteBranch: { checkout: true, delete: true, fetch: true, merge: true, pull: true, createPullRequest: true, createArchive: true, copyName: true },
 			stash: { apply: true, createBranch: true, pop: true, drop: true, copyName: true, copyHash: true },
 			tag: { viewDetails: true, delete: true, push: true, createArchive: true, copyName: true },
 			uncommittedChanges: { stash: true, reset: true, clean: true, openSourceControlView: true }
@@ -197,6 +199,7 @@ class Config {
 				reinstateIndex: !!this.config.get('dialog.applyStash.reinstateIndex', false)
 			},
 			cherryPick: {
+				noCommit: !!this.config.get('dialog.cherryPick.noCommit', false),
 				recordOrigin: !!this.config.get('dialog.cherryPick.recordOrigin', false)
 			},
 			createBranch: {
@@ -212,6 +215,10 @@ class Config {
 			},
 			popStash: {
 				reinstateIndex: !!this.config.get('dialog.popStash.reinstateIndex', false)
+			},
+			pullBranch: {
+				noFastForward: !!this.config.get('dialog.pullBranch.noFastForward', false),
+				squash: !!this.config.get('dialog.pullBranch.squashCommits', false)
 			},
 			rebase: {
 				ignoreDate: !!this.config.get('dialog.rebase.ignoreDate', true),
@@ -255,6 +262,13 @@ class Config {
 	 */
 	get fileEncoding() {
 		return this.config.get<string>('fileEncoding', 'utf8');
+	}
+
+	/**
+	 * Get the value of the `git-graph.commitDetailsViewFileTreeCompactFolders` Extension Setting.
+	 */
+	get fileTreeCompactFolders() {
+		return !!this.config.get('commitDetailsViewFileTreeCompactFolders', true);
 	}
 
 	/**
@@ -376,6 +390,15 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repositoryDropdownOrder` Extension Setting.
+	 */
+	get repoDropdownOrder(): RepoDropdownOrder {
+		return this.config.get<string>('repositoryDropdownOrder', 'Full Path') === 'Name'
+			? RepoDropdownOrder.Name
+			: RepoDropdownOrder.FullPath;
+	}
+
+	/**
 	 * Get the value of the `git-graph.retainContextWhenHidden` Extension Setting.
 	 */
 	get retainContextWhenHidden() {
@@ -431,6 +454,24 @@ class Config {
 		return !!this.config.get('showUntrackedFiles', true);
 	}
 
+	/**
+	 * Get the value of the `git-graph.dialog.merge.squashMessageFormat` Extension Setting.
+	 */
+	get squashMergeMessageFormat() {
+		return this.config.get<string>('dialog.merge.squashMessageFormat', 'Default') === 'Git SQUASH_MSG'
+			? SquashMessageFormat.GitSquashMsg
+			: SquashMessageFormat.Default;
+	}
+
+	/**
+	 * Get the value of the `git-graph.dialog.pullBranch.squashMessageFormat` Extension Setting.
+	 */
+	get squashPullMessageFormat() {
+		return this.config.get<string>('dialog.pullBranch.squashMessageFormat', 'Default') === 'Git SQUASH_MSG'
+			? SquashMessageFormat.GitSquashMsg
+			: SquashMessageFormat.Default;
+	}
+	
 	/**
 	 * Get the value of the `git-graph.tabIconColourTheme` Extension Setting.
 	 */

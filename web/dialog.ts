@@ -34,7 +34,7 @@ interface DialogTextRefInput {
 interface DialogSelectInput {
 	readonly type: DialogInputType.Select;
 	readonly name: string;
-	readonly options: DialogSelectInputOption[];
+	readonly options: ReadonlyArray<DialogSelectInputOption>;
 	readonly default: string;
 	readonly info?: string;
 }
@@ -42,7 +42,7 @@ interface DialogSelectInput {
 interface DialogRadioInput {
 	readonly type: DialogInputType.Radio;
 	readonly name: string;
-	readonly options: DialogRadioInputOption[];
+	readonly options: ReadonlyArray<DialogRadioInputOption>;
 	readonly default: string;
 }
 
@@ -78,12 +78,12 @@ class Dialog {
 	private target: DialogTarget | null = null;
 	private actioned: (() => void) | null = null;
 	private type: DialogType | null = null;
-	private customSelects: CustomSelect[] = [];
+	private customSelects: ReadonlyArray<CustomSelect> = [];
 
-	public showConfirmation(message: string, confirmed: () => void, target: DialogTarget | null) {
-		this.show(DialogType.Form, message, 'Yes', 'No', () => {
+	public showConfirmation(message: string, actionName: string, actioned: () => void, target: DialogTarget | null) {
+		this.show(DialogType.Form, message, actionName, 'Cancel', () => {
 			this.close();
-			confirmed();
+			actioned();
 		}, null, target);
 	}
 
@@ -109,13 +109,13 @@ class Dialog {
 		], actionName, (values) => actioned(<boolean>values[0]), target);
 	}
 
-	public showSelect(message: string, defaultValue: string, options: DialogSelectInputOption[], actionName: string, actioned: (value: string) => void, target: DialogTarget | null) {
+	public showSelect(message: string, defaultValue: string, options: ReadonlyArray<DialogSelectInputOption>, actionName: string, actioned: (value: string) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.Select, name: '', options: options, default: defaultValue }
 		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
-	public showForm(message: string, inputs: DialogInput[], actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
+	public showForm(message: string, inputs: ReadonlyArray<DialogInput>, actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
 		const multiCheckbox = multiElement && inputs.every((input) => input.type === DialogInputType.Checkbox);
 		const infoColRequired = inputs.some((input) => input.type !== DialogInputType.Checkbox && input.type !== DialogInputType.Radio && input.info);

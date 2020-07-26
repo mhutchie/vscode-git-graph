@@ -7,8 +7,8 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
-import { ActionOn, CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash } from './types';
-import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, realpath, runGitCommandInNewTerminal, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
+import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -119,7 +119,7 @@ export class DataSource implements vscode.Disposable {
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The repositories information.
 	 */
-	public getRepoInfo(repo: string, showRemoteBranches: boolean, hideRemotes: string[]): Promise<GitRepoInfo> {
+	public getRepoInfo(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>): Promise<GitRepoInfo> {
 		return Promise.all([
 			this.getBranches(repo, showRemoteBranches, hideRemotes),
 			this.getRemotes(repo),
@@ -146,7 +146,7 @@ export class DataSource implements vscode.Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns The commits in the repository.
 	 */
-	public getCommits(repo: string, branches: string[] | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: string[], hideRemotes: string[], stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
 			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
@@ -781,18 +781,16 @@ export class DataSource implements vscode.Disposable {
 	 * @param squash Is `--squash` enabled if a merge is required.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public async pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
+	public pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
 		let args = ['pull', remote, branchName];
 		if (squash) args.push('--squash');
 		else if (createNewCommit) args.push('--no-ff');
 
-		let pullStatus = await this.runGitCommand(args, repo);
-		if (pullStatus === null && squash) {
-			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge branch \'' + remote + '/' + branchName + '\''], repo);
-			}
-		}
-		return pullStatus;
+		return this.runGitCommand(args, repo).then((pullStatus) => {
+			return pullStatus === null && squash
+				? this.commitSquashIfStagedChangesExist(repo, remote + '/' + branchName, MergeActionOn.Branch, getConfig().squashPullMessageFormat)
+				: pullStatus;
+		});
 	}
 
 	/**
@@ -813,13 +811,13 @@ export class DataSource implements vscode.Disposable {
 	 * Merge a branch or commit into the current branch.
 	 * @param repo The path of the repository.
 	 * @param obj The object to be merged into the current branch.
-	 * @param actionOn Is the merge on a branch or commit.
+	 * @param actionOn Is the merge on a branch, remote-tracking branch or commit.
 	 * @param createNewCommit Is `--no-ff` enabled.
 	 * @param squash Is `--squash` enabled.
 	 * @param noCommit Is `--no-commit` enabled.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public async merge(repo: string, obj: string, actionOn: ActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
+	public merge(repo: string, obj: string, actionOn: MergeActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
 		let args = ['merge', obj];
 
 		if (squash) args.push('--squash');
@@ -827,13 +825,11 @@ export class DataSource implements vscode.Disposable {
 
 		if (noCommit) args.push('--no-commit');
 
-		let mergeStatus = await this.runGitCommand(args, repo);
-		if (mergeStatus === null && squash && !noCommit) {
-			if (await this.areStagedChanges(repo)) {
-				return this.runGitCommand(['commit', '-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\''], repo);
-			}
-		}
-		return mergeStatus;
+		return this.runGitCommand(args, repo).then((mergeStatus) => {
+			return mergeStatus === null && squash && !noCommit
+				? this.commitSquashIfStagedChangesExist(repo, obj, actionOn, getConfig().squashMergeMessageFormat)
+				: mergeStatus;
+		});
 	}
 
 	/**
@@ -845,16 +841,13 @@ export class DataSource implements vscode.Disposable {
 	 * @param interactive Should the rebase be performed interactively.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public rebase(repo: string, obj: string, actionOn: ActionOn, ignoreDate: boolean, interactive: boolean) {
+	public rebase(repo: string, obj: string, actionOn: RebaseActionOn, ignoreDate: boolean, interactive: boolean) {
 		if (interactive) {
-			return new Promise<ErrorInfo>(resolve => {
-				if (this.gitExecutable === null) return resolve(UNABLE_TO_FIND_GIT_MSG);
-
-				runGitCommandInNewTerminal(repo, this.gitExecutable.path,
-					'rebase --interactive ' + (actionOn === ActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
-					'Git Rebase on "' + (actionOn === ActionOn.Branch ? obj : abbrevCommit(obj)) + '"');
-				setTimeout(() => resolve(null), 1000);
-			});
+			return this.openGitTerminal(
+				repo,
+				'rebase --interactive ' + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
+				'Rebase on "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"'
+			);
 		} else {
 			let args = ['rebase', obj];
 			if (ignoreDate) args.push('--ignore-date');
@@ -1057,6 +1050,27 @@ export class DataSource implements vscode.Disposable {
 	}
 
 
+	/* Public Utils */
+
+	/**
+	 * Open a new terminal, set up the Git executable, and optionally run a command.
+	 * @param repo The path of the repository.
+	 * @param command The command to run.
+	 * @param name The name for the terminal.
+	 * @returns The ErrorInfo from opening the terminal.
+	 */
+	public openGitTerminal(repo: string, command: string | null, name: string) {
+		return new Promise<ErrorInfo>((resolve) => {
+			if (this.gitExecutable === null) {
+				resolve(UNABLE_TO_FIND_GIT_MSG);
+			} else {
+				openGitTerminal(repo, this.gitExecutable.path, command, name);
+				setTimeout(() => resolve(null), 1000);
+			}
+		});
+	}
+
+
 	/* Private Data Providers */
 
 	/**
@@ -1066,7 +1080,7 @@ export class DataSource implements vscode.Disposable {
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The branch data.
 	 */
-	private getBranches(repo: string, showRemoteBranches: boolean, hideRemotes: string[]) {
+	private getBranches(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>) {
 		let args = ['branch'];
 		if (showRemoteBranches) args.push('-a');
 		args.push('--no-color');
@@ -1203,7 +1217,7 @@ export class DataSource implements vscode.Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns An array of commits.
 	 */
-	private getLog(repo: string, branches: string[] | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: string[], hideRemotes: string[], stashes: ReadonlyArray<GitStash>) {
+	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (onlyFollowFirstParent) args.push('--first-parent');
 		if (branches !== null) {
@@ -1252,7 +1266,7 @@ export class DataSource implements vscode.Disposable {
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The references data.
 	 */
-	private getRefs(repo: string, showRemoteBranches: boolean, hideRemotes: string[]) {
+	private getRefs(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>) {
 		let args = ['show-ref'];
 		if (!showRemoteBranches) args.push('--heads', '--tags');
 		args.push('-d', '--head');
@@ -1372,6 +1386,30 @@ export class DataSource implements vscode.Disposable {
 	/* Private Utils */
 
 	/**
+	 * Check if there are staged changes that resulted from a squash merge, and if so, commit them.
+	 * @param repo The path of the repository.
+	 * @param obj The object being squash merged into the current branch.
+	 * @param actionOn Is the merge on a branch, remote-tracking branch or commit.
+	 * @param squashMessageFormat The format to be used in the commit message of the squash.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	private commitSquashIfStagedChangesExist(repo: string, obj: string, actionOn: MergeActionOn, squashMessageFormat: SquashMessageFormat): Promise<ErrorInfo> {
+		return this.areStagedChanges(repo).then((changes) => {
+			if (changes) {
+				let args = ['commit'];
+				if (squashMessageFormat === SquashMessageFormat.Default) {
+					args.push('-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\'');
+				} else {
+					args.push('--no-edit');
+				}
+				return this.runGitCommand(args, repo);
+			} else {
+				return null;
+			}
+		});
+	}
+
+	/**
 	 * Get the diff between two revisions.
 	 * @param repo The path of the repository.
 	 * @param fromHash The revision the diff is from.
@@ -1425,37 +1463,10 @@ export class DataSource implements vscode.Disposable {
 		return new Promise<T>((resolve, reject) => {
 			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
 
-			const cmd = cp.spawn(this.gitExecutable.path, args, {
+			resolveSpawnOutput(cp.spawn(this.gitExecutable.path, args, {
 				cwd: repo,
 				env: Object.assign({}, process.env, this.askpassEnv)
-			});
-
-			Promise.all([
-				new Promise<{ code: number, error: Error | null }>((resolve) => {
-					// status promise
-					let resolved = false;
-					cmd.on('error', (error) => {
-						resolve({ code: -1, error: error });
-						resolved = true;
-					});
-					cmd.on('exit', (code) => {
-						if (resolved) return;
-						resolve({ code: code, error: null });
-					});
-				}),
-				new Promise<Buffer>((resolve) => {
-					// stdout promise
-					let buffers: Buffer[] = [];
-					cmd.stdout.on('data', (b: Buffer) => { buffers.push(b); });
-					cmd.stdout.on('close', () => resolve(Buffer.concat(buffers)));
-				}),
-				new Promise<string>((resolve) => {
-					// stderr promise
-					let stderr = '';
-					cmd.stderr.on('data', (d) => { stderr += d; });
-					cmd.stderr.on('close', () => resolve(stderr));
-				})
-			]).then(values => {
+			})).then((values) => {
 				let status = values[0], stdout = values[1];
 				if (status.code === 0) {
 					resolve(resolveValue(stdout));

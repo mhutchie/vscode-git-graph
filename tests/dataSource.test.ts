@@ -41,6 +41,7 @@ describe('DataSource', () => {
 	let spyOnSpawn: jest.SpyInstance;
 	beforeEach(() => {
 		dataSource = new DataSource({ path: '/path/to/git', version: '2.25.0' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+		jest.clearAllMocks();
 		spyOnSpawn = jest.spyOn(cp, 'spawn');
 	});
 	afterEach(() => {
@@ -4147,6 +4148,8 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe(null);
+			expect(workspaceConfiguration.get).toBeCalledTimes(1);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', expect.anything());
 			expect(spyOnSpawn).toBeCalledTimes(3);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
@@ -4168,7 +4171,7 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should pull a remote branch into the current branch (squash and no staged changes)', async () => {
+		it('Should pull a remote branch into the current branch (squash and when diff-index fails)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitThrowingErrorOnce();
@@ -4311,6 +4314,8 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe(null);
+			expect(workspaceConfiguration.get).toBeCalledTimes(1);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', expect.anything());
 			expect(spyOnSpawn).toBeCalledTimes(3);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));

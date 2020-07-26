@@ -73,6 +73,7 @@ A summary of the Git Graph extension settings are:
 
 * **Auto Center Commit Details View**: Automatically center the commit details view when it is opened.
 * **Combine Local and Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
+* **Commit Details View File Tree Compact Folders**: Render the File Tree in the Commit Details / Comparison View in a compacted form, such that folders with a single child folder are compressed into a single combined folder element. Default: true (enabled)
 * **Commit Details View Location**: Specifies where the Commit Details View is rendered in the Git Graph view. Default: Inline (with graph)
 * **Commit Ordering**: Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option. Default: date
 * **Context Menu Actions Visibility**: Customise which context menu actions are visible. For more information, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
@@ -83,7 +84,7 @@ A summary of the Git Graph extension settings are:
 * **Date Type**: Specifies the date type to be displayed in the "Date" column on the Git Graph View, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
 * **Default File View Type**: Sets the default type of File View (Tree or List) used in the Commit Details / Comparison Views. This can be overridden per repository using the controls on the right side of the Commit Details / Comparison Views.
-* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Merge, Pop Stash, Rebase, Reset, and Stash Uncommitted Changes
+* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Merge, Pop Stash, Pull Branch, Rebase, Reset, and Stash Uncommitted Changes
 * **Enhanced Accessibility**: Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default. Default: false (disabled)
 * **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
 * **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
@@ -92,7 +93,7 @@ A summary of the Git Graph extension settings are:
 * **Graph Style**: Specifies the style of the graph.
 * **Include Commits Mentioned By Reflogs**: Controls whether commits only mentioned by reflogs are included in the Git Graph View. This can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: false (disabled)
 * **Initial Load Commits**: Specifies the number of commits to initially load.
-* **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when opened by Git Graph during Interactive Rebase's.
+* **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when it is opened by Git Graph.
 * **Load More Commits**: Specifies the number of additional commits to load when the "Load More Commits" button is pressed, or more commits are automatically loaded.
 * **Load More Commits Automatically**: When the view has been scrolled to the bottom, automatically load more commits if they exist (instead of having to press the "Load More Commits" button). Default: true (enabled)
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
@@ -103,6 +104,7 @@ A summary of the Git Graph extension settings are:
 * **Open Repo to HEAD**: When opening or switching repositories in the Git Graph View, automatically scroll the view to be centered on the commit referenced by HEAD. Default: false (disabled)
 * **Open to the Repo of the Active Text Editor Document**: Open the Git Graph View to the repository containing the active Text Editor document. Default: false (disabled)
 * **Reference Label Alignment**: Specifies how branch and tag reference labels are aligned for each commit.
+* **Repository Dropdown Order**: Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace). Default: Full Path
 * **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead. Default: true (enabled)
 * **Show Commits Only Referenced By Tags**: Show commits that are only referenced by tags in Git Graph. Default: true (enabled)
 * **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)

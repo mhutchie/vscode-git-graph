@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { Event } from './event';
 import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowTags } from './types';
-import { getPathFromStr, GitExecutable } from './utils';
+import { GitExecutable, getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';

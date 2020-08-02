@@ -15,7 +15,7 @@ import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 
 let extensionContext = vscode.mocks.extensionContext;
 let terminal = vscode.mocks.terminal;

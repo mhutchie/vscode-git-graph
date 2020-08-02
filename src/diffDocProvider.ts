@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
 import { GitFileStatus } from './types';
-import { getPathFromStr, showErrorMessage, UNCOMMITTED } from './utils';
+import { UNCOMMITTED, getPathFromStr, showErrorMessage } from './utils';
 
 export const enum DiffSide {
 	Old,

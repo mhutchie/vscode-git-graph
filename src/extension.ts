@@ -10,7 +10,7 @@ import { onStartUp } from './life-cycle/startup';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { findGit, getGitExecutable, GitExecutable, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, findGit, getGitExecutable, showErrorMessage, showInformationMessage } from './utils';
 
 /**
  * Activate Git Graph.

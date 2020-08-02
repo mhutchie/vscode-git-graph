@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, getRepoName, openExtensionSettings, openFile, showErrorMessage, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, getRepoName, openExtensionSettings, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
 
 /**
  * Manages the Git Graph View.

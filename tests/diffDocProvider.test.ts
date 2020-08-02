@@ -6,7 +6,7 @@ jest.mock('../src/logger');
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { decodeDiffDocUri, DiffDocProvider, DiffSide, encodeDiffDocUri } from '../src/diffDocProvider';
+import { DiffDocProvider, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from '../src/diffDocProvider';
 import { EventEmitter } from '../src/event';
 import { Logger } from '../src/logger';
 import { GitFileStatus } from '../src/types';

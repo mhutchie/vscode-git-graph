@@ -7,7 +7,7 @@ import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
 
 /**
  * Manages the registration and execution of Git Graph Commands.

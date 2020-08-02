@@ -8,7 +8,7 @@ import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
-import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;

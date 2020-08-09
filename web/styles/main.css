@@ -28,6 +28,9 @@ body #view{
 	overflow-x:hidden;
 	overflow-y:auto;
 }
+body #view:focus{
+	outline:none;
+}
 
 
 /* Content */

@@ -628,7 +628,7 @@ export class GitGraphView implements vscode.Disposable {
 			</body>`;
 		} else if (numRepos > 0) {
 			body = `<body>
-			<div id="view">
+			<div id="view" tabindex="-1">
 				<div id="controls">
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoDropdown" class="dropdown"></div></span>
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchDropdown" class="dropdown"></div></span>

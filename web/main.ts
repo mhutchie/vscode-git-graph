@@ -54,7 +54,6 @@ class GitGraphView {
 		this.gitRepos = initialState.repos;
 		this.config = initialState.config;
 		this.maxCommits = this.config.initialLoadCommits;
-		this.graph = new Graph('commitGraph', viewElem, this.config.graph, this.config.mute);
 		this.viewElem = viewElem;
 		this.currentRepoRefreshState = {
 			inProgress: false,
@@ -69,6 +68,10 @@ class GitGraphView {
 		this.tableElem = document.getElementById('commitTable')!;
 		this.footerElem = document.getElementById('footer')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
+
+		viewElem.focus();
+
+		this.graph = new Graph('commitGraph', viewElem, this.config.graph, this.config.mute);
 
 		this.repoDropdown = new Dropdown('repoDropdown', true, false, 'Repos', (values) => {
 			this.loadRepo(values[0]);

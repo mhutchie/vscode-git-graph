@@ -603,6 +603,7 @@ export class GitGraphView implements vscode.Disposable {
 				onRepoLoadShowCheckedOutBranch: config.onRepoLoadShowCheckedOutBranch,
 				referenceLabels: config.referenceLabels,
 				repoDropdownOrder: config.repoDropdownOrder,
+				showRemoteBranches: config.showRemoteBranches,
 				showTags: config.showTags
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),

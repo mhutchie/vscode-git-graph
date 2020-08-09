@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
+import { getConfig } from './config';
 import { Event } from './event';
-import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowTags } from './types';
+import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowRemoteBranches, ShowTags } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
@@ -25,6 +26,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	issueLinkingConfig: null,
 	pullRequestConfig: null,
 	showRemoteBranches: true,
+	showRemoteBranchesV2: ShowRemoteBranches.Default,
 	showTags: ShowTags.Default,
 	hideRemotes: []
 };
@@ -98,10 +100,20 @@ export class ExtensionState implements vscode.Disposable {
 	 */
 	public getRepos() {
 		const repoSet = this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
-		Object.keys(repoSet).forEach(repo => {
-			repoSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
+		const outputSet: GitRepoSet = {};
+		let showRemoteBranchesDefaultValue: boolean | null = null;
+		Object.keys(repoSet).forEach((repo) => {
+			outputSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
+			if (typeof repoSet[repo].showRemoteBranchesV2 === 'undefined' && typeof repoSet[repo].showRemoteBranches !== 'undefined') {
+				if (showRemoteBranchesDefaultValue === null) {
+					showRemoteBranchesDefaultValue = getConfig().showRemoteBranches;
+				}
+				if (repoSet[repo].showRemoteBranches !== showRemoteBranchesDefaultValue) {
+					outputSet[repo].showRemoteBranchesV2 = repoSet[repo].showRemoteBranches ? ShowRemoteBranches.Show : ShowRemoteBranches.Hide;
+				}
+			}
 		});
-		return repoSet;
+		return outputSet;
 	}
 
 	/**

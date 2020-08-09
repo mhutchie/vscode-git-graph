@@ -188,6 +188,7 @@ export interface GitRepoState {
 	issueLinkingConfig: IssueLinkingConfig | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
+	showRemoteBranchesV2: ShowRemoteBranches;
 	showTags: ShowTags;
 	hideRemotes: string[];
 }
@@ -228,6 +229,7 @@ export interface GitGraphViewConfig {
 	readonly onRepoLoadShowCheckedOutBranch: boolean;
 	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
+	readonly showRemoteBranches: boolean;
 	readonly showTags: boolean;
 }
 
@@ -461,6 +463,12 @@ export const enum RepoCommitOrdering {
 export const enum RepoDropdownOrder {
 	FullPath,
 	Name
+}
+
+export const enum ShowRemoteBranches {
+	Default,
+	Show,
+	Hide
 }
 
 export const enum ShowTags {

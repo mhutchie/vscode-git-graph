@@ -84,8 +84,7 @@ class GitGraphView {
 
 		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 		this.showRemoteBranchesElem.addEventListener('change', () => {
-			this.gitRepos[this.currentRepo].showRemoteBranches = this.showRemoteBranchesElem.checked;
-			this.saveRepoState();
+			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.ShowRemoteBranches.Show : GG.ShowRemoteBranches.Hide);
 			this.refresh(true);
 		});
 
@@ -123,7 +122,7 @@ class GitGraphView {
 				const currentRepoState = this.gitRepos[this.currentRepo];
 				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent);
 			}
-			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
+			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
 
 		let loadViewTo = initialState.loadViewTo;
@@ -200,7 +199,7 @@ class GitGraphView {
 	private loadRepo(repo: string) {
 		this.currentRepo = repo;
 		this.currentRepoLoading = true;
-		this.showRemoteBranchesElem.checked = this.gitRepos[this.currentRepo].showRemoteBranches;
+		this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[this.currentRepo].showRemoteBranchesV2);
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitRemotes = [];
 		this.gitStashes = [];
@@ -507,7 +506,7 @@ class GitGraphView {
 			command: 'loadRepoInfo',
 			repo: this.currentRepo,
 			refreshId: ++this.currentRepoRefreshState.loadRepoInfoRefreshId,
-			showRemoteBranches: repoState.showRemoteBranches,
+			showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
 			hideRemotes: repoState.hideRemotes
 		});
 	}
@@ -521,7 +520,7 @@ class GitGraphView {
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
 			showTags: getShowTags(repoState.showTags),
-			showRemoteBranches: repoState.showRemoteBranches,
+			showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
 			includeCommitsMentionedByReflogs: getIncludeCommitsMentionedByReflogs(repoState.includeCommitsMentionedByReflogs),
 			onlyFollowFirstParent: getOnlyFollowFirstParent(repoState.onlyFollowFirstParent),
 			commitOrdering: getCommitOrdering(repoState.commitOrdering),
@@ -3118,6 +3117,12 @@ function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering 
 		case GG.RepoCommitOrdering.Topological:
 			return GG.CommitOrdering.Topological;
 	}
+}
+
+function getShowRemoteBranches(repoValue: GG.ShowRemoteBranches) {
+	return repoValue === GG.ShowRemoteBranches.Default
+		? initialState.config.showRemoteBranches
+		: repoValue === GG.ShowRemoteBranches.Show;
 }
 
 function getShowTags(repoValue: GG.ShowTags) {

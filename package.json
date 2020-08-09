@@ -791,6 +791,11 @@
 					"default": true,
 					"description": "Show commits that are only referenced by tags in Git Graph."
 				},
+				"git-graph.repository.showRemoteBranches": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show Remote Branches in Git Graph by default. This can be overridden per repository from the Git Graph View's Control Bar."
+				},
 				"git-graph.repository.showTags": {
 					"type": "boolean",
 					"default": true,

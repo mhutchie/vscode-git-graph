@@ -409,6 +409,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.showRemoteBranches` Extension Setting.
+	 */
+	get showRemoteBranches() {
+		return !!this.config.get('repository.showRemoteBranches', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.showTags` Extension Setting.
 	 */
 	get showTags() {

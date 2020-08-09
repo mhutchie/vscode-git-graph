@@ -551,7 +551,7 @@ export class DataSource implements vscode.Disposable {
 			if (status !== null) return status;
 		}
 
-		return fetch ? this.fetch(repo, name, false) : null;
+		return fetch ? this.fetch(repo, name, false, false) : null;
 	}
 
 	/**
@@ -659,12 +659,24 @@ export class DataSource implements vscode.Disposable {
 	 * Fetch from the repositories remote(s).
 	 * @param repo The path of the repository.
 	 * @param remote The remote to fetch, or NULL (fetch all remotes).
-	 * @param prune Prune the remote.
+	 * @param prune Is pruning enabled.
+	 * @param pruneTags Should tags be pruned.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public fetch(repo: string, remote: string | null, prune: boolean) {
+	public fetch(repo: string, remote: string | null, prune: boolean, pruneTags: boolean) {
 		let args = ['fetch', remote === null ? '--all' : remote];
-		if (prune) args.push('--prune');
+
+		if (prune) {
+			args.push('--prune');
+		}
+		if (pruneTags) {
+			if (!prune) {
+				return Promise.resolve('In order to Prune Tags, pruning must be enabled for fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
+			} else if (this.gitExecutable !== null && !isGitAtLeastVersion(this.gitExecutable, '2.17.0')) {
+				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
+			}
+			args.push('--prune-tags');
+		}
 
 		return this.runGitCommand(args, repo);
 	}

@@ -348,7 +348,7 @@ export class GitGraphView implements vscode.Disposable {
 			case 'fetch':
 				this.sendMessage({
 					command: 'fetch',
-					error: await this.dataSource.fetch(msg.repo, msg.name, msg.prune)
+					error: await this.dataSource.fetch(msg.repo, msg.name, msg.prune, msg.pruneTags)
 				});
 				break;
 			case 'fetchAvatar':
@@ -591,6 +591,7 @@ export class GitGraphView implements vscode.Disposable {
 				dialogDefaults: config.dialogDefaults,
 				enhancedAccessibility: config.enhancedAccessibility,
 				fetchAndPrune: config.fetchAndPrune,
+				fetchAndPruneTags: config.fetchAndPruneTags,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
 				graph: config.graph,
 				includeCommitsMentionedByReflogs: config.includeCommitsMentionedByReflogs,

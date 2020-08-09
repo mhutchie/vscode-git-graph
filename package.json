@@ -499,6 +499,16 @@
 					"default": false,
 					"description": "Default state of the \"Force Delete\" checkbox."
 				},
+				"git-graph.dialog.fetchRemote.prune": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Prune\" checkbox."
+				},
+				"git-graph.dialog.fetchRemote.pruneTags": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Prune Tags\" checkbox."
+				},
 				"git-graph.dialog.merge.noCommit": {
 					"type": "boolean",
 					"default": false,
@@ -765,6 +775,11 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote(s)."
+				},
+				"git-graph.repository.fetchAndPruneTags": {
+					"type": "boolean",
+					"default": false,
+					"description": "Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any local tags that no longer exist on the remote(s). Requires Git >= 2.17.0, and the \"Repository: Fetch And Prune\" setting to be enabled. Caution: If you work in repositories that have multiple remotes, it is not recommended to use this setting (instead you can prune tags for a specific remote via \"Fetch Remote\" Dialog from the Repository Settings Widget on the Git Graph View)."
 				},
 				"git-graph.repository.includeCommitsMentionedByReflogs": {
 					"type": "boolean",

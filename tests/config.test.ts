@@ -809,6 +809,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -837,6 +839,10 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: true
+				},
+				fetchRemote: {
+					prune: true,
+					pruneTags: true
 				},
 				merge: {
 					noCommit: true,
@@ -887,6 +893,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -915,6 +923,10 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchRemote: {
+					prune: false,
+					pruneTags: false
 				},
 				merge: {
 					noCommit: false,
@@ -965,6 +977,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -993,6 +1007,10 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: true
+				},
+				fetchRemote: {
+					prune: true,
+					pruneTags: true
 				},
 				merge: {
 					noCommit: true,
@@ -1043,6 +1061,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1071,6 +1091,10 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchRemote: {
+					prune: false,
+					pruneTags: false
 				},
 				merge: {
 					noCommit: false,
@@ -1121,6 +1145,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1149,6 +1175,10 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchRemote: {
+					prune: false,
+					pruneTags: false
 				},
 				merge: {
 					noCommit: false,
@@ -1193,6 +1223,8 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1221,6 +1253,10 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchRemote: {
+					prune: false,
+					pruneTags: false
 				},
 				merge: {
 					noCommit: false,
@@ -2522,6 +2558,68 @@ describe('Config', () => {
 
 			// Assert
 			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
+			expect(value).toBe(false);
+		});
+	});
+
+	describe('fetchAndPruneTags', () => {
+		it('Should return TRUE when the configuration value is TRUE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(true);
+
+			// Run
+			const value = config.fetchAndPruneTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.fetchAndPruneTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
+			expect(value).toBe(false);
+		});
+
+		it('Should return TRUE when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.fetchAndPruneTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.fetchAndPruneTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
+			expect(value).toBe(false);
+		});
+
+		it('Should return the default value (FALSE) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.fetchAndPruneTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
 			expect(value).toBe(false);
 		});
 	});

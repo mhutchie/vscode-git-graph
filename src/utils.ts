@@ -681,8 +681,9 @@ function parseVersion(version: string) {
  * Construct a message that explains to the user that the Git executable is not compatible with a feature.
  * @param executable The Git executable.
  * @param version The minimum required version number.
+ * @param feature An optional name for the feature.
  * @returns The message for the user.
  */
-export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string) {
-	return 'A newer version of Git (>= ' + version + ') is required for this feature. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
+export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string, feature?: string) {
+	return 'A newer version of Git (>= ' + version + ') is required for ' + (feature ? feature : 'this feature') + '. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
 }

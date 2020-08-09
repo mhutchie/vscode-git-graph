@@ -184,6 +184,10 @@ class Config {
 			deleteBranch: {
 				forceDelete: !!this.config.get('dialog.deleteBranch.forceDelete', false)
 			},
+			fetchRemote: {
+				prune: !!this.config.get('dialog.fetchRemote.prune', false),
+				pruneTags: !!this.config.get('dialog.fetchRemote.pruneTags', false)
+			},
 			merge: {
 				noCommit: !!this.config.get('dialog.merge.noCommit', false),
 				noFastForward: !!this.config.get('dialog.merge.noFastForward', true),
@@ -371,6 +375,13 @@ class Config {
 	 */
 	get fetchAndPrune() {
 		return !!this.getRenamedExtensionSetting('repository.fetchAndPrune', 'fetchAndPrune', false);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.fetchAndPruneTags` Extension Setting.
+	 */
+	get fetchAndPruneTags() {
+		return !!this.config.get('repository.fetchAndPruneTags', false);
 	}
 
 	/**

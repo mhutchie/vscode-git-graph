@@ -217,6 +217,7 @@ export interface GitGraphViewConfig {
 	readonly dialogDefaults: DialogDefaults;
 	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
+	readonly fetchAndPruneTags: boolean;
 	readonly fetchAvatars: boolean;
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
@@ -396,6 +397,10 @@ export interface DialogDefaults {
 	};
 	readonly deleteBranch: {
 		readonly forceDelete: boolean
+	};
+	readonly fetchRemote: {
+		readonly prune: boolean,
+		readonly pruneTags: boolean
 	};
 	readonly merge: {
 		readonly noCommit: boolean,
@@ -783,6 +788,7 @@ export interface RequestFetch extends RepoRequest {
 	readonly command: 'fetch';
 	readonly name: string | null; // null => Fetch all remotes
 	readonly prune: boolean;
+	readonly pruneTags: boolean;
 }
 export interface ResponseFetch extends ResponseWithErrorInfo {
 	readonly command: 'fetch';

@@ -3627,7 +3627,7 @@ describe('DataSource', () => {
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledTimes(2);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote', 'add', 'origin', 'https://github.com/mhutchie/vscode-git-graph.git'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', 'origin',], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', 'origin'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git (when adding the remote)', async () => {
@@ -3918,7 +3918,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.fetch('/path/to/repo', null, false);
+			const result = await dataSource.fetch('/path/to/repo', null, false, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -3930,7 +3930,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.fetch('/path/to/repo', 'origin', false);
+			const result = await dataSource.fetch('/path/to/repo', 'origin', false, false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -3942,11 +3942,24 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.fetch('/path/to/repo', null, true);
+			const result = await dataSource.fetch('/path/to/repo', null, true, false);
 
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', '--all', '--prune'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should fetch and prune all remotes (and prune tags)', async () => {
+			// Setup
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.17.0' });
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.fetch('/path/to/repo', null, true, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', '--all', '--prune', '--prune-tags'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -3954,10 +3967,53 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.fetch('/path/to/repo', null, false);
+			const result = await dataSource.fetch('/path/to/repo', null, false, false);
 
 			// Assert
 			expect(result).toBe('error message');
+		});
+
+		it('Should return an error message when pruning tags, but pruning is not enabled (all remotes)', async () => {
+			// Setup
+
+			// Run
+			const result = await dataSource.fetch('/path/to/repo', null, false, true);
+
+			// Assert
+			expect(result).toBe('In order to Prune Tags, pruning must be enabled for fetching from remote(s).');
+		});
+
+		it('Should return an error message when pruning tags, but pruning is not enabled (specific remote)', async () => {
+			// Setup
+
+			// Run
+			const result = await dataSource.fetch('/path/to/repo', 'origin', false, true);
+
+			// Assert
+			expect(result).toBe('In order to Prune Tags, pruning must be enabled for fetching from a remote.');
+		});
+
+		it('Should return an error message when pruning tags when no Git executable is known', async () => {
+			// Setup
+			dataSource.dispose();
+			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+
+			// Run
+			const result = await dataSource.fetch('/path/to/repo', null, true, true);
+
+			// Assert
+			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
+		});
+
+		it('Should return an error message when pruning tags with Git < 2.17.0', async () => {
+			// Setup
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.16.1' });
+
+			// Run
+			const result = await dataSource.fetch('/path/to/repo', null, true, true);
+
+			// Assert
+			expect(result).toBe('A newer version of Git (>= 2.17.0) is required for pruning tags when fetching. Git 2.16.1 is currently installed. Please install a newer version of Git to use this feature.');
 		});
 	});
 

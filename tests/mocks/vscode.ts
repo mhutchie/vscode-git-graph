@@ -132,6 +132,22 @@ export const mocks = {
 		show: jest.fn()
 	},
 	workspaceConfiguration: {
-		get: jest.fn()
+		get: jest.fn(),
+		inspect: jest.fn()
 	}
 };
+
+export function mockRenamedExtensionSettingReturningValueOnce(value: any) {
+	const config = typeof value !== 'undefined'
+		? {
+			workspaceValue: value,
+			globalValue: value
+		}
+		: undefined;
+	mocks.workspaceConfiguration.inspect.mockReturnValueOnce(config).mockReturnValueOnce(config);
+}
+
+export function expectRenamedExtensionSettingToHaveBeenCalled(newSection: string, oldSection: string) {
+	expect(mocks.workspaceConfiguration.inspect).toBeCalledWith(newSection);
+	expect(mocks.workspaceConfiguration.inspect).toBeCalledWith(oldSection);
+}

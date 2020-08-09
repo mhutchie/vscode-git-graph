@@ -45,7 +45,11 @@ export class DataSource implements vscode.Disposable {
 		this.disposables.push(askpassManager);
 
 		onDidChangeConfiguration((event) => {
-			if (event.affectsConfiguration('git-graph.dateType') || event.affectsConfiguration('git-graph.showSignatureStatus') || event.affectsConfiguration('git-graph.useMailmap')) {
+			if (
+				event.affectsConfiguration('git-graph.date.type') || event.affectsConfiguration('git-graph.dateType') ||
+				event.affectsConfiguration('git-graph.repository.commits.showSignatureStatus') || event.affectsConfiguration('git-graph.showSignatureStatus') ||
+				event.affectsConfiguration('git-graph.repository.useMailmap') || event.affectsConfiguration('git-graph.useMailmap')
+			) {
 				this.generateGitCommandFormats();
 			}
 		}, this.disposables);

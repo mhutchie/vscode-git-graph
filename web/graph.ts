@@ -72,8 +72,8 @@ class Branch {
 
 	/* Rendering */
 
-	public draw(svg: SVGElement, config: Config, expandAt: number) {
-		let colour = config.graphColours[this.colour % config.graphColours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.graphStyle === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
+	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
+		let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
 
 		// Convert branch lines into pixel coordinates, respecting expanded commit extensions
 		for (i = 0; i < this.lines.length; i++) {
@@ -137,7 +137,7 @@ class Branch {
 			if (x1 === x2) { // If the path is vertical, draw a straight line
 				curPath += 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
 			} else { // If the path moves horizontal, draw the appropriate transition
-				if (config.graphStyle === GG.GraphStyle.Angular) {
+				if (config.style === GG.GraphStyle.Angular) {
 					curPath += 'L' + (line.lockedFirst ? (x2.toFixed(0) + ',' + (y2 - d).toFixed(1)) : (x1.toFixed(0) + ',' + (y1 + d).toFixed(1))) + 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
 				} else {
 					curPath += 'C' + x1.toFixed(0) + ',' + (y1 + d).toFixed(1) + ' ' + x2.toFixed(0) + ',' + (y2 - d).toFixed(1) + ' ' + x2.toFixed(0) + ',' + y2.toFixed(1);
@@ -296,10 +296,10 @@ class Vertex {
 
 	/* Rendering */
 
-	public draw(svg: SVGElement, config: Config, expandOffset: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
+	public draw(svg: SVGElement, config: GG.GraphConfig, expandOffset: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
 		if (this.onBranch === null) return;
 
-		const colour = this.isCommitted ? config.graphColours[this.onBranch.getColour() % config.graphColours.length] : '#808080';
+		const colour = this.isCommitted ? config.colours[this.onBranch.getColour() % config.colours.length] : '#808080';
 		const cx = (this.x * config.grid.x + config.grid.offsetX).toString();
 		const cy = (this.id * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString();
 
@@ -336,7 +336,8 @@ class Vertex {
 /* Graph Class */
 
 class Graph {
-	private readonly config: Config;
+	private readonly config: GG.GraphConfig;
+	private readonly muteConfig: GG.MuteCommitsConfig;
 	private vertices: Vertex[] = [];
 	private branches: Branch[] = [];
 	private availableColours: number[] = [];
@@ -361,9 +362,10 @@ class Graph {
 	private tooltipTimeout: NodeJS.Timer | null = null;
 	private tooltipVertex: HTMLElement | null = null;
 
-	constructor(id: string, viewElem: HTMLElement, config: Config) {
+	constructor(id: string, viewElem: HTMLElement, config: GG.GraphConfig, muteConfig: GG.MuteCommitsConfig) {
 		this.viewElem = viewElem;
 		this.config = config;
+		this.muteConfig = muteConfig;
 
 		const elem = document.getElementById(id)!;
 		this.contentElem = elem.parentElement!;
@@ -476,7 +478,7 @@ class Graph {
 	public getVertexColours() {
 		let colours = [], i;
 		for (i = 0; i < this.vertices.length; i++) {
-			colours[i] = this.vertices[i].getColour() % this.config.graphColours.length;
+			colours[i] = this.vertices[i].getColour() % this.config.colours.length;
 		}
 		return colours;
 	}
@@ -536,7 +538,7 @@ class Graph {
 		}
 
 		// Mute any merge commits if the Extension Setting is enabled
-		if (this.config.muteMergeCommits) {
+		if (this.muteConfig.mergeCommits) {
 			for (let i = 0; i < this.commits.length; i++) {
 				if (this.vertices[i].isMerge() && this.commits[i].stash === null) {
 					// The commit is a merge, and is not a stash
@@ -546,7 +548,7 @@ class Graph {
 		}
 
 		// Mute any commits that are not ancestors of the commit head if the Extension Setting is enabled, and the head commit is in the graph
-		if (this.config.muteCommitsNotAncestorsOfHead && currentHash !== null && typeof this.commitLookup[currentHash] === 'number') {
+		if (this.muteConfig.commitsNotAncestorsOfHead && currentHash !== null && typeof this.commitLookup[currentHash] === 'number') {
 			let ancestor: boolean[] = [];
 			for (let i = 0; i < this.commits.length; i++) {
 				ancestor[i] = false;
@@ -773,7 +775,7 @@ class Graph {
 			html += '<div class="graphTooltipSection">Stashes: ' + getLimitedRefs(htmlRefs) + '</div>';
 		}
 
-		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + (this.vertices[id].getColour() % this.config.graphColours.length) + ')';
+		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + (this.vertices[id].getColour() % this.config.colours.length) + ')';
 		const anchor = document.createElement('div'), pointer = document.createElement('div'), content = document.createElement('div'), shadow = document.createElement('div');
 		const pixel: Pixel = {
 			x: point.x * this.config.grid.x + this.config.grid.offsetX,

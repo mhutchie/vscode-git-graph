@@ -300,7 +300,7 @@ export function openFile(repo: string, filePath: string) {
 			if (err === null) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), {
 					preview: true,
-					viewColumn: getConfig().openDiffTabLocation
+					viewColumn: getConfig().openNewTabEditorGroup
 				}).then(
 					() => resolve(null),
 					() => resolve('Visual Studio Code was unable to open ' + filePath + '.')
@@ -334,7 +334,7 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 
 		return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {
 			preview: true,
-			viewColumn: getConfig().openDiffTabLocation
+			viewColumn: getConfig().openNewTabEditorGroup
 		}).then(
 			() => null,
 			() => 'Visual Studio Code was unable load the diff editor for ' + newFilePath + '.'
@@ -350,7 +350,7 @@ export async function viewFileAtRevision(repo: string, hash: string, filePath: s
 
 	return vscode.commands.executeCommand('vscode.open', encodeDiffDocUri(repo, filePath, hash, GitFileStatus.Modified, DiffSide.New).with({ path: title }), {
 		preview: true,
-		viewColumn: getConfig().openDiffTabLocation
+		viewColumn: getConfig().openNewTabEditorGroup
 	}).then(
 		() => null,
 		() => 'Visual Studio Code was unable to open ' + filePath + ' at commit ' + abbrevCommit(hash) + '.'

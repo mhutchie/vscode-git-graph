@@ -205,10 +205,7 @@ export interface GitGraphViewInitialState {
 }
 
 export interface GitGraphViewConfig {
-	readonly autoCenterCommitDetailsView: boolean;
-	readonly branchLabelsAlignedToGraph: boolean;
-	readonly combineLocalAndRemoteBranchLabels: boolean;
-	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly commitDetailsView: CommitDetailsViewConfig;
 	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
@@ -216,27 +213,22 @@ export interface GitGraphViewConfig {
 	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
-	readonly defaultFileViewType: FileViewType;
 	readonly dialogDefaults: DialogDefaults;
 	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
 	readonly fetchAvatars: boolean;
-	readonly fileTreeCompactFolders: boolean;
-	readonly graphColours: ReadonlyArray<string>;
-	readonly graphStyle: GraphStyle;
-	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
-	readonly muteCommitsNotAncestorsOfHead: boolean;
-	readonly muteMergeCommits: boolean;
+	readonly mute: MuteCommitsConfig;
 	readonly onlyFollowFirstParent: boolean;
-	readonly openRepoToHead: boolean;
+	readonly onRepoLoadScrollToHead: boolean;
+	readonly onRepoLoadShowCheckedOutBranch: boolean;
+	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
-	readonly showCurrentBranchByDefault: boolean;
 	readonly showTags: boolean;
-	readonly tagLabelsOnRight: boolean;
 }
 
 export interface GitGraphViewGlobalState {
@@ -244,13 +236,37 @@ export interface GitGraphViewGlobalState {
 	issueLinkingConfig: IssueLinkingConfig | null;
 }
 
+export interface CommitDetailsViewConfig {
+	readonly autoCenter: boolean;
+	readonly fileTreeCompactFolders: boolean;
+	readonly fileViewType: FileViewType;
+	readonly location: CommitDetailsViewLocation;
+}
+
+export interface GraphConfig {
+	readonly colours: ReadonlyArray<string>;
+	readonly style: GraphStyle;
+	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+}
+
 export type LoadGitGraphViewTo = {
-	repo: string,
-	commitDetails: {
-		commitHash: string,
-		compareWithHash: string | null
+	readonly repo: string,
+	readonly commitDetails: {
+		readonly commitHash: string,
+		readonly compareWithHash: string | null
 	} | null
 } | null;
+
+export interface MuteCommitsConfig {
+	readonly commitsNotAncestorsOfHead: boolean;
+	readonly mergeCommits: boolean;
+}
+
+export interface ReferenceLabelsConfig {
+	readonly branchLabelsAlignedToGraph: boolean;
+	readonly combineLocalAndRemoteBranchLabels: boolean;
+	readonly tagLabelsOnRight: boolean;
+}
 
 
 /* Extension Settings Types */

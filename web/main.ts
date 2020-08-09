@@ -54,7 +54,7 @@ class GitGraphView {
 		this.gitRepos = initialState.repos;
 		this.config = initialState.config;
 		this.maxCommits = this.config.initialLoadCommits;
-		this.graph = new Graph('commitGraph', viewElem, this.config);
+		this.graph = new Graph('commitGraph', viewElem, this.config.graph, this.config.mute);
 		this.viewElem = viewElem;
 		this.currentRepoRefreshState = {
 			inProgress: false,
@@ -100,8 +100,8 @@ class GitGraphView {
 		this.findWidget = new FindWidget(this);
 		this.settingsWidget = new SettingsWidget(this);
 
-		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, this.config.branchLabelsAlignedToGraph);
-		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, this.config.tagLabelsOnRight);
+		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, this.config.referenceLabels.branchLabelsAlignedToGraph);
+		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, this.config.referenceLabels.tagLabelsOnRight);
 
 		this.observeWindowSizeChanges();
 		this.observeWebviewStyleChanges();
@@ -245,7 +245,7 @@ class GitGraphView {
 		}
 
 		if (this.currentBranches === null) {
-			this.currentBranches = [this.config.showCurrentBranchByDefault && this.gitBranchHead !== null ? this.gitBranchHead : SHOW_ALL_BRANCHES];
+			this.currentBranches = [this.config.onRepoLoadShowCheckedOutBranch && this.gitBranchHead !== null ? this.gitBranchHead : SHOW_ALL_BRANCHES];
 		}
 
 		this.saveState();
@@ -355,7 +355,7 @@ class GitGraphView {
 		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup, this.onlyFollowFirstParent);
 		this.render();
 
-		if (currentRepoLoading && this.config.openRepoToHead && this.commitHead !== null) {
+		if (currentRepoLoading && this.config.onRepoLoadScrollToHead && this.commitHead !== null) {
 			this.scrollToCommit(this.commitHead, true);
 		}
 
@@ -689,13 +689,13 @@ class GitGraphView {
 		const expandedCommitElem = expandedCommit !== null ? document.getElementById('cdv') : null;
 
 		// Update the graphs grid dimensions
-		this.config.grid.expandY = expandedCommitElem !== null
+		this.config.graph.grid.expandY = expandedCommitElem !== null
 			? expandedCommitElem.getBoundingClientRect().height
 			: cdvHeight;
-		this.config.grid.y = this.commits.length > 0 && this.tableElem.children.length > 0
+		this.config.graph.grid.y = this.commits.length > 0 && this.tableElem.children.length > 0
 			? (this.tableElem.children[0].clientHeight - headerHeight - (expandedCommit !== null ? cdvHeight : 0)) / this.commits.length
-			: this.config.grid.y;
-		this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
+			: this.config.graph.grid.y;
+		this.config.graph.grid.offsetY = headerHeight + this.config.graph.grid.y / 2;
 
 		this.graph.render(expandedCommit);
 	}
@@ -704,7 +704,7 @@ class GitGraphView {
 		const colVisibility = this.getColumnVisibility();
 		const currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead;
 		const vertexColours = this.graph.getVertexColours();
-		const widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
+		const widthsAtVertices = this.config.referenceLabels.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		const mutedCommits = this.graph.getMutedCommits(currentHash);
 		const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, false, false);
 
@@ -756,7 +756,7 @@ class GitGraphView {
 				: '';
 
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (mutedCommits[i] ? ' mute' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' +
-				(this.config.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
+				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
@@ -2235,7 +2235,7 @@ class GitGraphView {
 				}
 			} else {
 				let elemTop = this.controlsElem.clientHeight + elem.offsetTop, cdvHeight = this.gitRepos[this.currentRepo].cdvHeight;
-				if (this.config.autoCenterCommitDetailsView) {
+				if (this.config.commitDetailsView.autoCenter) {
 					// Center Commit Detail View setting is enabled
 					// elemTop - commit height [24px] + (commit details view height + commit height [24px]) / 2 - (view height) / 2
 					this.viewElem.scroll(0, elemTop - 12 + (cdvHeight - this.viewElem.clientHeight) / 2);
@@ -2428,7 +2428,7 @@ class GitGraphView {
 	}
 
 	private isCdvDocked() {
-		return this.config.commitDetailsViewLocation === GG.CommitDetailsViewLocation.DockedToBottom;
+		return this.config.commitDetailsView.location === GG.CommitDetailsViewLocation.DockedToBottom;
 	}
 
 	private getCommitOrder(hash1: string, hash2: string) {
@@ -2441,7 +2441,7 @@ class GitGraphView {
 
 	private getFileViewType() {
 		return this.gitRepos[this.currentRepo].fileViewType === GG.FileViewType.Default
-			? this.config.defaultFileViewType
+			? this.config.commitDetailsView.fileViewType
 			: this.gitRepos[this.currentRepo].fileViewType;
 	}
 
@@ -2895,7 +2895,7 @@ function generateFileViewHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG
 }
 
 function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean, topLevelFolder: boolean): string {
-	const curFolderInfo = topLevelFolder || !initialState.config.fileTreeCompactFolders
+	const curFolderInfo = topLevelFolder || !initialState.config.commitDetailsView.fileTreeCompactFolders
 		? { folder: folder, name: folder.name, pathSeg: folder.name }
 		: getCurrentFolderInfo(folder, folder.name, folder.name);
 
@@ -3252,7 +3252,7 @@ function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG
 		headLabels.push({ name: heads[i], remotes: [] });
 		headLookup[heads[i]] = i;
 	}
-	if (initialState.config.combineLocalAndRemoteBranchLabels) {
+	if (initialState.config.referenceLabels.combineLocalAndRemoteBranchLabels) {
 		let remainingRemoteLabels = [];
 		for (let i = 0; i < remotes.length; i++) {
 			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known

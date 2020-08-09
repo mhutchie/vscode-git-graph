@@ -7,7 +7,7 @@ import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
-import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RefLabelAlignment, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
+import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, getRepoName, openExtensionSettings, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
 
 /**
@@ -578,41 +578,32 @@ export class GitGraphView implements vscode.Disposable {
 	 */
 	private getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
-		const refLabelAlignment = config.refLabelAlignment;
 		const initialState: GitGraphViewInitialState = {
 			config: {
-				autoCenterCommitDetailsView: config.autoCenterCommitDetailsView,
-				branchLabelsAlignedToGraph: refLabelAlignment === RefLabelAlignment.BranchesAlignedToGraphAndTagsOnRight,
-				combineLocalAndRemoteBranchLabels: config.combineLocalAndRemoteBranchLabels,
-				commitDetailsViewLocation: config.commitDetailsViewLocation,
-				commitOrdering: config.commitOrdering,
+				commitDetailsView: config.commitDetailsView,
+				commitOrdering: config.commitOrder,
 				contextMenuActionsVisibility: config.contextMenuActionsVisibility,
 				customBranchGlobPatterns: config.customBranchGlobPatterns,
 				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings,
 				customPullRequestProviders: config.customPullRequestProviders,
 				dateFormat: config.dateFormat,
 				defaultColumnVisibility: config.defaultColumnVisibility,
-				defaultFileViewType: config.defaultFileViewType,
 				dialogDefaults: config.dialogDefaults,
 				enhancedAccessibility: config.enhancedAccessibility,
 				fetchAndPrune: config.fetchAndPrune,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
-				fileTreeCompactFolders: config.fileTreeCompactFolders,
-				graphColours: config.graphColours,
-				graphStyle: config.graphStyle,
-				grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },
+				graph: config.graph,
 				includeCommitsMentionedByReflogs: config.includeCommitsMentionedByReflogs,
 				initialLoadCommits: config.initialLoadCommits,
 				loadMoreCommits: config.loadMoreCommits,
 				loadMoreCommitsAutomatically: config.loadMoreCommitsAutomatically,
-				muteCommitsNotAncestorsOfHead: config.muteCommitsThatAreNotAncestorsOfHead,
-				muteMergeCommits: config.muteMergeCommits,
+				mute: config.muteCommits,
 				onlyFollowFirstParent: config.onlyFollowFirstParent,
-				openRepoToHead: config.openRepoToHead,
+				onRepoLoadScrollToHead: config.onRepoLoadScrollToHead,
+				onRepoLoadShowCheckedOutBranch: config.onRepoLoadShowCheckedOutBranch,
+				referenceLabels: config.referenceLabels,
 				repoDropdownOrder: config.repoDropdownOrder,
-				showCurrentBranchByDefault: config.showCurrentBranchByDefault,
-				showTags: config.showTags,
-				tagLabelsOnRight: refLabelAlignment !== RefLabelAlignment.Normal
+				showTags: config.showTags
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadViewTo: this.loadViewTo,
@@ -623,8 +614,8 @@ export class GitGraphView implements vscode.Disposable {
 		const globalState = this.extensionState.getGlobalViewState();
 
 		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
-		for (let i = 0; i < initialState.config.graphColours.length; i++) {
-			colorVars += '--git-graph-color' + i + ':' + initialState.config.graphColours[i] + '; ';
+		for (let i = 0; i < initialState.config.graph.colours.length; i++) {
+			colorVars += '--git-graph-color' + i + ':' + initialState.config.graph.colours[i] + '; ';
 			colorParams += '[data-color="' + i + '"]{--git-graph-color:var(--git-graph-color' + i + ');} ';
 		}
 

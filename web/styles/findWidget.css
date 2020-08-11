@@ -129,5 +129,10 @@
 }
 
 .findMatch{
-	background-color:var(--git-graph-findMatch);
+	background-color:var(--git-graph-findMatch, transparent);
+	outline:1px solid var(--vscode-editor-findMatchHighlightBorder, transparent);
+	outline-offset:-1px;
+}
+body.vscode-high-contrast .findMatch{
+	outline:1px dotted var(--vscode-editor-findMatchHighlightBorder, transparent);
 }

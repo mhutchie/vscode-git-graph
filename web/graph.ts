@@ -494,27 +494,39 @@ class Graph {
 
 	/* Graph Queries */
 
+	/**
+	 * Determine whether a commit can be dropped.
+	 * @param i Index of the commit to test.
+	 * @returns TRUE => Commit can be dropped, FALSE => Commit can't be dropped
+	 */
 	public dropCommitPossible(i: number) {
 		if (!this.vertices[i].hasParents()) {
 			return false; // No parents
 		}
 
-		const isPossible = (v: Vertex) => {
+		const isPossible = (v: Vertex): boolean | null => {
 			if (v.isMerge()) {
-				return false; // Merging
+				// Commit is a merge - fails topological test
+				return null;
 			}
 
 			let children = v.getChildren();
 			if (children.length > 1) {
-				return false; // Branching
-			} else if (children.length === 1 && !isPossible(children[0])) {
-				return false; // Recursively Invalid
+				// Commit has multiple children - fails topological test
+				return null;
+			} else if (children.length === 1) {
+				const recursivelyPossible = isPossible(children[0]);
+				if (recursivelyPossible !== false) {
+					// Topological tests failed (recursivelyPossible === NULL), or the HEAD has already been found (recursivelyPossible === TRUE)
+					return recursivelyPossible;
+				}
 			}
 
-			return true;
+			// Check if the current vertex is the HEAD if it has no children, or the HEAD has not been found in its recursive children.
+			return this.commits[v.id].hash === this.commitHead;
 		};
 
-		return isPossible(this.vertices[i]);
+		return isPossible(this.vertices[i]) || false;
 	}
 
 	private getAllChildren(i: number) {

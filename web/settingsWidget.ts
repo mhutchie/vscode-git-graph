@@ -10,6 +10,7 @@ class SettingsWidget {
 	private loading: boolean = false;
 	private repo: string | null = null;
 
+	private name: string | null = null;
 	private hideRemotes: string[] | null = null;
 	private issueLinkingConfig: GG.IssueLinkingConfig | null = null;
 	private pullRequestConfig: GG.PullRequestConfig | null = null;
@@ -39,11 +40,12 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
-	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent, transition: boolean) {
+	public show(repo: string, name: string | null, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent, transition: boolean) {
 		if (this.visible) return;
 		this.visible = true;
 		this.loading = true;
 		this.repo = repo;
+		this.name = name;
 		this.hideRemotes = hideRemotes;
 		this.issueLinkingConfig = issueLinkingConfig;
 		this.pullRequestConfig = pullRequestConfig;
@@ -67,6 +69,7 @@ class SettingsWidget {
 		this.visible = false;
 		this.loading = false;
 		this.repo = null;
+		this.name = null;
 		this.hideRemotes = null;
 		this.issueLinkingConfig = null;
 		this.pullRequestConfig = null;
@@ -93,10 +96,10 @@ class SettingsWidget {
 		};
 	}
 
-	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
+	public restoreState(state: SettingsWidgetState, name: string | null, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
 		if (!state.visible || state.repo === null) return;
 		this.settings = state.settings;
-		this.show(state.repo, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, includeCommitsMentionedByReflogs, onlyFollowFirstParent, false);
+		this.show(state.repo, name, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, includeCommitsMentionedByReflogs, onlyFollowFirstParent, false);
 	}
 
 	public isVisible() {
@@ -130,8 +133,12 @@ class SettingsWidget {
 	/* Render Methods */
 
 	private render() {
-		if (this.settings !== null) {
+		if (this.repo !== null && this.settings !== null) {
+			const escapedRepoName = escapeHtml(this.name || getRepoName(this.repo));
 			let html = '<div class="settingsSection general"><h3>General</h3>' +
+				'<table>' +
+				'<tr class="lineAbove lineBelow"><td class="left">Name:</td><td class="leftWithEllipsis" title="' + escapedRepoName + (this.name === null ? ' (Default Name from the File System)' : '') + '">' + escapedRepoName + '</td><td class="btns"><div id="editRepoName" title="Edit Name' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div>' + (this.name !== null ? ' <div id="deleteRepoName" title="Delete Name' + ELLIPSIS + '">' + SVG_ICONS.close + '</div>' : '') + '</td></tr>' +
+				'</table>' +
 				'<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label><br/>' +
 				'<label id="settingsIncludeCommitsMentionedByReflogs"><input type="checkbox" id="settingsIncludeCommitsMentionedByReflogsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Include commits only mentioned by reflogs</label><span class="settingsWidgetInfo" title="Only applies when showing all branches.">' + SVG_ICONS.info + '</span><br/>' +
 				'<label id="settingsOnlyFollowFirstParent"><input type="checkbox" id="settingsOnlyFollowFirstParentCheckbox" tabindex="-1"><span class="customCheckbox"></span>Only follow the first parent of commits</label><span class="settingsWidgetInfo" title="Instead of following all parents of commits, only follow the first parent when discovering the commits to load.">' + SVG_ICONS.info + '</span>' +
@@ -163,7 +170,7 @@ class SettingsWidget {
 					html += '<tr class="lineAbove">' +
 						'<td class="left" rowspan="2"><span class="hideRemoteBtn" data-index="' + i + '" title="Click to ' + (hidden ? 'show' : 'hide') + ' branches of this remote.">' + (hidden ? SVG_ICONS.eyeClosed : SVG_ICONS.eyeOpen) + '</span>' + escapeHtml(remote.name) + '</td>' +
 						'<td class="leftWithEllipsis" title="Fetch URL: ' + fetchUrl + '">' + fetchUrl + '</td><td>Fetch</td>' +
-						'<td class="remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote' + ELLIPSIS + '">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+						'<td class="btns remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote' + ELLIPSIS + '">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
 						'</tr><tr><td class="leftWithEllipsis" title="Push URL: ' + pushUrl + '">' + pushUrl + '</td><td>Push</td></tr>';
 				});
 			} else {
@@ -214,6 +221,32 @@ class SettingsWidget {
 			html += '<div class="settingsSectionButtons"><div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div></div></div>';
 
 			this.contentsElem.innerHTML = html;
+
+			document.getElementById('editRepoName')!.addEventListener('click', () => {
+				if (this.repo === null) return;
+				dialog.showForm('Specify a Name for this Repository:', [
+					{ type: DialogInputType.Text, name: 'Name', default: this.name || '', placeholder: getRepoName(this.repo) }
+				], 'Save Name', (values) => {
+					if (this.repo === null) return;
+					this.name = <string>values[0] || null;
+					this.view.saveRepoStateValue(this.repo, 'name', this.name);
+					this.view.renderRepoDropdownOptions();
+					this.render();
+				}, { type: TargetType.Repo });
+			});
+
+			if (this.name !== null) {
+				document.getElementById('deleteRepoName')!.addEventListener('click', () => {
+					if (this.repo === null || this.name === null) return;
+					dialog.showConfirmation('Are you sure you want to delete the manually configured name <b><i>' + escapeHtml(this.name) + '</i></b> for this repository, and use the default name from the File System <b><i>' + escapeHtml(getRepoName(this.repo)) + '</i></b>?', 'Yes, delete', () => {
+						if (this.repo === null) return;
+						this.name = null;
+						this.view.saveRepoStateValue(this.repo, 'name', this.name);
+						this.view.renderRepoDropdownOptions();
+						this.render();
+					}, { type: TargetType.Repo });
+				});
+			}
 
 			const showTagsElem = <HTMLInputElement>document.getElementById('settingsShowTagsCheckbox');
 			showTagsElem.checked = getShowTags(this.showTags!);

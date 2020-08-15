@@ -24,6 +24,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
 	onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 	issueLinkingConfig: null,
+	name: null,
 	pullRequestConfig: null,
 	showRemoteBranches: true,
 	showRemoteBranchesV2: ShowRemoteBranches.Default,

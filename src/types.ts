@@ -186,6 +186,7 @@ export interface GitRepoState {
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
 	onlyFollowFirstParent: OnlyFollowFirstParent;
 	issueLinkingConfig: IssueLinkingConfig | null;
+	name: string | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: ShowRemoteBranches;
@@ -909,6 +910,7 @@ export interface ResponseOpenFile extends ResponseWithErrorInfo {
 
 export interface RequestOpenTerminal extends RepoRequest {
 	readonly command: 'openTerminal';
+	readonly name: string;
 }
 export interface ResponseOpenTerminal extends ResponseWithErrorInfo {
 	readonly command: 'openTerminal';

@@ -134,8 +134,11 @@ export class CommandManager implements vscode.Disposable {
 			return;
 		}
 
-		let repoPaths = Object.keys(this.repoManager.getRepos());
-		let items: vscode.QuickPickItem[] = repoPaths.map(path => ({ label: getRepoName(path), description: path }));
+		const repos = this.repoManager.getRepos();
+		const items: vscode.QuickPickItem[] = Object.keys(repos).map((path) => ({
+			label: repos[path].name || getRepoName(path),
+			description: path
+		}));
 
 		vscode.window.showQuickPick(items, {
 			placeHolder: 'Select a repository to remove from Git Graph:',
@@ -232,10 +235,12 @@ export class CommandManager implements vscode.Disposable {
 	 * @returns A list of Quick Pick items.
 	 */
 	private getCodeReviewQuickPickItems(codeReviews: CodeReviews): Promise<CodeReviewQuickPickItem[]> {
+		const repos = this.repoManager.getRepos();
 		const enrichedCodeReviews: { repo: string, id: string, review: CodeReviewData, fromCommitHash: string, toCommitHash: string }[] = [];
 		const fetchCommits: { repo: string, commitHash: string }[] = [];
 
 		Object.keys(codeReviews).forEach((repo) => {
+			if (typeof repos[repo] === 'undefined') return;
 			Object.keys(codeReviews[repo]).forEach((id) => {
 				const commitHashes = id.split('-');
 				commitHashes.forEach((commitHash) => fetchCommits.push({ repo: repo, commitHash: commitHash }));
@@ -263,7 +268,7 @@ export class CommandManager implements vscode.Disposable {
 					return {
 						codeReviewRepo: codeReview.repo,
 						codeReviewId: codeReview.id,
-						label: getRepoName(codeReview.repo) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
+						label: (repos[codeReview.repo].name || getRepoName(codeReview.repo)) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
 						description: getRelativeTimeDiff(Math.round(codeReview.review.lastActive / 1000)),
 						detail: isComparison
 							? abbrevText(fromSubject, 50) + ' ↔ ' + abbrevText(toSubject, 50)

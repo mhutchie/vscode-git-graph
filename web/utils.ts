@@ -139,6 +139,16 @@ function pad2(i: number) {
 	return i > 9 ? i : '0' + i;
 }
 
+function getRepoName(path: string) {
+	let firstSep = path.indexOf('/');
+	if (firstSep === path.length - 1 || firstSep === -1) {
+		return path; // Path has no slashes, or a single trailing slash ==> use the path
+	} else {
+		let p = path.endsWith('/') ? path.substring(0, path.length - 1) : path; // Remove trailing slash if it exists
+		return p.substring(p.lastIndexOf('/') + 1);
+	}
+}
+
 function registerCustomEmojiMappings(mappings: ReadonlyArray<GG.CustomEmojiShortcodeMapping>) {
 	let validShortcodeRegex = /^:[A-Za-z0-9-_]+:$/;
 	for (let i = 0; i < mappings.length; i++) {

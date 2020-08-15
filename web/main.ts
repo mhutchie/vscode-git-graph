@@ -123,7 +123,7 @@ class GitGraphView {
 			this.findWidget.restoreState(prevState.findWidget);
 			if (this.currentRepo === prevState.settingsWidget.repo) {
 				const currentRepoState = this.gitRepos[this.currentRepo];
-				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent);
+				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.name, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent);
 			}
 			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
@@ -152,11 +152,15 @@ class GitGraphView {
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
 			const currentRepoState = this.gitRepos[this.currentRepo];
-			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
+			this.settingsWidget.show(this.currentRepo, currentRepoState.name, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
 		});
 		terminalBtn.innerHTML = SVG_ICONS.terminal;
 		terminalBtn.addEventListener('click', () => {
-			runAction({ command: 'openTerminal', repo: this.currentRepo }, 'Opening Terminal');
+			runAction({
+				command: 'openTerminal',
+				repo: this.currentRepo,
+				name: this.gitRepos[this.currentRepo].name || getRepoName(this.currentRepo)
+			}, 'Opening Terminal');
 		});
 	}
 
@@ -177,7 +181,7 @@ class GitGraphView {
 		}
 
 		alterClass(this.controlsElem, 'singleRepo', repoPaths.length === 1);
-		this.repoDropdown.setOptions(getRepoDropdownOptions(repoPaths), [newRepo]);
+		this.renderRepoDropdownOptions(newRepo);
 
 		if (loadViewTo !== null) {
 			if (loadViewTo.repo === newRepo) {
@@ -842,6 +846,10 @@ class GitGraphView {
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
 		html += textFormatter.format(message) + '</span>';
 		dialog.showMessage(html);
+	}
+
+	public renderRepoDropdownOptions(repo?: string) {
+		this.repoDropdown.setOptions(getRepoDropdownOptions(this.gitRepos), [repo || this.currentRepo]);
 	}
 
 
@@ -3163,7 +3171,8 @@ function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
 }
 
-function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
+function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
+	const repoPaths = Object.keys(repos);
 	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
@@ -3206,15 +3215,21 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 
 	// Initialise recursion
 	let indexes = [];
-	for (let i = 0; i < repos.length; i++) {
-		firstSep.push(repos[i].indexOf('/'));
-		if (firstSep[i] === repos[i].length - 1 || firstSep[i] === -1) {
+	for (let i = 0; i < repoPaths.length; i++) {
+		firstSep.push(repoPaths[i].indexOf('/'));
+		const repo = repos[repoPaths[i]];
+		if (repo.name !== null) {
+			// A name has been set for the repository
+			paths.push(repoPaths[i]);
+			names.push(repo.name);
+			distinctNames.push(repo.name);
+		} else if (firstSep[i] === repoPaths[i].length - 1 || firstSep[i] === -1) {
 			// Path has no slashes, or a single trailing slash ==> use the path as the name
-			paths.push(repos[i]);
-			names.push(repos[i]);
-			distinctNames.push(repos[i]);
+			paths.push(repoPaths[i]);
+			names.push(repoPaths[i]);
+			distinctNames.push(repoPaths[i]);
 		} else {
-			paths.push(repos[i].endsWith('/') ? repos[i].substring(0, repos[i].length - 1) : repos[i]); // Remove trailing slash if it exists
+			paths.push(repoPaths[i].endsWith('/') ? repoPaths[i].substring(0, repoPaths[i].length - 1) : repoPaths[i]); // Remove trailing slash if it exists
 			let name = paths[i].substring(paths[i].lastIndexOf('/') + 1);
 			names.push(name);
 			distinctNames.push(name);
@@ -3224,7 +3239,7 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 	resolveAmbiguous(indexes);
 
 	let options: DropdownOption[] = [];
-	for (let i = 0; i < repos.length; i++) {
+	for (let i = 0; i < repoPaths.length; i++) {
 		let hint;
 		if (names[i] === distinctNames[i]) {
 			// Name is distinct, no hint needed
@@ -3241,7 +3256,7 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 			// Construct the hint
 			hint = (distinctNames[i] !== paths[i] ? '.../' : '') + hintComps.join('/');
 		}
-		options.push({ name: names[i], value: repos[i], hint: hint });
+		options.push({ name: names[i], value: repoPaths[i], hint: hint });
 	}
 
 	return initialState.config.repoDropdownOrder === GG.RepoDropdownOrder.Name

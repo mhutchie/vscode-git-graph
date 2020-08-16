@@ -121,9 +121,8 @@ class GitGraphView {
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
-			if (this.currentRepo === prevState.settingsWidget.repo) {
-				const currentRepoState = this.gitRepos[this.currentRepo];
-				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.name, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent);
+			if (this.currentRepo === prevState.settingsWidget.currentRepo) {
+				this.settingsWidget.restoreState(this.gitRepos[this.currentRepo], prevState.settingsWidget);
 			}
 			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
@@ -151,8 +150,7 @@ class GitGraphView {
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
-			const currentRepoState = this.gitRepos[this.currentRepo];
-			this.settingsWidget.show(this.currentRepo, currentRepoState.name, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
+			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo], true);
 		});
 		terminalBtn.innerHTML = SVG_ICONS.terminal;
 		terminalBtn.addEventListener('click', () => {
@@ -2644,7 +2642,7 @@ window.addEventListener('load', () => {
 		switch (msg.command) {
 			case 'addRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Add Remote');
-				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				settingsWidget.refresh();
 				break;
 			case 'addTag':
 				refreshAndDisplayErrors(msg.errors, 'Unable to Add Tag');
@@ -2707,7 +2705,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'deleteRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
-				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				settingsWidget.refresh();
 				break;
 			case 'deleteRemoteBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
@@ -2717,9 +2715,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'deleteUserDetails':
 				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => {
-					if (settingsWidget.isVisible()) {
-						settingsWidget.refresh();
-					}
+					settingsWidget.refresh();
 				}, true);
 				break;
 			case 'dropCommit':
@@ -2730,13 +2726,11 @@ window.addEventListener('load', () => {
 				break;
 			case 'editRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');
-				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				settingsWidget.refresh();
 				break;
 			case 'editUserDetails':
 				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => {
-					if (settingsWidget.isVisible()) {
-						settingsWidget.refresh();
-					}
+					settingsWidget.refresh();
 				}, true);
 				break;
 			case 'fetch':

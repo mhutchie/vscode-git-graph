@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Event } from './event';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput } from './utils';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -184,7 +184,7 @@ export class DataSource implements vscode.Disposable {
 				}
 			}
 
-			let commitNodes: Writeable<GitCommit>[] = [];
+			let commitNodes: DeepWriteable<GitCommit>[] = [];
 			let commitLookup: { [hash: string]: number } = {};
 
 			for (i = 0; i < commits.length; i++) {
@@ -1128,7 +1128,7 @@ export class DataSource implements vscode.Disposable {
 	 * @returns The base commit details.
 	 */
 	private getCommitDetailsBase(repo: string, commitHash: string) {
-		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): Writeable<GitCommitDetails> => {
+		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): DeepWriteable<GitCommitDetails> => {
 			const commitInfo = stdout.split(GIT_LOG_SEPARATOR);
 			return {
 				hash: commitInfo[0],
@@ -1595,8 +1595,6 @@ function removeTrailingBlankLines(lines: string[]) {
 
 
 /* Types */
-
-type Writeable<T> = { -readonly [K in keyof T]: Writeable<T[K]> };
 
 interface DiffNameStatusRecord {
 	type: GitFileStatus;

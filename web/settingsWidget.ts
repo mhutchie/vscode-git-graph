@@ -388,7 +388,7 @@ class SettingsWidget {
 					return;
 				}
 
-				let config: GG.PullRequestConfig;
+				let config: GG.DeepWriteable<GG.PullRequestConfig>;
 				if (this.repo.pullRequestConfig === null) {
 					let originIndex = this.settings.remotes.findIndex((remote) => remote.name === 'origin');
 					let sourceRemoteUrl = this.settings.remotes[originIndex > -1 ? originIndex : 0].url;
@@ -505,7 +505,7 @@ class SettingsWidget {
 		}, null, 'Cancel', null, false);
 	}
 
-	private showCreatePullRequestIntegrationDialog1(config: GG.PullRequestConfig) {
+	private showCreatePullRequestIntegrationDialog1(config: GG.DeepWriteable<GG.PullRequestConfig>) {
 		if (this.settings === null) return;
 
 		let originIndex = this.settings.remotes.findIndex((remote) => remote.name === 'origin');
@@ -624,7 +624,7 @@ class SettingsWidget {
 		}, { type: TargetType.Repo });
 	}
 
-	private showCreatePullRequestIntegrationDialog2(config: GG.PullRequestConfig) {
+	private showCreatePullRequestIntegrationDialog2(config: GG.DeepWriteable<GG.PullRequestConfig>) {
 		if (this.settings === null) return;
 
 		const destBranches = config.destRemote !== null

@@ -139,20 +139,20 @@ export type ColumnWidth = number;
 export type GitRepoSet = { [repo: string]: GitRepoState };
 
 export interface IssueLinkingConfig {
-	issue: string;
-	url: string;
+	readonly issue: string;
+	readonly url: string;
 }
 
 interface PullRequestConfigBase {
-	hostRootUrl: string;
-	sourceRemote: string;
-	sourceOwner: string;
-	sourceRepo: string;
-	destRemote: string | null;
-	destOwner: string;
-	destRepo: string;
-	destProjectId: string; // Only used by GitLab
-	destBranch: string;
+	readonly hostRootUrl: string;
+	readonly sourceRemote: string;
+	readonly sourceOwner: string;
+	readonly sourceRepo: string;
+	readonly destRemote: string | null;
+	readonly destOwner: string;
+	readonly destRepo: string;
+	readonly destProjectId: string; // Only used by GitLab
+	readonly destBranch: string;
 }
 
 export const enum PullRequestProvider {
@@ -163,15 +163,15 @@ export const enum PullRequestProvider {
 }
 
 interface PullRequestConfigBuiltIn extends PullRequestConfigBase {
-	provider: Exclude<PullRequestProvider, PullRequestProvider.Custom>;
-	custom: null;
+	readonly provider: Exclude<PullRequestProvider, PullRequestProvider.Custom>;
+	readonly custom: null;
 }
 
 interface PullRequestConfigCustom extends PullRequestConfigBase {
-	provider: PullRequestProvider.Custom;
-	custom: {
-		name: string,
-		templateUrl: string
+	readonly provider: PullRequestProvider.Custom;
+	readonly custom: {
+		readonly name: string,
+		readonly templateUrl: string
 	};
 }
 
@@ -1213,3 +1213,31 @@ export type ResponseMessage =
 	| ResponseViewDiff
 	| ResponseViewFileAtRevision
 	| ResponseViewScm;
+
+
+/** Helper Types */
+
+type PrimitiveTypes = string | number | boolean | symbol | bigint | undefined | null;
+
+/**
+ * Make all properties in T writeable
+ */
+export type Writeable<T> = { -readonly [K in keyof T]: T[K] };
+
+/**
+ * Make all properties in T recursively readonly
+ */
+export type DeepReadonly<T> = T extends PrimitiveTypes
+	? T
+	: T extends (Array<infer U> | ReadonlyArray<infer U>)
+	? ReadonlyArray<DeepReadonly<U>>
+	: { readonly [K in keyof T]: DeepReadonly<T[K]> };
+
+/**
+ * Make all properties in T recursively writeable
+ */
+export type DeepWriteable<T> = T extends PrimitiveTypes
+	? T
+	: T extends (Array<infer U> | ReadonlyArray<infer U>)
+	? Array<DeepWriteable<U>>
+	: { -readonly [K in keyof T]: DeepWriteable<T[K]> };

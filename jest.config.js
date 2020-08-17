@@ -11,6 +11,7 @@ module.exports = {
 		}
 	},
 	collectCoverageFrom: [
-		"src/*.ts"
+		'src/utils/*.ts',
+		'src/*.ts'
 	]
 };

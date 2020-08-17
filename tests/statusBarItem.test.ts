@@ -3,10 +3,10 @@ jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('../src/logger');
 
 import { ConfigurationChangeEvent } from 'vscode';
-import { EventEmitter } from '../src/event';
 import { Logger } from '../src/logger';
 import { RepoChangeEvent } from '../src/repoManager';
 import { StatusBarItem } from '../src/statusBarItem';
+import { EventEmitter } from '../src/utils/event';
 
 let vscodeStatusBarItem = vscode.mocks.statusBarItem;
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
@@ -48,6 +48,8 @@ describe('StatusBarItem', () => {
 
 		// Asset
 		expect(vscodeStatusBarItem.dispose).toHaveBeenCalledTimes(1);
+		expect(onDidChangeRepos['listeners']).toHaveLength(0);
+		expect(onDidChangeConfiguration['listeners']).toHaveLength(0);
 	});
 
 	it('Should hide the Status Bar Item after the number of repositories becomes zero', () => {

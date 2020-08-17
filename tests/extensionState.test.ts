@@ -4,10 +4,10 @@ jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('fs');
 
 import * as fs from 'fs';
-import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
 import { FileViewType, GitGraphViewGlobalState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowRemoteBranches, ShowTags } from '../src/types';
 import { GitExecutable } from '../src/utils';
+import { EventEmitter } from '../src/utils/event';
 
 let extensionContext = vscode.mocks.extensionContext;
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;

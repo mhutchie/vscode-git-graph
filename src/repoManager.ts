@@ -2,11 +2,12 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { Event, EventEmitter } from './event';
 import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
+import { Disposable, toDisposable } from './utils/disposable';
+import { Event, EventEmitter } from './utils/event';
 
 export interface RepoChangeEvent {
 	readonly repos: GitRepoSet;
@@ -17,7 +18,7 @@ export interface RepoChangeEvent {
 /**
  * Detects and manages repositories in Git Graph.
  */
-export class RepoManager implements vscode.Disposable {
+export class RepoManager extends Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
@@ -26,7 +27,6 @@ export class RepoManager implements vscode.Disposable {
 	private maxDepthOfRepoSearch: number;
 	private readonly folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
 	private readonly repoEventEmitter: EventEmitter<RepoChangeEvent>;
-	private disposables: vscode.Disposable[] = [];
 
 	private readonly createEventQueue: string[] = [];
 	private readonly changeEventQueue: string[] = [];
@@ -42,6 +42,7 @@ export class RepoManager implements vscode.Disposable {
 	 * @param logger The Git Graph Logger instance.
 	 */
 	constructor(dataSource: DataSource, extensionState: ExtensionState, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, logger: Logger) {
+		super();
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.logger = logger;
@@ -51,8 +52,9 @@ export class RepoManager implements vscode.Disposable {
 		this.repoEventEmitter = new EventEmitter<RepoChangeEvent>();
 		this.startupTasks();
 
-		this.disposables.push(
-			vscode.workspace.onDidChangeWorkspaceFolders(async e => {
+		this.registerDisposables(
+			// Monitor changes to the workspace folders to: search added folders for repositories, remove repositories within deleted folders
+			vscode.workspace.onDidChangeWorkspaceFolders(async (e) => {
 				let changes = false, path;
 				if (e.added.length > 0) {
 					for (let i = 0; i < e.added.length; i++) {
@@ -70,26 +72,25 @@ export class RepoManager implements vscode.Disposable {
 				}
 				if (changes) this.sendRepos();
 			}),
-			this.repoEventEmitter
+
+			// Monitor changes to the maxDepthOfRepoSearch Extension Setting, and trigger a new search if needed
+			onDidChangeConfiguration((event) => {
+				if (event.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
+					this.maxDepthOfRepoSearchChanged();
+				}
+			}),
+
+			// Dispose the Repository Event Emitter when disposed
+			this.repoEventEmitter,
+
+			// Stop watching folders when disposed
+			toDisposable(() => {
+				const folders = Object.keys(this.folderWatchers);
+				for (let i = 0; i < folders.length; i++) {
+					this.stopWatchingFolder(folders[i]);
+				}
+			})
 		);
-
-		onDidChangeConfiguration((event) => {
-			if (event.affectsConfiguration('git-graph.maxDepthOfRepoSearch')) {
-				this.maxDepthOfRepoSearchChanged();
-			}
-		}, this.disposables);
-	}
-
-	/**
-	 * Disposes the resources used by the RepoManager.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
-		let folders = Object.keys(this.folderWatchers);
-		for (let i = 0; i < folders.length; i++) {
-			this.stopWatchingFolder(folders[i]);
-		}
 	}
 
 	/**

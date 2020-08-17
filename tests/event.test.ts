@@ -1,5 +1,4 @@
-import * as vscode from 'vscode';
-import { EventEmitter } from '../src/event';
+import { EventEmitter } from '../src/utils/event';
 
 describe('Event Emitter', () => {
 	it('Registers and disposes subscribers', () => {
@@ -7,11 +6,10 @@ describe('Event Emitter', () => {
 		const emitter = new EventEmitter<number>();
 		const mockSubscriber1 = jest.fn((x: number) => x);
 		const mockSubscriber2 = jest.fn((x: number) => x);
-		const disposables: vscode.Disposable[] = [];
 
 		// Run
-		emitter.subscribe(mockSubscriber1, disposables);
-		emitter.subscribe(mockSubscriber2, disposables);
+		emitter.subscribe(mockSubscriber1);
+		emitter.subscribe(mockSubscriber2);
 
 		// Assert
 		expect(emitter['listeners'].length).toBe(2);
@@ -28,13 +26,11 @@ describe('Event Emitter', () => {
 		const emitter = new EventEmitter<number>();
 		const mockSubscriber1 = jest.fn((x: number) => x);
 		const mockSubscriber2 = jest.fn((x: number) => x);
-		const disposables1: vscode.Disposable[] = [];
-		const disposables2: vscode.Disposable[] = [];
 
 		// Run
-		emitter.subscribe(mockSubscriber1, disposables1);
-		emitter.subscribe(mockSubscriber2, disposables2);
-		disposables1.forEach((disposable) => disposable.dispose());
+		const disposable = emitter.subscribe(mockSubscriber1);
+		emitter.subscribe(mockSubscriber2);
+		disposable.dispose();
 
 		// Assert
 		expect(emitter['listeners'].length).toBe(1);
@@ -48,12 +44,11 @@ describe('Event Emitter', () => {
 		// Setup
 		const emitter = new EventEmitter<number>();
 		const mockSubscriber = jest.fn((x: number) => x);
-		const disposables: vscode.Disposable[] = [];
 
 		// Run
-		emitter.subscribe(mockSubscriber, disposables);
-		disposables.forEach((disposable) => disposable.dispose());
-		disposables.forEach((disposable) => disposable.dispose());
+		const disposable = emitter.subscribe(mockSubscriber);
+		disposable.dispose();
+		disposable.dispose();
 
 		// Assert
 		expect(emitter['listeners'].length).toBe(0);
@@ -67,11 +62,10 @@ describe('Event Emitter', () => {
 		const emitter = new EventEmitter<number>();
 		const mockSubscriber1 = jest.fn((x: number) => x);
 		const mockSubscriber2 = jest.fn((x: number) => x);
-		const disposables: vscode.Disposable[] = [];
 
 		// Run
-		emitter.subscribe(mockSubscriber1, disposables);
-		emitter.subscribe(mockSubscriber2, disposables);
+		emitter.subscribe(mockSubscriber1);
+		emitter.subscribe(mockSubscriber2);
 		emitter.emit(5);
 
 		// Assert

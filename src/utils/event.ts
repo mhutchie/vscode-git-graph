@@ -8,7 +8,7 @@ type EventListener<T> = (event: T) => void;
 /**
  * A function used to subscribe to an EventEmitter.
  */
-export type Event<T> = (listener: EventListener<T>, disposables: vscode.Disposable[]) => void;
+export type Event<T> = (listener: EventListener<T>) => vscode.Disposable;
 
 /**
  * Represents an EventEmitter, which is used to automate the delivery of events to subscribers. This applies the observer pattern.
@@ -21,16 +21,16 @@ export class EventEmitter<T> implements vscode.Disposable {
 	 * Creates an EventEmitter.
 	 */
 	constructor() {
-		this.event = (listener: EventListener<T>, disposables: vscode.Disposable[]) => {
+		this.event = (listener: EventListener<T>) => {
 			this.listeners.push(listener);
-			disposables.push({
+			return {
 				dispose: () => {
 					const removeListener = this.listeners.indexOf(listener);
 					if (removeListener > -1) {
 						this.listeners.splice(removeListener, 1);
 					}
 				}
-			});
+			};
 		};
 	}
 

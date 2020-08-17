@@ -3,16 +3,16 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import * as url from 'url';
-import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger, maskEmail } from './logger';
+import { Disposable, toDisposable } from './utils/disposable';
 
 /**
  * Manages fetching and caching Avatars.
  */
-export class AvatarManager implements vscode.Disposable {
+export class AvatarManager extends Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
@@ -34,6 +34,7 @@ export class AvatarManager implements vscode.Disposable {
 	 * @param logger The Git Graph Logger instance.
 	 */
 	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
+		super();
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.logger = logger;
@@ -47,13 +48,13 @@ export class AvatarManager implements vscode.Disposable {
 			}, 10000);
 			this.fetchAvatarsInterval();
 		});
-	}
 
-	/**
-	 * Disposes the resources used by the AvatarManager.
-	 */
-	public dispose() {
-		this.stopInterval();
+		this.registerDisposable(
+			// Stop fetching avatars when disposed
+			toDisposable(() => {
+				this.stopInterval();
+			})
+		);
 	}
 
 	/**

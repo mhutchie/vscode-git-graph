@@ -10,10 +10,10 @@ import * as fs from 'fs';
 import * as iconv from 'iconv-lite';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { EventEmitter } from '../src/event';
 import { Logger } from '../src/logger';
 import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn } from '../src/types';
 import * as utils from '../src/utils';
+import { EventEmitter } from '../src/utils/event';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;

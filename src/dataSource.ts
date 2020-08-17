@@ -5,10 +5,11 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
-import { Event } from './event';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput } from './utils';
+import { Disposable } from './utils/disposable';
+import { Event } from './utils/event';
 
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
@@ -20,7 +21,7 @@ export const GIT_CONFIG_USER_EMAIL = 'user.email';
 /**
  * Interfaces Git Graph with the Git executable to provide all Git integrations.
  */
-export class DataSource implements vscode.Disposable {
+export class DataSource extends Disposable {
 	private readonly logger: Logger;
 	private readonly askpassEnv: AskpassEnvironment;
 	private gitExecutable!: GitExecutable | null;
@@ -28,7 +29,6 @@ export class DataSource implements vscode.Disposable {
 	private gitFormatCommitDetails!: string;
 	private gitFormatLog!: string;
 	private gitFormatStash!: string;
-	private disposables: vscode.Disposable[] = [];
 
 	/**
 	 * Creates the Git Graph Data Source.
@@ -37,26 +37,28 @@ export class DataSource implements vscode.Disposable {
 	 * @param logger The Git Graph Logger instance.
 	 */
 	constructor(gitExecutable: GitExecutable | null, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
+		super();
 		this.logger = logger;
 		this.setGitExecutable(gitExecutable);
 
 		const askpassManager = new AskpassManager();
 		this.askpassEnv = askpassManager.getEnv();
-		this.disposables.push(askpassManager);
 
-		onDidChangeConfiguration((event) => {
-			if (
-				event.affectsConfiguration('git-graph.date.type') || event.affectsConfiguration('git-graph.dateType') ||
-				event.affectsConfiguration('git-graph.repository.commits.showSignatureStatus') || event.affectsConfiguration('git-graph.showSignatureStatus') ||
-				event.affectsConfiguration('git-graph.repository.useMailmap') || event.affectsConfiguration('git-graph.useMailmap')
-			) {
-				this.generateGitCommandFormats();
-			}
-		}, this.disposables);
-
-		onDidChangeGitExecutable((gitExecutable) => {
-			this.setGitExecutable(gitExecutable);
-		}, this.disposables);
+		this.registerDisposables(
+			onDidChangeConfiguration((event) => {
+				if (
+					event.affectsConfiguration('git-graph.date.type') || event.affectsConfiguration('git-graph.dateType') ||
+					event.affectsConfiguration('git-graph.repository.commits.showSignatureStatus') || event.affectsConfiguration('git-graph.showSignatureStatus') ||
+					event.affectsConfiguration('git-graph.repository.useMailmap') || event.affectsConfiguration('git-graph.useMailmap')
+				) {
+					this.generateGitCommandFormats();
+				}
+			}),
+			onDidChangeGitExecutable((gitExecutable) => {
+				this.setGitExecutable(gitExecutable);
+			}),
+			askpassManager
+		);
 	}
 
 	/**
@@ -103,14 +105,6 @@ export class DataSource implements vscode.Disposable {
 			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
 			'%s' // Subject
 		].join(GIT_LOG_SEPARATOR);
-	}
-
-	/**
-	 * Disposes the resources used by the DataSource.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
 	}
 
 

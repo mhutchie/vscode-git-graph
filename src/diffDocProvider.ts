@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { DataSource } from './dataSource';
 import { GitFileStatus } from './types';
 import { UNCOMMITTED, getPathFromStr, showErrorMessage } from './utils';
+import { Disposable, toDisposable } from './utils/disposable';
 
 export const enum DiffSide {
 	Old,
@@ -12,30 +13,25 @@ export const enum DiffSide {
 /**
  * Manages providing a specific revision of a repository file for use in the Visual Studio Code Diff View.
  */
-export class DiffDocProvider implements vscode.TextDocumentContentProvider, vscode.Disposable {
+export class DiffDocProvider extends Disposable implements vscode.TextDocumentContentProvider {
 	public static scheme = 'git-graph';
 	private readonly dataSource: DataSource;
 	private readonly docs = new Map<string, DiffDocument>();
-	private readonly closeDocSubscription: vscode.Disposable;
-
-	private onDidChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>();
+	private readonly onDidChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
 	/**
 	 * Creates the Git Graph Diff Document Provider.
 	 * @param dataSource The Git Graph DataSource instance.
 	 */
 	constructor(dataSource: DataSource) {
+		super();
 		this.dataSource = dataSource;
-		this.closeDocSubscription = vscode.workspace.onDidCloseTextDocument((doc) => this.docs.delete(doc.uri.toString()));
-	}
 
-	/**
-	 * Disposes the resources used by the DiffDocProvider.
-	 */
-	public dispose() {
-		this.closeDocSubscription.dispose();
-		this.docs.clear();
-		this.onDidChangeEventEmitter.dispose();
+		this.registerDisposables(
+			vscode.workspace.onDidCloseTextDocument((doc) => this.docs.delete(doc.uri.toString())),
+			this.onDidChangeEventEmitter,
+			toDisposable(() => this.docs.clear())
+		);
 	}
 
 	/**

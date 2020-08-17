@@ -2,9 +2,10 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { getConfig } from './config';
-import { Event } from './event';
 import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowRemoteBranches, ShowTags } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
+import { Disposable } from './utils/disposable';
+import { Event } from './utils/event';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
@@ -47,12 +48,11 @@ export type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
 /**
  * Manages the Git Graph Extension State, which stores data in both the Visual Studio Code Global & Workspace State.
  */
-export class ExtensionState implements vscode.Disposable {
+export class ExtensionState extends Disposable {
 	private readonly globalState: vscode.Memento;
 	private readonly workspaceState: vscode.Memento;
 	private readonly globalStoragePath: string;
 	private avatarStorageAvailable: boolean = false;
-	private disposables: vscode.Disposable[] = [];
 
 	/**
 	 * Creates the Git Graph Extension State.
@@ -60,6 +60,7 @@ export class ExtensionState implements vscode.Disposable {
 	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
 	 */
 	constructor(context: vscode.ExtensionContext, onDidChangeGitExecutable: Event<GitExecutable>) {
+		super();
 		this.globalState = context.globalState;
 		this.workspaceState = context.workspaceState;
 
@@ -79,17 +80,11 @@ export class ExtensionState implements vscode.Disposable {
 			}
 		});
 
-		onDidChangeGitExecutable((gitExecutable) => {
-			this.setLastKnownGitPath(gitExecutable.path);
-		}, this.disposables);
-	}
-
-	/**
-	 * Disposes the resources used by the ExtensionState.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
+		this.registerDisposable(
+			onDidChangeGitExecutable((gitExecutable) => {
+				this.setLastKnownGitPath(gitExecutable.path);
+			})
+		);
 	}
 
 

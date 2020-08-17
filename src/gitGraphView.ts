@@ -9,11 +9,12 @@ import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
 import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { Disposable, toDisposable } from './utils/disposable';
 
 /**
  * Manages the Git Graph View.
  */
-export class GitGraphView implements vscode.Disposable {
+export class GitGraphView extends Disposable {
 	public static currentPanel: GitGraphView | undefined;
 
 	private readonly panel: vscode.WebviewPanel;
@@ -24,7 +25,6 @@ export class GitGraphView implements vscode.Disposable {
 	private readonly repoFileWatcher: RepoFileWatcher;
 	private readonly repoManager: RepoManager;
 	private readonly logger: Logger;
-	private disposables: vscode.Disposable[] = [];
 	private isGraphViewLoaded: boolean = false;
 	private isPanelVisible: boolean = true;
 	private currentRepo: string | null = null;
@@ -76,6 +76,7 @@ export class GitGraphView implements vscode.Disposable {
 	 * @param column The column the view should be loaded in.
 	 */
 	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo, column: vscode.ViewColumn | undefined) {
+		super();
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
 		this.dataSource = dataSource;
@@ -98,21 +99,49 @@ export class GitGraphView implements vscode.Disposable {
 				dark: this.getResourcesUri('webview-icon-dark.svg')
 			};
 
-		// Dispose this Git Graph View when the Webview is disposed
-		this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 
-		// Register a callback that is called when the view is shown or hidden
-		this.panel.onDidChangeViewState(() => {
-			if (this.panel.visible !== this.isPanelVisible) {
-				if (this.panel.visible) {
+		this.registerDisposables(
+			// Dispose Git Graph View resources when disposed
+			toDisposable(() => {
+				GitGraphView.currentPanel = undefined;
+				this.avatarManager.deregisterView();
+				this.repoFileWatcher.stop();
+			}),
+
+			// Dispose this Git Graph View when the Webview Panel is disposed
+			this.panel.onDidDispose(() => this.dispose()),
+
+			// Register a callback that is called when the view is shown or hidden
+			this.panel.onDidChangeViewState(() => {
+				if (this.panel.visible !== this.isPanelVisible) {
+					if (this.panel.visible) {
+						this.update();
+					} else {
+						this.currentRepo = null;
+						this.repoFileWatcher.stop();
+					}
+					this.isPanelVisible = this.panel.visible;
+				}
+			}),
+
+			// Subscribe to events triggered when a repository is added or deleted from Git Graph
+			repoManager.onDidChangeRepos((event) => {
+				if (!this.panel.visible) return;
+				const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo, commitDetails: null } : null;
+				if ((event.numRepos === 0 && this.isGraphViewLoaded) || (event.numRepos > 0 && !this.isGraphViewLoaded)) {
+					this.loadViewTo = loadViewTo;
 					this.update();
 				} else {
-					this.currentRepo = null;
-					this.repoFileWatcher.stop();
+					this.respondLoadRepos(event.repos, loadViewTo);
 				}
-				this.isPanelVisible = this.panel.visible;
-			}
-		}, null, this.disposables);
+			}),
+
+			// Respond to messages sent from the Webview
+			this.panel.webview.onDidReceiveMessage((msg) => this.respondToMessage(msg)),
+
+			// Dispose the Webview Panel when disposed
+			this.panel
+		);
 
 		// Instantiate a RepoFileWatcher that watches for file changes in the repository currently open in the Git Graph View 
 		this.repoFileWatcher = new RepoFileWatcher(logger, () => {
@@ -120,21 +149,6 @@ export class GitGraphView implements vscode.Disposable {
 				this.sendMessage({ command: 'refresh' });
 			}
 		});
-
-		// Subscribe to events triggered when a repository is added or deleted from Git Graph
-		repoManager.onDidChangeRepos((event) => {
-			if (!this.panel.visible) return;
-			const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo, commitDetails: null } : null;
-			if ((event.numRepos === 0 && this.isGraphViewLoaded) || (event.numRepos > 0 && !this.isGraphViewLoaded)) {
-				this.loadViewTo = loadViewTo;
-				this.update();
-			} else {
-				this.respondLoadRepos(event.repos, loadViewTo);
-			}
-		}, this.disposables);
-
-		// Respond to messages sent from the Webview
-		this.panel.webview.onDidReceiveMessage((msg) => this.respondToMessage(msg), null, this.disposables);
 
 		// Render the content of the Webview
 		this.update();
@@ -550,19 +564,6 @@ export class GitGraphView implements vscode.Disposable {
 	 */
 	private sendMessage(msg: ResponseMessage) {
 		this.panel.webview.postMessage(msg);
-	}
-
-	/**
-	 * Disposes the resources used by the GitGraphView.
-	 */
-	public dispose() {
-		GitGraphView.currentPanel = undefined;
-		this.panel.dispose();
-		this.avatarManager.deregisterView();
-		this.repoFileWatcher.stop();
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
-		this.logger.log('Disposed Git Graph View');
 	}
 
 	/**

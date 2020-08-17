@@ -11,11 +11,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
 import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { EventEmitter } from '../src/utils/event';
 
 let extensionContext = vscode.mocks.extensionContext;
 let terminal = vscode.mocks.terminal;

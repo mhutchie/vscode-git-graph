@@ -321,7 +321,7 @@ export class AvatarManager extends Disposable {
 	 */
 	private async fetchFromGravatar(avatarRequest: AvatarRequestItem) {
 		this.logger.log('Requesting Avatar for ' + maskEmail(avatarRequest.email) + ' from Gravatar');
-		let hash: string = crypto.createHash('md5').update(avatarRequest.email).digest('hex');
+		const hash: string = crypto.createHash('md5').update(avatarRequest.email.trim().toLowerCase()).digest('hex');
 
 		let img = await this.downloadAvatarImage(avatarRequest.email, 'https://secure.gravatar.com/avatar/' + hash + '?s=162&d=404'), identicon = false;
 		if (img === null) {

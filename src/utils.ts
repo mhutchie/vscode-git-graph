@@ -63,11 +63,12 @@ export function isPathInWorkspace(path: string) {
 /**
  * Get the normalised canonical absolute path (i.e. resolves symlinks in `path`).
  * @param path The path.
+ * @param native Use the native realpath.
  * @returns The normalised canonical absolute path.
  */
-export function realpath(path: string) {
-	return new Promise<string>(resolve => {
-		fs.realpath(path, (err, resolvedPath) => resolve(err !== null ? path : getPathFromUri(vscode.Uri.file(resolvedPath))));
+export function realpath(path: string, native: boolean = false) {
+	return new Promise<string>((resolve) => {
+		(native ? fs.realpath.native : fs.realpath)(path, (err, resolvedPath) => resolve(err !== null ? path : getPathFromUri(vscode.Uri.file(resolvedPath))));
 	});
 }
 

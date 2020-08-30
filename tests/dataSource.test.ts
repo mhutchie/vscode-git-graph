@@ -8,6 +8,7 @@ jest.mock('../src/logger');
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as iconv from 'iconv-lite';
+import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
 import { Logger } from '../src/logger';
@@ -24,6 +25,7 @@ beforeAll(() => {
 	onDidChangeConfiguration = new EventEmitter<ConfigurationChangeEvent>();
 	onDidChangeGitExecutable = new EventEmitter<utils.GitExecutable>();
 	logger = new Logger();
+	jest.spyOn(path, 'normalize').mockImplementation((p) => p);
 });
 
 afterAll(() => {
@@ -3466,6 +3468,15 @@ describe('DataSource', () => {
 	});
 
 	describe('getSubmodules', () => {
+		let platform: NodeJS.Platform;
+		beforeEach(() => {
+			platform = process.platform;
+			Object.defineProperty(process, 'platform', { value: 'not-windows' });
+		});
+		afterEach(() => {
+			Object.defineProperty(process, 'platform', { value: platform });
+		});
+
 		it('Should return no submodules if no .gitmodules file exists', async () => {
 			// Setup
 			const spyOnReadFile = jest.spyOn(fs, 'readFile');
@@ -3511,6 +3522,15 @@ describe('DataSource', () => {
 	});
 
 	describe('repoRoot', () => {
+		let platform: NodeJS.Platform;
+		beforeEach(() => {
+			platform = process.platform;
+			Object.defineProperty(process, 'platform', { value: 'not-windows' });
+		});
+		afterEach(() => {
+			Object.defineProperty(process, 'platform', { value: platform });
+		});
+
 		it('Should return the same directory when called from the root of the repository', async () => {
 			// Setup
 			mockGitSuccessOnce('/path/to/repo/root');
@@ -3572,6 +3592,87 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toBe('/other-path');
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rev-parse', '--show-toplevel'], expect.objectContaining({ cwd: '/path' }));
+		});
+
+		describe('Windows Mapped Network Drive Resolution', () => {
+			it('Should not alter non-network share drives', async () => {
+				// Setup
+				mockGitSuccessOnce('c:/path/to/repo/root');
+				Object.defineProperty(process, 'platform', { value: 'win32' });
+				const spyOnRealpath = jest.spyOn(utils, 'realpath');
+
+				// Run
+				const result = await dataSource.repoRoot('c:/path/to/repo/root');
+
+				// Assert
+				expect(result).toBe('c:/path/to/repo/root');
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rev-parse', '--show-toplevel'], expect.objectContaining({ cwd: 'c:/path/to/repo/root' }));
+				expect(spyOnRealpath).toHaveBeenCalledTimes(0);
+			});
+
+			it('Should resolve the UNC Path Prefix of a path on a network share', async () => {
+				// Setup
+				mockGitSuccessOnce('//network/drive/path/to/repo/root');
+				Object.defineProperty(process, 'platform', { value: 'win32' });
+				const spyOnRealpath = jest.spyOn(utils, 'realpath');
+				spyOnRealpath.mockResolvedValueOnce('//network/drive/');
+
+				// Run
+				const result = await dataSource.repoRoot('a:/path/to/repo/root');
+
+				// Assert
+				expect(result).toBe('a:/path/to/repo/root');
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rev-parse', '--show-toplevel'], expect.objectContaining({ cwd: 'a:/path/to/repo/root' }));
+				expect(spyOnRealpath).toBeCalledWith('a:/', true);
+			});
+
+			it('Should resolve the UNC Path Prefix of a path on a network share (when native realpath doesn\'t return a trailing slash)', async () => {
+				// Setup
+				mockGitSuccessOnce('//network/drive/path/to/repo/root');
+				Object.defineProperty(process, 'platform', { value: 'win32' });
+				const spyOnRealpath = jest.spyOn(utils, 'realpath');
+				spyOnRealpath.mockResolvedValueOnce('//network/drive');
+
+				// Run
+				const result = await dataSource.repoRoot('a:/path/to/repo/root');
+
+				// Assert
+				expect(result).toBe('a:/path/to/repo/root');
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rev-parse', '--show-toplevel'], expect.objectContaining({ cwd: 'a:/path/to/repo/root' }));
+				expect(spyOnRealpath).toBeCalledWith('a:/', true);
+			});
+
+			it('Should not adjust the path if the native realpath can\'t resolve the Mapped Network Drive Letter', async () => {
+				// Setup
+				mockGitSuccessOnce('//network/drive/path/to/repo/root');
+				Object.defineProperty(process, 'platform', { value: 'win32' });
+				const spyOnRealpath = jest.spyOn(utils, 'realpath');
+				spyOnRealpath.mockResolvedValueOnce('a:/');
+
+				// Run
+				const result = await dataSource.repoRoot('a:/path/to/repo/root');
+
+				// Assert
+				expect(result).toBe('//network/drive/path/to/repo/root');
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rev-parse', '--show-toplevel'], expect.objectContaining({ cwd: 'a:/path/to/repo/root' }));
+				expect(spyOnRealpath).toBeCalledWith('a:/', true);
+			});
+
+			it('Should not adjust the path if the native realpath resolves the Mapped Network Drive Letter to a different UNC Path Prefix', async () => {
+				// Setup
+				mockGitSuccessOnce('//network/drive/path/to/repo/root');
+				Object.defineProperty(process, 'platform', { value: 'win32' });
+				const spyOnRealpath = jest.spyOn(utils, 'realpath');
+				spyOnRealpath.mockResolvedValueOnce('//other/network/drive/');
+
+				// Run
+				const result = await dataSource.repoRoot('a:/path/to/repo/root');
+
+				// Assert
+				expect(result).toBe('//network/drive/path/to/repo/root');
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rev-parse', '--show-toplevel'], expect.objectContaining({ cwd: 'a:/path/to/repo/root' }));
+				expect(spyOnRealpath).toBeCalledWith('a:/', true);
+			});
 		});
 
 		it('Should return NULL when git threw an error', async () => {

@@ -7,10 +7,11 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
+const DRIVE_LETTER_PATH_REGEX = /^[a-z]:\//;
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
@@ -505,20 +506,31 @@ export class DataSource extends Disposable {
 
 	/**
 	 * Get the root of the repository containing the specified path.
-	 * @param repoPath The path contained in the repository.
-	 * @returns The root of the repository.
+	 * @param pathOfPotentialRepo The path that is potentially a repository (or is contained within a repository).
+	 * @returns STRING => The root of the repository, NULL => `pathOfPotentialRepo` is not in a repository.
 	 */
-	public repoRoot(repoPath: string) {
-		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(vscode.Uri.file(path.normalize(stdout.trim())))).then(async (canonicalRoot) => {
-			let path = repoPath;
+	public repoRoot(pathOfPotentialRepo: string) {
+		return this.spawnGit(['rev-parse', '--show-toplevel'], pathOfPotentialRepo, (stdout) => getPathFromUri(vscode.Uri.file(path.normalize(stdout.trim())))).then(async (pathReturnedByGit) => {
+			if (process.platform === 'win32') {
+				// On Windows Mapped Network Drives with Git >= 2.25.0, `git rev-parse --show-toplevel` returns the UNC Path for the Mapped Network Drive, instead of the Drive Letter.
+				// Attempt to replace the UNC Path with the Drive Letter.
+				let driveLetterPathMatch: RegExpMatchArray | null;
+				if ((driveLetterPathMatch = pathOfPotentialRepo.match(DRIVE_LETTER_PATH_REGEX)) && !pathReturnedByGit.match(DRIVE_LETTER_PATH_REGEX)) {
+					const realPathForDriveLetter = pathWithTrailingSlash(await realpath(driveLetterPathMatch[0], true));
+					if (realPathForDriveLetter !== driveLetterPathMatch[0] && pathReturnedByGit.startsWith(realPathForDriveLetter)) {
+						pathReturnedByGit = driveLetterPathMatch[0] + pathReturnedByGit.substring(realPathForDriveLetter.length);
+					}
+				}
+			}
+			let path = pathOfPotentialRepo;
 			let first = path.indexOf('/');
 			while (true) {
-				if (canonicalRoot === path || canonicalRoot === await realpath(path)) return path;
+				if (pathReturnedByGit === path || pathReturnedByGit === await realpath(path)) return path;
 				let next = path.lastIndexOf('/');
 				if (first !== next && next > -1) {
 					path = path.substring(0, next);
 				} else {
-					return canonicalRoot;
+					return pathReturnedByGit;
 				}
 			}
 		}).catch(() => null); // null => path is not in a repo

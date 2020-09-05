@@ -1860,7 +1860,13 @@ class GitGraphView {
 					}
 				}
 			} else if (e.key === 'Escape') {
-				if (this.settingsWidget.isVisible()) {
+				if (this.repoDropdown.isOpen()) {
+					this.repoDropdown.close();
+					handledEvent(e);
+				} else if (this.branchDropdown.isOpen()) {
+					this.branchDropdown.close();
+					handledEvent(e);
+				} else if (this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
 					handledEvent(e);
 				} else if (this.findWidget.isVisible()) {

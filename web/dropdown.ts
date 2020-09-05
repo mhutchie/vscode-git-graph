@@ -74,9 +74,6 @@ class Dropdown {
 			}
 		}, true);
 		document.addEventListener('contextmenu', () => this.close(), true);
-		document.addEventListener('keyup', (e) => {
-			if (e.key === 'Escape') this.close();
-		}, true);
 		this.filterInput.addEventListener('keyup', () => this.filter());
 	}
 
@@ -106,6 +103,16 @@ class Dropdown {
 
 	public refresh() {
 		if (this.options.length > 0) this.render();
+	}
+
+	public isOpen() {
+		return this.dropdownVisible;
+	}
+
+	public close() {
+		this.elem.classList.remove('dropdownOpen');
+		this.dropdownVisible = false;
+		this.clearDoubleClickTimeout();
 	}
 
 	private render() {
@@ -146,12 +153,6 @@ class Dropdown {
 		}
 		this.filterInput.style.display = 'block';
 		this.noResultsElem.style.display = matches ? 'none' : 'block';
-	}
-
-	private close() {
-		this.elem.classList.remove('dropdownOpen');
-		this.dropdownVisible = false;
-		this.clearDoubleClickTimeout();
 	}
 
 	private getSelectedOptions(names: boolean) {

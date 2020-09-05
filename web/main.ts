@@ -235,21 +235,32 @@ class GitGraphView {
 		this.renderFetchButton();
 
 		// Configure current branches
-
 		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			let i = 0, globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
-			while (i < this.currentBranches.length) {
-				if (!branchOptions.includes(this.currentBranches[i]) && !globPatterns.includes(this.currentBranches[i])) {
-					this.currentBranches.splice(i, 1);
-				} else {
-					i++;
-				}
-			}
-			if (this.currentBranches.length === 0) this.currentBranches = null;
+			// Filter any branches that are currently selected, but no longer exist
+			const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
+			this.currentBranches = this.currentBranches.filter((branch) =>
+				this.gitBranches.includes(branch) || globPatterns.includes(branch)
+			);
 		}
-
-		if (this.currentBranches === null) {
-			this.currentBranches = [this.config.onRepoLoadShowCheckedOutBranch && this.gitBranchHead !== null ? this.gitBranchHead : SHOW_ALL_BRANCHES];
+		if (this.currentBranches === null || this.currentBranches.length === 0) {
+			// No branches are currently selected
+			const onRepoLoadShowCheckedOutBranch = getOnRepoLoadShowCheckedOutBranch(this.gitRepos[this.currentRepo].onRepoLoadShowCheckedOutBranch);
+			const onRepoLoadShowSpecificBranches = getOnRepoLoadShowSpecificBranches(this.gitRepos[this.currentRepo].onRepoLoadShowSpecificBranches);
+			this.currentBranches = [];
+			if (onRepoLoadShowSpecificBranches.length > 0) {
+				// Show specific branches if they exist in the repository
+				const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
+				this.currentBranches.push(...onRepoLoadShowSpecificBranches.filter((branch) =>
+					this.gitBranches.includes(branch) || globPatterns.includes(branch))
+				);
+			}
+			if (onRepoLoadShowCheckedOutBranch && this.gitBranchHead !== null && !this.currentBranches.includes(this.gitBranchHead)) {
+				// Show the checked-out branch, and it hasn't already been added as a specific branch
+				this.currentBranches.push(this.gitBranchHead);
+			}
+			if (this.currentBranches.length === 0) {
+				this.currentBranches.push(SHOW_ALL_BRANCHES);
+			}
 		}
 
 		this.saveState();
@@ -359,7 +370,7 @@ class GitGraphView {
 		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup, this.onlyFollowFirstParent);
 		this.render();
 
-		if (currentRepoLoading && this.config.onRepoLoadScrollToHead && this.commitHead !== null) {
+		if (currentRepoLoading && this.config.onRepoLoad.scrollToHead && this.commitHead !== null) {
 			this.scrollToCommit(this.commitHead, true);
 		}
 
@@ -482,6 +493,17 @@ class GitGraphView {
 
 	public getBranches(): ReadonlyArray<string> {
 		return this.gitBranches;
+	}
+
+	public getBranchesSelectInputOptions(): ReadonlyArray<DialogSelectInputOption> {
+		let options: DialogSelectInputOption[] = [];
+		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
+			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
+		}
+		for (let i = 0; i < this.gitBranches.length; i++) {
+			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
+		}
+		return options;
 	}
 
 	public getCommits(): ReadonlyArray<GG.GitCommit> {
@@ -3146,6 +3168,18 @@ function getOnlyFollowFirstParent(repoValue: GG.OnlyFollowFirstParent) {
 	return repoValue === GG.OnlyFollowFirstParent.Default
 		? initialState.config.onlyFollowFirstParent
 		: repoValue === GG.OnlyFollowFirstParent.Enabled;
+}
+
+function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.ShowCheckedOutBranch) {
+	return repoValue === GG.ShowCheckedOutBranch.Default
+		? initialState.config.onRepoLoad.showCheckedOutBranch
+		: repoValue === GG.ShowCheckedOutBranch.Enabled;
+}
+
+function getOnRepoLoadShowSpecificBranches(repoValue: string[] | null) {
+	return repoValue === null
+		? initialState.config.onRepoLoad.showSpecificBranches
+		: repoValue;
 }
 
 

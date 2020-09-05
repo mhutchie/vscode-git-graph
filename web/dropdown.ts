@@ -111,14 +111,14 @@ class Dropdown {
 	private render() {
 		this.elem.classList.add('loaded');
 
-		const curValueText = this.getCurrentValueText();
+		const curValueText = formatCommaSeparatedList(this.getSelectedOptions(true));
 		this.currentValueElem.title = curValueText;
 		this.currentValueElem.innerHTML = escapeHtml(curValueText);
 
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
 			const escapedName = escapeHtml(this.options[i].name);
-			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '" title="' + escapedName + '">' +
+			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' ' + CLASS_SELECTED : '') + '" data-id="' + i + '" title="' + escapedName + '">' +
 				(this.multipleAllowed && this.optionsSelected[i] ? '<div class="dropdownOptionMultiSelected">' + SVG_ICONS.check + '</div>' : '') +
 				escapedName + (typeof this.options[i].hint === 'string' && this.options[i].hint !== '' ? '<span class="dropdownOptionHint">' + escapeHtml(this.options[i].hint!) + '</span>' : '') +
 				(this.showInfo ? '<div class="dropdownOptionInfo" title="' + escapeHtml(this.options[i].value) + '">' + SVG_ICONS.info + '</div>' : '') +
@@ -164,14 +164,6 @@ class Dropdown {
 			if (this.optionsSelected[i]) selected.push(names ? this.options[i].name : this.options[i].value);
 		}
 		return selected;
-	}
-
-	private getCurrentValueText() {
-		let str = '', selected = this.getSelectedOptions(true);
-		for (let i = 0; i < selected.length; i++) {
-			str += (i > 0 ? i < selected.length - 1 ? ', ' : ' & ' : '') + selected[i];
-		}
-		return str;
 	}
 
 	private selectOption(option: number) {

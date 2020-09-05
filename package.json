@@ -796,6 +796,15 @@
 					"default": false,
 					"description": "Show the checked out branch when a repository is loaded. Default: false (show all branches)"
 				},
+				"git-graph.repository.onLoad.showSpecificBranches": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"description": "A local branch name (e.g. \"master\"), a remote-tracking branch name prefixed with \"remotes/\" (e.g. \"remotes/origin/master\"), or a glob pattern defined in git-graph.customBranchGlobPatterns prefixed with \"--glob=\" (e.g. \"--glob=heads/feature/*\")."
+					},
+					"default": [],
+					"markdownDescription": "Show specific branches when a repository is loaded. Branches can be specified as follows: A local branch name (e.g. `master`), a remote-tracking branch name prefixed with \"remotes/\" (e.g. `remotes/origin/master`), or a glob pattern defined in `git-graph.customBranchGlobPatterns` prefixed with \"--glob=\" (e.g. `--glob=heads/feature/*`). This setting can be used in conjunction with \"Repository > On Load > Show Checked Out Branch\". Default: [] (show all branches)"
+				},
 				"git-graph.repository.onlyFollowFirstParent": {
 					"type": "boolean",
 					"default": false,

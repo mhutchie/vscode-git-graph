@@ -178,20 +178,22 @@ interface PullRequestConfigCustom extends PullRequestConfigBase {
 export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCustom;
 
 export interface GitRepoState {
-	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
+	columnWidths: ColumnWidth[] | null;
 	commitOrdering: RepoCommitOrdering;
 	fileViewType: FileViewType;
+	hideRemotes: string[];
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
-	onlyFollowFirstParent: OnlyFollowFirstParent;
 	issueLinkingConfig: IssueLinkingConfig | null;
 	name: string | null;
+	onlyFollowFirstParent: OnlyFollowFirstParent;
+	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch;
+	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: ShowRemoteBranches;
 	showTags: ShowTags;
-	hideRemotes: string[];
 }
 
 
@@ -227,8 +229,7 @@ export interface GitGraphViewConfig {
 	readonly loadMoreCommitsAutomatically: boolean;
 	readonly mute: MuteCommitsConfig;
 	readonly onlyFollowFirstParent: boolean;
-	readonly onRepoLoadScrollToHead: boolean;
-	readonly onRepoLoadShowCheckedOutBranch: boolean;
+	readonly onRepoLoad: OnRepoLoadConfig;
 	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
 	readonly showRemoteBranches: boolean;
@@ -264,6 +265,12 @@ export type LoadGitGraphViewTo = {
 export interface MuteCommitsConfig {
 	readonly commitsNotAncestorsOfHead: boolean;
 	readonly mergeCommits: boolean;
+}
+
+export interface OnRepoLoadConfig {
+	readonly scrollToHead: boolean;
+	readonly showCheckedOutBranch: boolean;
+	readonly showSpecificBranches: ReadonlyArray<string>;
 }
 
 export interface ReferenceLabelsConfig {
@@ -448,6 +455,12 @@ export const enum IncludeCommitsMentionedByReflogs {
 }
 
 export const enum OnlyFollowFirstParent {
+	Default,
+	Enabled,
+	Disabled
+}
+
+export const enum ShowCheckedOutBranch {
 	Default,
 	Enabled,
 	Disabled

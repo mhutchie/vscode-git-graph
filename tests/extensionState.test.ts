@@ -5,7 +5,7 @@ jest.mock('fs');
 
 import * as fs from 'fs';
 import { ExtensionState } from '../src/extensionState';
-import { FileViewType, GitGraphViewGlobalState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowRemoteBranches, ShowTags } from '../src/types';
+import { FileViewType, GitGraphViewGlobalState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from '../src/types';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -61,20 +61,22 @@ describe('ExtensionState', () => {
 		it('Should return the stored repositories', () => {
 			// Setup
 			const repoState = {
-				columnWidths: null,
 				cdvDivider: 0.5,
 				cdvHeight: 250,
+				columnWidths: null,
 				commitOrdering: RepoCommitOrdering.AuthorDate,
 				fileViewType: FileViewType.List,
+				hideRemotes: [],
 				includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Enabled,
-				onlyFollowFirstParent: OnlyFollowFirstParent.Disabled,
 				issueLinkingConfig: null,
 				name: 'Custom Name',
+				onlyFollowFirstParent: OnlyFollowFirstParent.Disabled,
+				onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
 				pullRequestConfig: null,
 				showRemoteBranches: true,
 				showRemoteBranchesV2: ShowRemoteBranches.Show,
-				showTags: ShowTags.Show,
-				hideRemotes: []
+				showTags: ShowTags.Show
 			};
 			extensionContext.workspaceState.get.mockReturnValueOnce({
 				'/path/to/repo': repoState
@@ -104,20 +106,22 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				}
 			});
 		});
@@ -137,20 +141,22 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				}
 			});
 		});
@@ -170,20 +176,22 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: ShowRemoteBranches.Hide,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				}
 			});
 		});
@@ -203,20 +211,22 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				}
 			});
 		});
@@ -236,20 +246,22 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: ShowRemoteBranches.Show,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				}
 			});
 		});
@@ -272,36 +284,40 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo-1': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				},
 				'/path/to/repo-2': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
 					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: ShowRemoteBranches.Hide,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showTags: ShowTags.Default
 				}
 			});
 			expect(workspaceConfiguration.get).toHaveBeenCalledTimes(1);

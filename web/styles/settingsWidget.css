@@ -106,6 +106,9 @@
 	text-overflow:ellipsis;
 	text-align:left;
 }
+.settingsSection > table td.right{
+	text-align:right;
+}
 
 .settingsSection.general > table{
 	margin-bottom:4px;

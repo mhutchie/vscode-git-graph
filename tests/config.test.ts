@@ -2686,127 +2686,197 @@ describe('Config', () => {
 		});
 	});
 
-	describe('onRepoLoadScrollToHead', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+	describe('onRepoLoad', () => {
+		describe('scrollToHead', () => {
+			const mockScrollToHeadExtensionSetting = (value: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+			};
 
-			// Run
-			const value = config.onRepoLoadScrollToHead;
+			it('Should return TRUE when the configuration value is TRUE', () => {
+				// Setup
+				mockScrollToHeadExtensionSetting(true);
 
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
-			expect(value).toBe(true);
+				// Run
+				const value = config.onRepoLoad.scrollToHead;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is FALSE', () => {
+				// Setup
+				mockScrollToHeadExtensionSetting(false);
+
+				// Run
+				const value = config.onRepoLoad.scrollToHead;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expect(value).toBe(false);
+			});
+
+			it('Should return TRUE when the configuration value is truthy', () => {
+				// Setup
+				mockScrollToHeadExtensionSetting(5);
+
+				// Run
+				const value = config.onRepoLoad.scrollToHead;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is falsy', () => {
+				// Setup
+				mockScrollToHeadExtensionSetting(0);
+
+				// Run
+				const value = config.onRepoLoad.scrollToHead;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expect(value).toBe(false);
+			});
+
+			it('Should return the default value (FALSE) when the configuration value is unknown', () => {
+				// Setup
+				mockScrollToHeadExtensionSetting(undefined);
+
+				// Run
+				const value = config.onRepoLoad.scrollToHead;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expect(value).toBe(false);
+			});
 		});
 
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+		describe('showCheckedOutBranch', () => {
+			const mockShowCheckedOutBranchExtensionSetting = (value: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
+			};
 
-			// Run
-			const value = config.onRepoLoadScrollToHead;
+			it('Should return TRUE when the configuration value is TRUE', () => {
+				// Setup
+				mockShowCheckedOutBranchExtensionSetting(true);
 
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
-			expect(value).toBe(false);
+				// Run
+				const value = config.onRepoLoad.showCheckedOutBranch;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is FALSE', () => {
+				// Setup
+				mockShowCheckedOutBranchExtensionSetting(false);
+
+				// Run
+				const value = config.onRepoLoad.showCheckedOutBranch;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expect(value).toBe(false);
+			});
+
+			it('Should return TRUE when the configuration value is truthy', () => {
+				// Setup
+				mockShowCheckedOutBranchExtensionSetting(5);
+
+				// Run
+				const value = config.onRepoLoad.showCheckedOutBranch;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is falsy', () => {
+				// Setup
+				mockShowCheckedOutBranchExtensionSetting(0);
+
+				// Run
+				const value = config.onRepoLoad.showCheckedOutBranch;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expect(value).toBe(false);
+			});
+
+			it('Should return the default value (FALSE) when the configuration value is unknown', () => {
+				// Setup
+				mockShowCheckedOutBranchExtensionSetting(undefined);
+
+				// Run
+				const value = config.onRepoLoad.showCheckedOutBranch;
+
+				// Assert
+				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expect(value).toBe(false);
+			});
 		});
 
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+		describe('showSpecificBranches', () => {
+			const mockShowSpecificBranchesExtensionSetting = (value: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => value || defaultValue);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+			};
 
-			// Run
-			const value = config.onRepoLoadScrollToHead;
+			it('Should return all branches when correctly configured', () => {
+				// Setup
+				mockShowSpecificBranchesExtensionSetting(['master', 'develop']);
 
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
-			expect(value).toBe(true);
-		});
+				// Run
+				const value = config.onRepoLoad.showSpecificBranches;
 
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('repository.onLoad.showSpecificBranches', expect.anything());
+				expect(value).toStrictEqual(['master', 'develop']);
+			});
 
-			// Run
-			const value = config.onRepoLoadScrollToHead;
+			it('Should filter out all non-string branches', () => {
+				// Setup
+				mockShowSpecificBranchesExtensionSetting(['master', 5, 'develop']);
 
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
-			expect(value).toBe(false);
-		});
+				// Run
+				const value = config.onRepoLoad.showSpecificBranches;
 
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('repository.onLoad.showSpecificBranches', expect.anything());
+				expect(value).toStrictEqual(['master', 'develop']);
+			});
 
-			// Run
-			const value = config.onRepoLoadScrollToHead;
+			it('Should return the default value ([]) when the configuration value is invalid', () => {
+				// Setup
+				mockShowSpecificBranchesExtensionSetting('master');
 
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
-			expect(value).toBe(false);
-		});
-	});
+				// Run
+				const value = config.onRepoLoad.showSpecificBranches;
 
-	describe('onRepoLoadShowCheckedOutBranch', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('repository.onLoad.showSpecificBranches', expect.anything());
+				expect(value).toStrictEqual([]);
+			});
 
-			// Run
-			const value = config.onRepoLoadShowCheckedOutBranch;
+			it('Should return the default value ([]) when the configuration value is unknown', () => {
+				// Setup
+				mockShowSpecificBranchesExtensionSetting(undefined);
 
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
-			expect(value).toBe(true);
-		});
+				// Run
+				const value = config.onRepoLoad.showSpecificBranches;
 
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
-
-			// Run
-			const value = config.onRepoLoadShowCheckedOutBranch;
-
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
-
-			// Run
-			const value = config.onRepoLoadShowCheckedOutBranch;
-
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
-
-			// Run
-			const value = config.onRepoLoadShowCheckedOutBranch;
-
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
-			// Run
-			const value = config.onRepoLoadShowCheckedOutBranch;
-
-			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
-			expect(value).toBe(false);
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('repository.onLoad.showSpecificBranches', expect.anything());
+				expect(value).toStrictEqual([]);
+			});
 		});
 	});
 

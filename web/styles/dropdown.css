@@ -80,8 +80,12 @@
 	background-color:rgba(128,128,128,0.15);
 }
 .dropdownOption:hover{
-	background-color:var(--vscode-menu-selectionBackground);
-	color:var(--vscode-menu-selectionForeground);
+	background-color:var(--vscode-menu-selectionBackground, var(--vscode-menu-background));
+	color:var(--vscode-menu-selectionForeground, var(--vscode-menu-foreground));
+}
+body.vscode-high-contrast .dropdownOption:hover{
+	outline:1px dotted var(--vscode-menu-selectionBorder, transparent);
+	outline-offset:-2px;
 }
 .dropdownOptionHint{
 	opacity:0.6;
@@ -108,12 +112,12 @@
 }
 .dropdownOptionMultiSelected svg{
 	fill:var(--vscode-menu-foreground);
-	opacity:0.5;
+	opacity:0.7;
 }
 
 .dropdownOption:hover svg{
-	fill:var(--vscode-menu-selectionForeground);
-	opacity:0.75;
+	fill:var(--vscode-menu-selectionForeground, var(--vscode-menu-foreground));
+	opacity:0.85;
 }
 
 .dropdown.dropdownOpen .dropdownCurrentValue{

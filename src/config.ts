@@ -17,6 +17,7 @@ import {
 	GraphConfig,
 	GraphStyle,
 	MuteCommitsConfig,
+	OnRepoLoadConfig,
 	RefLabelAlignment,
 	ReferenceLabelsConfig,
 	RepoDropdownOrder,
@@ -392,17 +393,17 @@ class Config {
 	}
 
 	/**
-	 * Get the value of the `git-graph.repository.onLoad.scrollToHead` Extension Setting.
+	 * Get the On Repo Load configuration from the Extension Settings.
 	 */
-	get onRepoLoadScrollToHead() {
-		return !!this.getRenamedExtensionSetting('repository.onLoad.scrollToHead', 'openRepoToHead', false);
-	}
-
-	/**
-	 * Get the value of the `git-graph.repository.onLoad.showCheckedOutBranch` Extension Setting.
-	 */
-	get onRepoLoadShowCheckedOutBranch() {
-		return !!this.getRenamedExtensionSetting('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault', false);
+	get onRepoLoad(): OnRepoLoadConfig {
+		const branches = this.config.get('repository.onLoad.showSpecificBranches', []);
+		return {
+			scrollToHead: !!this.getRenamedExtensionSetting('repository.onLoad.scrollToHead', 'openRepoToHead', false),
+			showCheckedOutBranch: !!this.getRenamedExtensionSetting('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault', false),
+			showSpecificBranches: Array.isArray(branches)
+				? branches.filter((branch) => typeof branch === 'string')
+				: []
+		};
 	}
 
 	/**

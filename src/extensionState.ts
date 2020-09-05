@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { getConfig } from './config';
-import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowRemoteBranches, ShowTags } from './types';
+import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -17,20 +17,22 @@ const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
 const REPO_STATES = 'repoStates';
 
 export const DEFAULT_REPO_STATE: GitRepoState = {
-	columnWidths: null,
 	cdvDivider: 0.5,
 	cdvHeight: 250,
+	columnWidths: null,
 	commitOrdering: RepoCommitOrdering.Default,
 	fileViewType: FileViewType.Default,
+	hideRemotes: [],
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-	onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 	issueLinkingConfig: null,
 	name: null,
+	onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+	onRepoLoadShowSpecificBranches: null,
 	pullRequestConfig: null,
 	showRemoteBranches: true,
 	showRemoteBranchesV2: ShowRemoteBranches.Default,
-	showTags: ShowTags.Default,
-	hideRemotes: []
+	showTags: ShowTags.Default
 };
 
 const DEFAULT_GLOBAL_VIEW_STATE: GitGraphViewGlobalState = {

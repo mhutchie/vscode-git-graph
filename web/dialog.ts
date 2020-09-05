@@ -31,13 +31,21 @@ interface DialogTextRefInput {
 	readonly info?: string;
 }
 
-interface DialogSelectInput {
+type DialogSelectInput = {
 	readonly type: DialogInputType.Select;
 	readonly name: string;
 	readonly options: ReadonlyArray<DialogSelectInputOption>;
 	readonly default: string;
+	readonly multiple?: false;
 	readonly info?: string;
-}
+} | {
+	readonly type: DialogInputType.Select;
+	readonly name: string;
+	readonly options: ReadonlyArray<DialogSelectInputOption>;
+	readonly defaults: ReadonlyArray<string>;
+	readonly multiple: true;
+	readonly info?: string;
+};
 
 interface DialogRadioInput {
 	readonly type: DialogInputType.Radio;
@@ -64,7 +72,7 @@ interface DialogRadioInputOption {
 }
 
 type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogRadioInput | DialogCheckboxInput;
-type DialogInputValue = string | boolean;
+type DialogInputValue = string | string[] | boolean;
 
 type DialogTarget = {
 	type: TargetType.Commit | TargetType.Ref;
@@ -78,7 +86,7 @@ class Dialog {
 	private target: DialogTarget | null = null;
 	private actioned: (() => void) | null = null;
 	private type: DialogType | null = null;
-	private customSelects: ReadonlyArray<CustomSelect> = [];
+	private customSelects: { [inputIndex: string]: CustomSelect } = {};
 
 	public showConfirmation(message: string, actionName: string, actioned: () => void, target: DialogTarget | null) {
 		this.show(DialogType.Form, message, actionName, 'Cancel', () => {
@@ -154,6 +162,8 @@ class Dialog {
 					}
 				}
 				return input.default; // If no option is checked, return the default value
+			} else if (input.type === DialogInputType.Select) {
+				return this.customSelects[index].getValue();
 			} else {
 				const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
 				return input.type === DialogInputType.Checkbox
@@ -175,14 +185,10 @@ class Dialog {
 		} : null, target);
 
 		// Create custom select inputs
-		const selectIds: number[] = [];
 		inputs.forEach((input, id) => {
 			if (input.type === DialogInputType.Select) {
-				selectIds.push(id);
+				this.customSelects[id.toString()] = new CustomSelect(<DialogSelectInput>inputs[id], 'dialogFormSelect' + id, id + 1, this.elem!);
 			}
-		});
-		this.customSelects = selectIds.map((id) => {
-			return new CustomSelect(<DialogSelectInput>inputs[id], 'dialogFormSelect' + id, 'dialogInput' + id, id + 1, this.elem!);
 		});
 
 		// If the dialog contains a TextRef input, attach event listeners for validation
@@ -263,8 +269,8 @@ class Dialog {
 			alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, false);
 		}
 		this.target = null;
-		this.customSelects.forEach(select => select.remove());
-		this.customSelects = [];
+		Object.keys(this.customSelects).forEach((index) => this.customSelects[index].remove());
+		this.customSelects = {};
 		this.actioned = null;
 		this.type = null;
 	}
@@ -325,42 +331,37 @@ class Dialog {
 }
 
 class CustomSelect {
-	private data: DialogSelectInput;
+	private readonly data: DialogSelectInput;
+	private readonly selected: boolean[];
+	private lastSelected: number = -1;
+	private focussed: number = -1;
 	private open: boolean;
-	private selectedItem!: number;
 
 	private dialogElem: HTMLElement | null;
 	private elem: HTMLElement | null;
 	private currentElem: HTMLElement | null;
-	private valueElem: HTMLInputElement | null;
 	private optionsElem: HTMLElement | null = null;
 	private clickHandler: ((e: MouseEvent) => void) | null;
 
-	constructor(data: DialogSelectInput, containerId: string, inputId: string, tabIndex: number, dialogElem: HTMLElement) {
+	constructor(data: DialogSelectInput, containerId: string, tabIndex: number, dialogElem: HTMLElement) {
 		this.data = data;
+		this.selected = data.options.map(() => false);
 		this.open = false;
 		this.dialogElem = dialogElem;
 
-		let container = document.getElementById(containerId)!;
+		const container = document.getElementById(containerId)!;
 		container.className = 'customSelectContainer';
 		this.elem = container;
 
-		let currentElem = document.createElement('div');
+		const currentElem = document.createElement('div');
 		currentElem.className = 'customSelectCurrent';
 		currentElem.tabIndex = tabIndex;
 		this.currentElem = currentElem;
 		container.appendChild(currentElem);
 
-		let valueElem = document.createElement('input');
-		valueElem.className = 'customSelectValue';
-		valueElem.id = inputId;
-		valueElem.type = 'hidden';
-		this.valueElem = valueElem;
-		container.appendChild(valueElem);
-
 		this.clickHandler = (e: MouseEvent) => {
 			if (!e.target) return;
-			let targetElem = <HTMLElement>e.target;
+			const targetElem = <HTMLElement>e.target;
 			if (targetElem.closest('.customSelectContainer') !== this.elem && (this.optionsElem === null || targetElem.closest('.customSelectOptions') !== this.optionsElem)) {
 				this.render(false);
 				return;
@@ -368,9 +369,18 @@ class CustomSelect {
 
 			if (targetElem.className === 'customSelectCurrent') {
 				this.render(!this.open);
-			} else if (this.open && targetElem.classList.contains('customSelectOption')) {
-				this.setSelectedItem(parseInt(targetElem.dataset.index!));
-				this.render(false);
+			} else if (this.open) {
+				const optionElem = <HTMLElement | null>targetElem.closest('.customSelectOption');
+				if (optionElem !== null) {
+					const selectedOptionIndex = parseInt(optionElem.dataset.index!);
+					this.setItemSelectedState(selectedOptionIndex, data.multiple ? !this.selected[selectedOptionIndex] : true);
+					if (!this.data.multiple) {
+						this.render(false);
+					}
+					if (this.currentElem !== null) {
+						this.currentElem.focus();
+					}
+				}
 			}
 		};
 		document.addEventListener('click', this.clickHandler, true);
@@ -381,17 +391,49 @@ class CustomSelect {
 			} else if (this.open && (e.key === 'Enter' || e.key === 'Escape')) {
 				this.render(false);
 				handledEvent(e);
-			} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-				this.setSelectedItem(this.selectedItem > 0 ? this.selectedItem - 1 : this.data.options.length - 1);
-				handledEvent(e);
-			} else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-				this.setSelectedItem(this.selectedItem < this.data.options.length - 1 ? this.selectedItem + 1 : 0);
-				handledEvent(e);
+			} else if (this.data.multiple) {
+				if (e.key === ' ' && this.focussed > -1) {
+					this.setItemSelectedState(this.focussed, !this.selected[this.focussed]);
+					handledEvent(e);
+				} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+					if (!this.open) {
+						this.render(true);
+					}
+					this.setFocussed(this.focussed > 0 ? this.focussed - 1 : this.data.options.length - 1);
+					this.scrollOptionIntoView(this.focussed);
+					handledEvent(e);
+				} else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+					if (!this.open) {
+						this.render(true);
+					}
+					this.setFocussed(this.focussed < this.data.options.length - 1 ? this.focussed + 1 : 0);
+					this.scrollOptionIntoView(this.focussed);
+					handledEvent(e);
+				}
+			} else {
+				if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+					this.setItemSelectedState(this.lastSelected > 0 ? this.lastSelected - 1 : this.data.options.length - 1, true);
+					this.scrollOptionIntoView(this.lastSelected);
+					handledEvent(e);
+				} else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+					this.setItemSelectedState(this.lastSelected < this.data.options.length - 1 ? this.lastSelected + 1 : 0, true);
+					this.scrollOptionIntoView(this.lastSelected);
+					handledEvent(e);
+				}
 			}
 		});
 
-		let defaultIndex = data.options.findIndex(option => option.value === data.default);
-		this.setSelectedItem(defaultIndex > -1 ? defaultIndex : 0);
+		if (data.multiple) {
+			for (let i = data.options.length - 1; i >= 0; i--) {
+				if (data.defaults.includes(data.options[i].value)) {
+					this.setItemSelectedState(i, true);
+				}
+			}
+		} else {
+			const defaultIndex = data.options.findIndex((option) => option.value === data.default);
+			this.setItemSelectedState(defaultIndex > -1 ? defaultIndex : 0, true);
+		}
+		this.renderCurrentValue();
 	}
 
 	public remove() {
@@ -404,10 +446,6 @@ class CustomSelect {
 			this.currentElem.remove();
 			this.currentElem = null;
 		}
-		if (this.valueElem !== null) {
-			this.valueElem.remove();
-			this.valueElem = null;
-		}
 		if (this.optionsElem !== null) {
 			this.optionsElem.remove();
 			this.optionsElem = null;
@@ -418,16 +456,35 @@ class CustomSelect {
 		}
 	}
 
-	private setSelectedItem(index: number) {
-		if (this.currentElem === null || this.valueElem === null) return;
+	public getValue() {
+		const values = this.data.options.map((option) => option.value).filter((_, index) => this.selected[index]);
+		return this.data.multiple ? values : values[0];
+	}
 
-		this.selectedItem = index;
-		this.currentElem.innerHTML = escapeHtml(this.data.options[index].name);
-		this.valueElem.value = this.data.options[index].value;
-		if (this.optionsElem !== null) {
-			let optionElems = this.optionsElem.children;
-			for (let i = 0; i < optionElems.length; i++) {
-				alterClass(<HTMLElement>optionElems[i], 'selected', parseInt((<HTMLElement>optionElems[i]).dataset.index!) === index);
+	private setItemSelectedState(index: number, state: boolean) {
+		if (this.currentElem === null) return;
+
+		if (!this.data.multiple && this.lastSelected > -1) {
+			this.selected[this.lastSelected] = false;
+		}
+		this.selected[index] = state;
+		this.lastSelected = index;
+		this.renderCurrentValue();
+		this.renderOptionsStates();
+	}
+
+	private setFocussed(index: number) {
+		if (this.focussed !== index) {
+			if (this.focussed > -1) {
+				const currentlyFocussedOption = this.getOptionElem(this.focussed);
+				if (currentlyFocussedOption !== null) {
+					alterClass(currentlyFocussedOption, CLASS_FOCUSSED, false);
+				}
+			}
+			this.focussed = index;
+			const newlyFocussedOption = this.getOptionElem(this.focussed);
+			if (newlyFocussedOption !== null) {
+				alterClass(newlyFocussedOption, CLASS_FOCUSSED, true);
 			}
 		}
 	}
@@ -438,30 +495,83 @@ class CustomSelect {
 		if (this.open !== open) {
 			this.open = open;
 			if (open) {
-				let optionsElem = this.optionsElem === null ? document.createElement('div') : this.optionsElem;
-				let currentElemRect = this.currentElem.getBoundingClientRect(), dialogElemRect = this.dialogElem.getBoundingClientRect();
-				optionsElem.style.top = (currentElemRect.top - dialogElemRect.top + currentElemRect.height - 2) + 'px';
-				optionsElem.style.left = (currentElemRect.left - dialogElemRect.left - 1) + 'px';
-				optionsElem.style.width = currentElemRect.width + 'px';
-				optionsElem.style.maxHeight = Math.max(document.body.clientHeight - currentElemRect.top - currentElemRect.height - 2, 50) + 'px';
-				if (this.optionsElem === null) {
-					optionsElem.className = 'customSelectOptions';
-					this.optionsElem = optionsElem;
-					this.dialogElem.appendChild(optionsElem);
+				if (this.optionsElem !== null) {
+					this.optionsElem.remove();
 				}
-			} else if (this.optionsElem !== null) {
-				this.optionsElem.remove();
-				this.optionsElem = null;
+				this.optionsElem = document.createElement('div');
+				const currentElemRect = this.currentElem.getBoundingClientRect(), dialogElemRect = this.dialogElem.getBoundingClientRect();
+				this.optionsElem.style.top = (currentElemRect.top - dialogElemRect.top + currentElemRect.height - 2) + 'px';
+				this.optionsElem.style.left = (currentElemRect.left - dialogElemRect.left - 1) + 'px';
+				this.optionsElem.style.width = currentElemRect.width + 'px';
+				this.optionsElem.style.maxHeight = Math.max(document.body.clientHeight - currentElemRect.top - currentElemRect.height - 2, 50) + 'px';
+				this.optionsElem.className = 'customSelectOptions' + (this.data.multiple ? ' multiple' : '');
+				const icon = this.data.multiple ? '<div class="selectedIcon">' + SVG_ICONS.check + '</div>' : '';
+				this.optionsElem.innerHTML = this.data.options.map((option, index) =>
+					'<div class="customSelectOption" data-index="' + index + '">' + icon + escapeHtml(option.name) + '</div>'
+				).join('');
+				addListenerToCollectionElems(this.optionsElem.children, 'mousemove', (e) => {
+					if (!e.target) return;
+					const elem = (<HTMLElement>e.target).closest('.customSelectOption');
+					if (elem === null) return;
+					this.setFocussed(parseInt((<HTMLElement>elem).dataset.index!));
+				});
+				this.optionsElem.addEventListener('mouseleave', () => this.setFocussed(-1));
+				this.dialogElem.appendChild(this.optionsElem);
+			} else {
+				if (this.optionsElem !== null) {
+					this.optionsElem.remove();
+					this.optionsElem = null;
+				}
+				this.setFocussed(-1);
 			}
 			alterClass(this.elem, 'open', open);
 		}
 
+		if (open) {
+			this.renderOptionsStates();
+		}
+	}
+
+	private renderCurrentValue() {
+		if (this.currentElem === null) return;
+		const value = formatCommaSeparatedList(this.data.options.filter((_, index) => this.selected[index]).map((option) => option.name)) || 'None';
+		this.currentElem.title = value;
+		this.currentElem.innerHTML = escapeHtml(value);
+	}
+
+	private renderOptionsStates() {
 		if (this.optionsElem !== null) {
-			let html = '';
-			for (let i = 0; i < this.data.options.length; i++) {
-				html += '<div class="customSelectOption' + (this.selectedItem === i ? ' selected' : '') + '" data-index="' + i + '">' + escapeHtml(this.data.options[i].name) + '</div>';
+			let optionElems = this.optionsElem.children, elemIndex: number;
+			for (let i = 0; i < optionElems.length; i++) {
+				elemIndex = parseInt((<HTMLElement>optionElems[i]).dataset.index!);
+				alterClass(<HTMLElement>optionElems[i], CLASS_SELECTED, this.selected[elemIndex]);
+				alterClass(<HTMLElement>optionElems[i], CLASS_FOCUSSED, this.focussed === elemIndex);
 			}
-			this.optionsElem.innerHTML = html;
+		}
+	}
+
+	private getOptionElem(index: number) {
+		if (this.optionsElem !== null && index > -1) {
+			const optionElems = this.optionsElem.children, indexStr = index.toString();
+			for (let i = 0; i < optionElems.length; i++) {
+				if ((<HTMLElement>optionElems[i]).dataset.index === indexStr) {
+					return <HTMLElement>optionElems[i];
+				}
+			}
+		}
+		return null;
+	}
+
+	private scrollOptionIntoView(index: number) {
+		const elem = this.getOptionElem(index);
+		if (this.optionsElem !== null && elem !== null) {
+			const elemOffsetTop = elem.offsetTop, elemHeight = elem.clientHeight;
+			const optionsScrollTop = this.optionsElem.scrollTop, optionsHeight = this.optionsElem.clientHeight;
+			if (elemOffsetTop < optionsScrollTop) {
+				this.optionsElem.scroll(0, elemOffsetTop);
+			} else if (elemOffsetTop + elemHeight > optionsScrollTop + optionsHeight) {
+				this.optionsElem.scroll(0, Math.max(elemOffsetTop + elemHeight - optionsHeight, 0));
+			}
 		}
 	}
 }

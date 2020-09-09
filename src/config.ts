@@ -261,7 +261,7 @@ class Config {
 			style: this.getRenamedExtensionSetting<string>('graph.style', 'graphStyle', 'rounded') === 'angular'
 				? GraphStyle.Angular
 				: GraphStyle.Rounded,
-			grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 },
+			grid: { x: 16, y: 24, offsetX: 16, offsetY: 12, expandY: 250 }
 		};
 	}
 

@@ -4081,7 +4081,7 @@ describe('DataSource', () => {
 			const result = await dataSource.fetch('/path/to/repo', null, false, true);
 
 			// Assert
-			expect(result).toBe('In order to Prune Tags, pruning must be enabled for fetching from remote(s).');
+			expect(result).toBe('In order to Prune Tags, pruning must also be enabled when fetching from remote(s).');
 		});
 
 		it('Should return an error message when pruning tags, but pruning is not enabled (specific remote)', async () => {
@@ -4091,7 +4091,7 @@ describe('DataSource', () => {
 			const result = await dataSource.fetch('/path/to/repo', 'origin', false, true);
 
 			// Assert
-			expect(result).toBe('In order to Prune Tags, pruning must be enabled for fetching from a remote.');
+			expect(result).toBe('In order to Prune Tags, pruning must also be enabled when fetching from a remote.');
 		});
 
 		it('Should return an error message when pruning tags when no Git executable is known', async () => {

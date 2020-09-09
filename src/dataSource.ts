@@ -677,7 +677,7 @@ export class DataSource extends Disposable {
 		}
 		if (pruneTags) {
 			if (!prune) {
-				return Promise.resolve('In order to Prune Tags, pruning must be enabled for fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
+				return Promise.resolve('In order to Prune Tags, pruning must also be enabled when fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
 			} else if (this.gitExecutable !== null && !isGitAtLeastVersion(this.gitExecutable, '2.17.0')) {
 				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
 			}

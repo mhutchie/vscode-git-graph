@@ -1165,7 +1165,16 @@ export class DataSource extends Disposable {
 	 * @returns An array of configuration records.
 	 */
 	private getConfigList(repo: string, location: GitConfigLocation) {
-		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location], repo, (stdout) => stdout.split(EOL_REGEX));
+		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location], repo, (stdout) => stdout.split(EOL_REGEX)).catch((errorMessage) => {
+			if (typeof errorMessage === 'string') {
+				const message = errorMessage.toLowerCase();
+				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
+					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
+					return <string[]>[];
+				}
+			}
+			throw errorMessage;
+		});
 	}
 
 	/**

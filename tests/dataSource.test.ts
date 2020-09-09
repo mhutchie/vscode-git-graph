@@ -3392,6 +3392,71 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the repositories settings (ignoring Git exception when either the global or local .gitconfig file doesn\'t exist)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'user.email=local@mhutchie.com\n' +
+				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
+				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
+				'remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\n'
+			);
+			mockGitThrowingErrorOnce('fatal: unable to read config file \'c:/users/michael/.gitconfig\': no such file or directory');
+			mockGitSuccessOnce('origin\n');
+
+			// Run
+			const result = await dataSource.getRepoSettings('/path/to/repo');
+
+			// Assert
+			expect(result).toStrictEqual({
+				settings: {
+					user: {
+						name: {
+							local: 'Local Name',
+							global: null
+						},
+						email: {
+							local: 'local@mhutchie.com',
+							global: null
+						}
+					},
+					remotes: [
+						{
+							name: 'origin',
+							url: 'https://github.com/mhutchie/vscode-git-graph.git',
+							pushUrl: 'https://github.com/mhutchie/vscode-git-graph-push.git'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git', async () => {
+			// Setup
+			const error = new Error();
+			mockGitSuccessOnce(
+				'user.email=local@mhutchie.com\n' +
+				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n'
+			);
+			spyOnSpawn.mockImplementationOnce(() => {
+				throw error;
+			});
+			mockGitSuccessOnce('origin\n');
+
+			// Run
+			const result = await dataSource.getRepoSettings('/path/to/repo');
+
+			// Assert
+			expect(result).toStrictEqual({
+				settings: null,
+				error: error
+			});
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();

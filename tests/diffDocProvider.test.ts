@@ -6,11 +6,11 @@ jest.mock('../src/logger');
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { decodeDiffDocUri, DiffDocProvider, DiffSide, encodeDiffDocUri } from '../src/diffDocProvider';
-import { EventEmitter } from '../src/event';
+import { DiffDocProvider, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from '../src/diffDocProvider';
 import { Logger } from '../src/logger';
 import { GitFileStatus } from '../src/types';
 import { GitExecutable, UNCOMMITTED } from '../src/utils';
+import { EventEmitter } from '../src/utils/event';
 
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;
@@ -43,6 +43,7 @@ describe('DiffDocProvider', () => {
 
 		// Run
 		const diffDocProvider = new DiffDocProvider(dataSource);
+		const disposables = diffDocProvider['disposables'];
 		const docContents = await diffDocProvider.provideTextDocumentContent(uri);
 
 		// Assert
@@ -54,9 +55,9 @@ describe('DiffDocProvider', () => {
 		diffDocProvider.dispose();
 
 		// Assert
-		expect(diffDocProvider['closeDocSubscription'].dispose).toHaveBeenCalled();
+		expect(disposables[0].dispose).toHaveBeenCalled();
+		expect(disposables[1].dispose).toHaveBeenCalled();
 		expect(diffDocProvider['docs'].size).toBe(0);
-		expect(diffDocProvider['onDidChangeEventEmitter'].dispose).toHaveBeenCalled();
 	});
 
 	it('Should remove a cached document once it is closed', async () => {

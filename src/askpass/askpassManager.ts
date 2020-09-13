@@ -12,6 +12,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getNonce } from '../utils';
+import { Disposable, toDisposable } from '../utils/disposable';
 
 export interface AskpassEnvironment {
 	GIT_ASKPASS: string;
@@ -26,12 +27,13 @@ export interface AskpassRequest {
 	request: string;
 }
 
-export class AskpassManager implements vscode.Disposable {
+export class AskpassManager extends Disposable {
 	private ipcHandlePath: string;
 	private server: http.Server;
 	private enabled = true;
 
 	constructor() {
+		super();
 		this.ipcHandlePath = getIPCHandlePath(getNonce());
 		this.server = http.createServer((req, res) => this.onRequest(req, res));
 		try {
@@ -42,6 +44,18 @@ export class AskpassManager implements vscode.Disposable {
 		}
 		fs.chmod(path.join(__dirname, 'askpass.sh'), '755', () => { });
 		fs.chmod(path.join(__dirname, 'askpass-empty.sh'), '755', () => { });
+
+		this.registerDisposable(
+			// Close the Askpass Server
+			toDisposable(() => {
+				try {
+					this.server.close();
+					if (process.platform !== 'win32') {
+						fs.unlinkSync(this.ipcHandlePath);
+					}
+				} catch (e) { }
+			})
+		);
 	}
 
 	private onRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
@@ -61,23 +75,17 @@ export class AskpassManager implements vscode.Disposable {
 	}
 
 	public getEnv(): AskpassEnvironment {
-		return this.enabled ?
-			{
+		return this.enabled
+			? {
 				ELECTRON_RUN_AS_NODE: '1',
 				GIT_ASKPASS: path.join(__dirname, 'askpass.sh'),
 				VSCODE_GIT_GRAPH_ASKPASS_NODE: process.execPath,
 				VSCODE_GIT_GRAPH_ASKPASS_MAIN: path.join(__dirname, 'askpassMain.js'),
 				VSCODE_GIT_GRAPH_ASKPASS_HANDLE: this.ipcHandlePath
-			} : {
+			}
+			: {
 				GIT_ASKPASS: path.join(__dirname, 'askpass-empty.sh')
 			};
-	}
-
-	public dispose(): void {
-		this.server.close();
-		if (process.platform !== 'win32') {
-			fs.unlinkSync(this.ipcHandlePath);
-		}
 	}
 }
 

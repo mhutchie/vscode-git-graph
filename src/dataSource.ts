@@ -5,11 +5,13 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
-import { Event } from './event';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat } from './types';
-import { abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, GitExecutable, isGitAtLeastVersion, openGitTerminal, realpath, resolveSpawnOutput, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED } from './utils';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
+import { Disposable } from './utils/disposable';
+import { Event } from './utils/event';
 
+const DRIVE_LETTER_PATH_REGEX = /^[a-z]:\//;
 const EOL_REGEX = /\r\n|\r|\n/g;
 const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
@@ -20,7 +22,7 @@ export const GIT_CONFIG_USER_EMAIL = 'user.email';
 /**
  * Interfaces Git Graph with the Git executable to provide all Git integrations.
  */
-export class DataSource implements vscode.Disposable {
+export class DataSource extends Disposable {
 	private readonly logger: Logger;
 	private readonly askpassEnv: AskpassEnvironment;
 	private gitExecutable!: GitExecutable | null;
@@ -28,7 +30,6 @@ export class DataSource implements vscode.Disposable {
 	private gitFormatCommitDetails!: string;
 	private gitFormatLog!: string;
 	private gitFormatStash!: string;
-	private disposables: vscode.Disposable[] = [];
 
 	/**
 	 * Creates the Git Graph Data Source.
@@ -37,22 +38,28 @@ export class DataSource implements vscode.Disposable {
 	 * @param logger The Git Graph Logger instance.
 	 */
 	constructor(gitExecutable: GitExecutable | null, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
+		super();
 		this.logger = logger;
 		this.setGitExecutable(gitExecutable);
 
 		const askpassManager = new AskpassManager();
 		this.askpassEnv = askpassManager.getEnv();
-		this.disposables.push(askpassManager);
 
-		onDidChangeConfiguration((event) => {
-			if (event.affectsConfiguration('git-graph.dateType') || event.affectsConfiguration('git-graph.showSignatureStatus') || event.affectsConfiguration('git-graph.useMailmap')) {
-				this.generateGitCommandFormats();
-			}
-		}, this.disposables);
-
-		onDidChangeGitExecutable((gitExecutable) => {
-			this.setGitExecutable(gitExecutable);
-		}, this.disposables);
+		this.registerDisposables(
+			onDidChangeConfiguration((event) => {
+				if (
+					event.affectsConfiguration('git-graph.date.type') || event.affectsConfiguration('git-graph.dateType') ||
+					event.affectsConfiguration('git-graph.repository.commits.showSignatureStatus') || event.affectsConfiguration('git-graph.showSignatureStatus') ||
+					event.affectsConfiguration('git-graph.repository.useMailmap') || event.affectsConfiguration('git-graph.useMailmap')
+				) {
+					this.generateGitCommandFormats();
+				}
+			}),
+			onDidChangeGitExecutable((gitExecutable) => {
+				this.setGitExecutable(gitExecutable);
+			}),
+			askpassManager
+		);
 	}
 
 	/**
@@ -99,14 +106,6 @@ export class DataSource implements vscode.Disposable {
 			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
 			'%s' // Subject
 		].join(GIT_LOG_SEPARATOR);
-	}
-
-	/**
-	 * Disposes the resources used by the DataSource.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
 	}
 
 
@@ -180,7 +179,7 @@ export class DataSource implements vscode.Disposable {
 				}
 			}
 
-			let commitNodes: Writeable<GitCommit>[] = [];
+			let commitNodes: DeepWriteable<GitCommit>[] = [];
 			let commitLookup: { [hash: string]: number } = {};
 
 			for (i = 0; i < commits.length; i++) {
@@ -507,20 +506,31 @@ export class DataSource implements vscode.Disposable {
 
 	/**
 	 * Get the root of the repository containing the specified path.
-	 * @param repoPath The path contained in the repository.
-	 * @returns The root of the repository.
+	 * @param pathOfPotentialRepo The path that is potentially a repository (or is contained within a repository).
+	 * @returns STRING => The root of the repository, NULL => `pathOfPotentialRepo` is not in a repository.
 	 */
-	public repoRoot(repoPath: string) {
-		return this.spawnGit(['rev-parse', '--show-toplevel'], repoPath, (stdout) => getPathFromUri(vscode.Uri.file(path.normalize(stdout.trim())))).then(async (canonicalRoot) => {
-			let path = repoPath;
+	public repoRoot(pathOfPotentialRepo: string) {
+		return this.spawnGit(['rev-parse', '--show-toplevel'], pathOfPotentialRepo, (stdout) => getPathFromUri(vscode.Uri.file(path.normalize(stdout.trim())))).then(async (pathReturnedByGit) => {
+			if (process.platform === 'win32') {
+				// On Windows Mapped Network Drives with Git >= 2.25.0, `git rev-parse --show-toplevel` returns the UNC Path for the Mapped Network Drive, instead of the Drive Letter.
+				// Attempt to replace the UNC Path with the Drive Letter.
+				let driveLetterPathMatch: RegExpMatchArray | null;
+				if ((driveLetterPathMatch = pathOfPotentialRepo.match(DRIVE_LETTER_PATH_REGEX)) && !pathReturnedByGit.match(DRIVE_LETTER_PATH_REGEX)) {
+					const realPathForDriveLetter = pathWithTrailingSlash(await realpath(driveLetterPathMatch[0], true));
+					if (realPathForDriveLetter !== driveLetterPathMatch[0] && pathReturnedByGit.startsWith(realPathForDriveLetter)) {
+						pathReturnedByGit = driveLetterPathMatch[0] + pathReturnedByGit.substring(realPathForDriveLetter.length);
+					}
+				}
+			}
+			let path = pathOfPotentialRepo;
 			let first = path.indexOf('/');
 			while (true) {
-				if (canonicalRoot === path || canonicalRoot === await realpath(path)) return path;
+				if (pathReturnedByGit === path || pathReturnedByGit === await realpath(path)) return path;
 				let next = path.lastIndexOf('/');
 				if (first !== next && next > -1) {
 					path = path.substring(0, next);
 				} else {
-					return canonicalRoot;
+					return pathReturnedByGit;
 				}
 			}
 		}).catch(() => null); // null => path is not in a repo
@@ -547,7 +557,7 @@ export class DataSource implements vscode.Disposable {
 			if (status !== null) return status;
 		}
 
-		return fetch ? this.fetch(repo, name, false) : null;
+		return fetch ? this.fetch(repo, name, false, false) : null;
 	}
 
 	/**
@@ -655,12 +665,24 @@ export class DataSource implements vscode.Disposable {
 	 * Fetch from the repositories remote(s).
 	 * @param repo The path of the repository.
 	 * @param remote The remote to fetch, or NULL (fetch all remotes).
-	 * @param prune Prune the remote.
+	 * @param prune Is pruning enabled.
+	 * @param pruneTags Should tags be pruned.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public fetch(repo: string, remote: string | null, prune: boolean) {
+	public fetch(repo: string, remote: string | null, prune: boolean, pruneTags: boolean) {
 		let args = ['fetch', remote === null ? '--all' : remote];
-		if (prune) args.push('--prune');
+
+		if (prune) {
+			args.push('--prune');
+		}
+		if (pruneTags) {
+			if (!prune) {
+				return Promise.resolve('In order to Prune Tags, pruning must also be enabled when fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
+			} else if (this.gitExecutable !== null && !isGitAtLeastVersion(this.gitExecutable, '2.17.0')) {
+				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
+			}
+			args.push('--prune-tags');
+		}
 
 		return this.runGitCommand(args, repo);
 	}
@@ -1112,7 +1134,7 @@ export class DataSource implements vscode.Disposable {
 	 * @returns The base commit details.
 	 */
 	private getCommitDetailsBase(repo: string, commitHash: string) {
-		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): Writeable<GitCommitDetails> => {
+		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): DeepWriteable<GitCommitDetails> => {
 			const commitInfo = stdout.split(GIT_LOG_SEPARATOR);
 			return {
 				hash: commitInfo[0],
@@ -1143,7 +1165,16 @@ export class DataSource implements vscode.Disposable {
 	 * @returns An array of configuration records.
 	 */
 	private getConfigList(repo: string, location: GitConfigLocation) {
-		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location], repo, (stdout) => stdout.split(EOL_REGEX));
+		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location], repo, (stdout) => stdout.split(EOL_REGEX)).catch((errorMessage) => {
+			if (typeof errorMessage === 'string') {
+				const message = errorMessage.toLowerCase();
+				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
+					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
+					return <string[]>[];
+				}
+			}
+			throw errorMessage;
+		});
 	}
 
 	/**
@@ -1579,8 +1610,6 @@ function removeTrailingBlankLines(lines: string[]) {
 
 
 /* Types */
-
-type Writeable<T> = { -readonly [K in keyof T]: Writeable<T[K]> };
 
 interface DiffNameStatusRecord {
 	type: GitFileStatus;

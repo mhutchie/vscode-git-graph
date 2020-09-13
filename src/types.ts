@@ -139,20 +139,20 @@ export type ColumnWidth = number;
 export type GitRepoSet = { [repo: string]: GitRepoState };
 
 export interface IssueLinkingConfig {
-	issue: string;
-	url: string;
+	readonly issue: string;
+	readonly url: string;
 }
 
 interface PullRequestConfigBase {
-	hostRootUrl: string;
-	sourceRemote: string;
-	sourceOwner: string;
-	sourceRepo: string;
-	destRemote: string | null;
-	destOwner: string;
-	destRepo: string;
-	destProjectId: string; // Only used by GitLab
-	destBranch: string;
+	readonly hostRootUrl: string;
+	readonly sourceRemote: string;
+	readonly sourceOwner: string;
+	readonly sourceRepo: string;
+	readonly destRemote: string | null;
+	readonly destOwner: string;
+	readonly destRepo: string;
+	readonly destProjectId: string; // Only used by GitLab
+	readonly destBranch: string;
 }
 
 export const enum PullRequestProvider {
@@ -163,33 +163,37 @@ export const enum PullRequestProvider {
 }
 
 interface PullRequestConfigBuiltIn extends PullRequestConfigBase {
-	provider: Exclude<PullRequestProvider, PullRequestProvider.Custom>;
-	custom: null;
+	readonly provider: Exclude<PullRequestProvider, PullRequestProvider.Custom>;
+	readonly custom: null;
 }
 
 interface PullRequestConfigCustom extends PullRequestConfigBase {
-	provider: PullRequestProvider.Custom;
-	custom: {
-		name: string,
-		templateUrl: string
+	readonly provider: PullRequestProvider.Custom;
+	readonly custom: {
+		readonly name: string,
+		readonly templateUrl: string
 	};
 }
 
 export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCustom;
 
 export interface GitRepoState {
-	columnWidths: ColumnWidth[] | null;
 	cdvDivider: number;
 	cdvHeight: number;
+	columnWidths: ColumnWidth[] | null;
 	commitOrdering: RepoCommitOrdering;
 	fileViewType: FileViewType;
+	hideRemotes: string[];
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
-	onlyFollowFirstParent: OnlyFollowFirstParent;
 	issueLinkingConfig: IssueLinkingConfig | null;
+	name: string | null;
+	onlyFollowFirstParent: OnlyFollowFirstParent;
+	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch;
+	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
+	showRemoteBranchesV2: ShowRemoteBranches;
 	showTags: ShowTags;
-	hideRemotes: string[];
 }
 
 
@@ -205,10 +209,7 @@ export interface GitGraphViewInitialState {
 }
 
 export interface GitGraphViewConfig {
-	readonly autoCenterCommitDetailsView: boolean;
-	readonly branchLabelsAlignedToGraph: boolean;
-	readonly combineLocalAndRemoteBranchLabels: boolean;
-	readonly commitDetailsViewLocation: CommitDetailsViewLocation;
+	readonly commitDetailsView: CommitDetailsViewConfig;
 	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
@@ -216,27 +217,23 @@ export interface GitGraphViewConfig {
 	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
-	readonly defaultFileViewType: FileViewType;
 	readonly dialogDefaults: DialogDefaults;
 	readonly enhancedAccessibility: boolean;
 	readonly fetchAndPrune: boolean;
+	readonly fetchAndPruneTags: boolean;
 	readonly fetchAvatars: boolean;
-	readonly fileTreeCompactFolders: boolean;
-	readonly graphColours: ReadonlyArray<string>;
-	readonly graphStyle: GraphStyle;
-	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
-	readonly muteCommitsNotAncestorsOfHead: boolean;
-	readonly muteMergeCommits: boolean;
+	readonly mute: MuteCommitsConfig;
 	readonly onlyFollowFirstParent: boolean;
-	readonly openRepoToHead: boolean;
+	readonly onRepoLoad: OnRepoLoadConfig;
+	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
-	readonly showCurrentBranchByDefault: boolean;
+	readonly showRemoteBranches: boolean;
 	readonly showTags: boolean;
-	readonly tagLabelsOnRight: boolean;
 }
 
 export interface GitGraphViewGlobalState {
@@ -244,13 +241,43 @@ export interface GitGraphViewGlobalState {
 	issueLinkingConfig: IssueLinkingConfig | null;
 }
 
+export interface CommitDetailsViewConfig {
+	readonly autoCenter: boolean;
+	readonly fileTreeCompactFolders: boolean;
+	readonly fileViewType: FileViewType;
+	readonly location: CommitDetailsViewLocation;
+}
+
+export interface GraphConfig {
+	readonly colours: ReadonlyArray<string>;
+	readonly style: GraphStyle;
+	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+}
+
 export type LoadGitGraphViewTo = {
-	repo: string,
-	commitDetails: {
-		commitHash: string,
-		compareWithHash: string | null
+	readonly repo: string,
+	readonly commitDetails: {
+		readonly commitHash: string,
+		readonly compareWithHash: string | null
 	} | null
 } | null;
+
+export interface MuteCommitsConfig {
+	readonly commitsNotAncestorsOfHead: boolean;
+	readonly mergeCommits: boolean;
+}
+
+export interface OnRepoLoadConfig {
+	readonly scrollToHead: boolean;
+	readonly showCheckedOutBranch: boolean;
+	readonly showSpecificBranches: ReadonlyArray<string>;
+}
+
+export interface ReferenceLabelsConfig {
+	readonly branchLabelsAlignedToGraph: boolean;
+	readonly combineLocalAndRemoteBranchLabels: boolean;
+	readonly tagLabelsOnRight: boolean;
+}
 
 
 /* Extension Settings Types */
@@ -379,6 +406,10 @@ export interface DialogDefaults {
 	readonly deleteBranch: {
 		readonly forceDelete: boolean
 	};
+	readonly fetchRemote: {
+		readonly prune: boolean,
+		readonly pruneTags: boolean
+	};
 	readonly merge: {
 		readonly noCommit: boolean,
 		readonly noFastForward: boolean,
@@ -429,6 +460,12 @@ export const enum OnlyFollowFirstParent {
 	Disabled
 }
 
+export const enum ShowCheckedOutBranch {
+	Default,
+	Enabled,
+	Disabled
+}
+
 export const enum RefLabelAlignment {
 	Normal,
 	BranchesOnLeftAndTagsOnRight,
@@ -445,6 +482,12 @@ export const enum RepoCommitOrdering {
 export const enum RepoDropdownOrder {
 	FullPath,
 	Name
+}
+
+export const enum ShowRemoteBranches {
+	Default,
+	Show,
+	Hide
 }
 
 export const enum ShowTags {
@@ -759,6 +802,7 @@ export interface RequestFetch extends RepoRequest {
 	readonly command: 'fetch';
 	readonly name: string | null; // null => Fetch all remotes
 	readonly prune: boolean;
+	readonly pruneTags: boolean;
 }
 export interface ResponseFetch extends ResponseWithErrorInfo {
 	readonly command: 'fetch';
@@ -879,6 +923,7 @@ export interface ResponseOpenFile extends ResponseWithErrorInfo {
 
 export interface RequestOpenTerminal extends RepoRequest {
 	readonly command: 'openTerminal';
+	readonly name: string;
 }
 export interface ResponseOpenTerminal extends ResponseWithErrorInfo {
 	readonly command: 'openTerminal';
@@ -1181,3 +1226,31 @@ export type ResponseMessage =
 	| ResponseViewDiff
 	| ResponseViewFileAtRevision
 	| ResponseViewScm;
+
+
+/** Helper Types */
+
+type PrimitiveTypes = string | number | boolean | symbol | bigint | undefined | null;
+
+/**
+ * Make all properties in T writeable
+ */
+export type Writeable<T> = { -readonly [K in keyof T]: T[K] };
+
+/**
+ * Make all properties in T recursively readonly
+ */
+export type DeepReadonly<T> = T extends PrimitiveTypes
+	? T
+	: T extends (Array<infer U> | ReadonlyArray<infer U>)
+	? ReadonlyArray<DeepReadonly<U>>
+	: { readonly [K in keyof T]: DeepReadonly<T[K]> };
+
+/**
+ * Make all properties in T recursively writeable
+ */
+export type DeepWriteable<T> = T extends PrimitiveTypes
+	? T
+	: T extends (Array<infer U> | ReadonlyArray<infer U>)
+	? Array<DeepWriteable<U>>
+	: { -readonly [K in keyof T]: DeepWriteable<T[K]> };

@@ -10,7 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { generateNonce, getDataDirectory, getLifeCycleStateInDirectory, LifeCycleStage, LifeCycleState, saveLifeCycleStateInDirectory, sendQueue } from './utils';
+import { LifeCycleStage, LifeCycleState, generateNonce, getDataDirectory, getLifeCycleStateInDirectory, saveLifeCycleStateInDirectory, sendQueue } from './utils';
 
 /**
  * Run on startup to detect if Git Graph has been installed or updated, and if so generate an event.

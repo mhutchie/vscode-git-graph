@@ -6,16 +6,25 @@ jest.mock('../src/dataSource');
 jest.mock('../src/extensionState');
 jest.mock('../src/logger');
 
-import * as cp from 'child_process';
 import * as fs from 'fs';
+const mockedFileSystemModule: any = {
+	access: jest.fn(),
+	constants: fs.constants,
+	realpath: jest.fn(),
+	stat: jest.fn()
+};
+mockedFileSystemModule.realpath['native'] = jest.fn();
+jest.doMock('fs', () => mockedFileSystemModule);
+
+import * as cp from 'child_process';
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNCOMMITTED, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { EventEmitter } from '../src/utils/event';
 
 let extensionContext = vscode.mocks.extensionContext;
 let terminal = vscode.mocks.terminal;
@@ -120,24 +129,41 @@ describe('pathWithTrailingSlash', () => {
 describe('realpath', () => {
 	it('Should return the normalised canonical absolute path', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementationOnce((path, callback) => callback(null, path as string));
+		mockedFileSystemModule.realpath.mockImplementationOnce((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, path as string));
 
 		// Run
 		const path = await realpath('\\a\\b');
 
 		// Assert
 		expect(path).toBe('/a/b');
+		expect(mockedFileSystemModule.realpath).toBeCalledWith('\\a\\b', expect.anything());
+		expect(mockedFileSystemModule.realpath.native).toHaveBeenCalledTimes(0);
+	});
+
+	it('Should return the normalised canonical absolute path (using the native version realpath)', async () => {
+		// Setup
+		mockedFileSystemModule.realpath.native.mockImplementationOnce((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, path as string));
+
+		// Run
+		const path = await realpath('\\a\\b', true);
+
+		// Assert
+		expect(path).toBe('/a/b');
+		expect(mockedFileSystemModule.realpath).toHaveBeenCalledTimes(0);
+		expect(mockedFileSystemModule.realpath.native).toBeCalledWith('\\a\\b', expect.anything());
 	});
 
 	it('Should return the original path if fs.realpath returns an error', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementationOnce((_, callback) => callback(new Error('message'), ''));
+		mockedFileSystemModule.realpath.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(new Error('message'), ''));
 
 		// Run
 		const path = await realpath('/a/b');
 
 		// Assert
 		expect(path).toBe('/a/b');
+		expect(mockedFileSystemModule.realpath).toBeCalledWith('/a/b', expect.anything());
+		expect(mockedFileSystemModule.realpath.native).toHaveBeenCalledTimes(0);
 	});
 });
 
@@ -190,7 +216,7 @@ describe('isPathInWorkspace', () => {
 describe('resolveToSymbolicPath', () => {
 	it('Should return the original path if it matches a vscode workspace folder', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => callback(null, path as string));
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, path as string));
 		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }];
 
 		// Run
@@ -202,7 +228,7 @@ describe('resolveToSymbolicPath', () => {
 
 	it('Should return the symbolic path if a vscode workspace folder resolves to it', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => callback(null, (path as string).replace('symbolic', 'workspace')));
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
 		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder1') }];
 
 		// Run
@@ -214,7 +240,7 @@ describe('resolveToSymbolicPath', () => {
 
 	it('Should return the original path if it is within a vscode workspace folder', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => callback(null, path as string));
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, path as string));
 		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }];
 
 		// Run
@@ -226,7 +252,7 @@ describe('resolveToSymbolicPath', () => {
 
 	it('Should return the symbolic path if a vscode workspace folder resolves to contain it', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => callback(null, (path as string).replace('symbolic', 'workspace')));
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
 		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder1') }];
 
 		// Run
@@ -238,7 +264,7 @@ describe('resolveToSymbolicPath', () => {
 
 	it('Should return the symbolic path if the vscode workspace folder resolves to be contained within it', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => callback(null, (path as string).replace('symbolic', 'workspace')));
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
 		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder/dir') }];
 
 		// Run
@@ -250,7 +276,7 @@ describe('resolveToSymbolicPath', () => {
 
 	it('Should return the original path if the vscode workspace folder resolves to be contained within it, when it was unable to find the path correspondence', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => {
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => {
 			path = path as string;
 			callback(null, path === '/symbolic-folder/path/to/dir' ? path.replace('symbolic', 'workspace') : path);
 		});
@@ -265,7 +291,7 @@ describe('resolveToSymbolicPath', () => {
 
 	it('Should return the original path if it is unrelated to the vscode workspace folders', async () => {
 		// Setup
-		jest.spyOn(fs, 'realpath').mockImplementation((path, callback) => callback(null, (path as string).replace('symbolic', 'workspace')));
+		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
 		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder/dir') }];
 
 		// Run
@@ -806,7 +832,7 @@ describe('openExtensionSettings', () => {
 describe('openFile', () => {
 	it('Should open the file in vscode', async () => {
 		// Setup
-		jest.spyOn(fs, 'access').mockImplementationOnce((...args) => ((args as unknown) as [fs.PathLike, number | undefined, (x: NodeJS.ErrnoException | null) => void])[2](null));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
@@ -825,7 +851,7 @@ describe('openFile', () => {
 
 	it('Should return an error message if vscode was unable to open the file', async () => {
 		// Setup
-		jest.spyOn(fs, 'access').mockImplementationOnce((...args) => ((args as unknown) as [fs.PathLike, number | undefined, (x: NodeJS.ErrnoException | null) => void])[2](null));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
@@ -837,7 +863,7 @@ describe('openFile', () => {
 
 	it('Should return an error message if the file doesn\'t exist in the repository', async () => {
 		// Setup
-		jest.spyOn(fs, 'access').mockImplementationOnce((...args) => ((args as unknown) as [fs.PathLike, number | undefined, (x: NodeJS.ErrnoException | null) => void])[2](new Error()));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
 
 		// Run
 		const result = await openFile('/path/to/repo', 'file.txt');
@@ -1101,7 +1127,7 @@ describe('viewDiff', () => {
 
 	it('Should open an untracked file in vscode', async () => {
 		// Setup
-		jest.spyOn(fs, 'access').mockImplementationOnce((...args) => ((args as unknown) as [fs.PathLike, number | undefined, (x: NodeJS.ErrnoException | null) => void])[2](null));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
@@ -1754,8 +1780,7 @@ describe('findGit', () => {
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
-			const spyOnStat = jest.spyOn(fs, 'stat');
-			spyOnStat.mockImplementation((statPath, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+			mockedFileSystemModule.stat.mockImplementation((statPath: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
 				callback(null, { isFile: () => getPathFromStr(statPath as string) === 'c:/path/to/git-dir/git.exe', isSymbolicLink: () => false } as any);
 			});
 			mockSpawnGitVersionSuccessOnce();
@@ -1766,9 +1791,6 @@ describe('findGit', () => {
 			// Assert
 			expect(getPathFromStr(result.path)).toBe('c:/path/to/git-dir/git.exe');
 			expect(result.version).toBe('1.2.3');
-
-			// Teardown
-			spyOnStat.mockReset();
 		});
 
 		it('Should find Git in PATH (isSymbolicLink)', async () => {
@@ -1778,8 +1800,7 @@ describe('findGit', () => {
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
-			const spyOnStat = jest.spyOn(fs, 'stat');
-			spyOnStat.mockImplementation((statPath, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+			mockedFileSystemModule.stat.mockImplementation((statPath: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
 				callback(null, { isFile: () => false, isSymbolicLink: () => getPathFromStr(statPath as string) === 'c:/path/to/git-dir/git.exe' } as any);
 			});
 			mockSpawnGitVersionSuccessOnce();
@@ -1790,9 +1811,6 @@ describe('findGit', () => {
 			// Assert
 			expect(getPathFromStr(result.path)).toBe('c:/path/to/git-dir/git.exe');
 			expect(result.version).toBe('1.2.3');
-
-			// Teardown
-			spyOnStat.mockReset();
 		});
 
 		it('Should find Git in CWD', async () => {
@@ -1802,9 +1820,8 @@ describe('findGit', () => {
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
-			const spyOnStat = jest.spyOn(fs, 'stat');
 			const gitPath = getPathFromStr(path.join(process.cwd(), 'git.exe'));
-			spyOnStat.mockImplementation((statPath, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+			mockedFileSystemModule.stat.mockImplementation((statPath: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
 				callback(null, { isFile: () => getPathFromStr(statPath as string) === gitPath, isSymbolicLink: () => false } as any);
 			});
 			mockSpawnGitVersionSuccessOnce();
@@ -1815,9 +1832,6 @@ describe('findGit', () => {
 			// Assert
 			expect(getPathFromStr(result.path)).toBe(gitPath);
 			expect(result.version).toBe('1.2.3');
-
-			// Teardown
-			spyOnStat.mockReset();
 		});
 
 		it('Should reject when Git executable not in PATH', async () => {
@@ -1827,8 +1841,7 @@ describe('findGit', () => {
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
 			mockSpawnGitVersionThrowingErrorOnce();
-			const spyOnStat = jest.spyOn(fs, 'stat');
-			spyOnStat.mockImplementation((_, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
+			mockedFileSystemModule.stat.mockImplementation((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, stats: fs.Stats) => void) => {
 				callback(null, { isFile: () => false, isSymbolicLink: () => false } as any);
 			});
 

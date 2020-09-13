@@ -7,7 +7,7 @@
  * - Full details are available at: https://api.mhutchie.com/vscode-git-graph/about
  */
 
-import { generateNonce, getDataDirectory, getLifeCycleStateInDirectory, LifeCycleStage, sendQueue } from './utils';
+import { LifeCycleStage, generateNonce, getDataDirectory, getLifeCycleStateInDirectory, sendQueue } from './utils';
 
 (async function () {
 	try {

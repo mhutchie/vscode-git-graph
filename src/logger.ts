@@ -1,23 +1,19 @@
 import * as vscode from 'vscode';
+import { Disposable } from './utils/disposable';
 
 /**
  * Manages the Git Graph Logger, which writes log information to the Git Graph Output Channel.
  */
-export class Logger implements vscode.Disposable {
+export class Logger extends Disposable {
 	private readonly channel: vscode.OutputChannel;
 
 	/**
 	 * Creates the Git Graph Logger.
 	 */
 	constructor() {
+		super();
 		this.channel = vscode.window.createOutputChannel('Git Graph');
-	}
-
-	/**
-	 * Disposes the resources used by the Logger.
-	 */
-	public dispose() {
-		this.channel.dispose();
+		this.registerDisposable(this.channel);
 	}
 
 	/**

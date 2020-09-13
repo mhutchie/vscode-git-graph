@@ -77,6 +77,7 @@ const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_DISABLED = 'disabled';
 const CLASS_FETCH_SUPPORTED = 'fetchSupported';
+const CLASS_FOCUSSED = 'focussed';
 const CLASS_LOADING = 'loading';
 const CLASS_PENDING_REVIEW = 'pendingReview';
 const CLASS_REFRESHING = 'refreshing';
@@ -84,6 +85,7 @@ const CLASS_REF_HEAD = 'head';
 const CLASS_REF_REMOTE = 'remote';
 const CLASS_REF_STASH = 'stash';
 const CLASS_REF_TAG = 'tag';
+const CLASS_SELECTED = 'selected';
 const CLASS_TAG_LABELS_RIGHT_ALIGNED = 'tagLabelsRightAligned';
 const CLASS_TRANSITION = 'transition';
 
@@ -115,6 +117,14 @@ function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	return true;
 }
 
+function arraysStrictlyEqualIgnoringOrder<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (b.indexOf(a[i]) === -1) return false;
+	}
+	return true;
+}
+
 // Modify opacity of rgb/rgba/hex colour by multiplying it by opacity (0 <= opacity <= 1)
 function modifyColourOpacity(colour: string, opacity: number) {
 	let fadedCol = 'rgba(0,0,0,0)', match;
@@ -137,6 +147,16 @@ function modifyColourOpacity(colour: string, opacity: number) {
 
 function pad2(i: number) {
 	return i > 9 ? i : '0' + i;
+}
+
+function getRepoName(path: string) {
+	let firstSep = path.indexOf('/');
+	if (firstSep === path.length - 1 || firstSep === -1) {
+		return path; // Path has no slashes, or a single trailing slash ==> use the path
+	} else {
+		let p = path.endsWith('/') ? path.substring(0, path.length - 1) : path; // Remove trailing slash if it exists
+		return p.substring(p.lastIndexOf('/') + 1);
+	}
 }
 
 function registerCustomEmojiMappings(mappings: ReadonlyArray<GG.CustomEmojiShortcodeMapping>) {
@@ -397,8 +417,11 @@ function formatLongDate(unixTimestamp: number) {
 /* DOM Helpers */
 
 function addListenerToClass(className: string, event: string, eventListener: EventListener) {
-	let elems = document.getElementsByClassName(className), i;
-	for (i = 0; i < elems.length; i++) {
+	addListenerToCollectionElems(document.getElementsByClassName(className), event, eventListener);
+}
+
+function addListenerToCollectionElems(elems: HTMLCollectionOf<Element>, event: string, eventListener: EventListener) {
+	for (let i = 0; i < elems.length; i++) {
 		elems[i].addEventListener(event, eventListener);
 	}
 }

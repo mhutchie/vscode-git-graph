@@ -10,6 +10,6 @@ resources/demo.gif
 src/
 tests/
 web/
+.eslintrc.json
 .gitignore
 jest.config.js
-tslint.json

@@ -4,12 +4,13 @@ jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('fs');
 
 import * as fs from 'fs';
-import { EventEmitter } from '../src/event';
 import { ExtensionState } from '../src/extensionState';
-import { FileViewType, GitGraphViewGlobalState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowTags } from '../src/types';
+import { FileViewType, GitGraphViewGlobalState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from '../src/types';
 import { GitExecutable } from '../src/utils';
+import { EventEmitter } from '../src/utils/event';
 
 let extensionContext = vscode.mocks.extensionContext;
+let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;
 
 beforeAll(() => {
@@ -60,18 +61,22 @@ describe('ExtensionState', () => {
 		it('Should return the stored repositories', () => {
 			// Setup
 			const repoState = {
-				columnWidths: null,
 				cdvDivider: 0.5,
 				cdvHeight: 250,
+				columnWidths: null,
 				commitOrdering: RepoCommitOrdering.AuthorDate,
 				fileViewType: FileViewType.List,
+				hideRemotes: [],
 				includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Enabled,
-				onlyFollowFirstParent: OnlyFollowFirstParent.Disabled,
 				issueLinkingConfig: null,
+				name: 'Custom Name',
+				onlyFollowFirstParent: OnlyFollowFirstParent.Disabled,
+				onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
 				pullRequestConfig: null,
 				showRemoteBranches: true,
-				showTags: ShowTags.Show,
-				hideRemotes: []
+				showRemoteBranchesV2: ShowRemoteBranches.Show,
+				showTags: ShowTags.Show
 			};
 			extensionContext.workspaceState.get.mockReturnValueOnce({
 				'/path/to/repo': repoState
@@ -101,20 +106,221 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({
 				'/path/to/repo': {
-					columnWidths: null,
 					cdvDivider: 0.5,
 					cdvHeight: 250,
+					columnWidths: null,
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
+					hideRemotes: [],
 					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showTags: ShowTags.Default,
-					hideRemotes: []
+					showRemoteBranchesV2: ShowRemoteBranches.Default,
+					showTags: ShowTags.Default
 				}
 			});
+		});
+
+		it('Should migrate showRemoteBranches = TRUE from boolean to enum (repository.showRemoteBranches = TRUE)', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': {
+					showRemoteBranches: true
+				}
+			});
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteBranches
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': {
+					cdvDivider: 0.5,
+					cdvHeight: 250,
+					columnWidths: null,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
+					hideRemotes: [],
+					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
+					pullRequestConfig: null,
+					showRemoteBranches: true,
+					showRemoteBranchesV2: ShowRemoteBranches.Default,
+					showTags: ShowTags.Default
+				}
+			});
+		});
+
+		it('Should migrate showRemoteBranches = FALSE from boolean to enum (repository.showRemoteBranches = TRUE)', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': {
+					showRemoteBranches: false
+				}
+			});
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteBranches
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': {
+					cdvDivider: 0.5,
+					cdvHeight: 250,
+					columnWidths: null,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
+					hideRemotes: [],
+					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
+					pullRequestConfig: null,
+					showRemoteBranches: false,
+					showRemoteBranchesV2: ShowRemoteBranches.Hide,
+					showTags: ShowTags.Default
+				}
+			});
+		});
+
+		it('Should migrate showRemoteBranches = FALSE from boolean to enum (repository.showRemoteBranches = FALSE)', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': {
+					showRemoteBranches: false
+				}
+			});
+			workspaceConfiguration.get.mockReturnValueOnce(false); // repository.showRemoteBranches
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': {
+					cdvDivider: 0.5,
+					cdvHeight: 250,
+					columnWidths: null,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
+					hideRemotes: [],
+					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
+					pullRequestConfig: null,
+					showRemoteBranches: false,
+					showRemoteBranchesV2: ShowRemoteBranches.Default,
+					showTags: ShowTags.Default
+				}
+			});
+		});
+
+		it('Should migrate showRemoteBranches = TRUE from boolean to enum (repository.showRemoteBranches = FALSE)', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': {
+					showRemoteBranches: true
+				}
+			});
+			workspaceConfiguration.get.mockReturnValueOnce(false); // repository.showRemoteBranches
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': {
+					cdvDivider: 0.5,
+					cdvHeight: 250,
+					columnWidths: null,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
+					hideRemotes: [],
+					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
+					pullRequestConfig: null,
+					showRemoteBranches: true,
+					showRemoteBranchesV2: ShowRemoteBranches.Show,
+					showTags: ShowTags.Default
+				}
+			});
+		});
+
+		it('Should migrate multiple showRemoteBranches from boolean to enum (repository.showRemoteBranches = TRUE)', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo-1': {
+					showRemoteBranches: true
+				},
+				'/path/to/repo-2': {
+					showRemoteBranches: false
+				}
+			});
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteBranches
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo-1': {
+					cdvDivider: 0.5,
+					cdvHeight: 250,
+					columnWidths: null,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
+					hideRemotes: [],
+					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
+					pullRequestConfig: null,
+					showRemoteBranches: true,
+					showRemoteBranchesV2: ShowRemoteBranches.Default,
+					showTags: ShowTags.Default
+				},
+				'/path/to/repo-2': {
+					cdvDivider: 0.5,
+					cdvHeight: 250,
+					columnWidths: null,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
+					hideRemotes: [],
+					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					issueLinkingConfig: null,
+					name: null,
+					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onRepoLoadShowSpecificBranches: null,
+					pullRequestConfig: null,
+					showRemoteBranches: false,
+					showRemoteBranchesV2: ShowRemoteBranches.Hide,
+					showTags: ShowTags.Default
+				}
+			});
+			expect(workspaceConfiguration.get).toHaveBeenCalledTimes(1);
 		});
 
 		it('Should return the default value if it is not defined', () => {

@@ -2,17 +2,18 @@ import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { Event } from './event';
 import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, GitExecutable, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import { Disposable } from './utils/disposable';
+import { Event } from './utils/event';
 
 /**
  * Manages the registration and execution of Git Graph Commands.
  */
-export class CommandManager implements vscode.Disposable {
+export class CommandManager extends Disposable {
 	private readonly extensionPath: string;
 	private readonly avatarManager: AvatarManager;
 	private readonly dataSource: DataSource;
@@ -20,7 +21,6 @@ export class CommandManager implements vscode.Disposable {
 	private readonly logger: Logger;
 	private readonly repoManager: RepoManager;
 	private gitExecutable: GitExecutable | null;
-	private disposables: vscode.Disposable[] = [];
 
 	/**
 	 * Creates the Git Graph Command Manager.
@@ -34,6 +34,7 @@ export class CommandManager implements vscode.Disposable {
 	 * @param logger The Git Graph Logger instance.
 	 */
 	constructor(extensionPath: string, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
+		super();
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManger;
 		this.dataSource = dataSource;
@@ -50,17 +51,11 @@ export class CommandManager implements vscode.Disposable {
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
 		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
 
-		onDidChangeGitExecutable((gitExecutable) => {
-			this.gitExecutable = gitExecutable;
-		}, this.disposables);
-	}
-
-	/**
-	 * Disposes the resources used by the CommandManager.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
+		this.registerDisposable(
+			onDidChangeGitExecutable((gitExecutable) => {
+				this.gitExecutable = gitExecutable;
+			})
+		);
 	}
 
 	/**
@@ -69,7 +64,9 @@ export class CommandManager implements vscode.Disposable {
 	 * @param callback A command handler function.
 	 */
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
-		this.disposables.push(vscode.commands.registerCommand(command, callback));
+		this.registerDisposable(
+			vscode.commands.registerCommand(command, callback)
+		);
 	}
 
 
@@ -134,8 +131,11 @@ export class CommandManager implements vscode.Disposable {
 			return;
 		}
 
-		let repoPaths = Object.keys(this.repoManager.getRepos());
-		let items: vscode.QuickPickItem[] = repoPaths.map(path => ({ label: getRepoName(path), description: path }));
+		const repos = this.repoManager.getRepos();
+		const items: vscode.QuickPickItem[] = Object.keys(repos).map((path) => ({
+			label: repos[path].name || getRepoName(path),
+			description: path
+		}));
 
 		vscode.window.showQuickPick(items, {
 			placeHolder: 'Select a repository to remove from Git Graph:',
@@ -232,10 +232,12 @@ export class CommandManager implements vscode.Disposable {
 	 * @returns A list of Quick Pick items.
 	 */
 	private getCodeReviewQuickPickItems(codeReviews: CodeReviews): Promise<CodeReviewQuickPickItem[]> {
+		const repos = this.repoManager.getRepos();
 		const enrichedCodeReviews: { repo: string, id: string, review: CodeReviewData, fromCommitHash: string, toCommitHash: string }[] = [];
 		const fetchCommits: { repo: string, commitHash: string }[] = [];
 
 		Object.keys(codeReviews).forEach((repo) => {
+			if (typeof repos[repo] === 'undefined') return;
 			Object.keys(codeReviews[repo]).forEach((id) => {
 				const commitHashes = id.split('-');
 				commitHashes.forEach((commitHash) => fetchCommits.push({ repo: repo, commitHash: commitHash }));
@@ -263,7 +265,7 @@ export class CommandManager implements vscode.Disposable {
 					return {
 						codeReviewRepo: codeReview.repo,
 						codeReviewId: codeReview.id,
-						label: getRepoName(codeReview.repo) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
+						label: (repos[codeReview.repo].name || getRepoName(codeReview.repo)) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
 						description: getRelativeTimeDiff(Math.round(codeReview.review.lastActive / 1000)),
 						detail: isComparison
 							? abbrevText(fromSubject, 50) + ' ↔ ' + abbrevText(toSubject, 50)

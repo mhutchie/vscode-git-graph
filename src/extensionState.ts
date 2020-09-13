@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
-import { Event } from './event';
-import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowTags } from './types';
-import { getPathFromStr, GitExecutable } from './utils';
+import { getConfig } from './config';
+import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from './types';
+import { GitExecutable, getPathFromStr } from './utils';
+import { Disposable } from './utils/disposable';
+import { Event } from './utils/event';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
@@ -15,18 +17,22 @@ const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
 const REPO_STATES = 'repoStates';
 
 export const DEFAULT_REPO_STATE: GitRepoState = {
-	columnWidths: null,
 	cdvDivider: 0.5,
 	cdvHeight: 250,
+	columnWidths: null,
 	commitOrdering: RepoCommitOrdering.Default,
 	fileViewType: FileViewType.Default,
+	hideRemotes: [],
 	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
-	onlyFollowFirstParent: OnlyFollowFirstParent.Default,
 	issueLinkingConfig: null,
+	name: null,
+	onlyFollowFirstParent: OnlyFollowFirstParent.Default,
+	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+	onRepoLoadShowSpecificBranches: null,
 	pullRequestConfig: null,
 	showRemoteBranches: true,
-	showTags: ShowTags.Default,
-	hideRemotes: []
+	showRemoteBranchesV2: ShowRemoteBranches.Default,
+	showTags: ShowTags.Default
 };
 
 const DEFAULT_GLOBAL_VIEW_STATE: GitGraphViewGlobalState = {
@@ -44,12 +50,11 @@ export type CodeReviews = { [repo: string]: { [id: string]: CodeReviewData } };
 /**
  * Manages the Git Graph Extension State, which stores data in both the Visual Studio Code Global & Workspace State.
  */
-export class ExtensionState implements vscode.Disposable {
+export class ExtensionState extends Disposable {
 	private readonly globalState: vscode.Memento;
 	private readonly workspaceState: vscode.Memento;
 	private readonly globalStoragePath: string;
 	private avatarStorageAvailable: boolean = false;
-	private disposables: vscode.Disposable[] = [];
 
 	/**
 	 * Creates the Git Graph Extension State.
@@ -57,6 +62,7 @@ export class ExtensionState implements vscode.Disposable {
 	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
 	 */
 	constructor(context: vscode.ExtensionContext, onDidChangeGitExecutable: Event<GitExecutable>) {
+		super();
 		this.globalState = context.globalState;
 		this.workspaceState = context.workspaceState;
 
@@ -76,17 +82,11 @@ export class ExtensionState implements vscode.Disposable {
 			}
 		});
 
-		onDidChangeGitExecutable((gitExecutable) => {
-			this.setLastKnownGitPath(gitExecutable.path);
-		}, this.disposables);
-	}
-
-	/**
-	 * Disposes the resources used by the ExtensionState.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
+		this.registerDisposable(
+			onDidChangeGitExecutable((gitExecutable) => {
+				this.setLastKnownGitPath(gitExecutable.path);
+			})
+		);
 	}
 
 
@@ -98,10 +98,20 @@ export class ExtensionState implements vscode.Disposable {
 	 */
 	public getRepos() {
 		const repoSet = this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
-		Object.keys(repoSet).forEach(repo => {
-			repoSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
+		const outputSet: GitRepoSet = {};
+		let showRemoteBranchesDefaultValue: boolean | null = null;
+		Object.keys(repoSet).forEach((repo) => {
+			outputSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
+			if (typeof repoSet[repo].showRemoteBranchesV2 === 'undefined' && typeof repoSet[repo].showRemoteBranches !== 'undefined') {
+				if (showRemoteBranchesDefaultValue === null) {
+					showRemoteBranchesDefaultValue = getConfig().showRemoteBranches;
+				}
+				if (repoSet[repo].showRemoteBranches !== showRemoteBranchesDefaultValue) {
+					outputSet[repo].showRemoteBranchesV2 = repoSet[repo].showRemoteBranches ? ShowRemoteBranches.Show : ShowRemoteBranches.Hide;
+				}
+			}
 		});
-		return repoSet;
+		return outputSet;
 	}
 
 	/**

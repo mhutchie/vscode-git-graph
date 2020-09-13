@@ -63,11 +63,12 @@ export function isPathInWorkspace(path: string) {
 /**
  * Get the normalised canonical absolute path (i.e. resolves symlinks in `path`).
  * @param path The path.
+ * @param native Use the native realpath.
  * @returns The normalised canonical absolute path.
  */
-export function realpath(path: string) {
-	return new Promise<string>(resolve => {
-		fs.realpath(path, (err, resolvedPath) => resolve(err !== null ? path : getPathFromUri(vscode.Uri.file(resolvedPath))));
+export function realpath(path: string, native: boolean = false) {
+	return new Promise<string>((resolve) => {
+		(native ? fs.realpath.native : fs.realpath)(path, (err, resolvedPath) => resolve(err !== null ? path : getPathFromUri(vscode.Uri.file(resolvedPath))));
 	});
 }
 
@@ -300,7 +301,7 @@ export function openFile(repo: string, filePath: string) {
 			if (err === null) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), {
 					preview: true,
-					viewColumn: getConfig().openDiffTabLocation
+					viewColumn: getConfig().openNewTabEditorGroup
 				}).then(
 					() => resolve(null),
 					() => resolve('Visual Studio Code was unable to open ' + filePath + '.')
@@ -334,7 +335,7 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 
 		return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {
 			preview: true,
-			viewColumn: getConfig().openDiffTabLocation
+			viewColumn: getConfig().openNewTabEditorGroup
 		}).then(
 			() => null,
 			() => 'Visual Studio Code was unable load the diff editor for ' + newFilePath + '.'
@@ -350,7 +351,7 @@ export async function viewFileAtRevision(repo: string, hash: string, filePath: s
 
 	return vscode.commands.executeCommand('vscode.open', encodeDiffDocUri(repo, filePath, hash, GitFileStatus.Modified, DiffSide.New).with({ path: title }), {
 		preview: true,
-		viewColumn: getConfig().openDiffTabLocation
+		viewColumn: getConfig().openNewTabEditorGroup
 	}).then(
 		() => null,
 		() => 'Visual Studio Code was unable to open ' + filePath + ' at commit ' + abbrevCommit(hash) + '.'
@@ -681,8 +682,9 @@ function parseVersion(version: string) {
  * Construct a message that explains to the user that the Git executable is not compatible with a feature.
  * @param executable The Git executable.
  * @param version The minimum required version number.
+ * @param feature An optional name for the feature.
  * @returns The message for the user.
  */
-export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string) {
-	return 'A newer version of Git (>= ' + version + ') is required for this feature. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
+export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string, feature?: string) {
+	return 'A newer version of Git (>= ' + version + ') is required for ' + (feature ? feature : 'this feature') + '. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
 }

@@ -1,4 +1,4 @@
-import * as GG from "../out/types"; // Import types from back-end (requires `npm run compile-src`)
+import * as GG from '../out/types'; // Import types from back-end (requires `npm run compile-src`)
 
 declare global {
 

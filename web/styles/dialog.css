@@ -13,6 +13,9 @@
 	z-index:41;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 }
+body.vscode-high-contrast .dialog{
+	border-color:var(--vscode-menu-border, rgba(128,128,128,0.5));
+}
 
 .dialogContent{
 	display:block;
@@ -240,6 +243,7 @@
 	position:absolute;
 	box-sizing:border-box;
 	background-color:var(--vscode-menu-background);
+	color:var(--vscode-menu-foreground);
 	border:1px solid var(--vscode-focusBorder);
 	border-radius:0 0 4px 4px;
 	z-index:42;
@@ -248,11 +252,12 @@
 }
 
 .customSelectOption{
+	position:relative;
 	box-sizing:border-box;
 	width:100%;
 	padding:5px 6px;
 	max-height:61px;
-	background-color:rgba(127,127,127,0.05);
+	background-color:rgba(128,128,128,0.05);
 	overflow:hidden;
 	word-wrap:break-word;
 	-webkit-user-select:none;
@@ -260,12 +265,38 @@
 	cursor:pointer;
 }
 
-.customSelectOptions .customSelectOption.selected{
-	background-color:rgba(127,127,127,0.2);
+.customSelectOptions > .customSelectOption.selected{
+	background-color:rgba(128,128,128,0.2);
 }
-.customSelectOptions:hover .customSelectOption{
-	background-color:rgba(127,127,127,0.05);
+.customSelectOptions > .customSelectOption.focussed{
+	background-color:var(--vscode-menu-selectionBackground, rgba(128,128,128,0.05));
+	color:var(--vscode-menu-selectionForeground, var(--vscode-menu-foreground));
 }
-.customSelectOptions .customSelectOption:hover{
-	background-color:rgba(127,127,127,0.2);
+body.vscode-high-contrast .customSelectOptions > .customSelectOption.focussed{
+	outline:1px dotted var(--vscode-menu-selectionBorder, transparent);
+	outline-offset:-2px;
+}
+
+.customSelectOptions.multiple > .customSelectOption{
+	padding-left:28px;
+}
+.customSelectOptions.multiple > .customSelectOption > .selectedIcon{
+	display:none;
+}
+.customSelectOptions.multiple > .customSelectOption.selected > .selectedIcon{
+	display:block;
+	position:absolute;
+	width:12px;
+	height:16px;
+	top:50%;
+	left:9px;
+	margin-top:-9px;
+}
+.customSelectOptions.multiple > .customSelectOption > .selectedIcon svg{
+	fill:var(--vscode-menu-foreground);
+	opacity:0.7;
+}
+.customSelectOptions.multiple > .customSelectOption.focussed > .selectedIcon svg{
+	fill:var(--vscode-menu-selectionForeground, var(--vscode-menu-foreground));
+	opacity:0.85;
 }

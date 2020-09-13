@@ -28,6 +28,9 @@ body #view{
 	overflow-x:hidden;
 	overflow-y:auto;
 }
+body #view:focus{
+	outline:none;
+}
 
 
 /* Content */
@@ -634,9 +637,16 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 #commitTable tr.commit.commitDetailsOpen:hover, #commitTable tr.commit.commitDetailsOpen.contextMenuActive, #commitTable tr.commit.commitDetailsOpen.dialogActive, #commitTable tr.commit.commitDetailsOpen.graphVertexActive{
 	background-color:rgba(128,128,128,0.35);
 }
+
 #commitTable tr.commit.findCurrentCommit {
 	background-image:linear-gradient(var(--git-graph-findMatchCommit), var(--git-graph-findMatchCommit));
+	outline:1px solid var(--vscode-editor-findMatchHighlightBorder, transparent);
+	outline-offset:-1px;
 }
+body.vscode-high-contrast #commitTable tr.commit.findCurrentCommit{
+	outline-style:dotted;
+}
+
 #commitTable tr.commit.mute.commitDetailsOpen td.text,
 #commitTable tr.commit.mute.commitDetailsOpen span.description .text,
 #commitTable tr.commit.mute.findCurrentCommit td.text,

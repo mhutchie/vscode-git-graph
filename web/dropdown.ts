@@ -74,9 +74,6 @@ class Dropdown {
 			}
 		}, true);
 		document.addEventListener('contextmenu', () => this.close(), true);
-		document.addEventListener('keyup', (e) => {
-			if (e.key === 'Escape') this.close();
-		}, true);
 		this.filterInput.addEventListener('keyup', () => this.filter());
 	}
 
@@ -108,17 +105,27 @@ class Dropdown {
 		if (this.options.length > 0) this.render();
 	}
 
+	public isOpen() {
+		return this.dropdownVisible;
+	}
+
+	public close() {
+		this.elem.classList.remove('dropdownOpen');
+		this.dropdownVisible = false;
+		this.clearDoubleClickTimeout();
+	}
+
 	private render() {
 		this.elem.classList.add('loaded');
 
-		const curValueText = this.getCurrentValueText();
+		const curValueText = formatCommaSeparatedList(this.getSelectedOptions(true));
 		this.currentValueElem.title = curValueText;
 		this.currentValueElem.innerHTML = escapeHtml(curValueText);
 
 		let html = '';
 		for (let i = 0; i < this.options.length; i++) {
 			const escapedName = escapeHtml(this.options[i].name);
-			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' selected' : '') + '" data-id="' + i + '" title="' + escapedName + '">' +
+			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' ' + CLASS_SELECTED : '') + '" data-id="' + i + '" title="' + escapedName + '">' +
 				(this.multipleAllowed && this.optionsSelected[i] ? '<div class="dropdownOptionMultiSelected">' + SVG_ICONS.check + '</div>' : '') +
 				escapedName + (typeof this.options[i].hint === 'string' && this.options[i].hint !== '' ? '<span class="dropdownOptionHint">' + escapeHtml(this.options[i].hint!) + '</span>' : '') +
 				(this.showInfo ? '<div class="dropdownOptionInfo" title="' + escapeHtml(this.options[i].value) + '">' + SVG_ICONS.info + '</div>' : '') +
@@ -148,12 +155,6 @@ class Dropdown {
 		this.noResultsElem.style.display = matches ? 'none' : 'block';
 	}
 
-	private close() {
-		this.elem.classList.remove('dropdownOpen');
-		this.dropdownVisible = false;
-		this.clearDoubleClickTimeout();
-	}
-
 	private getSelectedOptions(names: boolean) {
 		let selected = [];
 		if (this.multipleAllowed && this.optionsSelected[0]) {
@@ -164,14 +165,6 @@ class Dropdown {
 			if (this.optionsSelected[i]) selected.push(names ? this.options[i].name : this.options[i].value);
 		}
 		return selected;
-	}
-
-	private getCurrentValueText() {
-		let str = '', selected = this.getSelectedOptions(true);
-		for (let i = 0; i < selected.length; i++) {
-			str += (i > 0 ? i < selected.length - 1 ? ', ' : ' & ' : '') + selected[i];
-		}
-		return str;
 	}
 
 	private selectOption(option: number) {

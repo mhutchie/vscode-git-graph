@@ -4,13 +4,13 @@ import { CommandManager } from './commands';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
-import { EventEmitter } from './event';
 import { ExtensionState } from './extensionState';
 import { onStartUp } from './life-cycle/startup';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { findGit, getGitExecutable, GitExecutable, showErrorMessage, showInformationMessage, UNABLE_TO_FIND_GIT_MSG } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, findGit, getGitExecutable, showErrorMessage, showInformationMessage } from './utils';
+import { EventEmitter } from './utils/event';
 
 /**
  * Activate Git Graph.
@@ -44,9 +44,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	const repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration, logger);
 	const statusBarItem = new StatusBarItem(repoManager.getNumRepos(), repoManager.onDidChangeRepos, onDidChangeConfiguration, logger);
 	const commandManager = new CommandManager(context.extensionPath, avatarManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);
+	const diffDocProvider = new DiffDocProvider(dataSource);
 
 	context.subscriptions.push(
-		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, new DiffDocProvider(dataSource)),
+		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, diffDocProvider),
 		vscode.workspace.onDidChangeConfiguration((event) => {
 			if (event.affectsConfiguration('git-graph')) {
 				configurationEmitter.emit(event);
@@ -67,6 +68,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				});
 			}
 		}),
+		diffDocProvider,
 		commandManager,
 		statusBarItem,
 		repoManager,

@@ -14,6 +14,11 @@
 		"removeComments": true,
 		"sourceMap": true,
 		"strict": true,
-		"target": "es6"
+		"target": "es6",
+		"types": [
+			"node",
+			"vscode",
+			"./utils/@types/node"
+		]
 	}
 }

@@ -54,7 +54,6 @@ class GitGraphView {
 		this.gitRepos = initialState.repos;
 		this.config = initialState.config;
 		this.maxCommits = this.config.initialLoadCommits;
-		this.graph = new Graph('commitGraph', viewElem, this.config);
 		this.viewElem = viewElem;
 		this.currentRepoRefreshState = {
 			inProgress: false,
@@ -70,6 +69,10 @@ class GitGraphView {
 		this.footerElem = document.getElementById('footer')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 
+		viewElem.focus();
+
+		this.graph = new Graph('commitGraph', viewElem, this.config.graph, this.config.mute);
+
 		this.repoDropdown = new Dropdown('repoDropdown', true, false, 'Repos', (values) => {
 			this.loadRepo(values[0]);
 		});
@@ -84,8 +87,7 @@ class GitGraphView {
 
 		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 		this.showRemoteBranchesElem.addEventListener('change', () => {
-			this.gitRepos[this.currentRepo].showRemoteBranches = this.showRemoteBranchesElem.checked;
-			this.saveRepoState();
+			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.ShowRemoteBranches.Show : GG.ShowRemoteBranches.Hide);
 			this.refresh(true);
 		});
 
@@ -100,8 +102,8 @@ class GitGraphView {
 		this.findWidget = new FindWidget(this);
 		this.settingsWidget = new SettingsWidget(this);
 
-		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, this.config.branchLabelsAlignedToGraph);
-		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, this.config.tagLabelsOnRight);
+		alterClass(document.body, CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH, this.config.referenceLabels.branchLabelsAlignedToGraph);
+		alterClass(document.body, CLASS_TAG_LABELS_RIGHT_ALIGNED, this.config.referenceLabels.tagLabelsOnRight);
 
 		this.observeWindowSizeChanges();
 		this.observeWebviewStyleChanges();
@@ -119,11 +121,10 @@ class GitGraphView {
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
-			if (this.currentRepo === prevState.settingsWidget.repo) {
-				const currentRepoState = this.gitRepos[this.currentRepo];
-				this.settingsWidget.restoreState(prevState.settingsWidget, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent);
+			if (this.currentRepo === prevState.settingsWidget.currentRepo) {
+				this.settingsWidget.restoreState(this.gitRepos[this.currentRepo], prevState.settingsWidget);
 			}
-			this.showRemoteBranchesElem.checked = this.gitRepos[prevState.currentRepo].showRemoteBranches;
+			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
 
 		let loadViewTo = initialState.loadViewTo;
@@ -143,18 +144,21 @@ class GitGraphView {
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => {
-			runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune }, 'Fetching from Remote(s)');
+			runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune, pruneTags: this.config.fetchAndPruneTags }, 'Fetching from Remote(s)');
 		});
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => {
-			const currentRepoState = this.gitRepos[this.currentRepo];
-			this.settingsWidget.show(this.currentRepo, currentRepoState.hideRemotes, currentRepoState.issueLinkingConfig, currentRepoState.pullRequestConfig, currentRepoState.showTags, currentRepoState.includeCommitsMentionedByReflogs, currentRepoState.onlyFollowFirstParent, true);
+			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo], true);
 		});
 		terminalBtn.innerHTML = SVG_ICONS.terminal;
 		terminalBtn.addEventListener('click', () => {
-			runAction({ command: 'openTerminal', repo: this.currentRepo }, 'Opening Terminal');
+			runAction({
+				command: 'openTerminal',
+				repo: this.currentRepo,
+				name: this.gitRepos[this.currentRepo].name || getRepoName(this.currentRepo)
+			}, 'Opening Terminal');
 		});
 	}
 
@@ -175,7 +179,7 @@ class GitGraphView {
 		}
 
 		alterClass(this.controlsElem, 'singleRepo', repoPaths.length === 1);
-		this.repoDropdown.setOptions(getRepoDropdownOptions(repoPaths), [newRepo]);
+		this.renderRepoDropdownOptions(newRepo);
 
 		if (loadViewTo !== null) {
 			if (loadViewTo.repo === newRepo) {
@@ -200,7 +204,7 @@ class GitGraphView {
 	private loadRepo(repo: string) {
 		this.currentRepo = repo;
 		this.currentRepoLoading = true;
-		this.showRemoteBranchesElem.checked = this.gitRepos[this.currentRepo].showRemoteBranches;
+		this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[this.currentRepo].showRemoteBranchesV2);
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitRemotes = [];
 		this.gitStashes = [];
@@ -231,34 +235,38 @@ class GitGraphView {
 		this.renderFetchButton();
 
 		// Configure current branches
-
 		if (this.currentBranches !== null && !(this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES)) {
-			let i = 0, globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
-			while (i < this.currentBranches.length) {
-				if (!branchOptions.includes(this.currentBranches[i]) && !globPatterns.includes(this.currentBranches[i])) {
-					this.currentBranches.splice(i, 1);
-				} else {
-					i++;
-				}
-			}
-			if (this.currentBranches.length === 0) this.currentBranches = null;
+			// Filter any branches that are currently selected, but no longer exist
+			const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
+			this.currentBranches = this.currentBranches.filter((branch) =>
+				this.gitBranches.includes(branch) || globPatterns.includes(branch)
+			);
 		}
-
-		if (this.currentBranches === null) {
-			this.currentBranches = [this.config.showCurrentBranchByDefault && this.gitBranchHead !== null ? this.gitBranchHead : SHOW_ALL_BRANCHES];
+		if (this.currentBranches === null || this.currentBranches.length === 0) {
+			// No branches are currently selected
+			const onRepoLoadShowCheckedOutBranch = getOnRepoLoadShowCheckedOutBranch(this.gitRepos[this.currentRepo].onRepoLoadShowCheckedOutBranch);
+			const onRepoLoadShowSpecificBranches = getOnRepoLoadShowSpecificBranches(this.gitRepos[this.currentRepo].onRepoLoadShowSpecificBranches);
+			this.currentBranches = [];
+			if (onRepoLoadShowSpecificBranches.length > 0) {
+				// Show specific branches if they exist in the repository
+				const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
+				this.currentBranches.push(...onRepoLoadShowSpecificBranches.filter((branch) =>
+					this.gitBranches.includes(branch) || globPatterns.includes(branch)
+				));
+			}
+			if (onRepoLoadShowCheckedOutBranch && this.gitBranchHead !== null && !this.currentBranches.includes(this.gitBranchHead)) {
+				// Show the checked-out branch, and it hasn't already been added as a specific branch
+				this.currentBranches.push(this.gitBranchHead);
+			}
+			if (this.currentBranches.length === 0) {
+				this.currentBranches.push(SHOW_ALL_BRANCHES);
+			}
 		}
 
 		this.saveState();
 
 		// Set up branch dropdown options
-		let options: DropdownOption[] = [{ name: 'Show All', value: SHOW_ALL_BRANCHES }];
-		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
-			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
-		}
-		for (let i = 0; i < this.gitBranches.length; i++) {
-			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
-		}
-		this.branchDropdown.setOptions(options, this.currentBranches);
+		this.branchDropdown.setOptions(this.getBranchOptions(true), this.currentBranches);
 
 		// Remove hidden remotes that no longer exist
 		let hiddenRemotes = this.gitRepos[this.currentRepo].hideRemotes;
@@ -355,7 +363,7 @@ class GitGraphView {
 		this.graph.loadCommits(this.commits, this.commitHead, this.commitLookup, this.onlyFollowFirstParent);
 		this.render();
 
-		if (currentRepoLoading && this.config.openRepoToHead && this.commitHead !== null) {
+		if (currentRepoLoading && this.config.onRepoLoad.scrollToHead && this.commitHead !== null) {
 			this.scrollToCommit(this.commitHead, true);
 		}
 
@@ -480,6 +488,20 @@ class GitGraphView {
 		return this.gitBranches;
 	}
 
+	public getBranchOptions(includeShowAll?: boolean): ReadonlyArray<DialogSelectInputOption> {
+		const options: DialogSelectInputOption[] = [];
+		if (includeShowAll) {
+			options.push({ name: 'Show All', value: SHOW_ALL_BRANCHES });
+		}
+		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
+			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
+		}
+		for (let i = 0; i < this.gitBranches.length; i++) {
+			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
+		}
+		return options;
+	}
+
 	public getCommits(): ReadonlyArray<GG.GitCommit> {
 		return this.commits;
 	}
@@ -507,7 +529,7 @@ class GitGraphView {
 			command: 'loadRepoInfo',
 			repo: this.currentRepo,
 			refreshId: ++this.currentRepoRefreshState.loadRepoInfoRefreshId,
-			showRemoteBranches: repoState.showRemoteBranches,
+			showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
 			hideRemotes: repoState.hideRemotes
 		});
 	}
@@ -521,7 +543,7 @@ class GitGraphView {
 			branches: this.currentBranches === null || (this.currentBranches.length === 1 && this.currentBranches[0] === SHOW_ALL_BRANCHES) ? null : this.currentBranches,
 			maxCommits: this.maxCommits,
 			showTags: getShowTags(repoState.showTags),
-			showRemoteBranches: repoState.showRemoteBranches,
+			showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
 			includeCommitsMentionedByReflogs: getIncludeCommitsMentionedByReflogs(repoState.includeCommitsMentionedByReflogs),
 			onlyFollowFirstParent: getOnlyFollowFirstParent(repoState.onlyFollowFirstParent),
 			commitOrdering: getCommitOrdering(repoState.commitOrdering),
@@ -689,13 +711,13 @@ class GitGraphView {
 		const expandedCommitElem = expandedCommit !== null ? document.getElementById('cdv') : null;
 
 		// Update the graphs grid dimensions
-		this.config.grid.expandY = expandedCommitElem !== null
+		this.config.graph.grid.expandY = expandedCommitElem !== null
 			? expandedCommitElem.getBoundingClientRect().height
 			: cdvHeight;
-		this.config.grid.y = this.commits.length > 0 && this.tableElem.children.length > 0
+		this.config.graph.grid.y = this.commits.length > 0 && this.tableElem.children.length > 0
 			? (this.tableElem.children[0].clientHeight - headerHeight - (expandedCommit !== null ? cdvHeight : 0)) / this.commits.length
-			: this.config.grid.y;
-		this.config.grid.offsetY = headerHeight + this.config.grid.y / 2;
+			: this.config.graph.grid.y;
+		this.config.graph.grid.offsetY = headerHeight + this.config.graph.grid.y / 2;
 
 		this.graph.render(expandedCommit);
 	}
@@ -704,7 +726,7 @@ class GitGraphView {
 		const colVisibility = this.getColumnVisibility();
 		const currentHash = this.commits.length > 0 && this.commits[0].hash === UNCOMMITTED ? UNCOMMITTED : this.commitHead;
 		const vertexColours = this.graph.getVertexColours();
-		const widthsAtVertices = this.config.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
+		const widthsAtVertices = this.config.referenceLabels.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		const mutedCommits = this.graph.getMutedCommits(currentHash);
 		const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, false, false);
 
@@ -756,7 +778,7 @@ class GitGraphView {
 				: '';
 
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (mutedCommits[i] ? ' mute' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' +
-				(this.config.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
+				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
@@ -840,6 +862,10 @@ class GitGraphView {
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
 		html += textFormatter.format(message) + '</span>';
 		dialog.showMessage(html);
+	}
+
+	public renderRepoDropdownOptions(repo?: string) {
+		this.repoDropdown.setOptions(getRepoDropdownOptions(this.gitRepos), [repo || this.currentRepo]);
 	}
 
 
@@ -1830,7 +1856,13 @@ class GitGraphView {
 					}
 				}
 			} else if (e.key === 'Escape') {
-				if (this.settingsWidget.isVisible()) {
+				if (this.repoDropdown.isOpen()) {
+					this.repoDropdown.close();
+					handledEvent(e);
+				} else if (this.branchDropdown.isOpen()) {
+					this.branchDropdown.close();
+					handledEvent(e);
+				} else if (this.settingsWidget.isVisible()) {
 					this.settingsWidget.close();
 					handledEvent(e);
 				} else if (this.findWidget.isVisible()) {
@@ -2235,7 +2267,7 @@ class GitGraphView {
 				}
 			} else {
 				let elemTop = this.controlsElem.clientHeight + elem.offsetTop, cdvHeight = this.gitRepos[this.currentRepo].cdvHeight;
-				if (this.config.autoCenterCommitDetailsView) {
+				if (this.config.commitDetailsView.autoCenter) {
 					// Center Commit Detail View setting is enabled
 					// elemTop - commit height [24px] + (commit details view height + commit height [24px]) / 2 - (view height) / 2
 					this.viewElem.scroll(0, elemTop - 12 + (cdvHeight - this.viewElem.clientHeight) / 2);
@@ -2428,7 +2460,7 @@ class GitGraphView {
 	}
 
 	private isCdvDocked() {
-		return this.config.commitDetailsViewLocation === GG.CommitDetailsViewLocation.DockedToBottom;
+		return this.config.commitDetailsView.location === GG.CommitDetailsViewLocation.DockedToBottom;
 	}
 
 	private getCommitOrder(hash1: string, hash2: string) {
@@ -2441,7 +2473,7 @@ class GitGraphView {
 
 	private getFileViewType() {
 		return this.gitRepos[this.currentRepo].fileViewType === GG.FileViewType.Default
-			? this.config.defaultFileViewType
+			? this.config.commitDetailsView.fileViewType
 			: this.gitRepos[this.currentRepo].fileViewType;
 	}
 
@@ -2634,7 +2666,7 @@ window.addEventListener('load', () => {
 		switch (msg.command) {
 			case 'addRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Add Remote');
-				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				settingsWidget.refresh();
 				break;
 			case 'addTag':
 				refreshAndDisplayErrors(msg.errors, 'Unable to Add Tag');
@@ -2697,7 +2729,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'deleteRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
-				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				settingsWidget.refresh();
 				break;
 			case 'deleteRemoteBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
@@ -2707,9 +2739,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'deleteUserDetails':
 				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => {
-					if (settingsWidget.isVisible()) {
-						settingsWidget.refresh();
-					}
+					settingsWidget.refresh();
 				}, true);
 				break;
 			case 'dropCommit':
@@ -2720,13 +2750,11 @@ window.addEventListener('load', () => {
 				break;
 			case 'editRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');
-				if (settingsWidget.isVisible()) settingsWidget.refresh();
+				settingsWidget.refresh();
 				break;
 			case 'editUserDetails':
 				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => {
-					if (settingsWidget.isVisible()) {
-						settingsWidget.refresh();
-					}
+					settingsWidget.refresh();
 				}, true);
 				break;
 			case 'fetch':
@@ -2895,7 +2923,7 @@ function generateFileViewHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG
 }
 
 function generateFileTreeHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFileChange>, lastViewedFile: string | null, isUncommitted: boolean, topLevelFolder: boolean): string {
-	const curFolderInfo = topLevelFolder || !initialState.config.fileTreeCompactFolders
+	const curFolderInfo = topLevelFolder || !initialState.config.commitDetailsView.fileTreeCompactFolders
 		? { folder: folder, name: folder.name, pathSeg: folder.name }
 		: getCurrentFolderInfo(folder, folder.name, folder.name);
 
@@ -3120,6 +3148,12 @@ function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering 
 	}
 }
 
+function getShowRemoteBranches(repoValue: GG.ShowRemoteBranches) {
+	return repoValue === GG.ShowRemoteBranches.Default
+		? initialState.config.showRemoteBranches
+		: repoValue === GG.ShowRemoteBranches.Show;
+}
+
 function getShowTags(repoValue: GG.ShowTags) {
 	return repoValue === GG.ShowTags.Default
 		? initialState.config.showTags
@@ -3136,6 +3170,18 @@ function getOnlyFollowFirstParent(repoValue: GG.OnlyFollowFirstParent) {
 	return repoValue === GG.OnlyFollowFirstParent.Default
 		? initialState.config.onlyFollowFirstParent
 		: repoValue === GG.OnlyFollowFirstParent.Enabled;
+}
+
+function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.ShowCheckedOutBranch) {
+	return repoValue === GG.ShowCheckedOutBranch.Default
+		? initialState.config.onRepoLoad.showCheckedOutBranch
+		: repoValue === GG.ShowCheckedOutBranch.Enabled;
+}
+
+function getOnRepoLoadShowSpecificBranches(repoValue: string[] | null) {
+	return repoValue === null
+		? initialState.config.onRepoLoad.showSpecificBranches
+		: repoValue;
 }
 
 
@@ -3155,7 +3201,8 @@ function abbrevCommit(commitHash: string) {
 	return commitHash.substring(0, 8);
 }
 
-function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
+function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
+	const repoPaths = Object.keys(repos);
 	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
@@ -3198,15 +3245,21 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 
 	// Initialise recursion
 	let indexes = [];
-	for (let i = 0; i < repos.length; i++) {
-		firstSep.push(repos[i].indexOf('/'));
-		if (firstSep[i] === repos[i].length - 1 || firstSep[i] === -1) {
+	for (let i = 0; i < repoPaths.length; i++) {
+		firstSep.push(repoPaths[i].indexOf('/'));
+		const repo = repos[repoPaths[i]];
+		if (repo.name !== null) {
+			// A name has been set for the repository
+			paths.push(repoPaths[i]);
+			names.push(repo.name);
+			distinctNames.push(repo.name);
+		} else if (firstSep[i] === repoPaths[i].length - 1 || firstSep[i] === -1) {
 			// Path has no slashes, or a single trailing slash ==> use the path as the name
-			paths.push(repos[i]);
-			names.push(repos[i]);
-			distinctNames.push(repos[i]);
+			paths.push(repoPaths[i]);
+			names.push(repoPaths[i]);
+			distinctNames.push(repoPaths[i]);
 		} else {
-			paths.push(repos[i].endsWith('/') ? repos[i].substring(0, repos[i].length - 1) : repos[i]); // Remove trailing slash if it exists
+			paths.push(repoPaths[i].endsWith('/') ? repoPaths[i].substring(0, repoPaths[i].length - 1) : repoPaths[i]); // Remove trailing slash if it exists
 			let name = paths[i].substring(paths[i].lastIndexOf('/') + 1);
 			names.push(name);
 			distinctNames.push(name);
@@ -3216,7 +3269,7 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 	resolveAmbiguous(indexes);
 
 	let options: DropdownOption[] = [];
-	for (let i = 0; i < repos.length; i++) {
+	for (let i = 0; i < repoPaths.length; i++) {
 		let hint;
 		if (names[i] === distinctNames[i]) {
 			// Name is distinct, no hint needed
@@ -3233,7 +3286,7 @@ function getRepoDropdownOptions(repos: ReadonlyArray<string>) {
 			// Construct the hint
 			hint = (distinctNames[i] !== paths[i] ? '.../' : '') + hintComps.join('/');
 		}
-		options.push({ name: names[i], value: repos[i], hint: hint });
+		options.push({ name: names[i], value: repoPaths[i], hint: hint });
 	}
 
 	return initialState.config.repoDropdownOrder === GG.RepoDropdownOrder.Name
@@ -3252,7 +3305,7 @@ function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG
 		headLabels.push({ name: heads[i], remotes: [] });
 		headLookup[heads[i]] = i;
 	}
-	if (initialState.config.combineLocalAndRemoteBranchLabels) {
+	if (initialState.config.referenceLabels.combineLocalAndRemoteBranchLabels) {
 		let remainingRemoteLabels = [];
 		for (let i = 0; i < remotes.length; i++) {
 			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known

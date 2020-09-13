@@ -56,50 +56,65 @@
 	text-align:center;
 }
 
-.settingsSection table{
+.settingsSection > table{
 	width:100%;
 	border-collapse:collapse;
 }
 
-.settingsSection:before, .settingsSection table tr.lineAbove td:before, .settingsSection .settingsSectionButtons.lineAbove:before{
+.settingsSection:before, .settingsSection > table tr.lineAbove td:before, .settingsSection > table tr.lineBelow td:after, .settingsSection .settingsSectionButtons.lineAbove:before{
 	content:'';
 	position:absolute;
 	display:block;
 	left:0;
-	top:0;
 	right:0;
 	height:1px;
 	background-color:var(--vscode-editorSuggestWidget-foreground);
 	opacity:0.3;
 }
-.settingsSection table tr.lineAbove td:before, .settingsSection .settingsSectionButtons.lineAbove:before{
+.settingsSection:before, .settingsSection > table tr.lineAbove td:before, .settingsSection .settingsSectionButtons.lineAbove:before{
+	top:0;
+}
+.settingsSection > table tr.lineBelow td:after{
+	bottom:0;
+}
+.settingsSection > table tr.lineAbove td:before, .settingsSection > table tr.lineBelow td:after, .settingsSection .settingsSectionButtons.lineAbove:before{
 	opacity:0.15;
 }
 
-.settingsSection table th, .settingsSection table td{
+.settingsSection > table th, .settingsSection > table td{
 	position:relative;
 	text-align:center;
 	white-space:nowrap;
 }
-.settingsSection table th{
+.settingsSection > table th{
 	font-weight:bold;
 	padding:3px 5px;
 }
-.settingsSection table td{
+.settingsSection > table td{
 	padding:0 5px 3px 5px;
 }
-.settingsSection table tr.lineAbove td{
+.settingsSection > table tr.lineAbove td{
 	padding-top:3px;
 }
-.settingsSection table td.left{
+.settingsSection > table td.left{
 	text-align:left;
 }
-.settingsSection table td.leftWithEllipsis{
+.settingsSection > table td.leftWithEllipsis{
 	width:100%;
 	max-width:0;
 	overflow:hidden;
 	text-overflow:ellipsis;
 	text-align:left;
+}
+.settingsSection > table td.right{
+	text-align:right;
+}
+
+.settingsSection.general > table{
+	margin-bottom:4px;
+}
+.settingsSection.general > table td{
+	padding:5px !important;
 }
 
 .settingsSection .hideRemoteBtn{
@@ -117,22 +132,25 @@
 	left:0;
 }
 
-.settingsSection .remoteBtns div{
+.settingsSection > table td.btns div{
 	display:inline-block;
 	position:relative;
 	width:17px;
 	height:17px;
-	vertical-align:middle;
+	vertical-align:top;
 	cursor:pointer;
 }
-.settingsSection .editRemote svg{
+.settingsSection > table td.btns.remoteBtns div{
+	vertical-align:middle;
+}
+.settingsSection > table #editRepoName svg, .settingsSection > table #editInitialBranches svg, .settingsSection > table .editRemote svg{
 	position:absolute;
 	left:1.5px;
 	top:1.5px;
 	width:14px !important;
 	height:14px !important;
 }
-.settingsSection .deleteRemote svg, .settingsSection .fetchRemote svg, .settingsSection .pruneRemote svg{
+.settingsSection > table #deleteRepoName svg, .settingsSection > table #clearInitialBranches svg, .settingsSection > table .deleteRemote svg, .settingsSection > table .fetchRemote svg, .settingsSection > table .pruneRemote svg{
 	position:absolute;
 	left:0.5px;
 	top:0.5px;
@@ -232,7 +250,7 @@
 	height:16px !important;
 }
 
-.settingsSectionButtons > div:hover svg, .settingsSection .hideRemoteBtn:hover svg, .settingsSection .remoteBtns div:hover svg, #settingsClose:hover{
+.settingsSectionButtons > div:hover svg, .settingsSection .hideRemoteBtn:hover svg, .settingsSection > table td.btns div:hover svg, #settingsClose:hover{
 	fill-opacity:1;
 }
 .settingsWidget.loading #settingsContent{

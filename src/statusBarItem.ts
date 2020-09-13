@@ -1,18 +1,18 @@
 import * as vscode from 'vscode';
 import { getConfig } from './config';
-import { Event } from './event';
 import { Logger } from './logger';
 import { RepoChangeEvent } from './repoManager';
+import { Disposable } from './utils/disposable';
+import { Event } from './utils/event';
 
 /**
  * Manages the Git Graph Status Bar Item, which allows users to open the Git Graph View from the Visual Studio Code Status Bar.
  */
-export class StatusBarItem implements vscode.Disposable {
+export class StatusBarItem extends Disposable {
 	private readonly logger: Logger;
 	private readonly statusBarItem: vscode.StatusBarItem;
 	private isVisible: boolean = false;
 	private numRepos: number = 0;
-	private disposables: vscode.Disposable[] = [];
 
 	/**
 	 * Creates the Git Graph Status Bar Item.
@@ -20,6 +20,7 @@ export class StatusBarItem implements vscode.Disposable {
 	 * @param logger The Git Graph Logger instance.
 	 */
 	constructor(initialNumRepos: number, onDidChangeRepos: Event<RepoChangeEvent>, onDidChangeConfiguration: Event<vscode.ConfigurationChangeEvent>, logger: Logger) {
+		super();
 		this.logger = logger;
 
 		const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
@@ -27,27 +28,20 @@ export class StatusBarItem implements vscode.Disposable {
 		statusBarItem.tooltip = 'View Git Graph';
 		statusBarItem.command = 'git-graph.view';
 		this.statusBarItem = statusBarItem;
-		this.disposables.push(statusBarItem);
 
-		onDidChangeRepos((event) => {
-			this.setNumRepos(event.numRepos);
-		}, this.disposables);
-
-		onDidChangeConfiguration((event) => {
-			if (event.affectsConfiguration('git-graph.showStatusBarItem')) {
-				this.refresh();
-			}
-		}, this.disposables);
+		this.registerDisposables(
+			onDidChangeRepos((event) => {
+				this.setNumRepos(event.numRepos);
+			}),
+			onDidChangeConfiguration((event) => {
+				if (event.affectsConfiguration('git-graph.showStatusBarItem')) {
+					this.refresh();
+				}
+			}),
+			statusBarItem
+		);
 
 		this.setNumRepos(initialNumRepos);
-	}
-
-	/**
-	 * Disposes the resources used by the StatusBarItem.
-	 */
-	public dispose() {
-		this.disposables.forEach((disposable) => disposable.dispose());
-		this.disposables = [];
 	}
 
 	/** 

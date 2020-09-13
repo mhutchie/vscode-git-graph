@@ -1,22 +1,14 @@
 interface SettingsWidgetState {
-	readonly visible: boolean;
-	readonly repo: string | null;
+	readonly currentRepo: string | null;
 	readonly settings: GG.GitRepoSettings | null;
 }
 
 class SettingsWidget {
 	private readonly view: GitGraphView;
-	private visible: boolean = false;
+
+	private currentRepo: string | null = null;
+	private repo: Readonly<GG.GitRepoState> | null = null;
 	private loading: boolean = false;
-	private repo: string | null = null;
-
-	private hideRemotes: string[] | null = null;
-	private issueLinkingConfig: GG.IssueLinkingConfig | null = null;
-	private pullRequestConfig: GG.PullRequestConfig | null = null;
-	private showTags: GG.ShowTags | null = null;
-	private includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs | null = null;
-	private onlyFollowFirstParent: GG.OnlyFollowFirstParent | null = null;
-
 	private settings: GG.GitRepoSettings | null = null;
 
 	private readonly widgetElem: HTMLElement;
@@ -39,17 +31,11 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
-	public show(repo: string, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent, transition: boolean) {
-		if (this.visible) return;
-		this.visible = true;
+	public show(currentRepo: string, repo: Readonly<GG.GitRepoState>, transition: boolean) {
+		if (this.currentRepo !== null) return;
 		this.loading = true;
+		this.currentRepo = currentRepo;
 		this.repo = repo;
-		this.hideRemotes = hideRemotes;
-		this.issueLinkingConfig = issueLinkingConfig;
-		this.pullRequestConfig = pullRequestConfig;
-		this.showTags = showTags;
-		this.includeCommitsMentionedByReflogs = includeCommitsMentionedByReflogs;
-		this.onlyFollowFirstParent = onlyFollowFirstParent;
 		alterClass(this.widgetElem, CLASS_TRANSITION, transition);
 		this.widgetElem.classList.add(CLASS_ACTIVE);
 		this.requestSettings();
@@ -57,22 +43,16 @@ class SettingsWidget {
 	}
 
 	public refresh() {
-		if (!this.visible) return;
+		if (this.currentRepo === null) return;
 		this.loading = true;
 		this.requestSettings();
 	}
 
 	public close() {
-		if (!this.visible) return;
-		this.visible = false;
-		this.loading = false;
+		if (this.currentRepo === null) return;
+		this.currentRepo = null;
 		this.repo = null;
-		this.hideRemotes = null;
-		this.issueLinkingConfig = null;
-		this.pullRequestConfig = null;
-		this.showTags = null;
-		this.includeCommitsMentionedByReflogs = null;
-		this.onlyFollowFirstParent = null;
+		this.loading = false;
 		this.settings = null;
 		this.widgetElem.classList.add(CLASS_TRANSITION);
 		this.widgetElem.classList.remove(CLASS_ACTIVE);
@@ -87,30 +67,32 @@ class SettingsWidget {
 
 	public getState(): SettingsWidgetState {
 		return {
-			visible: this.visible,
-			repo: this.repo,
+			currentRepo: this.currentRepo,
 			settings: this.settings
 		};
 	}
 
-	public restoreState(state: SettingsWidgetState, hideRemotes: string[], issueLinkingConfig: GG.IssueLinkingConfig | null, pullRequestConfig: GG.PullRequestConfig | null, showTags: GG.ShowTags, includeCommitsMentionedByReflogs: GG.IncludeCommitsMentionedByReflogs, onlyFollowFirstParent: GG.OnlyFollowFirstParent) {
-		if (!state.visible || state.repo === null) return;
+	public restoreState(repo: Readonly<GG.GitRepoState>, state: SettingsWidgetState) {
+		if (state.currentRepo === null) return;
 		this.settings = state.settings;
-		this.show(state.repo, hideRemotes, issueLinkingConfig, pullRequestConfig, showTags, includeCommitsMentionedByReflogs, onlyFollowFirstParent, false);
+		this.show(state.currentRepo, repo, false);
 	}
 
 	public isVisible() {
-		return this.visible;
+		return this.currentRepo !== null;
 	}
 
 	public loadSettings(settings: GG.GitRepoSettings | null, error: string | null) {
-		if (!this.visible) return;
+		if (this.currentRepo === null || this.repo === null) return;
 		this.settings = settings;
 
-		if (this.settings !== null && this.hideRemotes !== null) {
+		if (this.settings !== null) {
 			// Remove hidden remotes that no longer exist
-			let remotes = this.settings.remotes.map((remote) => remote.name);
-			this.hideRemotes = this.hideRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
+			const remotes = this.settings.remotes.map((remote) => remote.name);
+			const newHideRemotes = this.repo.hideRemotes.filter((hiddenRemote) => remotes.includes(hiddenRemote));
+			if (this.repo.hideRemotes.length !== newHideRemotes.length) {
+				this.view.saveRepoStateValue(this.currentRepo, 'hideRemotes', newHideRemotes);
+			}
 		}
 
 		if (error === null) {
@@ -130,8 +112,30 @@ class SettingsWidget {
 	/* Render Methods */
 
 	private render() {
-		if (this.settings !== null) {
+		if (this.currentRepo !== null && this.repo !== null && this.settings !== null) {
+			const escapedRepoName = escapeHtml(this.repo.name || getRepoName(this.currentRepo));
+
+			const initialBranchesLocallyConfigured = this.repo.onRepoLoadShowCheckedOutBranch !== GG.ShowCheckedOutBranch.Default || this.repo.onRepoLoadShowSpecificBranches !== null;
+			const initialBranches: string[] = [];
+			if (getOnRepoLoadShowCheckedOutBranch(this.repo.onRepoLoadShowCheckedOutBranch)) {
+				initialBranches.push('Checked Out');
+			}
+			const branchOptions = this.view.getBranchOptions();
+			getOnRepoLoadShowSpecificBranches(this.repo.onRepoLoadShowSpecificBranches).forEach((branch) => {
+				const option = branchOptions.find((option) => option.value === branch);
+				if (option) {
+					initialBranches.push(option.name);
+				}
+			});
+			const initialBranchesStr = initialBranches.length > 0
+				? escapeHtml(formatCommaSeparatedList(initialBranches))
+				: 'Show All';
+
 			let html = '<div class="settingsSection general"><h3>General</h3>' +
+				'<table>' +
+				'<tr class="lineAbove"><td class="left">Name:</td><td class="leftWithEllipsis" title="' + escapedRepoName + (this.repo.name === null ? ' (Default Name from the File System)' : '') + '">' + escapedRepoName + '</td><td class="btns right"><div id="editRepoName" title="Edit Name' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div>' + (this.repo.name !== null ? ' <div id="deleteRepoName" title="Delete Name' + ELLIPSIS + '">' + SVG_ICONS.close + '</div>' : '') + '</td></tr>' +
+				'<tr class="lineAbove lineBelow"><td class="left">Initial Branches:</td><td class="leftWithEllipsis" title="' + initialBranchesStr + ' (' + (initialBranchesLocallyConfigured ? 'Local' : 'Global') + ')">' + initialBranchesStr + '</td><td class="btns right"><div id="editInitialBranches" title="Edit Initial Branches' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div>' + (initialBranchesLocallyConfigured ? ' <div id="clearInitialBranches" title="Clear Initial Branches' + ELLIPSIS + '">' + SVG_ICONS.close + '</div>' : '') + '</td></tr>' +
+				'</table>' +
 				'<label id="settingsShowTags"><input type="checkbox" id="settingsShowTagsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Tags</label><br/>' +
 				'<label id="settingsIncludeCommitsMentionedByReflogs"><input type="checkbox" id="settingsIncludeCommitsMentionedByReflogsCheckbox" tabindex="-1"><span class="customCheckbox"></span>Include commits only mentioned by reflogs</label><span class="settingsWidgetInfo" title="Only applies when showing all branches.">' + SVG_ICONS.info + '</span><br/>' +
 				'<label id="settingsOnlyFollowFirstParent"><input type="checkbox" id="settingsOnlyFollowFirstParentCheckbox" tabindex="-1"><span class="customCheckbox"></span>Only follow the first parent of commits</label><span class="settingsWidgetInfo" title="Instead of following all parents of commits, only follow the first parent when discovering the commits to load.">' + SVG_ICONS.info + '</span>' +
@@ -157,13 +161,14 @@ class SettingsWidget {
 
 			html += '<div class="settingsSection"><h3>Remote Configuration</h3><table><tr><th>Remote</th><th>URL</th><th>Type</th><th>Action</th></tr>';
 			if (this.settings.remotes.length > 0) {
+				const hideRemotes = this.repo.hideRemotes;
 				this.settings.remotes.forEach((remote, i) => {
-					let hidden = this.hideRemotes !== null && this.hideRemotes.includes(remote.name);
-					let fetchUrl = escapeHtml(remote.url || 'Not Set'), pushUrl = escapeHtml(remote.pushUrl || remote.url || 'Not Set');
+					const hidden = hideRemotes.includes(remote.name);
+					const fetchUrl = escapeHtml(remote.url || 'Not Set'), pushUrl = escapeHtml(remote.pushUrl || remote.url || 'Not Set');
 					html += '<tr class="lineAbove">' +
 						'<td class="left" rowspan="2"><span class="hideRemoteBtn" data-index="' + i + '" title="Click to ' + (hidden ? 'show' : 'hide') + ' branches of this remote.">' + (hidden ? SVG_ICONS.eyeClosed : SVG_ICONS.eyeOpen) + '</span>' + escapeHtml(remote.name) + '</td>' +
 						'<td class="leftWithEllipsis" title="Fetch URL: ' + fetchUrl + '">' + fetchUrl + '</td><td>Fetch</td>' +
-						'<td class="remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+						'<td class="btns remoteBtns" rowspan="2" data-index="' + i + '"><div class="fetchRemote" title="Fetch from Remote' + ELLIPSIS + '">' + SVG_ICONS.download + '</div> <div class="pruneRemote" title="Prune Remote' + ELLIPSIS + '">' + SVG_ICONS.branch + '</div><br><div class="editRemote" title="Edit Remote' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteRemote" title="Delete Remote' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
 						'</tr><tr><td class="leftWithEllipsis" title="Push URL: ' + pushUrl + '">' + pushUrl + '</td><td>Push</td></tr>';
 				});
 			} else {
@@ -172,9 +177,7 @@ class SettingsWidget {
 			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote" class="addBtn">' + SVG_ICONS.close + 'Add Remote</div></div></div>';
 
 			html += '<div class="settingsSection centered"><h3>Issue Linking</h3>';
-			const issueLinkingConfig = this.issueLinkingConfig !== null
-				? this.issueLinkingConfig
-				: globalState.issueLinkingConfig;
+			const issueLinkingConfig = this.repo.issueLinkingConfig || globalState.issueLinkingConfig;
 			if (issueLinkingConfig !== null) {
 				const escapedIssue = escapeHtml(issueLinkingConfig.issue), escapedUrl = escapeHtml(issueLinkingConfig.url);
 				html += '<table><tr><td class="left">Issue Regex:</td><td class="leftWithEllipsis" title="' + escapedIssue + '">' + escapedIssue + '</td></tr><tr><td class="left">Issue URL:</td><td class="leftWithEllipsis" title="' + escapedUrl + '">' + escapedUrl + '</td></tr></table>';
@@ -186,7 +189,7 @@ class SettingsWidget {
 			html += '</div>';
 
 			html += '<div class="settingsSection centered"><h3>Pull Request Creation</h3>';
-			const pullRequestConfig = this.pullRequestConfig;
+			const pullRequestConfig = this.repo.pullRequestConfig;
 			if (pullRequestConfig !== null) {
 				const provider = escapeHtml((pullRequestConfig.provider === GG.PullRequestProvider.Bitbucket
 					? 'Bitbucket'
@@ -215,36 +218,85 @@ class SettingsWidget {
 
 			this.contentsElem.innerHTML = html;
 
-			const showTagsElem = <HTMLInputElement>document.getElementById('settingsShowTagsCheckbox');
-			showTagsElem.checked = getShowTags(this.showTags!);
-			showTagsElem.addEventListener('change', () => {
+			document.getElementById('editRepoName')!.addEventListener('click', () => {
+				if (this.currentRepo === null || this.repo === null) return;
+				dialog.showForm('Specify a Name for this Repository:', [
+					{ type: DialogInputType.Text, name: 'Name', default: this.repo.name || '', placeholder: getRepoName(this.currentRepo) }
+				], 'Save Name', (values) => {
+					if (this.currentRepo === null) return;
+					this.view.saveRepoStateValue(this.currentRepo, 'name', <string>values[0] || null);
+					this.view.renderRepoDropdownOptions();
+					this.render();
+				}, null);
+			});
+
+			if (this.repo.name !== null) {
+				document.getElementById('deleteRepoName')!.addEventListener('click', () => {
+					if (this.currentRepo === null || this.repo === null || this.repo.name === null) return;
+					dialog.showConfirmation('Are you sure you want to delete the manually configured name <b><i>' + escapeHtml(this.repo.name) + '</i></b> for this repository, and use the default name from the File System <b><i>' + escapeHtml(getRepoName(this.currentRepo)) + '</i></b>?', 'Yes, delete', () => {
+						if (this.currentRepo === null) return;
+						this.view.saveRepoStateValue(this.currentRepo, 'name', null);
+						this.view.renderRepoDropdownOptions();
+						this.render();
+					}, null);
+				});
+			}
+
+			document.getElementById('editInitialBranches')!.addEventListener('click', () => {
 				if (this.repo === null) return;
+				const showCheckedOutBranch = getOnRepoLoadShowCheckedOutBranch(this.repo.onRepoLoadShowCheckedOutBranch);
+				const showSpecificBranches = getOnRepoLoadShowSpecificBranches(this.repo.onRepoLoadShowSpecificBranches);
+				dialog.showForm('<b>Configure Initial Branches</b><p style="margin:6px 0;">Configure the branches that are initially shown when this repository is loaded in the Git Graph View.</p><p style="font-size:12px; margin:6px 0 0 0;">Note: When "Checked Out Branch" is Disabled, and no "Specific Branches" are selected, all branches will be shown.</p>', [
+					{ type: DialogInputType.Checkbox, name: 'Checked Out Branch', value: showCheckedOutBranch },
+					{ type: DialogInputType.Select, name: 'Specific Branches', options: this.view.getBranchOptions(), defaults: showSpecificBranches, multiple: true }
+				], 'Save Configuration', (values) => {
+					if (this.currentRepo === null) return;
+					if (showCheckedOutBranch !== values[0] || !arraysStrictlyEqualIgnoringOrder(showSpecificBranches, <string[]>values[1])) {
+						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowCheckedOutBranch', values[0] ? GG.ShowCheckedOutBranch.Enabled : GG.ShowCheckedOutBranch.Disabled);
+						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowSpecificBranches', <string[]>values[1]);
+						this.render();
+					}
+				}, null, 'Cancel', null, false);
+			});
+
+			if (initialBranchesLocallyConfigured) {
+				document.getElementById('clearInitialBranches')!.addEventListener('click', () => {
+					dialog.showConfirmation('Are you sure you want to clear the branches that are initially shown when this repository is loaded in the Git Graph View?', 'Yes, clear', () => {
+						if (this.currentRepo === null) return;
+						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowCheckedOutBranch', GG.ShowCheckedOutBranch.Default);
+						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowSpecificBranches', null);
+						this.render();
+					}, null);
+				});
+			}
+
+			const showTagsElem = <HTMLInputElement>document.getElementById('settingsShowTagsCheckbox');
+			showTagsElem.checked = getShowTags(this.repo.showTags);
+			showTagsElem.addEventListener('change', () => {
+				if (this.currentRepo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsShowTagsCheckbox');
 				if (elem === null) return;
-				this.showTags = elem.checked ? GG.ShowTags.Show : GG.ShowTags.Hide;
-				this.view.saveRepoStateValue(this.repo, 'showTags', this.showTags);
+				this.view.saveRepoStateValue(this.currentRepo, 'showTags', elem.checked ? GG.ShowTags.Show : GG.ShowTags.Hide);
 				this.view.refresh(true);
 			});
 
 			const includeCommitsMentionedByReflogsElem = <HTMLInputElement>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
-			includeCommitsMentionedByReflogsElem.checked = getIncludeCommitsMentionedByReflogs(this.includeCommitsMentionedByReflogs!);
+			includeCommitsMentionedByReflogsElem.checked = getIncludeCommitsMentionedByReflogs(this.repo.includeCommitsMentionedByReflogs);
 			includeCommitsMentionedByReflogsElem.addEventListener('change', () => {
-				if (this.repo === null) return;
+				if (this.currentRepo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
 				if (elem === null) return;
-				this.includeCommitsMentionedByReflogs = elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled;
-				this.view.saveRepoStateValue(this.repo, 'includeCommitsMentionedByReflogs', this.includeCommitsMentionedByReflogs);
+				this.view.saveRepoStateValue(this.currentRepo, 'includeCommitsMentionedByReflogs', elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled);
 				this.view.refresh(true);
 			});
 
 			const settingsOnlyFollowFirstParentElem = <HTMLInputElement>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
-			settingsOnlyFollowFirstParentElem.checked = getOnlyFollowFirstParent(this.onlyFollowFirstParent!);
+			settingsOnlyFollowFirstParentElem.checked = getOnlyFollowFirstParent(this.repo.onlyFollowFirstParent);
 			settingsOnlyFollowFirstParentElem.addEventListener('change', () => {
-				if (this.repo === null) return;
+				if (this.currentRepo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
 				if (elem === null) return;
-				this.onlyFollowFirstParent = elem.checked ? GG.OnlyFollowFirstParent.Enabled : GG.OnlyFollowFirstParent.Disabled;
-				this.view.saveRepoStateValue(this.repo, 'onlyFollowFirstParent', this.onlyFollowFirstParent);
+				this.view.saveRepoStateValue(this.currentRepo, 'onlyFollowFirstParent', elem.checked ? GG.OnlyFollowFirstParent.Enabled : GG.OnlyFollowFirstParent.Disabled);
 				this.view.refresh(true);
 			});
 
@@ -256,10 +308,11 @@ class SettingsWidget {
 					{ type: DialogInputType.Text, name: 'User Email', default: userEmail.local ?? userEmail.global ?? '', placeholder: null },
 					{ type: DialogInputType.Checkbox, name: 'Use Globally', value: userName.local === null && userEmail.local === null, info: 'Use the "User Name" and "User Email" globally for all Git repositories (it can be overridden per repository).' }
 				], 'Set User Details', (values) => {
+					if (this.currentRepo === null) return;
 					const useGlobally = <boolean>values[2];
 					runAction({
 						command: 'editUserDetails',
-						repo: this.repo!,
+						repo: this.currentRepo,
 						name: <string>values[0],
 						email: <string>values[1],
 						location: useGlobally ? GG.GitConfigLocation.Global : GG.GitConfigLocation.Local,
@@ -274,9 +327,10 @@ class SettingsWidget {
 					const userName = this.settings.user.name, userEmail = this.settings.user.email;
 					const isGlobal = userName.local === null && userEmail.local === null;
 					dialog.showConfirmation('Are you sure you want to remove the <b>' + (isGlobal ? 'globally' : 'locally') + ' configured</b> user name and email, which are used by Git to record the Author and Committer of commit objects?', 'Yes, remove', () => {
+						if (this.currentRepo === null) return;
 						runAction({
 							command: 'deleteUserDetails',
-							repo: this.repo!,
+							repo: this.currentRepo,
 							name: (isGlobal ? userName.global : userName.local) !== null,
 							email: (isGlobal ? userEmail.global : userEmail.local) !== null,
 							location: isGlobal ? GG.GitConfigLocation.Global : GG.GitConfigLocation.Local
@@ -293,79 +347,95 @@ class SettingsWidget {
 					{ type: DialogInputType.Text, name: 'Push URL', default: '', placeholder: pushUrlPlaceholder },
 					{ type: DialogInputType.Checkbox, name: 'Fetch Immediately', value: true }
 				], 'Add Remote', (values) => {
-					runAction({ command: 'addRemote', name: <string>values[0], repo: this.repo!, url: <string>values[1], pushUrl: <string>values[2] !== '' ? <string>values[2] : null, fetch: <boolean>values[3] }, 'Adding Remote');
+					if (this.currentRepo === null) return;
+					runAction({ command: 'addRemote', repo: this.currentRepo, name: <string>values[0], url: <string>values[1], pushUrl: <string>values[2] !== '' ? <string>values[2] : null, fetch: <boolean>values[3] }, 'Adding Remote');
 				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('editRemote', 'click', (e) => {
-				let remote = this.getRemoteForBtnEvent(e);
+				const remote = this.getRemoteForBtnEvent(e);
+				if (remote === null) return;
 				dialog.showForm('Edit the remote <b><i>' + escapeHtml(remote.name) + '</i></b>:', [
 					{ type: DialogInputType.Text, name: 'Name', default: remote.name, placeholder: null },
 					{ type: DialogInputType.Text, name: 'Fetch URL', default: remote.url !== null ? remote.url : '', placeholder: null },
 					{ type: DialogInputType.Text, name: 'Push URL', default: remote.pushUrl !== null ? remote.pushUrl : '', placeholder: pushUrlPlaceholder }
 				], 'Save Changes', (values) => {
-					runAction({ command: 'editRemote', repo: this.repo!, nameOld: remote.name, nameNew: <string>values[0], urlOld: remote.url, urlNew: <string>values[1] !== '' ? <string>values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: <string>values[2] !== '' ? <string>values[2] : null }, 'Saving Changes to Remote');
+					if (this.currentRepo === null) return;
+					runAction({ command: 'editRemote', repo: this.currentRepo, nameOld: remote.name, nameNew: <string>values[0], urlOld: remote.url, urlNew: <string>values[1] !== '' ? <string>values[1] : null, pushUrlOld: remote.pushUrl, pushUrlNew: <string>values[2] !== '' ? <string>values[2] : null }, 'Saving Changes to Remote');
 				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('deleteRemote', 'click', (e) => {
-				let remote = this.getRemoteForBtnEvent(e);
+				const remote = this.getRemoteForBtnEvent(e);
+				if (remote === null) return;
 				dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, delete', () => {
-					runAction({ command: 'deleteRemote', repo: this.repo!, name: remote.name }, 'Deleting Remote');
+					if (this.currentRepo === null) return;
+					runAction({ command: 'deleteRemote', repo: this.currentRepo, name: remote.name }, 'Deleting Remote');
 				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('fetchRemote', 'click', (e) => {
-				runAction({ command: 'fetch', repo: this.repo!, name: this.getRemoteForBtnEvent(e).name, prune: false }, 'Fetching from Remote');
+				const remote = this.getRemoteForBtnEvent(e);
+				if (remote === null) return;
+				dialog.showForm('Are you sure you want to fetch from the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', [
+					{ type: DialogInputType.Checkbox, name: 'Prune', value: initialState.config.dialogDefaults.fetchRemote.prune, info: 'Before fetching, remove any remote-tracking references that no longer exist on the remote.' },
+					{ type: DialogInputType.Checkbox, name: 'Prune Tags', value: initialState.config.dialogDefaults.fetchRemote.pruneTags, info: 'Before fetching, remove any local tags that no longer exist on the remote. Requires Git >= 2.17.0, and "Prune" to be enabled.' }
+				], 'Yes, fetch', (values) => {
+					if (this.currentRepo === null) return;
+					runAction({ command: 'fetch', repo: this.currentRepo, name: remote.name, prune: <boolean>values[0], pruneTags: <boolean>values[1] }, 'Fetching from Remote');
+				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('pruneRemote', 'click', (e) => {
-				let remote = this.getRemoteForBtnEvent(e);
+				const remote = this.getRemoteForBtnEvent(e);
+				if (remote === null) return;
 				dialog.showConfirmation('Are you sure you want to prune remote-tracking references that no longer exist on the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, prune', () => {
-					runAction({ command: 'pruneRemote', repo: this.repo!, name: remote.name }, 'Pruning Remote');
+					if (this.currentRepo === null) return;
+					runAction({ command: 'pruneRemote', repo: this.currentRepo, name: remote.name }, 'Pruning Remote');
 				}, { type: TargetType.Repo });
 			});
 			addListenerToClass('hideRemoteBtn', 'click', (e) => {
-				if (this.repo === null || this.hideRemotes === null) return;
-				let source = <HTMLElement>(<Element>e.target).closest('.hideRemoteBtn')!;
-				let remote = this.settings!.remotes[parseInt(source.dataset.index!)].name;
-				let hideRemote = !this.hideRemotes.includes(remote);
+				if (this.currentRepo === null || this.repo === null || this.settings === null) return;
+				const source = <HTMLElement>(<Element>e.target).closest('.hideRemoteBtn')!;
+				const remote = this.settings.remotes[parseInt(source.dataset.index!)].name;
+				const hideRemote = !this.repo.hideRemotes.includes(remote);
 				source.title = 'Click to ' + (hideRemote ? 'show' : 'hide') + ' branches of this remote.';
 				source.innerHTML = hideRemote ? SVG_ICONS.eyeClosed : SVG_ICONS.eyeOpen;
 				if (hideRemote) {
-					this.hideRemotes.push(remote);
+					this.repo.hideRemotes.push(remote);
 				} else {
-					this.hideRemotes.splice(this.hideRemotes.indexOf(remote), 1);
+					this.repo.hideRemotes.splice(this.repo.hideRemotes.indexOf(remote), 1);
 				}
-				this.view.saveRepoStateValue(this.repo, 'hideRemotes', this.hideRemotes);
+				this.view.saveRepoStateValue(this.currentRepo, 'hideRemotes', this.repo.hideRemotes);
 				this.view.refresh(true);
 			});
 
 			document.getElementById('editIssueLinking')!.addEventListener('click', () => {
-				const issueLinkingConfig = this.issueLinkingConfig !== null
-					? this.issueLinkingConfig
-					: globalState.issueLinkingConfig;
+				if (this.repo === null) return;
+				const issueLinkingConfig = this.repo.issueLinkingConfig || globalState.issueLinkingConfig;
 				if (issueLinkingConfig !== null) {
-					this.showIssueLinkingDialog(issueLinkingConfig.issue, issueLinkingConfig.url, this.issueLinkingConfig === null && globalState.issueLinkingConfig !== null, true);
+					this.showIssueLinkingDialog(issueLinkingConfig.issue, issueLinkingConfig.url, this.repo.issueLinkingConfig === null && globalState.issueLinkingConfig !== null, true);
 				} else {
 					this.showIssueLinkingDialog(null, null, false, false);
 				}
 			});
 
-			if (this.issueLinkingConfig !== null || globalState.issueLinkingConfig !== null) {
+			if (this.repo.issueLinkingConfig !== null || globalState.issueLinkingConfig !== null) {
 				document.getElementById('removeIssueLinking')!.addEventListener('click', () => {
-					dialog.showConfirmation('Are you sure you want to remove ' + (this.issueLinkingConfig !== null ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', 'Yes, remove', () => {
-						this.setIssueLinkingConfig(null, this.issueLinkingConfig === null);
+					if (this.repo === null) return;
+					const locallyConfigured = this.repo.issueLinkingConfig !== null;
+					dialog.showConfirmation('Are you sure you want to remove ' + (locallyConfigured ? (globalState.issueLinkingConfig !== null ? 'the <b>locally configured</b> ' : '') + 'Issue Linking from this repository' : 'the <b>globally configured</b> Issue Linking in Git Graph') + '?', 'Yes, remove', () => {
+						this.setIssueLinkingConfig(null, !locallyConfigured);
 					}, null);
 				});
 			}
 
 			document.getElementById('editPullRequestIntegration')!.addEventListener('click', () => {
-				if (this.settings === null) return;
+				if (this.repo === null || this.settings === null) return;
 
 				if (this.settings.remotes.length === 0) {
 					dialog.showError('Unable to configure the "Pull Request Creation" Integration', 'The repository must have at least one remote to configure the "Pull Request Creation" Integration. There are no remotes in the current repository.', null, null);
 					return;
 				}
 
-				let config: GG.PullRequestConfig;
-				if (this.pullRequestConfig === null) {
+				let config: GG.DeepWriteable<GG.PullRequestConfig>;
+				if (this.repo.pullRequestConfig === null) {
 					let originIndex = this.settings.remotes.findIndex((remote) => remote.name === 'origin');
 					let sourceRemoteUrl = this.settings.remotes[originIndex > -1 ? originIndex : 0].url;
 					let provider: GG.PullRequestProvider;
@@ -387,7 +457,7 @@ class SettingsWidget {
 						custom: null
 					};
 				} else {
-					config = Object.assign({}, this.pullRequestConfig);
+					config = Object.assign({}, this.repo.pullRequestConfig);
 				}
 				this.showCreatePullRequestIntegrationDialog1(config);
 			});
@@ -412,23 +482,21 @@ class SettingsWidget {
 	/* Private Helper Methods */
 
 	private requestSettings() {
-		if (this.repo === null) return;
-		sendMessage({ command: 'getSettings', repo: this.repo });
+		if (this.currentRepo === null) return;
+		sendMessage({ command: 'getSettings', repo: this.currentRepo });
 		this.render();
 	}
 
 	private setIssueLinkingConfig(config: GG.IssueLinkingConfig | null, global: boolean) {
-		if (this.repo === null) return;
+		if (this.currentRepo === null || this.repo === null) return;
 
 		if (global) {
-			if (this.issueLinkingConfig !== null) {
-				this.issueLinkingConfig = null;
-				this.view.saveRepoStateValue(this.repo, 'issueLinkingConfig', null);
+			if (this.repo.issueLinkingConfig !== null) {
+				this.view.saveRepoStateValue(this.currentRepo, 'issueLinkingConfig', null);
 			}
 			this.view.updateGlobalViewState('issueLinkingConfig', config);
 		} else {
-			this.issueLinkingConfig = config;
-			this.view.saveRepoStateValue(this.repo, 'issueLinkingConfig', config);
+			this.view.saveRepoStateValue(this.currentRepo, 'issueLinkingConfig', config);
 		}
 
 		this.view.refresh(true);
@@ -436,9 +504,8 @@ class SettingsWidget {
 	}
 
 	private setPullRequestConfig(config: GG.PullRequestConfig | null) {
-		if (this.repo === null) return;
-		this.pullRequestConfig = config;
-		this.view.saveRepoStateValue(this.repo, 'pullRequestConfig', config);
+		if (this.currentRepo === null) return;
+		this.view.saveRepoStateValue(this.currentRepo, 'pullRequestConfig', config);
 		this.render();
 	}
 
@@ -484,7 +551,7 @@ class SettingsWidget {
 		}, null, 'Cancel', null, false);
 	}
 
-	private showCreatePullRequestIntegrationDialog1(config: GG.PullRequestConfig) {
+	private showCreatePullRequestIntegrationDialog1(config: GG.DeepWriteable<GG.PullRequestConfig>) {
 		if (this.settings === null) return;
 
 		let originIndex = this.settings.remotes.findIndex((remote) => remote.name === 'origin');
@@ -603,7 +670,7 @@ class SettingsWidget {
 		}, { type: TargetType.Repo });
 	}
 
-	private showCreatePullRequestIntegrationDialog2(config: GG.PullRequestConfig) {
+	private showCreatePullRequestIntegrationDialog2(config: GG.DeepWriteable<GG.PullRequestConfig>) {
 		if (this.settings === null) return;
 
 		const destBranches = config.destRemote !== null
@@ -658,7 +725,9 @@ class SettingsWidget {
 	}
 
 	private getRemoteForBtnEvent(e: Event) {
-		return this.settings!.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.remoteBtns')!).dataset.index!)];
+		return this.settings !== null
+			? this.settings.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.remoteBtns')!).dataset.index!)]
+			: null;
 	}
 }
 

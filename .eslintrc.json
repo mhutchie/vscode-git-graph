@@ -1,0 +1,74 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module"
+    },
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "rules": {
+        "eqeqeq": "error",
+        "indent": [
+            "error",
+            "tab",
+            {
+                "SwitchCase": 1
+            }
+        ],
+        "linebreak-style": [
+            "error",
+            "windows"
+        ],
+        "no-console": "warn",
+        "no-redeclare": "error",
+        "no-shadow-restricted-names": "error",
+        "no-throw-literal": "error",
+        "no-unused-expressions": "error",
+        "quotes": [
+            "error",
+            "single"
+        ],
+        "semi": "error",
+        "sort-imports": [
+            "error",
+            {
+                "allowSeparatedGroups": true,
+                "ignoreDeclarationSort": true
+            }
+        ],
+        "@typescript-eslint/explicit-member-accessibility": [
+            "error",
+            {
+                "overrides": {
+                    "accessors": "off",
+                    "constructors": "off"
+                }
+            }
+        ],
+        "@typescript-eslint/naming-convention": [
+            "error",
+            {
+                "selector": "class",
+                "format": [
+                    "StrictPascalCase"
+                ]
+            },
+            {
+                "selector": "function",
+                "format": [
+                    "camelCase"
+                ]
+            }
+        ]
+    },
+    "overrides": [
+        {
+            "files": "./src/askpass/askpassMain.ts",
+            "rules": {
+                "no-console": "off"
+            }
+        }
+    ]
+}

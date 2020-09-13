@@ -13,6 +13,9 @@
 	z-index:41;
 	box-shadow:0 0 30px 5px var(--vscode-widget-shadow);
 }
+body.vscode-high-contrast .dialog{
+	border-color:var(--vscode-menu-border, rgba(128,128,128,0.5));
+}
 
 .dialogContent{
 	display:block;
@@ -254,7 +257,7 @@
 	width:100%;
 	padding:5px 6px;
 	max-height:61px;
-	background-color:rgba(127,127,127,0.05);
+	background-color:rgba(128,128,128,0.05);
 	overflow:hidden;
 	word-wrap:break-word;
 	-webkit-user-select:none;
@@ -263,10 +266,10 @@
 }
 
 .customSelectOptions > .customSelectOption.selected{
-	background-color:rgba(128,128,128,0.15);
+	background-color:rgba(128,128,128,0.2);
 }
 .customSelectOptions > .customSelectOption.focussed{
-	background-color:var(--vscode-menu-selectionBackground, rgba(127,127,127,0.05));
+	background-color:var(--vscode-menu-selectionBackground, rgba(128,128,128,0.05));
 	color:var(--vscode-menu-selectionForeground, var(--vscode-menu-foreground));
 }
 body.vscode-high-contrast .customSelectOptions > .customSelectOption.focussed{

@@ -163,7 +163,7 @@ class Dialog {
 				}
 				return input.default; // If no option is checked, return the default value
 			} else if (input.type === DialogInputType.Select) {
-				return this.customSelects[index].getValue();
+				return this.customSelects[index.toString()].getValue();
 			} else {
 				const elem = <HTMLInputElement>document.getElementById('dialogInput' + index);
 				return input.type === DialogInputType.Checkbox
@@ -185,9 +185,9 @@ class Dialog {
 		} : null, target);
 
 		// Create custom select inputs
-		inputs.forEach((input, id) => {
+		inputs.forEach((input, index) => {
 			if (input.type === DialogInputType.Select) {
-				this.customSelects[id.toString()] = new CustomSelect(<DialogSelectInput>inputs[id], 'dialogFormSelect' + id, id + 1, this.elem!);
+				this.customSelects[index.toString()] = new CustomSelect(input, 'dialogFormSelect' + index, index + 1, this.elem!);
 			}
 		});
 
@@ -462,8 +462,6 @@ class CustomSelect {
 	}
 
 	private setItemSelectedState(index: number, state: boolean) {
-		if (this.currentElem === null) return;
-
 		if (!this.data.multiple && this.lastSelected > -1) {
 			this.selected[this.lastSelected] = false;
 		}

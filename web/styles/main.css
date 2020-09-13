@@ -644,7 +644,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	outline-offset:-1px;
 }
 body.vscode-high-contrast #commitTable tr.commit.findCurrentCommit{
-	outline:1px dotted var(--vscode-editor-findMatchHighlightBorder, transparent);
+	outline-style:dotted;
 }
 
 #commitTable tr.commit.mute.commitDetailsOpen td.text,

@@ -70,52 +70,64 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
 Detailed information of all Git Graph settings is available [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings), including: descriptions, screenshots, default values and types.
 
 A summary of the Git Graph extension settings are:
-
-* **Auto Center Commit Details View**: Automatically center the commit details view when it is opened.
-* **Combine Local and Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
-* **Commit Details View File Tree Compact Folders**: Render the File Tree in the Commit Details / Comparison View in a compacted form, such that folders with a single child folder are compressed into a single combined folder element. Default: true (enabled)
-* **Commit Details View Location**: Specifies where the Commit Details View is rendered in the Git Graph view. Default: Inline (with graph)
-* **Commit Ordering**: Specifies the order of commits on the Git Graph view. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option. Default: date
+* **Commit Details View**:
+    * **Auto Center**: Automatically center the Commit Details View when it is opened.
+    * **File View**:
+        * **File Tree**:
+            * **Compact Folders**: Render the File Tree in the Commit Details View in a compacted form, such that folders with a single child folder are compressed into a single combined folder element.
+        * **Type**: Sets the default type of File View used in the Commit Details View.
+    * **Location**: Specifies where the Commit Details View is rendered in the Git Graph View.
 * **Context Menu Actions Visibility**: Customise which context menu actions are visible. For more information, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility).
 * **Custom Branch Glob Patterns**: An array of Custom Glob Patterns to be shown in the "Branches" dropdown. Example: `[{"name":"Feature Requests", "glob":"heads/feature/*"}]`
 * **Custom Emoji Shortcode Mappings**: An array of custom Emoji Shortcode mappings. Example: `[{"shortcode": ":sparkles:", "emoji":"✨"}]`
 * **Custom Pull Request Providers**: An array of custom Pull Request providers that can be used in the "Pull Request Creation" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider).
-* **Date Format**: Specifies the date format to be used in the "Date" column on the Git Graph View.
-* **Date Type**: Specifies the date type to be displayed in the "Date" column on the Git Graph View, either the author or commit date.
+* **Date**:
+    * **Format**: Specifies the date format to be used in the "Date" column on the Git Graph View.
+    * **Type**: Specifies the date type to be displayed in the "Date" column on the Git Graph View, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
-* **Default File View Type**: Sets the default type of File View (Tree or List) used in the Commit Details / Comparison Views. This can be overridden per repository using the controls on the right side of the Commit Details / Comparison Views.
-* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Merge, Pop Stash, Pull Branch, Rebase, Reset, and Stash Uncommitted Changes
-* **Enhanced Accessibility**: Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default. Default: false (disabled)
-* **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote. Default: false (disabled)
-* **Fetch Avatars**: Fetch avatars of commit authors and committers. Default: false (disabled)
-* **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings). Default: utf8
-* **Graph Colours**: Specifies the colours used on the graph.
-* **Graph Style**: Specifies the style of the graph.
-* **Include Commits Mentioned By Reflogs**: Controls whether commits only mentioned by reflogs are included in the Git Graph View. This can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: false (disabled)
-* **Initial Load Commits**: Specifies the number of commits to initially load.
+* **Dialog.\***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Fetch Remote, Merge, Pop Stash, Pull Branch, Rebase, Reset, and Stash Uncommitted Changes
+* **Enhanced Accessibility**: Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default.
+* **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings).
+* **Graph**:
+    * **Colours**: Specifies the colours used on the graph.
+    * **Style**: Specifies the style of the graph.
 * **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when it is opened by Git Graph.
-* **Load More Commits**: Specifies the number of additional commits to load when the "Load More Commits" button is pressed, or more commits are automatically loaded.
-* **Load More Commits Automatically**: When the view has been scrolled to the bottom, automatically load more commits if they exist (instead of having to press the "Load More Commits" button). Default: true (enabled)
-* **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace. Default: 0 (don't search subfolders)
-* **Mute Commits that are not ancestors of HEAD**: Display commits that aren't ancestors of the checked-out branch / commit with a muted text color. Default: false (disabled)
-* **Mute Merge Commits**: Display merge commits with a muted text color. Default: true (enabled)
-* **Only Follow First Parent**: Only follow the first parent of commits when discovering the commits to load in the Git Graph View. See [--first-parent](https://git-scm.com/docs/git-log#Documentation/git-log.txt---first-parent) to find out more about this setting. Default: false (disabled)
-* **Open Diff Tab Location**: Specifies which pane the Visual Studio Code Diff is opened in. Default: Active
-* **Open Repo to HEAD**: When opening or switching repositories in the Git Graph View, automatically scroll the view to be centered on the commit referenced by HEAD. Default: false (disabled)
-* **Open to the Repo of the Active Text Editor Document**: Open the Git Graph View to the repository containing the active Text Editor document. Default: false (disabled)
-* **Reference Label Alignment**: Specifies how branch and tag reference labels are aligned for each commit.
-* **Repository Dropdown Order**: Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace). Default: Full Path
-* **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead. Default: true (enabled)
-* **Show Commits Only Referenced By Tags**: Show commits that are only referenced by tags in Git Graph. Default: true (enabled)
-* **Show Current Branch By Default**: Show the current branch by default when Git Graph is opened. Default: false (show all branches)
-* **Show Signature Status**: Show the commit's signature status to the right of the Committer in the Commit Details View (only for signed commits). Hovering over the signature icon displays a tooltip with the signature details. Default: false (disabled)
-* **Show Status Bar Item**: Show a Status Bar Item that opens the Git Graph View when clicked. Default: true (enabled)
-* **Show Tags**: Show Tags in Git Graph by default. This can be overridden per repository in the Git Graph View's Repository Settings Widget. Default: true (enabled)
-* **Show Uncommitted Changes**: Show uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View. Default: true (enabled)
-* **Show Untracked Files**: Show untracked files when viewing the uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View. Default: true (enabled)
-* **Source Code Provider Integration Location**: Specifies where the "View Git Graph" action appears on the title of SCM Providers. Default: Inline
+* **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace.
+* **Open New Tab Editor Group**: Specifies the Editor Group where Git Graph should open new tabs, when performing the following actions from the Git Graph View: Viewing the Visual Studio Code Diff View, Opening a File, Viewing a File at a Specific Revision.
+* **Open to the Repo of the Active Text Editor Document**: Open the Git Graph View to the repository containing the active Text Editor document.
+* **Reference Labels**:
+    * **Alignment**: Specifies how branch and tag reference labels are aligned for each commit.
+    * **Combine Local and Remote Branch Labels**: Combine local and remote branch labels if they refer to the same branch, and are on the same commit.
+* **Repository**:
+    * **Commits**:
+        * **Fetch Avatars**: Fetch avatars of commit authors and committers.
+        * **Initial Load**: Specifies the number of commits to initially load.
+        * **Load More**: Specifies the number of additional commits to load when the "Load More Commits" button is pressed, or more commits are automatically loaded.
+        * **Load More Automatically**: When the view has been scrolled to the bottom, automatically load more commits if they exist (instead of having to press the "Load More Commits" button).
+        * **Mute**:
+            * **Commits that are not ancestors of HEAD**: Display commits that aren't ancestors of the checked-out branch / commit with a muted text color.
+            * **Merge Commits**: Display merge commits with a muted text color.
+        * **Order**: Specifies the order of commits on the Git Graph View. See [git log](https://git-scm.com/docs/git-log#_commit_ordering) for more information on each order option.
+        * **Show Signature Status**: Show the commit's signature status to the right of the Committer in the Commit Details View (only for signed commits). Hovering over the signature icon displays a tooltip with the signature details.
+    * **Fetch and Prune**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any remote-tracking references that no longer exist on the remote(s).
+    * **Fetch And Prune Tags**: Before fetching from remote(s) using the Fetch button on the Git Graph View Control Bar, remove any local tags that no longer exist on the remote(s).
+    * **Include Commits Mentioned By Reflogs**: Include commits only mentioned by reflogs in the Git Graph View (only applies when showing all branches).
+    * **On Load**:
+        * **Scroll To Head**: Automatically scroll the Git Graph View to be centered on the commit referenced by HEAD.
+        * **Show Checked Out Branch**: Show the checked out branch when a repository is loaded in the Git Graph View.
+        * **Show Specific Branches**: Show specific branches when a repository is loaded in the Git Graph View.
+    * **Only Follow First Parent**: Only follow the first parent of commits when discovering the commits to load in the Git Graph View. See [--first-parent](https://git-scm.com/docs/git-log#Documentation/git-log.txt---first-parent) to find out more about this setting.
+    * **Show Commits Only Referenced By Tags**: Show Commits that are only referenced by tags in Git Graph.
+    * **Show Remote Branches**: Show Remote Branches in Git Graph by default.
+    * **Show Tags**: Show Tags in Git Graph by default.
+    * **Show Uncommitted Changes**: Show uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View.
+    * **Show Untracked Files**: Show untracked files when viewing the uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View.
+    * **Use Mailmap**: Respect [.mailmap](https://git-scm.com/docs/git-check-mailmap#_mapping_authors) files when displaying author & committer names and email addresses.
+* **Repository Dropdown Order**: Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace).
+* **Retain Context When Hidden**: Specifies if the Git Graph view Visual Studio Code context is kept when the panel is no longer visible (e.g. moved to background tab). Enabling this setting will make Git Graph load significantly faster when switching back to the Git Graph tab, however has a higher memory overhead.
+* **Show Status Bar Item**: Show a Status Bar Item that opens the Git Graph View when clicked.
+* **Source Code Provider Integration Location**: Specifies where the "View Git Graph" action appears on the title of SCM Providers.
 * **Tab Icon Colour Theme**: Specifies the colour theme of the icon displayed on the Git Graph tab.
-* **Use Mailmap**: Respect [.mailmap](https://git-scm.com/docs/git-check-mailmap#_mapping_authors) files when displaying author & committer names and email addresses. Default: false (disabled)
 
 This extension consumes the following settings:
 

@@ -251,8 +251,8 @@ class GitGraphView {
 				// Show specific branches if they exist in the repository
 				const globPatterns = this.config.customBranchGlobPatterns.map((pattern) => pattern.glob);
 				this.currentBranches.push(...onRepoLoadShowSpecificBranches.filter((branch) =>
-					this.gitBranches.includes(branch) || globPatterns.includes(branch))
-				);
+					this.gitBranches.includes(branch) || globPatterns.includes(branch)
+				));
 			}
 			if (onRepoLoadShowCheckedOutBranch && this.gitBranchHead !== null && !this.currentBranches.includes(this.gitBranchHead)) {
 				// Show the checked-out branch, and it hasn't already been added as a specific branch
@@ -266,14 +266,7 @@ class GitGraphView {
 		this.saveState();
 
 		// Set up branch dropdown options
-		let options: DropdownOption[] = [{ name: 'Show All', value: SHOW_ALL_BRANCHES }];
-		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
-			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
-		}
-		for (let i = 0; i < this.gitBranches.length; i++) {
-			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
-		}
-		this.branchDropdown.setOptions(options, this.currentBranches);
+		this.branchDropdown.setOptions(this.getBranchOptions(true), this.currentBranches);
 
 		// Remove hidden remotes that no longer exist
 		let hiddenRemotes = this.gitRepos[this.currentRepo].hideRemotes;
@@ -495,8 +488,11 @@ class GitGraphView {
 		return this.gitBranches;
 	}
 
-	public getBranchesSelectInputOptions(): ReadonlyArray<DialogSelectInputOption> {
-		let options: DialogSelectInputOption[] = [];
+	public getBranchOptions(includeShowAll?: boolean): ReadonlyArray<DialogSelectInputOption> {
+		const options: DialogSelectInputOption[] = [];
+		if (includeShowAll) {
+			options.push({ name: 'Show All', value: SHOW_ALL_BRANCHES });
+		}
 		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
 			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
 		}

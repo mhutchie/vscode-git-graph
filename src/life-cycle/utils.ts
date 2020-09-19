@@ -154,7 +154,7 @@ function sendEvent(event: LifeCycleEvent) {
 			}
 		};
 
-		const sendEvent = Object.assign({
+		const sendEvent: Omit<LifeCycleEvent, 'stage'> & { about: string, stage?: LifeCycleStage } = Object.assign({
 			about: 'Information about this API is available at: https://api.mhutchie.com/vscode-git-graph/about'
 		}, event);
 		delete sendEvent.stage;

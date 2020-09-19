@@ -728,7 +728,7 @@ class GitGraphView {
 		const vertexColours = this.graph.getVertexColours();
 		const widthsAtVertices = this.config.referenceLabels.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		const mutedCommits = this.graph.getMutedCommits(currentHash);
-		const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, false, false);
+		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, false);
 
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
@@ -854,7 +854,7 @@ class GitGraphView {
 	}
 
 	public renderTagDetails(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
-		const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true);
+		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, true);
 		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
 		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
@@ -2217,7 +2217,7 @@ class GitGraphView {
 			if (expandedCommit.compareWithHash === null) {
 				// Commit details should be shown
 				if (expandedCommit.commitHash !== UNCOMMITTED) {
-					const textFormatter = new TextFormatter(this.gitRepos[this.currentRepo].issueLinkingConfig, true, true);
+					const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, true);
 					const commitDetails = expandedCommit.commitDetails!;
 					const parents = commitDetails.parents.length > 0
 						? commitDetails.parents.map((parent) => {

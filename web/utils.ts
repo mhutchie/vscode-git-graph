@@ -184,7 +184,8 @@ function unescapeHtml(str: string) {
 
 const enum ParsedTextType {
 	Plain,
-	Url
+	InternalUrl,
+	ExternalUrl
 }
 
 interface ParsedTextPlain {
@@ -192,24 +193,45 @@ interface ParsedTextPlain {
 	str: string;
 }
 
-interface ParsedTextUrl {
-	type: ParsedTextType.Url;
+interface ParsedTextInternalUrl {
+	type: ParsedTextType.InternalUrl;
+	urlType: 'commit';
+	urlValue: string;
+	displayText: string;
+}
+
+interface ParsedTextExternalUrl {
+	type: ParsedTextType.ExternalUrl;
 	url: string;
 	displayText: string;
 }
 
-type ParsedText = ParsedTextPlain | ParsedTextUrl;
+type ParsedText = ParsedTextPlain | ParsedTextInternalUrl | ParsedTextExternalUrl;
 
-// TextFormatter formats commit & tag messages with issue linking, urls, whitespace, and emoji shortcodes.
+/**
+ * TextFormatter formats a string (e.g. commit or tag messages), including:
+ * - Issue Numbers
+ * - URL's
+ * - Whitespace
+ * - Emoji Shortcodes
+ * - Commit Hashes
+ */
 class TextFormatter {
 	private issueLinking: {
 		regexp: RegExp,
 		url: string
 	} | null = null;
-	private findUrls: boolean;
-	private whitespace: boolean;
+	private commits: ReadonlyArray<GG.GitCommit>;
+	private all: boolean;
 
-	constructor(repoIssueLinkingConfig: GG.IssueLinkingConfig | null, findUrls: boolean, whitespace: boolean) {
+	/**
+	 * Constructs a TextFormatter Class
+	 * @param commits The loaded commits in the repository (used to generate commit hash links).
+	 * @param repoIssueLinkingConfig The repositories Issue Linking Config (used to generate issue links).
+	 * @param all Apply all formatters (slower), including: URL's, Commit Hashes & Whitespace
+	 */
+	constructor(commits: ReadonlyArray<GG.GitCommit>, repoIssueLinkingConfig: GG.IssueLinkingConfig | null, all: boolean) {
+		this.commits = commits;
 		const issueLinkingConfig = repoIssueLinkingConfig !== null
 			? repoIssueLinkingConfig
 			: globalState.issueLinkingConfig;
@@ -224,30 +246,30 @@ class TextFormatter {
 				this.issueLinking = null;
 			}
 		}
-
-		this.findUrls = findUrls;
-		this.whitespace = whitespace;
+		this.all = all;
 	}
 
+	/**
+	 * Formats the provided text.
+	 * @param text Text to format.
+	 * @returns Safe HTML.
+	 */
 	public format(text: string) {
 		let parsed: ParsedText[] = [{ type: ParsedTextType.Plain, str: text }];
 
-		if (this.findUrls) {
+		if (this.all) {
 			// Parse URL's
 			parsed = this.parseUrls(<ParsedTextPlain>parsed[0]);
 		}
 
 		if (this.issueLinking !== null) {
 			// Parse Issue Links
-			let tmpParsed: ParsedText[] = [];
-			for (let i = 0; i < parsed.length; i++) {
-				if (parsed[i].type === ParsedTextType.Plain) {
-					tmpParsed.push(...this.parseIssueLinks(<ParsedTextPlain>parsed[i]));
-				} else {
-					tmpParsed.push(parsed[i]);
-				}
-			}
-			parsed = tmpParsed;
+			parsed = this.parse(parsed, this.parseIssueLinks.bind(this));
+		}
+
+		if (this.all) {
+			// Parse Commit Hashes
+			parsed = this.parse(parsed, this.parseCommitHashes.bind(this));
 		}
 
 		// Produce the output string
@@ -255,10 +277,12 @@ class TextFormatter {
 		for (let i = 0; i < parsed.length; i++) {
 			outputStr += parsed[i].type === ParsedTextType.Plain
 				? escapeHtml(this.resolveEmojis((<ParsedTextPlain>parsed[i]).str))
-				: '<a class="externalUrl" href="' + escapeHtml((<ParsedTextUrl>parsed[i]).url) + '" tabindex="-1">' + escapeHtml((<ParsedTextUrl>parsed[i]).displayText) + '</a>';
+				: parsed[i].type === ParsedTextType.InternalUrl
+					? '<span class="internalUrl" data-type="' + (<ParsedTextInternalUrl>parsed[i]).urlType + '" data-value="' + escapeHtml((<ParsedTextInternalUrl>parsed[i]).urlValue) + '" tabindex="-1">' + escapeHtml((<ParsedTextInternalUrl>parsed[i]).displayText) + '</span>'
+					: '<a class="externalUrl" href="' + escapeHtml((<ParsedTextExternalUrl>parsed[i]).url) + '" tabindex="-1">' + escapeHtml((<ParsedTextExternalUrl>parsed[i]).displayText) + '</a>';
 		}
 
-		if (this.whitespace) {
+		if (this.all) {
 			outputStr = outputStr
 				.split('\n')
 				.map((line) => line.replace(/^[ \t]+/, (str) => str.replace(/ /g, '&nbsp;').replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')))
@@ -268,15 +292,27 @@ class TextFormatter {
 		return outputStr;
 	}
 
+	/**
+	 * Iterate through an array of parsed text components, and parse all components that are plain.
+	 * @param toParse An array of parsed text components.
+	 * @param parser The parser to use.
+	 * @returns An array of parsed text components (with the parsed applied).
+	 */
+	private parse(toParse: ParsedText[], parser: (input: ParsedTextPlain) => ParsedText[]) {
+		let parsed: ParsedText[] = [];
+		for (let i = 0; i < toParse.length; i++) {
+			if (toParse[i].type === ParsedTextType.Plain) {
+				parsed.push(...parser(<ParsedTextPlain>toParse[i]));
+			} else {
+				parsed.push(toParse[i]);
+			}
+		}
+		return parsed;
+	}
+
 	private parseUrls(input: ParsedTextPlain) {
 		const urlRegExp = /https?:\/\/\S+[^,.?!'":;\s]/gu;
-		let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
-		while (match = urlRegExp.exec(input.str)) {
-			if (matchEnd !== match.index) {
-				// Append the text between the end of the last match, and the start of this match
-				parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
-			}
-
+		return this.parseRegExp(urlRegExp, input, (match) => {
 			// Correct urls which are enclosed with: (), [], {} or <>
 			let url = match[0];
 			let suffix = url.substring(url.length - 1);
@@ -284,42 +320,15 @@ class TextFormatter {
 				url = url.substring(0, url.length - 1);
 				urlRegExp.lastIndex--;
 			}
-
-			parsed.push({ type: ParsedTextType.Url, url: url, displayText: url });
-			matchEnd = urlRegExp.lastIndex;
-		}
-
-		if (matchEnd === 0) {
-			// No matches were found, return the input ParsedText
-			return [input];
-		}
-
-		if (matchEnd !== input.str.length) {
-			// Append the text between the end of the last match, and the end of the string
-			parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd) });
-		}
-
-		return parsed;
+			return { type: ParsedTextType.ExternalUrl, url: url, displayText: url };
+		});
 	}
 
 	private parseIssueLinks(input: ParsedTextPlain) {
 		const config = this.issueLinking!;
-		let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
-
-		config.regexp.lastIndex = 0;
-		while (match = config.regexp.exec(input.str)) {
-			if (match[0].length === 0) {
-				// Zero length match, return the input ParsedText
-				return [input];
-			}
-
-			if (matchEnd !== match.index) {
-				// Append the text between the end of the last match, and the start of this match
-				parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
-			}
-
-			parsed.push({
-				type: ParsedTextType.Url,
+		return this.parseRegExp(config.regexp, input, (match) => {
+			return {
+				type: ParsedTextType.ExternalUrl,
 				url: match.length > 1
 					? config.url.replace(/\$([1-9][0-9]*)/g, (placeholder, index) => {
 						const i = parseInt(index);
@@ -327,8 +336,41 @@ class TextFormatter {
 					})
 					: config.url,
 				displayText: match[0]
-			});
-			matchEnd = config.regexp.lastIndex;
+			};
+		});
+	}
+
+	private parseCommitHashes(input: ParsedTextPlain) {
+		return this.parseRegExp(/\b([0-9a-fA-F]{6,})\b/gu, input, (match) => {
+			const hash = match[0].toLowerCase();
+			const commit = this.commits.find((commit) => commit.hash.toLowerCase().startsWith(hash));
+			if (commit) {
+				return { type: ParsedTextType.InternalUrl, urlType: 'commit', urlValue: commit.hash, displayText: match[0] };
+			} else {
+				return null;
+			}
+		});
+	}
+
+	private parseRegExp(regExp: RegExp, input: ParsedTextPlain, matchHook: (match: RegExpExecArray) => ParsedText | null) {
+		let match: RegExpExecArray | null, matchEnd = 0, parsed: ParsedText[] = [];
+
+		regExp.lastIndex = 0;
+		while (match = regExp.exec(input.str)) {
+			if (match[0].length === 0) {
+				// Zero length match, return the input ParsedText
+				return [input];
+			}
+
+			const result = matchHook(match);
+			if (result) {
+				if (matchEnd !== match.index) {
+					// Append the text between the end of the last match, and the start of this match
+					parsed.push({ type: ParsedTextType.Plain, str: input.str.substring(matchEnd, match.index) });
+				}
+				parsed.push(result);
+				matchEnd = regExp.lastIndex;
+			}
 		}
 
 		if (matchEnd === 0) {

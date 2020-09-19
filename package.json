@@ -1237,14 +1237,14 @@
 		"iconv-lite": "0.5.0"
 	},
 	"devDependencies": {
-		"@types/jest": "25.2.3",
+		"@types/jest": "26.0.14",
 		"@types/node": "8.10.62",
 		"@types/vscode": "1.38.0",
 		"@typescript-eslint/eslint-plugin": "4.1.0",
 		"@typescript-eslint/parser": "4.1.0",
 		"eslint": "7.9.0",
-		"jest": "25.5.4",
-		"ts-jest": "25.5.1",
+		"jest": "26.4.2",
+		"ts-jest": "26.3.0",
 		"typescript": "4.0.2",
 		"uglify-js": "3.10.0"
 	}

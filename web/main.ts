@@ -1819,10 +1819,20 @@ class GitGraphView {
 
 				if (e.ctrlKey || e.metaKey) {
 					// Up / Down navigates according to the order of commits on the branch
-					if (e.key === 'ArrowUp') {
-						newHashIndex = this.graph.getFirstChildIndex(curHashIndex);
-					} else if (e.key === 'ArrowDown') {
-						newHashIndex = this.graph.getFirstParentIndex(curHashIndex);
+					if (e.shiftKey) {
+						// Follow commits on alternative branches when possible
+						if (e.key === 'ArrowUp') {
+							newHashIndex = this.graph.getAlternativeChildIndex(curHashIndex);
+						} else if (e.key === 'ArrowDown') {
+							newHashIndex = this.graph.getAlternativeParentIndex(curHashIndex);
+						}
+					} else {
+						// Follow commits on the same branch
+						if (e.key === 'ArrowUp') {
+							newHashIndex = this.graph.getFirstChildIndex(curHashIndex);
+						} else if (e.key === 'ArrowDown') {
+							newHashIndex = this.graph.getFirstParentIndex(curHashIndex);
+						}
 					}
 				} else {
 					// Up / Down navigates according to the order of commits in the table

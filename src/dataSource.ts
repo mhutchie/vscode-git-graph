@@ -716,6 +716,50 @@ export class DataSource extends Disposable {
 		return this.runGitCommand(['push', remote, tagName], repo);
 	}
 
+	/**
+	 * Push a branch to multiple remotes.
+	 * @param repo The path of the repository.
+	 * @param branchName The name of the branch to push.
+	 * @param remotes The remotes to push the branch to.
+	 * @param setUpstream Set the branches upstream.
+	 * @param mode The mode of the push.
+	 * @returns The ErrorInfo's from the executed commands.
+	 */
+	public async pushBranchToMultipleRemotes(repo: string, branchName: string, remotes: string[], setUpstream: boolean, mode: GitPushBranchMode): Promise<ErrorInfo[]> {
+		if (remotes.length === 0) {
+			return ['No remote(s) were specified to push the branch ' + branchName + ' to.'];
+		}
+
+		const results: ErrorInfo[] = [];
+		for (let i = 0; i < remotes.length; i++) {
+			const result = await this.pushBranch(repo, branchName, remotes[i], setUpstream, mode);
+			results.push(result);
+			if (result !== null) break;
+		}
+		return results;
+	}
+
+	/**
+	 * Push a tag to multiple remotes.
+	 * @param repo The path of the repository.
+	 * @param tagName The name of the tag to push.
+	 * @param remote The remotes to push the tag to.
+	 * @returns The ErrorInfo's from the executed commands.
+	 */
+	public async pushTagToMultipleRemotes(repo: string, tagName: string, remotes: string[]): Promise<ErrorInfo[]> {
+		if (remotes.length === 0) {
+			return ['No remote(s) were specified to push the tag ' + tagName + ' to.'];
+		}
+
+		const results: ErrorInfo[] = [];
+		for (let i = 0; i < remotes.length; i++) {
+			const result = await this.pushTag(repo, tagName, remotes[i]);
+			results.push(result);
+			if (result !== null) break;
+		}
+		return results;
+	}
+
 
 	/* Git Action Methods - Branches */
 

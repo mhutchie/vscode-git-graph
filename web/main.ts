@@ -915,7 +915,8 @@ class GitGraphView {
 				title: 'Push Branch' + ELLIPSIS,
 				visible: visibility.push && this.gitRemotes.length > 0,
 				onClick: () => {
-					let multipleRemotes = this.gitRemotes.length > 1, inputs: DialogInput[] = [
+					const multipleRemotes = this.gitRemotes.length > 1;
+					const inputs: DialogInput[] = [
 						{ type: DialogInputType.Checkbox, name: 'Set Upstream', value: true },
 						{
 							type: DialogInputType.Radio,
@@ -931,15 +932,17 @@ class GitGraphView {
 
 					if (multipleRemotes) {
 						inputs.unshift({
-							type: DialogInputType.Select, name: 'Push to Remote',
-							default: (this.gitRemotes.includes('origin') ? this.gitRemotes.indexOf('origin') : 0).toString(),
-							options: this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }))
+							type: DialogInputType.Select,
+							name: 'Push to Remote(s)',
+							defaults: [this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0]],
+							options: this.gitRemotes.map((remote) => ({ name: remote, value: remote })),
+							multiple: true
 						});
 					}
 
 					dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
-						let remote = this.gitRemotes[multipleRemotes ? parseInt(<string>values.shift()) : 0];
-						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remote: remote, setUpstream: <boolean>values[0], mode: <GG.GitPushBranchMode>values[1] }, 'Pushing Branch');
+						const remotes = multipleRemotes ? <string[]>values.shift() : [this.gitRemotes[0]];
+						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remotes: remotes, setUpstream: <boolean>values[0], mode: <GG.GitPushBranchMode>values[1] }, 'Pushing Branch');
 					}, target);
 				}
 			}
@@ -1342,13 +1345,13 @@ class GitGraphView {
 				onClick: () => {
 					if (this.gitRemotes.length === 1) {
 						dialog.showConfirmation('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b> to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>?', 'Yes, push', () => {
-							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[0] }, 'Pushing Tag');
+							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remotes: [this.gitRemotes[0]] }, 'Pushing Tag');
 						}, target);
 					} else if (this.gitRemotes.length > 1) {
-						let defaultRemote = (this.gitRemotes.includes('origin') ? this.gitRemotes.indexOf('origin') : 0).toString();
-						let remoteOptions = this.gitRemotes.map((remote, index) => ({ name: remote, value: index.toString() }));
-						dialog.showSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote to push the tag to:', defaultRemote, remoteOptions, 'Yes, push', (remoteIndex) => {
-							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remote: this.gitRemotes[parseInt(remoteIndex)] }, 'Pushing Tag');
+						const defaults = [this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0]];
+						const options = this.gitRemotes.map((remote) => ({ name: remote, value: remote }));
+						dialog.showMultiSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote(s) to push the tag to:', defaults, options, 'Yes, push', (remotes) => {
+							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remotes: remotes }, 'Pushing Tag');
 						}, target);
 					}
 				}
@@ -2812,13 +2815,13 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');
 				break;
 			case 'pushBranch':
-				refreshOrDisplayError(msg.error, 'Unable to Push Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Push Branch');
 				break;
 			case 'pushStash':
 				refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
 				break;
 			case 'pushTag':
-				refreshOrDisplayError(msg.error, 'Unable to Push Tag');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Push Tag');
 				break;
 			case 'rebase':
 				if (msg.error === null) {

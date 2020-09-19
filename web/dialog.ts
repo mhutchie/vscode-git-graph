@@ -123,6 +123,12 @@ class Dialog {
 		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
+	public showMultiSelect(message: string, defaultValues: ReadonlyArray<string>, options: ReadonlyArray<DialogSelectInputOption>, actionName: string, actioned: (value: string[]) => void, target: DialogTarget | null) {
+		this.showForm(message, [
+			{ type: DialogInputType.Select, name: '', options: options, defaults: defaultValues, multiple: true }
+		], actionName, (values) => actioned(<string[]>values[0]), target);
+	}
+
 	public showForm(message: string, inputs: ReadonlyArray<DialogInput>, actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
 		const multiCheckbox = multiElement && inputs.every((input) => input.type === DialogInputType.Checkbox);

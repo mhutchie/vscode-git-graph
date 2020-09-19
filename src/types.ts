@@ -960,11 +960,11 @@ export interface ResponsePullBranch extends ResponseWithErrorInfo {
 export interface RequestPushBranch extends RepoRequest {
 	readonly command: 'pushBranch';
 	readonly branchName: string;
-	readonly remote: string;
+	readonly remotes: string[];
 	readonly setUpstream: boolean;
 	readonly mode: GitPushBranchMode;
 }
-export interface ResponsePushBranch extends ResponseWithErrorInfo {
+export interface ResponsePushBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushBranch';
 }
 
@@ -980,9 +980,9 @@ export interface ResponsePushStash extends ResponseWithErrorInfo {
 export interface RequestPushTag extends RepoRequest {
 	readonly command: 'pushTag';
 	readonly tagName: string;
-	readonly remote: string;
+	readonly remotes: string[];
 }
-export interface ResponsePushTag extends ResponseWithErrorInfo {
+export interface ResponsePushTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushTag';
 }
 

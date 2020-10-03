@@ -32,6 +32,13 @@ body #view:focus{
 	outline:none;
 }
 
+body.selection-background-color-exists ::-moz-selection{
+	background-color: var(--vscode-selection-background);
+}
+body.selection-background-color-exists ::selection{
+	background-color: var(--vscode-selection-background);
+}
+
 
 /* Content */
 

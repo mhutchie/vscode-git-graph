@@ -1748,17 +1748,29 @@ class GitGraphView {
 	}
 
 	private observeWebviewStyleChanges() {
-		let fontFamily = getVSCodeStyle(CSS_PROP_FONT_FAMILY), editorFontFamily = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), findMatchColour = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
+		let fontFamily = getVSCodeStyle(CSS_PROP_FONT_FAMILY),
+			editorFontFamily = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY),
+			findMatchColour = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND),
+			selectionBackgroundColor = !!getVSCodeStyle(CSS_PROP_SELECTION_BACKGROUND);
 
 		const setFlashColour = (colour: string) => {
 			document.body.style.setProperty('--git-graph-flashPrimary', modifyColourOpacity(colour, 0.7));
 			document.body.style.setProperty('--git-graph-flashSecondary', modifyColourOpacity(colour, 0.5));
 		};
+		const setSelectionBackgroundColorExists = () => {
+			alterClass(document.body, 'selection-background-color-exists', selectionBackgroundColor);
+		};
 
 		this.findWidget.setColour(findMatchColour);
 		setFlashColour(findMatchColour);
+		setSelectionBackgroundColorExists();
+
 		(new MutationObserver(() => {
-			let ff = getVSCodeStyle(CSS_PROP_FONT_FAMILY), eff = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY), fmc = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND);
+			let ff = getVSCodeStyle(CSS_PROP_FONT_FAMILY),
+				eff = getVSCodeStyle(CSS_PROP_EDITOR_FONT_FAMILY),
+				fmc = getVSCodeStyle(CSS_PROP_FIND_MATCH_HIGHLIGHT_BACKGROUND),
+				sbc = !!getVSCodeStyle(CSS_PROP_SELECTION_BACKGROUND);
+
 			if (ff !== fontFamily || eff !== editorFontFamily) {
 				fontFamily = ff;
 				editorFontFamily = eff;
@@ -1769,6 +1781,10 @@ class GitGraphView {
 				findMatchColour = fmc;
 				this.findWidget.setColour(findMatchColour);
 				setFlashColour(findMatchColour);
+			}
+			if (selectionBackgroundColor !== sbc) {
+				selectionBackgroundColor = sbc;
+				setSelectionBackgroundColorExists();
 			}
 		})).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 	}

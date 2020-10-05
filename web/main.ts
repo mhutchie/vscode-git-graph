@@ -728,7 +728,11 @@ class GitGraphView {
 		const vertexColours = this.graph.getVertexColours();
 		const widthsAtVertices = this.config.referenceLabels.branchLabelsAlignedToGraph ? this.graph.getWidthsAtVertices() : [];
 		const mutedCommits = this.graph.getMutedCommits(currentHash);
-		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, false);
+		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, {
+			emoji: true,
+			issueLinking: true,
+			markdown: this.config.markdown
+		});
 
 		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
@@ -854,7 +858,14 @@ class GitGraphView {
 	}
 
 	public renderTagDetails(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
-		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, true);
+		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, {
+			commits: true,
+			emoji: true,
+			issueLinking: true,
+			markdown: this.config.markdown,
+			multiline: true,
+			urls: true
+		});
 		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
 		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
@@ -2246,7 +2257,14 @@ class GitGraphView {
 			if (expandedCommit.compareWithHash === null) {
 				// Commit details should be shown
 				if (expandedCommit.commitHash !== UNCOMMITTED) {
-					const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, true);
+					const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, {
+						commits: true,
+						emoji: true,
+						issueLinking: true,
+						markdown: this.config.markdown,
+						multiline: true,
+						urls: true
+					});
 					const commitDetails = expandedCommit.commitDetails!;
 					const parents = commitDetails.parents.length > 0
 						? commitDetails.parents.map((parent) => {
@@ -2680,7 +2698,7 @@ window.addEventListener('load', () => {
 	if (loaded) return;
 	loaded = true;
 
-	registerCustomEmojiMappings(initialState.config.customEmojiShortcodeMappings);
+	TextFormatter.registerCustomEmojiMappings(initialState.config.customEmojiShortcodeMappings);
 
 	let viewElem = document.getElementById('view');
 	if (viewElem === null) return;

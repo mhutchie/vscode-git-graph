@@ -280,6 +280,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.markdown` Extension Setting.
+	 */
+	get markdown() {
+		return !!this.config.get('markdown', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.openNewTabEditorGroup` Extension Setting.
 	 */
 	get openNewTabEditorGroup(): vscode.ViewColumn {

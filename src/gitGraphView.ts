@@ -599,6 +599,7 @@ export class GitGraphView extends Disposable {
 				initialLoadCommits: config.initialLoadCommits,
 				loadMoreCommits: config.loadMoreCommits,
 				loadMoreCommitsAutomatically: config.loadMoreCommitsAutomatically,
+				markdown: config.markdown,
 				mute: config.muteCommits,
 				onlyFollowFirstParent: config.onlyFollowFirstParent,
 				onRepoLoad: config.onRepoLoad,

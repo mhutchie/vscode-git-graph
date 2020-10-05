@@ -227,6 +227,7 @@ export interface GitGraphViewConfig {
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
+	readonly markdown: boolean;
 	readonly mute: MuteCommitsConfig;
 	readonly onlyFollowFirstParent: boolean;
 	readonly onRepoLoad: OnRepoLoadConfig;

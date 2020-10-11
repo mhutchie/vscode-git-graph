@@ -3720,44 +3720,70 @@ describe('Config', () => {
 		});
 	});
 
-	describe('gitPath', () => {
+	describe('gitPaths', () => {
 		it('Should return the configured path', () => {
 			// Setup
 			workspaceConfiguration.get.mockReturnValueOnce('/path/to/git');
 
 			// Run
-			const value = config.gitPath;
+			const value = config.gitPaths;
 
 			// Assert
 			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
 			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
-			expect(value).toBe('/path/to/git');
+			expect(value).toStrictEqual(['/path/to/git']);
 		});
 
-		it('Should return NULL when the configuration value is NULL', () => {
+		it('Should return the valid configured paths', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(['/path/to/first/git', '/path/to/second/git', 4, {}, null, '/path/to/third/git']);
+
+			// Run
+			const value = config.gitPaths;
+
+			// Assert
+			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
+			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
+			expect(value).toStrictEqual(['/path/to/first/git', '/path/to/second/git', '/path/to/third/git']);
+		});
+
+		it('Should return an empty array when the configuration value is NULL', () => {
 			// Setup
 			workspaceConfiguration.get.mockReturnValueOnce(null);
 
 			// Run
-			const value = config.gitPath;
+			const value = config.gitPaths;
 
 			// Assert
 			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
 			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
-			expect(value).toBe(null);
+			expect(value).toStrictEqual([]);
 		});
 
-		it('Should return the default configuration value (NULL)', () => {
+		it('Should return an empty array when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(4);
+
+			// Run
+			const value = config.gitPaths;
+
+			// Assert
+			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
+			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
+			expect(value).toStrictEqual([]);
+		});
+
+		it('Should return an empty array when the default configuration value (NULL) is received', () => {
 			// Setup
 			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
 
 			// Run
-			const value = config.gitPath;
+			const value = config.gitPaths;
 
 			// Assert
 			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
 			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
-			expect(value).toBe(null);
+			expect(value).toStrictEqual([]);
 		});
 	});
 

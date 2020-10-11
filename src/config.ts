@@ -499,10 +499,19 @@ class Config {
 	}
 
 	/**
-	 * Get the value of the `git.path` Visual Studio Code Setting.
+	 * Get the Git executable paths configured by the `git.path` Visual Studio Code Setting.
 	 */
-	get gitPath() {
-		return vscode.workspace.getConfiguration('git').get<string | null>('path', null);
+	get gitPaths() {
+		const configValue = vscode.workspace.getConfiguration('git').get<string | string[] | null>('path', null);
+		if (configValue === null) {
+			return [];
+		} else if (typeof configValue === 'string') {
+			return [configValue];
+		} else if (Array.isArray(configValue)) {
+			return configValue.filter((value) => typeof value === 'string');
+		} else {
+			return [];
+		}
 	}
 
 	/**

@@ -523,10 +523,10 @@ export async function findGit(extensionState: ExtensionState) {
 		} catch (_) { }
 	}
 
-	const configGitPath = getConfig().gitPath;
-	if (configGitPath !== null) {
+	const configGitPaths = getConfig().gitPaths;
+	if (configGitPaths.length > 0) {
 		try {
-			return await getGitExecutable(configGitPath);
+			return await getGitExecutableFromPaths(configGitPaths);
 		} catch (_) { }
 	}
 
@@ -612,7 +612,7 @@ function isExecutable(path: string) {
 }
 
 /**
- * Gets information about a Git executable.
+ * Tests whether the specified path corresponds to the path of a Git executable.
  * @param path The path of the Git executable.
  * @returns The GitExecutable data.
  */
@@ -626,6 +626,20 @@ export function getGitExecutable(path: string) {
 			}
 		});
 	});
+}
+
+/**
+ * Tests whether one of the specified paths corresponds to the path of a Git executable.
+ * @param paths The paths of possible Git executables.
+ * @returns The GitExecutable data.
+ */
+export async function getGitExecutableFromPaths(paths: string[]): Promise<GitExecutable> {
+	for (let i = 0; i < paths.length; i++) {
+		try {
+			return await getGitExecutable(paths[i]);
+		} catch (_) { }
+	}
+	throw new Error('None of the provided paths are a Git executable');
 }
 
 

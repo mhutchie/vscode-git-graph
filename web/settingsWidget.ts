@@ -515,7 +515,7 @@ class SettingsWidget {
 		html += '<table style="display:inline-table; width:360px; text-align:left; font-size:12px; margin-bottom:2px;"><tr><td>Issue Regex:</td><td>#(\\d+)</td></tr><tr><td>Issue URL:</td><td>https://github.com/mhutchie/repo/issues/$1</td></tr></tbody></table>';
 
 		if (!isEdit && defaultIssueRegex === null && defaultIssueUrl === null) {
-			defaultIssueRegex = autoDetectIssueRegex(this.view.getCommits());
+			defaultIssueRegex = SettingsWidget.autoDetectIssueRegex(this.view.getCommits());
 			if (defaultIssueRegex !== null) {
 				html += '<p style="font-size:12px"><i>The prefilled Issue Regex was detected in commit messages in this repository. Review and/or correct it if necessary.</i></p>';
 			}
@@ -729,20 +729,20 @@ class SettingsWidget {
 			? this.settings.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.remoteBtns')!).dataset.index!)]
 			: null;
 	}
-}
 
-function autoDetectIssueRegex(commits: ReadonlyArray<GG.GitCommit>) {
-	const patterns = ['#(\\d+)', '^(\\d+)\\.(?=\\s|$)', '^(\\d+):(?=\\s|$)', '([A-Za-z]+-\\d+)'].map((pattern) => {
-		const regexp = new RegExp(pattern);
-		return {
-			pattern: pattern,
-			matches: commits.filter((commit) => regexp.test(commit.message)).length
-		};
-	}).sort((a, b) => b.matches - a.matches);
-
-	if (patterns[0].matches > 0.1 * commits.length) {
-		// If the most common pattern was matched in more than 10% of commits, return the pattern
-		return patterns[0].pattern;
+	private static autoDetectIssueRegex(commits: ReadonlyArray<GG.GitCommit>) {
+		const patterns = ['#(\\d+)', '^(\\d+)\\.(?=\\s|$)', '^(\\d+):(?=\\s|$)', '([A-Za-z]+-\\d+)'].map((pattern) => {
+			const regexp = new RegExp(pattern);
+			return {
+				pattern: pattern,
+				matches: commits.filter((commit) => regexp.test(commit.message)).length
+			};
+		}).sort((a, b) => b.matches - a.matches);
+	
+		if (patterns[0].matches > 0.1 * commits.length) {
+			// If the most common pattern was matched in more than 10% of commits, return the pattern
+			return patterns[0].pattern;
+		}
+		return null;
 	}
-	return null;
 }

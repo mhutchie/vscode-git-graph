@@ -2,7 +2,7 @@ import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
-import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
+import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -1604,6 +1604,7 @@ describe('Config', () => {
 			const mockColoursExtensionSetting = (value: any) => {
 				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
 				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
 			};
 
 			it('Should return a filtered array of colours based on the configuration value', () => {
@@ -1662,6 +1663,7 @@ describe('Config', () => {
 			const mockStyleExtensionSetting = (value: any) => {
 				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
 				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
 			};
 
 			it('Should return GraphStyle.Rounded when the configuration value is "rounded"', () => {
@@ -1710,6 +1712,62 @@ describe('Config', () => {
 				// Assert
 				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
 				expect(value).toBe(GraphStyle.Rounded);
+			});
+		});
+
+		describe('uncommittedChanges', () => {
+			const mockUncommittedChangesExtensionSetting = (value?: string) => {
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
+			};
+
+			it('Should return GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges when the configuration value is "Open Circle at the Uncommitted Changes"', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting('Open Circle at the Uncommitted Changes');
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges);
+			});
+
+			it('Should return GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit when the configuration value is "Open Circle at the Checked Out Commit"', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting('Open Circle at the Checked Out Commit');
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit);
+			});
+
+			it('Should return the default value (GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) when the configuration value is invalid', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting('invalid');
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges);
+			});
+
+			it('Should return the default value (GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) when the configuration value is unknown', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting(undefined);
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges);
 			});
 		});
 	});

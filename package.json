@@ -654,6 +654,19 @@
 					"default": "rounded",
 					"description": "Specifies the style of the graph."
 				},
+				"git-graph.graph.uncommittedChanges": {
+					"type": "string",
+					"enum": [
+						"Open Circle at the Uncommitted Changes",
+						"Open Circle at the Checked Out Commit"
+					],
+					"enumDescriptions": [
+						"Display the Uncommitted Changes as a grey open circle, connected to the commit referenced by HEAD with a solid grey line. The current file system's state is therefore always displayed as an open circle.",
+						"Display the Uncommitted Changes as a grey closed circle, connected to the commit referenced by HEAD with a dotted grey line. The commit referenced by HEAD is therefore always displayed as an open circle."
+					],
+					"default": "Open Circle at the Uncommitted Changes",
+					"description": "Specifies how the Uncommitted Changes are displayed on the graph."
+				},
 				"git-graph.integratedTerminalShell": {
 					"type": "string",
 					"default": "",

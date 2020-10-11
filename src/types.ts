@@ -253,6 +253,7 @@ export interface GraphConfig {
 	readonly colours: ReadonlyArray<string>;
 	readonly style: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+	readonly uncommittedChanges: GraphUncommittedChangesStyle;
 }
 
 export type LoadGitGraphViewTo = {
@@ -447,6 +448,11 @@ export const enum FileViewType {
 export const enum GraphStyle {
 	Rounded,
 	Angular
+}
+
+export const enum GraphUncommittedChangesStyle {
+	OpenCircleAtTheUncommittedChanges,
+	OpenCircleAtTheCheckedOutCommit
 }
 
 export const enum IncludeCommitsMentionedByReflogs {

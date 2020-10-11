@@ -73,7 +73,7 @@ class Branch {
 	/* Rendering */
 
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
-		let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', curColour = '', d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
+		let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
 
 		// Convert branch lines into pixel coordinates, respecting expanded commit extensions
 		for (i = 0; i < this.lines.length; i++) {
@@ -123,16 +123,12 @@ class Branch {
 
 			// If the new point belongs to a different path, render the current path and reset it for the new path
 			if (curPath !== '' && i > 0 && line.isCommitted !== lines[i - 1].isCommitted) {
-				this.drawPath(svg, curPath, curColour);
+				Branch.drawPath(svg, curPath, lines[i - 1].isCommitted, colour, config.uncommittedChanges);
 				curPath = '';
-				curColour = '';
 			}
 
 			// If the path hasn't been started or the new point belongs to a different path, move to p1
 			if (curPath === '' || (i > 0 && (x1 !== lines[i - 1].p2.x || y1 !== lines[i - 1].p2.y))) curPath += 'M' + x1.toFixed(0) + ',' + y1.toFixed(1);
-
-			// If the path hasn't been assigned a colour, assign it
-			if (curColour === '') curColour = line.isCommitted ? colour : '#808080';
 
 			if (x1 === x2) { // If the path is vertical, draw a straight line
 				curPath += 'L' + x2.toFixed(0) + ',' + y2.toFixed(1);
@@ -146,17 +142,20 @@ class Branch {
 		}
 
 		if (curPath !== '') {
-			this.drawPath(svg, curPath, curColour); // Draw the remaining path
+			Branch.drawPath(svg, curPath, lines[lines.length - 1].isCommitted, colour, config.uncommittedChanges); // Draw the remaining path
 		}
 	}
 
-	private drawPath(svg: SVGElement, path: string, colour: string) {
-		let shadow = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path')), line = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path'));
+	private static drawPath(svg: SVGElement, path: string, isCommitted: boolean, colour: string, uncommittedChanges: GG.GraphUncommittedChangesStyle) {
+		const shadow = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path')), line = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path'));
 		shadow.setAttribute('class', 'shadow');
 		shadow.setAttribute('d', path);
 		line.setAttribute('class', 'line');
 		line.setAttribute('d', path);
-		line.setAttribute('stroke', colour);
+		line.setAttribute('stroke', isCommitted ? colour : '#808080');
+		if (!isCommitted && uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit) {
+			line.setAttribute('stroke-dasharray', '2px');
+		}
 	}
 }
 
@@ -421,8 +420,11 @@ class Graph {
 		}
 
 		if (commits[0].hash === UNCOMMITTED) {
-			this.vertices[0].setCurrent();
 			this.vertices[0].setNotCommitted();
+		}
+
+		if (commits[0].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
+			this.vertices[0].setCurrent();
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
 			this.vertices[commitLookup[commitHead]].setCurrent();
 		}

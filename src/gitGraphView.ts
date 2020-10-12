@@ -639,6 +639,7 @@ export class GitGraphView extends Disposable {
 				customPullRequestProviders: config.customPullRequestProviders,
 				dateFormat: config.dateFormat,
 				defaultColumnVisibility: config.defaultColumnVisibility,
+				stickyHeader: config.stickyHeader,
 				dialogDefaults: config.dialogDefaults,
 				enhancedAccessibility: config.enhancedAccessibility,
 				fetchAndPrune: config.fetchAndPrune,
@@ -681,9 +682,10 @@ export class GitGraphView extends Disposable {
 			<p class="unableToLoadMessage">${UNABLE_TO_FIND_GIT_MSG}</p>
 			</body>`;
 		} else if (numRepos > 0) {
+			const stickyClassAttr = initialState.config.stickyHeader ? ' class="sticky"' : '';
 			body = `<body>
 			<div id="view" tabindex="-1">
-				<div id="controls">
+				<div id="controls"${stickyClassAttr}>
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoDropdown" class="dropdown"></div></span>
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchDropdown" class="dropdown"></div></span>
 					<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" tabindex="-1"><span class="customCheckbox"></span>Show Remote Branches</label>

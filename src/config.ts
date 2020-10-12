@@ -546,6 +546,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.stickyHeader` Extension Setting.
+	 */
+	get stickyHeader() {
+		return !!this.config.get('stickyHeader', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.tabIconColourTheme` Extension Setting.
 	 */
 	get tabIconColourTheme() {

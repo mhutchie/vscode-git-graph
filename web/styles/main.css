@@ -214,7 +214,8 @@ code{
 	padding:0 4px;
 }
 #commitTable th{
-	border-bottom:1px solid rgba(128,128,128,0.5);
+	border-bottom:1px solid transparent;
+	box-shadow: 0 1px 0 rgba(128,128,128,0.5);
 	line-height:18px;
 	padding:6px 12px;
 }
@@ -276,6 +277,12 @@ code{
 
 .tableColHeader{
 	position:relative;
+}
+#tableColHeaders.sticky .tableColHeader {
+	position: sticky;
+	top: 41px;
+	z-index: 3;
+	background-color: var(--vscode-editor-background);
 }
 .resizeCol{
 	position:absolute;
@@ -776,11 +783,12 @@ body.tagLabelsRightAligned .gitRef.tag{
 
 #controls{
 	display:block;
-	position:relative;
+	position: relative;
 	left:0;
 	right:0;
 	top:0;
 	padding:4px 132px 4px 0;
+	background-color: var(--vscode-editor-background);
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	line-height:32px;
 	text-align:center;
@@ -788,6 +796,11 @@ body.tagLabelsRightAligned .gitRef.tag{
 	font-size:13px;
 	-webkit-user-select:none;
 	user-select:none;
+}
+
+#controls.sticky {
+	position:sticky;
+	z-index: 4;
 }
 
 #repoControl, #branchControl, #showRemoteBranchesControl{

@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { LifeCycleStage, LifeCycleState, generateNonce, getDataDirectory, getLifeCycleStateInDirectory, saveLifeCycleStateInDirectory, sendQueue } from './utils';
+import { getExtensionVersion } from '../utils';
 
 /**
  * Run on startup to detect if Git Graph has been installed or updated, and if so generate an event.
@@ -87,27 +88,6 @@ function saveLifeCycleState(extensionContext: vscode.ExtensionContext, state: Li
 		saveLifeCycleStateInDirectory(extensionContext.globalStoragePath, state),
 		saveLifeCycleStateInDirectory(getDataDirectory(), state)
 	]);
-}
-
-/**
- * Gets the version of Git Graph.
- * @param extensionContext The extension context of Git Graph.
- * @returns The Git Graph version.
- */
-function getExtensionVersion(extensionContext: vscode.ExtensionContext) {
-	return new Promise<string>((resolve, reject) => {
-		fs.readFile(path.join(extensionContext.extensionPath, 'package.json'), (err, data) => {
-			if (err) {
-				reject();
-			} else {
-				try {
-					resolve(JSON.parse(data.toString()).version);
-				} catch (_) {
-					reject();
-				}
-			}
-		});
-	});
 }
 
 /**

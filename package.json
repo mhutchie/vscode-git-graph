@@ -79,6 +79,11 @@
 				"category": "Git Graph",
 				"command": "git-graph.resumeWorkspaceCodeReview",
 				"title": "Resume a specific Code Review in Workspace..."
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.version",
+				"title": "Get Version Information"
 			}
 		],
 		"configuration": {

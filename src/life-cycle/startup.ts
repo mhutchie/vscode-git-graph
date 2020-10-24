@@ -50,7 +50,8 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
 					extension: versions.extension,
 					vscode: versions.vscode,
 					nonce: nonce
-				}]
+				}],
+				attempts: 1
 			};
 		} else {
 			// Update
@@ -62,6 +63,7 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
 				to: state.current,
 				nonce: nonce
 			});
+			state.attempts = 1;
 		}
 
 		await saveLifeCycleState(extensionContext, state);
@@ -69,8 +71,10 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
 		state.queue = [];
 		await saveLifeCycleState(extensionContext, state);
 
-	} else if (state.queue.length > 0) {
+	} else if (state.queue.length > 0 && state.attempts < 2) {
 		// There are one or more events in the queue that previously failed to send, send them
+		state.attempts++;
+		await saveLifeCycleState(extensionContext, state);
 		state.apiAvailable = await sendQueue(state.queue);
 		state.queue = [];
 		await saveLifeCycleState(extensionContext, state);

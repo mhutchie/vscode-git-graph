@@ -10,7 +10,7 @@ interface ContextMenuAction {
 type ContextMenuActions = ReadonlyArray<ReadonlyArray<ContextMenuAction>>;
 
 type ContextMenuTarget = {
-	type: TargetType.Commit | TargetType.Ref;
+	type: TargetType.Commit | TargetType.Ref | TargetType.CommitDetailsView;
 	elem: HTMLElement;
 	hash: string;
 	index: number;
@@ -19,6 +19,7 @@ type ContextMenuTarget = {
 
 class ContextMenu {
 	private elem: HTMLElement | null = null;
+	private onClose: (() => void) | null = null;
 	private target: ContextMenuTarget | null = null;
 
 	constructor() {
@@ -27,9 +28,8 @@ class ContextMenu {
 		document.addEventListener('contextmenu', listener);
 	}
 
-	public show(actions: ContextMenuActions, checked: boolean, target: ContextMenuTarget | null, event: MouseEvent) {
-		let viewElem = document.getElementById('view'), html = '', handlers: (() => void)[] = [], handlerId = 0;
-		if (viewElem === null) return;
+	public show(actions: ContextMenuActions, checked: boolean, target: ContextMenuTarget | null, event: MouseEvent, frameElem: HTMLElement, blockUserInteractionElem: HTMLElement | null = null, onClose: (() => void) | null = null) {
+		let html = '', handlers: (() => void)[] = [], handlerId = 0;
 		this.close();
 
 		for (let i = 0; i < actions.length; i++) {
@@ -53,22 +53,23 @@ class ContextMenu {
 		menu.className = 'contextMenu' + (checked ? ' checked' : '');
 		menu.style.opacity = '0';
 		menu.innerHTML = html;
-		viewElem.appendChild(menu);
-		let bounds = menu.getBoundingClientRect();
-		let relativeX = event.pageX + bounds.width < viewElem.clientWidth
+		frameElem.appendChild(menu);
+		const menuBounds = menu.getBoundingClientRect(), frameBounds = frameElem.getBoundingClientRect();
+		const relativeX = event.pageX + menuBounds.width < frameBounds.right
 			? -2 // context menu fits to the right
-			: event.pageX - bounds.width > 0
-				? 2 - bounds.width // context menu fits to the left
-				: -2 - (bounds.width - (viewElem.clientWidth - event.pageX)); // Overlap the context menu horizontally with the cursor
-		let relativeY = event.pageY + bounds.height < viewElem.clientHeight
+			: event.pageX - menuBounds.width > 0
+				? 2 - menuBounds.width // context menu fits to the left
+				: -2 - (menuBounds.width - (frameBounds.width - event.pageX)); // Overlap the context menu horizontally with the cursor
+		const relativeY = event.pageY + menuBounds.height < frameBounds.bottom
 			? -2 // context menu fits below
-			: event.pageY - bounds.height > 0
-				? 2 - bounds.height // context menu fits above
-				: -2 - (bounds.height - (viewElem.clientHeight - event.pageY)); // Overlap the context menu vertically with the cursor
-		menu.style.left = (viewElem.scrollLeft + Math.max(event.pageX + relativeX, 2)) + 'px';
-		menu.style.top = (viewElem.scrollTop + Math.max(event.pageY + relativeY, 2)) + 'px';
+			: event.pageY - menuBounds.height > 0
+				? 2 - menuBounds.height // context menu fits above
+				: -2 - (menuBounds.height - (frameBounds.height - event.pageY)); // Overlap the context menu vertically with the cursor
+		menu.style.left = (frameElem.scrollLeft + Math.max(event.pageX - frameBounds.left + relativeX, 2)) + 'px';
+		menu.style.top = (frameElem.scrollTop + Math.max(event.pageY - frameBounds.top + relativeY, 2)) + 'px';
 		menu.style.opacity = '1';
 		this.elem = menu;
+		this.onClose = onClose;
 
 		addListenerToClass('contextMenuItem', 'click', (e) => {
 			e.stopPropagation();
@@ -80,6 +81,10 @@ class ContextMenu {
 		if (this.target !== null && this.target.type !== TargetType.Repo) {
 			alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
 		}
+
+		if (blockUserInteractionElem !== null) {
+			alterClass(blockUserInteractionElem, CLASS_BLOCK_USER_INTERACTION, true);
+		}
 	}
 
 	public close() {
@@ -87,8 +92,11 @@ class ContextMenu {
 			this.elem.remove();
 			this.elem = null;
 		}
-		if (this.target !== null && this.target.type !== TargetType.Repo) {
-			alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, false);
+		alterClassOfCollection(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName(CLASS_BLOCK_USER_INTERACTION), CLASS_BLOCK_USER_INTERACTION, false);
+		alterClassOfCollection(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName(CLASS_CONTEXT_MENU_ACTIVE), CLASS_CONTEXT_MENU_ACTIVE, false);
+		if (this.onClose !== null) {
+			this.onClose();
+			this.onClose = null;
 		}
 		this.target = null;
 	}
@@ -106,8 +114,10 @@ class ContextMenu {
 			if (commitElem !== null) {
 				if (typeof this.target.ref === 'undefined') {
 					// ContextMenu is only dependent on the commit itself
-					this.target.elem = commitElem;
-					alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
+					if (this.target.type !== TargetType.CommitDetailsView) {
+						this.target.elem = commitElem;
+						alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
+					}
 					return;
 				} else {
 					// ContextMenu is dependent on the commit and ref 

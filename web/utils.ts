@@ -69,6 +69,7 @@ const COLUMN_MIN_WIDTH = 40;
 const COLUMN_LEFT_RIGHT_PADDING = 24;
 
 const CLASS_ACTIVE = 'active';
+const CLASS_BLOCK_USER_INTERACTION = 'blockUserInteraction';
 const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_DISABLED = 'disabled';
@@ -274,6 +275,16 @@ function alterClass(elem: HTMLElement, className: string, state: boolean) {
 	return false;
 }
 
+function alterClassOfCollection(elems: HTMLCollectionOf<HTMLElement>, className: string, state: boolean) {
+	const lockedElems = [];
+	for (let i = 0; i < elems.length; i++) {
+		lockedElems.push(elems[i]);
+	}
+	for (let i = 0; i < lockedElems.length; i++) {
+		alterClass(lockedElems[i], className, state);
+	}
+}
+
 function getChildNodesWithTextContent(elem: Node) {
 	let textChildren: Node[] = [];
 	for (let i = 0; i < elem.childNodes.length; i++) {
@@ -375,7 +386,7 @@ class EventOverlay {
 	public create(className: string, move: EventListener | null, stop: EventListener | null) {
 		if (document.getElementById(ID_EVENT_CAPTURE_ELEM) !== null) this.remove();
 
-		let eventOverlayElem = document.createElement('div');
+		const eventOverlayElem = document.createElement('div');
 		eventOverlayElem.id = ID_EVENT_CAPTURE_ELEM;
 		eventOverlayElem.className = className;
 
@@ -387,6 +398,10 @@ class EventOverlay {
 		if (this.stop !== null) {
 			eventOverlayElem.addEventListener('mouseup', this.stop);
 			eventOverlayElem.addEventListener('mouseleave', this.stop);
+		}
+
+		if (contextMenu.isOpen()) {
+			contextMenu.close();
 		}
 
 		document.body.appendChild(eventOverlayElem);

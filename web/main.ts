@@ -2693,7 +2693,6 @@ class GitGraphView {
 			const isUncommitted = commitOrder.to === UNCOMMITTED;
 
 			expandedCommit.fileContextMenuOpen = parseInt(fileElem.dataset.index!);
-			this.saveState();
 
 			const target: ContextMenuTarget & CommitTarget = {
 				type: TargetType.CommitDetailsView,
@@ -2729,10 +2728,7 @@ class GitGraphView {
 					}
 				]
 			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, filesElem, () => {
-				if (expandedCommit.fileContextMenuOpen > -1) {
-					expandedCommit.fileContextMenuOpen = -1;
-					this.saveState();
-				}
+				expandedCommit.fileContextMenuOpen = -1;
 			});
 		});
 	}

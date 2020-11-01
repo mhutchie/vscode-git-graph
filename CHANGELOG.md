@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.27.0 - 2020-11-01
+* #281 For the Repository Settings Widget, read values defined in additional Git config files when they're included via [include directives](https://git-scm.com/docs/git-config#_includes) in local or global Git config files.
+* #364 Parse and render a frequently used subset of inline Markdown formatting rules in commit messages and tag details (bold, italics, bold & italics, and inline code blocks). Markdown parsing can be disabled using the extension setting `git-graph.markdown`.
+* #381 New Commit Details View File Context Menu, which is an alternative method to run any available actions on a file ("View Diff", "View File at this Revision", "Open File", and "Copy File Path to the Clipboard").
+* #383 When the Commit Details View is open, the `CTRL/CMD + Up` / `CTRL/CMD + Down` keystrokes may be used to navigate topologically to the child / parent on the same branch (the existing behaviour). Now there is a new Shift Key Modifier, that when pressed in combination with the existing keystrokes (i.e. `CTRL/CMD + SHIFT + Up` / `CTRL/CMD + SHIFT + Down`), will follow the alternative branch when a branch or a merge is encountered.
+* #385 Push branches or tags to multiple remotes from their respective dialogs.
+* #386 Detect commit hashes in the body of the commit that's displayed in the Commit Details View, and make them clickable links that open the Commit Details View for the referenced commit.
+* #389 Use the Visual Studio Code Color Theme's text selection background colour (set by some themes and users) in the Git Graph View.
+* #392 Support Visual Studio Code's `git.path` Setting containing an array of possible Git executable paths (introduced in Visual Studio Code 1.50.0).
+* #393 New display option for the Uncommitted Changes in the graph. This is controlled by the new extension setting `git-graph.graph.uncommittedChanges`.
+    * Open Circle at the Uncommitted Changes: Display the Uncommitted Changes as a grey open circle, connected to the commit referenced by HEAD with a solid grey line. The current file system's state is therefore always displayed as an open circle in the graph. *(the existing behaviour)*
+    * Open Circle at the Checked Out Commit: Display the Uncommitted Changes as a grey closed circle, connected to the commit referenced by HEAD with a dotted grey line. The commit referenced by HEAD is therefore always displayed as an open circle in the graph. *(the new option)*
+* #398 New command "Git Graph: Get Version Information", that displays basic version information of the Git Graph installation, and allows it to be easily copied to the clipboard.
+* Various code improvements.
+
 ## 1.26.0 - 2020-09-13
 * #318 Customise the branches that are initially shown when the Git Graph View is first opened. Each repository can have it's initial branches configured from the Repository Settings Widget on the Git Graph View, or they may inherit the global configuration set by the extension settings `git-graph.repository.onLoad.showCheckedOutBranch` & `git-graph.repository.onLoad.showSpecificBranches`.
 * #341 Added a new extension setting `git-graph.repository.showRemoteBranches`, to set the default value of the "Show Remote Branches" repository setting.
@@ -44,7 +59,7 @@
 * #279 Support Chinese / Japanese / Korean IME Keyboard Enter Events on Mac's for dialog submission. Thanks [Kazuma Ebina (@kazuma1989)](https://github.com/kazuma1989)!
 * #283 After the Keyboard Shortcut `CTRL + H` is run in the Git Graph View to scroll to the HEAD commit, the commit now momentarily flashes to draw attention to it.
 * #285 Added a new extension setting `git-graph.repository.showUntrackedFiles`, that controls whether untracked files are included in the uncommitted changes on the Git Graph View. Default: true (enabled)
-* #286 Added a "View File at Revision" button for each file displayed in the Commit Details / Comparison Views.
+* #286 Added a "View File at this Revision" button for each file displayed in the Commit Details / Comparison Views.
 * #287 Added a new "Only follow the first parent of commits" option to the Git Graph View's Repository Settings Widget. The default value can be defined globally for all repositories using the new extension setting `git-graph.repository.onlyFollowFirstParent`. Default: false (disabled)
 * #292 Create a *.tar or *.zip archive of the repository at any branch or tag from the corresponding context menu.
 * #299 Previously when the Commit Details View was open on a commit, `Up` / `Down` keystrokes would open the Commit Details View on the commit directly above or below it on the Git Graph View. This is now augmented with `CTRL/CMD + Up` / `CTRL/CMD + Down` keystrokes, that open the Commit Details View on its child or parent commit on the same branch.

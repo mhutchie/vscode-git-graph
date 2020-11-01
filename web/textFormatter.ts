@@ -142,22 +142,22 @@ class TextFormatter {
 
 	public format(input: string) {
 		if (this.config.multiline) {
-			let htmlLines = [], lines = input.split('\n'), i, j, match;
+			let html = [], lines = input.split('\n'), i, j, match;
 			for (i = 0; i < lines.length; i++) {
 				if (i > 0) {
-					htmlLines.push('<br/>');
+					html.push('<br/>');
 				}
 
 				j = 0;
 				if (match = lines[i].match(TextFormatter.INDENT_REGEXP)) {
 					for (j = 0; j < match[0].length; j++) {
-						htmlLines.push(match[0][j] === '\t' ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '&nbsp;');
+						html.push(match[0][j] === '\t' ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '&nbsp;');
 					}
 				}
 
-				htmlLines.push(this.formatLine(j > 0 ? lines[i].substring(j) : lines[i]));
+				html.push(this.formatLine(j > 0 ? lines[i].substring(j) : lines[i]));
 			}
-			return htmlLines.join('');
+			return html.join('');
 		} else {
 			return this.formatLine(input);
 		}
@@ -369,7 +369,8 @@ class TextFormatter {
 			const emphasisStack: TF.EmphasisDelimiter[] = [];
 			let stackMatch: number;
 			for (let i = 0; i < emphasisTokens.length; i++) {
-				const delimiter = emphasisTokens[i], run = emphasisRuns[delimiter.run];
+				const delimiter = emphasisTokens[i];
+				const run = emphasisRuns[delimiter.run];
 				if (run.close && (stackMatch = TextFormatter.findOpenEmphasis(delimiter, run, emphasisRuns, emphasisStack)) > -1) {
 					TextFormatter.insertIntoTree(tree, {
 						type: emphasisRuns[emphasisStack[stackMatch].run].type === TF.EmphasisDelimiterType.Asterisk ? TF.NodeType.Asterisk : TF.NodeType.Underscore,
@@ -472,10 +473,8 @@ class TextFormatter {
 		let firstChildIndexOfNode = -1, lastChildIndexOfNode = -1, curNode;
 		for (let i = 0; i < tree.contains.length; i++) {
 			curNode = tree.contains[i];
-			if (node.start < curNode.start) {
-				if (firstChildIndexOfNode === -1) {
-					firstChildIndexOfNode = i;
-				}
+			if (node.start < curNode.start && firstChildIndexOfNode === -1) {
+				firstChildIndexOfNode = i;
 			}
 			if (curNode.end < node.end) {
 				lastChildIndexOfNode = i;

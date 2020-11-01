@@ -10,6 +10,7 @@ import * as fs from 'fs';
 const mockedFileSystemModule: any = {
 	access: jest.fn(),
 	constants: fs.constants,
+	readFile: jest.fn(),
 	realpath: jest.fn(),
 	stat: jest.fn()
 };
@@ -23,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 let extensionContext = vscode.mocks.extensionContext;
@@ -468,6 +469,45 @@ describe('getRelativeTimeDiff', () => {
 
 		// Assert
 		expect(diff).toBe('3 years ago');
+	});
+});
+
+describe('getExtensionVersion', () => {
+	it('Should return the extension\'s version number', async () => {
+		// Setup
+		mockedFileSystemModule.readFile.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, data: string) => void) => callback(null, '{"version":"1.2.3"}'));
+
+		// Run
+		const version = await getExtensionVersion(vscode.mocks.extensionContext);
+
+		// Assert
+		expect(version).toBe('1.2.3');
+		const [path] = mockedFileSystemModule.readFile.mock.calls[0];
+		expect(getPathFromStr(path)).toBe('/path/to/extension/package.json');
+	});
+
+	it('Should reject if unable to read package.json file', async () => {
+		// Setup
+		let rejected = false;
+		mockedFileSystemModule.readFile.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, data: string) => void) => callback(new Error(), ''));
+
+		// Run
+		await getExtensionVersion(vscode.mocks.extensionContext).catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
+	});
+
+	it('Should reject if unable to parse package.json file', async () => {
+		// Setup
+		let rejected = false;
+		mockedFileSystemModule.readFile.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, data: string) => void) => callback(null, '{"version":"1.2.3"'));
+
+		// Run
+		await getExtensionVersion(vscode.mocks.extensionContext).catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
 	});
 });
 

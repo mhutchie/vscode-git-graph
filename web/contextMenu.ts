@@ -57,14 +57,14 @@ class ContextMenu {
 		const menuBounds = menu.getBoundingClientRect(), frameBounds = frameElem.getBoundingClientRect();
 		const relativeX = event.pageX + menuBounds.width < frameBounds.right
 			? -2 // context menu fits to the right
-			: event.pageX - menuBounds.width > 0
+			: event.pageX - menuBounds.width > frameBounds.left
 				? 2 - menuBounds.width // context menu fits to the left
-				: -2 - (menuBounds.width - (frameBounds.width - event.pageX)); // Overlap the context menu horizontally with the cursor
+				: -2 - (menuBounds.width - (frameBounds.width - (event.pageX - frameBounds.left))); // Overlap the context menu horizontally with the cursor
 		const relativeY = event.pageY + menuBounds.height < frameBounds.bottom
 			? -2 // context menu fits below
-			: event.pageY - menuBounds.height > 0
+			: event.pageY - menuBounds.height > frameBounds.top
 				? 2 - menuBounds.height // context menu fits above
-				: -2 - (menuBounds.height - (frameBounds.height - event.pageY)); // Overlap the context menu vertically with the cursor
+				: -2 - (menuBounds.height - (frameBounds.height - (event.pageY - frameBounds.top))); // Overlap the context menu vertically with the cursor
 		menu.style.left = (frameElem.scrollLeft + Math.max(event.pageX - frameBounds.left + relativeX, 2)) + 'px';
 		menu.style.top = (frameElem.scrollTop + Math.max(event.pageY - frameBounds.top + relativeY, 2)) + 'px';
 		menu.style.opacity = '1';

@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { LifeCycleStage, LifeCycleState, generateNonce, getDataDirectory, getLifeCycleStateInDirectory, saveLifeCycleStateInDirectory, sendQueue } from './utils';
+import { getExtensionVersion } from '../utils';
 
 /**
  * Run on startup to detect if Git Graph has been installed or updated, and if so generate an event.
@@ -49,7 +50,8 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
 					extension: versions.extension,
 					vscode: versions.vscode,
 					nonce: nonce
-				}]
+				}],
+				attempts: 1
 			};
 		} else {
 			// Update
@@ -61,6 +63,7 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
 				to: state.current,
 				nonce: nonce
 			});
+			state.attempts = 1;
 		}
 
 		await saveLifeCycleState(extensionContext, state);
@@ -68,8 +71,10 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
 		state.queue = [];
 		await saveLifeCycleState(extensionContext, state);
 
-	} else if (state.queue.length > 0) {
+	} else if (state.queue.length > 0 && state.attempts < 2) {
 		// There are one or more events in the queue that previously failed to send, send them
+		state.attempts++;
+		await saveLifeCycleState(extensionContext, state);
 		state.apiAvailable = await sendQueue(state.queue);
 		state.queue = [];
 		await saveLifeCycleState(extensionContext, state);
@@ -87,27 +92,6 @@ function saveLifeCycleState(extensionContext: vscode.ExtensionContext, state: Li
 		saveLifeCycleStateInDirectory(extensionContext.globalStoragePath, state),
 		saveLifeCycleStateInDirectory(getDataDirectory(), state)
 	]);
-}
-
-/**
- * Gets the version of Git Graph.
- * @param extensionContext The extension context of Git Graph.
- * @returns The Git Graph version.
- */
-function getExtensionVersion(extensionContext: vscode.ExtensionContext) {
-	return new Promise<string>((resolve, reject) => {
-		fs.readFile(path.join(extensionContext.extensionPath, 'package.json'), (err, data) => {
-			if (err) {
-				reject();
-			} else {
-				try {
-					resolve(JSON.parse(data.toString()).version);
-				} catch (_) {
-					reject();
-				}
-			}
-		});
-	});
 }
 
 /**

@@ -52,6 +52,7 @@ export interface LifeCycleState {
 	};
 	apiAvailable: boolean;
 	queue: LifeCycleEvent[];
+	attempts: number;
 }
 
 /**
@@ -91,7 +92,7 @@ export function getLifeCycleStateInDirectory(directory: string) {
 				resolve(null);
 			} else {
 				try {
-					resolve(JSON.parse(data.toString()));
+					resolve(Object.assign({ attempts: 1 }, JSON.parse(data.toString())));
 				} catch (_) {
 					resolve(null);
 				}
@@ -154,7 +155,7 @@ function sendEvent(event: LifeCycleEvent) {
 			}
 		};
 
-		const sendEvent = Object.assign({
+		const sendEvent: Omit<LifeCycleEvent, 'stage'> & { about: string, stage?: LifeCycleStage } = Object.assign({
 			about: 'Information about this API is available at: https://api.mhutchie.com/vscode-git-graph/about'
 		}, event);
 		delete sendEvent.stage;

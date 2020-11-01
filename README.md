@@ -57,6 +57,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * When the Commit Details View is open on a commit:
             * `Up` / `Down`: The Commit Details View will be opened on the commit directly above or below it on the Git Graph View.
             * `CTRL/CMD + Up` / `CTRL/CMD + Down`: The Commit Details View will be opened on its child or parent commit on the same branch.
+                * If the Shift Key is also pressed (i.e. `CTRL/CMD + SHIFT + Up` / `CTRL/CMD + SHIFT + Down`), when branches or merges are encountered the alternative branch is followed.
         * `Enter`: If a dialog is open, pressing enter submits the dialog, taking the primary (left) action.
         * `Escape`: Closes the active dialog, context menu or the Commit Details View.
     * Resize the width of each column, and show/hide the Date, Author & Commit columns.
@@ -91,7 +92,9 @@ A summary of the Git Graph extension settings are:
 * **Graph**:
     * **Colours**: Specifies the colours used on the graph.
     * **Style**: Specifies the style of the graph.
+    * **Uncommitted Changes**: Specifies how the Uncommitted Changes are displayed on the graph.
 * **Integrated Terminal Shell**: Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when it is opened by Git Graph.
+* **Markdown**: Parse and render a frequently used subset of inline Markdown formatting rules in commit messages and tag details (bold, italics, bold & italics, and inline code blocks).
 * **Max Depth Of Repo Search**: Specifies the maximum depth of subfolders to search when discovering repositories in the workspace.
 * **Open New Tab Editor Group**: Specifies the Editor Group where Git Graph should open new tabs, when performing the following actions from the Git Graph View: Viewing the Visual Studio Code Diff View, Opening a File, Viewing a File at a Specific Revision.
 * **Open to the Repo of the Active Text Editor Document**: Open the Git Graph View to the repository containing the active Text Editor document.
@@ -144,6 +147,7 @@ This extension contributes the following commands:
 * `git-graph.endSpecificWorkspaceCodeReview`: Git Graph: End a specific Code Review in Workspace... _(used to end a specific Code Review without having to first open it in the Git Graph View)_
 * `git-graph.removeGitRepository`: Git Graph: Remove Git Repository... _(used to remove repositories from Git Graph)_
 * `git-graph.resumeWorkspaceCodeReview`: Git Graph: Resume a specific Code Review in Workspace... _(used to open the Git Graph View to a Code Review that is already in progress)_
+* `git-graph.version`: Git Graph: Get Version Information
 
 ## Release Notes
 

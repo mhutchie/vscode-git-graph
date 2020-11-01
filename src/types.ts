@@ -227,6 +227,7 @@ export interface GitGraphViewConfig {
 	readonly initialLoadCommits: number;
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
+	readonly markdown: boolean;
 	readonly mute: MuteCommitsConfig;
 	readonly onlyFollowFirstParent: boolean;
 	readonly onRepoLoad: OnRepoLoadConfig;
@@ -252,6 +253,7 @@ export interface GraphConfig {
 	readonly colours: ReadonlyArray<string>;
 	readonly style: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
+	readonly uncommittedChanges: GraphUncommittedChangesStyle;
 }
 
 export type LoadGitGraphViewTo = {
@@ -446,6 +448,11 @@ export const enum FileViewType {
 export const enum GraphStyle {
 	Rounded,
 	Angular
+}
+
+export const enum GraphUncommittedChangesStyle {
+	OpenCircleAtTheUncommittedChanges,
+	OpenCircleAtTheCheckedOutCommit
 }
 
 export const enum IncludeCommitsMentionedByReflogs {
@@ -960,11 +967,11 @@ export interface ResponsePullBranch extends ResponseWithErrorInfo {
 export interface RequestPushBranch extends RepoRequest {
 	readonly command: 'pushBranch';
 	readonly branchName: string;
-	readonly remote: string;
+	readonly remotes: string[];
 	readonly setUpstream: boolean;
 	readonly mode: GitPushBranchMode;
 }
-export interface ResponsePushBranch extends ResponseWithErrorInfo {
+export interface ResponsePushBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushBranch';
 }
 
@@ -980,9 +987,9 @@ export interface ResponsePushStash extends ResponseWithErrorInfo {
 export interface RequestPushTag extends RepoRequest {
 	readonly command: 'pushTag';
 	readonly tagName: string;
-	readonly remote: string;
+	readonly remotes: string[];
 }
-export interface ResponsePushTag extends ResponseWithErrorInfo {
+export interface ResponsePushTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushTag';
 }
 

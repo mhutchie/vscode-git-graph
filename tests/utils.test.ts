@@ -10,6 +10,7 @@ import * as fs from 'fs';
 const mockedFileSystemModule: any = {
 	access: jest.fn(),
 	constants: fs.constants,
+	readFile: jest.fn(),
 	realpath: jest.fn(),
 	stat: jest.fn()
 };
@@ -23,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getGitExecutable, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 let extensionContext = vscode.mocks.extensionContext;
@@ -468,6 +469,45 @@ describe('getRelativeTimeDiff', () => {
 
 		// Assert
 		expect(diff).toBe('3 years ago');
+	});
+});
+
+describe('getExtensionVersion', () => {
+	it('Should return the extension\'s version number', async () => {
+		// Setup
+		mockedFileSystemModule.readFile.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, data: string) => void) => callback(null, '{"version":"1.2.3"}'));
+
+		// Run
+		const version = await getExtensionVersion(vscode.mocks.extensionContext);
+
+		// Assert
+		expect(version).toBe('1.2.3');
+		const [path] = mockedFileSystemModule.readFile.mock.calls[0];
+		expect(getPathFromStr(path)).toBe('/path/to/extension/package.json');
+	});
+
+	it('Should reject if unable to read package.json file', async () => {
+		// Setup
+		let rejected = false;
+		mockedFileSystemModule.readFile.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, data: string) => void) => callback(new Error(), ''));
+
+		// Run
+		await getExtensionVersion(vscode.mocks.extensionContext).catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
+	});
+
+	it('Should reject if unable to parse package.json file', async () => {
+		// Setup
+		let rejected = false;
+		mockedFileSystemModule.readFile.mockImplementationOnce((_: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, data: string) => void) => callback(null, '{"version":"1.2.3"'));
+
+		// Run
+		await getExtensionVersion(vscode.mocks.extensionContext).catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
 	});
 });
 
@@ -1543,7 +1583,7 @@ describe('findGit', () => {
 	it('Should use the users git.path if the last known Git executable path no longer exists', async () => {
 		// Setup
 		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce('/path/to/not-git');
-		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // gitPath
+		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // git.path
 		mockSpawnGitVersionThrowingErrorOnce();
 		mockSpawnGitVersionSuccessOnce();
 
@@ -1561,7 +1601,7 @@ describe('findGit', () => {
 	it('Should use the users git.path if there is no last known Git executable path', async () => {
 		// Setup
 		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // gitPath
+		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // git.path
 		mockSpawnGitVersionSuccessOnce();
 
 		// Run
@@ -1579,7 +1619,7 @@ describe('findGit', () => {
 		let spyOnExec: jest.SpyInstance;
 		beforeEach(() => {
 			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-			workspaceConfiguration.get.mockReturnValueOnce(null); // gitPath
+			workspaceConfiguration.get.mockReturnValueOnce(null); // git.path
 			Object.defineProperty(process, 'platform', { value: 'darwin' });
 			spyOnExec = jest.spyOn(cp, 'exec');
 		});
@@ -1699,7 +1739,7 @@ describe('findGit', () => {
 		let programW6432: string | undefined, programFilesX86: string | undefined, programFiles: string | undefined, localAppData: string | undefined, envPath: string | undefined;
 		beforeEach(() => {
 			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-			workspaceConfiguration.get.mockReturnValueOnce(null); // gitPath
+			workspaceConfiguration.get.mockReturnValueOnce([]); // git.path
 			programW6432 = process.env['ProgramW6432'];
 			programFilesX86 = process.env['ProgramFiles(x86)'];
 			programFiles = process.env['ProgramFiles'];
@@ -1856,7 +1896,7 @@ describe('findGit', () => {
 	describe('process.platform === \'unknown\'', () => {
 		beforeEach(() => {
 			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-			workspaceConfiguration.get.mockReturnValueOnce(null); // gitPath
+			workspaceConfiguration.get.mockReturnValueOnce(null); // git.path
 			Object.defineProperty(process, 'platform', { value: 'unknown' });
 		});
 
@@ -1945,6 +1985,65 @@ describe('getGitExecutable', () => {
 
 		// Assert
 		expect(rejected).toBe(true);
+	});
+});
+
+describe('getGitExecutableFromPaths', () => {
+	it('Should return the git version information from the first valid path (all valid)', async () => {
+		// Setup
+		mockSpawnGitVersionSuccessOnce();
+
+		// Run
+		const result = await getGitExecutableFromPaths(['/path/to/first/git', '/path/to/second/git']);
+
+		// Assert
+		expect(result).toStrictEqual({
+			path: '/path/to/first/git',
+			version: '1.2.3'
+		});
+		expect(spyOnSpawn).toBeCalledTimes(1);
+	});
+
+	it('Should return the git version information from the first valid path (first invalid)', async () => {
+		// Setup
+		mockSpawnGitVersionThrowingErrorOnce();
+		mockSpawnGitVersionSuccessOnce();
+
+		// Run
+		const result = await getGitExecutableFromPaths(['/path/to/first/git', '/path/to/second/git']);
+
+		// Assert
+		expect(result).toStrictEqual({
+			path: '/path/to/second/git',
+			version: '1.2.3'
+		});
+		expect(spyOnSpawn).toBeCalledTimes(2);
+	});
+
+	it('Should reject when none of the provided paths are valid Git executables', async () => {
+		// Setup
+		let rejected = false;
+		mockSpawnGitVersionThrowingErrorOnce();
+		mockSpawnGitVersionThrowingErrorOnce();
+
+		// Run
+		await getGitExecutableFromPaths(['/path/to/first/git', '/path/to/second/git']).catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
+		expect(spyOnSpawn).toBeCalledTimes(2);
+	});
+
+	it('Should reject when no paths are provided', async () => {
+		// Setup
+		let rejected = false;
+
+		// Run
+		await getGitExecutableFromPaths([]).catch(() => rejected = true);
+
+		// Assert
+		expect(rejected).toBe(true);
+		expect(spyOnSpawn).toBeCalledTimes(0);
 	});
 });
 

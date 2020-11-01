@@ -2,7 +2,7 @@ import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
-import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
+import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
 
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -1604,6 +1604,7 @@ describe('Config', () => {
 			const mockColoursExtensionSetting = (value: any) => {
 				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
 				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
 			};
 
 			it('Should return a filtered array of colours based on the configuration value', () => {
@@ -1662,6 +1663,7 @@ describe('Config', () => {
 			const mockStyleExtensionSetting = (value: any) => {
 				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
 				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
 			};
 
 			it('Should return GraphStyle.Rounded when the configuration value is "rounded"', () => {
@@ -1712,6 +1714,62 @@ describe('Config', () => {
 				expect(value).toBe(GraphStyle.Rounded);
 			});
 		});
+
+		describe('uncommittedChanges', () => {
+			const mockUncommittedChangesExtensionSetting = (value?: string) => {
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
+			};
+
+			it('Should return GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges when the configuration value is "Open Circle at the Uncommitted Changes"', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting('Open Circle at the Uncommitted Changes');
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges);
+			});
+
+			it('Should return GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit when the configuration value is "Open Circle at the Checked Out Commit"', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting('Open Circle at the Checked Out Commit');
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit);
+			});
+
+			it('Should return the default value (GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) when the configuration value is invalid', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting('invalid');
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges);
+			});
+
+			it('Should return the default value (GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) when the configuration value is unknown', () => {
+				// Setup
+				mockUncommittedChangesExtensionSetting(undefined);
+
+				// Run
+				const value = config.graph.uncommittedChanges;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
+				expect(value).toBe(GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges);
+			});
+		});
 	});
 
 	describe('integratedTerminalShell', () => {
@@ -1737,6 +1795,68 @@ describe('Config', () => {
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('integratedTerminalShell', '');
 			expect(value).toBe('');
+		});
+	});
+
+	describe('markdown', () => {
+		it('Should return TRUE when the configuration value is TRUE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(true);
+
+			// Run
+			const value = config.markdown;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.markdown;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
+			expect(value).toBe(false);
+		});
+
+		it('Should return TRUE when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.markdown;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.markdown;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
+			expect(value).toBe(false);
+		});
+
+		it('Should return the default value (FALSE) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.markdown;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
+			expect(value).toBe(true);
 		});
 	});
 
@@ -3600,44 +3720,70 @@ describe('Config', () => {
 		});
 	});
 
-	describe('gitPath', () => {
+	describe('gitPaths', () => {
 		it('Should return the configured path', () => {
 			// Setup
 			workspaceConfiguration.get.mockReturnValueOnce('/path/to/git');
 
 			// Run
-			const value = config.gitPath;
+			const value = config.gitPaths;
 
 			// Assert
 			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
 			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
-			expect(value).toBe('/path/to/git');
+			expect(value).toStrictEqual(['/path/to/git']);
 		});
 
-		it('Should return NULL when the configuration value is NULL', () => {
+		it('Should return the valid configured paths', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(['/path/to/first/git', '/path/to/second/git', 4, {}, null, '/path/to/third/git']);
+
+			// Run
+			const value = config.gitPaths;
+
+			// Assert
+			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
+			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
+			expect(value).toStrictEqual(['/path/to/first/git', '/path/to/second/git', '/path/to/third/git']);
+		});
+
+		it('Should return an empty array when the configuration value is NULL', () => {
 			// Setup
 			workspaceConfiguration.get.mockReturnValueOnce(null);
 
 			// Run
-			const value = config.gitPath;
+			const value = config.gitPaths;
 
 			// Assert
 			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
 			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
-			expect(value).toBe(null);
+			expect(value).toStrictEqual([]);
 		});
 
-		it('Should return the default configuration value (NULL)', () => {
+		it('Should return an empty array when the configuration value is invalid', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(4);
+
+			// Run
+			const value = config.gitPaths;
+
+			// Assert
+			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
+			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
+			expect(value).toStrictEqual([]);
+		});
+
+		it('Should return an empty array when the default configuration value (NULL) is received', () => {
 			// Setup
 			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
 
 			// Run
-			const value = config.gitPath;
+			const value = config.gitPaths;
 
 			// Assert
 			expect(vscode.workspace.getConfiguration).toBeCalledWith('git');
 			expect(workspaceConfiguration.get).toBeCalledWith('path', null);
-			expect(value).toBe(null);
+			expect(value).toStrictEqual([]);
 		});
 	});
 

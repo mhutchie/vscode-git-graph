@@ -75,7 +75,7 @@ type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | Di
 type DialogInputValue = string | string[] | boolean;
 
 type DialogTarget = {
-	type: TargetType.Commit | TargetType.Ref;
+	type: TargetType.Commit | TargetType.Ref | TargetType.CommitDetailsView;
 	elem: HTMLElement;
 	hash: string;
 	ref?: string;
@@ -121,6 +121,12 @@ class Dialog {
 		this.showForm(message, [
 			{ type: DialogInputType.Select, name: '', options: options, default: defaultValue }
 		], actionName, (values) => actioned(<string>values[0]), target);
+	}
+
+	public showMultiSelect(message: string, defaultValues: ReadonlyArray<string>, options: ReadonlyArray<DialogSelectInputOption>, actionName: string, actioned: (value: string[]) => void, target: DialogTarget | null) {
+		this.showForm(message, [
+			{ type: DialogInputType.Select, name: '', options: options, defaults: defaultValues, multiple: true }
+		], actionName, (values) => actioned(<string[]>values[0]), target);
 	}
 
 	public showForm(message: string, inputs: ReadonlyArray<DialogInput>, actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
@@ -265,9 +271,7 @@ class Dialog {
 			this.elem.remove();
 			this.elem = null;
 		}
-		if (this.target !== null && this.target.type !== TargetType.Repo) {
-			alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, false);
-		}
+		alterClassOfCollection(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName(CLASS_DIALOG_ACTIVE), CLASS_DIALOG_ACTIVE, false);
 		this.target = null;
 		Object.keys(this.customSelects).forEach((index) => this.customSelects[index].remove());
 		this.customSelects = {};
@@ -297,8 +301,10 @@ class Dialog {
 			if (commitElem !== null) {
 				if (typeof this.target.ref === 'undefined') {
 					// Dialog is only dependent on the commit itself
-					this.target.elem = commitElem;
-					alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);
+					if (this.target.type !== TargetType.CommitDetailsView) {
+						this.target.elem = commitElem;
+						alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);
+					}
 					return;
 				} else {
 					// Dialog is dependent on the commit and ref 

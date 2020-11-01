@@ -463,7 +463,7 @@ export class GitGraphView extends Disposable {
 			case 'pushBranch':
 				this.sendMessage({
 					command: 'pushBranch',
-					error: await this.dataSource.pushBranch(msg.repo, msg.branchName, msg.remote, msg.setUpstream, msg.mode)
+					errors: await this.dataSource.pushBranchToMultipleRemotes(msg.repo, msg.branchName, msg.remotes, msg.setUpstream, msg.mode)
 				});
 				break;
 			case 'pushStash':
@@ -475,7 +475,7 @@ export class GitGraphView extends Disposable {
 			case 'pushTag':
 				this.sendMessage({
 					command: 'pushTag',
-					error: await this.dataSource.pushTag(msg.repo, msg.tagName, msg.remote)
+					errors: await this.dataSource.pushTagToMultipleRemotes(msg.repo, msg.tagName, msg.remotes)
 				});
 				break;
 			case 'rebase':
@@ -599,6 +599,7 @@ export class GitGraphView extends Disposable {
 				initialLoadCommits: config.initialLoadCommits,
 				loadMoreCommits: config.loadMoreCommits,
 				loadMoreCommitsAutomatically: config.loadMoreCommitsAutomatically,
+				markdown: config.markdown,
 				mute: config.muteCommits,
 				onlyFollowFirstParent: config.onlyFollowFirstParent,
 				onRepoLoad: config.onRepoLoad,

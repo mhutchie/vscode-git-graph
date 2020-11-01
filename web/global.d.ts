@@ -34,6 +34,7 @@ declare global {
 		lastViewedFile: string | null;
 		loading: boolean;
 		fileChangesScrollTop: number;
+		fileContextMenuOpen: number;
 	}
 
 	interface WebViewState {
@@ -91,12 +92,13 @@ declare global {
 
 	const enum TargetType {
 		Commit = 'commit',
+		CommitDetailsView = 'cdv',
 		Ref = 'ref',
 		Repo = 'repo'
 	}
 
 	interface CommitOrRefTarget {
-		type: TargetType.Commit | TargetType.Ref;
+		type: TargetType.Commit | TargetType.Ref | TargetType.CommitDetailsView;
 		elem: HTMLElement;
 	}
 

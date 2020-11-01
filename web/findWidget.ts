@@ -206,17 +206,28 @@ class FindWidget {
 									break;
 								}
 								if (matchEnd !== match.index) {
-									if (matchStart !== matchEnd) textElem.parentNode!.insertBefore(createFindMatchElem(text.substring(matchStart, matchEnd)), textElem);
+									// This match isn't immediately after the previous match, or isn't at the beginning of the text
+									if (matchStart !== matchEnd) {
+										// There was a previous match, insert it in a text node
+										textElem.parentNode!.insertBefore(FindWidget.createMatchElem(text.substring(matchStart, matchEnd)), textElem);
+									}
+									// Insert a text node containing the text between the last match and the current match
 									textElem.parentNode!.insertBefore(document.createTextNode(text.substring(matchEnd, match.index)), textElem);
 									matchStart = match.index;
 								}
 								matchEnd = findGlobalPattern.lastIndex;
 							}
 							if (matchEnd > 0) {
-								if (matchStart !== matchEnd) textElem.parentNode!.insertBefore(createFindMatchElem(text.substring(matchStart, matchEnd)), textElem);
+								// There were one or more matches
+								if (matchStart !== matchEnd) {
+									// There was a match, insert it in a text node
+									textElem.parentNode!.insertBefore(FindWidget.createMatchElem(text.substring(matchStart, matchEnd)), textElem);
+								}
 								if (matchEnd !== text.length) {
+									// There was some text after last match, update the textElem (the last node of it's parent) to contain the remaining text.
 									textElem.textContent = text.substring(matchEnd);
 								} else {
+									// The last match was at the end of the text, the textElem is no longer required, so delete it
 									textElem.parentNode!.removeChild(textElem);
 								}
 							}
@@ -225,7 +236,7 @@ class FindWidget {
 						if (colVisibility.commit && commit.hash.search(findPattern) === 0 && !findPattern.test(abbrevCommit(commit.hash)) && textElems.length > 0) {
 							// The commit matches on more than the abbreviated commit, so the commit should be highlighted
 							let commitNode = textElems[textElems.length - 1]; // Commit is always the last column if it is visible
-							commitNode.parentNode!.replaceChild(createFindMatchElem(commitNode.textContent!), commitNode);
+							commitNode.parentNode!.replaceChild(FindWidget.createMatchElem(commitNode.textContent!), commitNode);
 						}
 						if (zeroLengthMatch) break;
 					}
@@ -304,11 +315,12 @@ class FindWidget {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
 	}
-}
 
-function createFindMatchElem(text: string) {
-	let span = document.createElement('span');
-	span.className = CLASS_FIND_MATCH;
-	span.innerHTML = text;
-	return span;
+	private static createMatchElem(text: string) {
+		const span = document.createElement('span');
+		span.className = CLASS_FIND_MATCH;
+		span.innerHTML = text;
+		return span;
+	}
+
 }

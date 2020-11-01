@@ -1,3 +1,4 @@
+import * as os from 'os';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
@@ -6,7 +7,7 @@ import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, copyToClipboard, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -14,7 +15,7 @@ import { Event } from './utils/event';
  * Manages the registration and execution of Git Graph Commands.
  */
 export class CommandManager extends Disposable {
-	private readonly extensionPath: string;
+	private readonly context: vscode.ExtensionContext;
 	private readonly avatarManager: AvatarManager;
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
@@ -33,9 +34,9 @@ export class CommandManager extends Disposable {
 	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(extensionPath: string, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
+	constructor(context: vscode.ExtensionContext, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
 		super();
-		this.extensionPath = extensionPath;
+		this.context = context;
 		this.avatarManager = avatarManger;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
@@ -50,6 +51,7 @@ export class CommandManager extends Disposable {
 		this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => this.endAllWorkspaceCodeReviews());
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
 		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
+		this.registerCommand('git-graph.version', () => this.version());
 
 		this.registerDisposable(
 			onDidChangeGitExecutable((gitExecutable) => {
@@ -92,7 +94,7 @@ export class CommandManager extends Disposable {
 			loadRepo = this.repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 		}
 
-		GitGraphView.createOrShow(this.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null);
+		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null);
 	}
 
 	/**
@@ -210,7 +212,7 @@ export class CommandManager extends Disposable {
 		}).then((item) => {
 			if (item) {
 				const commitHashes = item.codeReviewId.split('-');
-				GitGraphView.createOrShow(this.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+				GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
 					repo: item.codeReviewRepo,
 					commitDetails: {
 						commitHash: commitHashes[commitHashes.length > 1 ? 1 : 0],
@@ -221,6 +223,27 @@ export class CommandManager extends Disposable {
 		}, () => {
 			showErrorMessage('An unexpected error occurred while running the command "Resume a specific Code Review in Workspace...".');
 		});
+	}
+
+	/**
+	 * The method run when the `git-graph.version` command is invoked.
+	 */
+	private async version() {
+		try {
+			const gitGraphVersion = await getExtensionVersion(this.context);
+			const information = 'Git Graph: ' + gitGraphVersion + '\nVisual Studio Code: ' + vscode.version + '\nOS: ' + os.type() + ' ' + os.arch() + ' ' + os.release() + '\nGit: ' + (this.gitExecutable !== null ? this.gitExecutable.version : '(none)');
+			vscode.window.showInformationMessage(information, { modal: true }, 'Copy').then((selectedItem) => {
+				if (selectedItem === 'Copy') {
+					copyToClipboard(information).then((result) => {
+						if (result !== null) {
+							showErrorMessage(result);
+						}
+					});
+				}
+			}, () => { });
+		} catch (_) {
+			showErrorMessage('An unexpected error occurred while retrieving version information.');
+		}
 	}
 
 

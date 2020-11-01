@@ -3308,6 +3308,7 @@ describe('DataSource', () => {
 			// Setup
 			mockGitSuccessOnce(
 				'user.name=Local Name\n' +
+				'user.email=unused@mhutchie.com\n' +
 				'user.email=local@mhutchie.com\n' +
 				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
 				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
@@ -3345,8 +3346,8 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -3387,8 +3388,8 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -3430,8 +3431,8 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -4266,6 +4267,106 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe('error message');
+		});
+	});
+
+	describe('pushBranchToMultipleRemotes', () => {
+		it('Should push a branch to one remote', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.pushBranchToMultipleRemotes('/path/to/repo', 'master', ['origin'], false, GitPushBranchMode.Normal);
+
+			// Assert
+			expect(result).toStrictEqual([null]);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'origin', 'master'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should push a branch to multiple remotes', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.pushBranchToMultipleRemotes('/path/to/repo', 'master', ['origin', 'other-origin'], false, GitPushBranchMode.Force);
+
+			// Assert
+			expect(result).toStrictEqual([null, null]);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'origin', 'master', '--force'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'other-origin', 'master', '--force'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should push a branch to multiple remotes, stopping if an error occurs', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.pushBranchToMultipleRemotes('/path/to/repo', 'master', ['origin', 'other-origin', 'another-origin'], true, GitPushBranchMode.Normal);
+
+			// Assert
+			expect(result).toStrictEqual([null, 'error message']);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'origin', 'master', '--set-upstream'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'other-origin', 'master', '--set-upstream'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error when no remotes are specified', async () => {
+			// Run
+			const result = await dataSource.pushBranchToMultipleRemotes('/path/to/repo', 'master', [], false, GitPushBranchMode.Normal);
+
+			// Assert
+			expect(result).toStrictEqual(['No remote(s) were specified to push the branch master to.']);
+		});
+	});
+
+	describe('pushTagToMultipleRemotes', () => {
+		it('Should push a tag to one remote', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.pushTagToMultipleRemotes('/path/to/repo', 'tag-name', ['origin']);
+
+			// Assert
+			expect(result).toStrictEqual([null]);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'origin', 'tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should push a tag to multiple remotes', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.pushTagToMultipleRemotes('/path/to/repo', 'tag-name', ['origin', 'other-origin']);
+
+			// Assert
+			expect(result).toStrictEqual([null, null]);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'origin', 'tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'other-origin', 'tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should push a tag to multiple remotes, stopping if an error occurs', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.pushTagToMultipleRemotes('/path/to/repo', 'tag-name', ['origin', 'other-origin', 'another-origin']);
+
+			// Assert
+			expect(result).toStrictEqual([null, 'error message']);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'origin', 'tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['push', 'other-origin', 'tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error when no remotes are specified', async () => {
+			// Run
+			const result = await dataSource.pushTagToMultipleRemotes('/path/to/repo', 'tag-name', []);
+
+			// Assert
+			expect(result).toStrictEqual(['No remote(s) were specified to push the tag tag-name to.']);
 		});
 	});
 

@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.26.0",
+	"version": "1.27.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -79,6 +79,11 @@
 				"category": "Git Graph",
 				"command": "git-graph.resumeWorkspaceCodeReview",
 				"title": "Resume a specific Code Review in Workspace..."
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.version",
+				"title": "Get Version Information"
 			}
 		],
 		"configuration": {
@@ -654,11 +659,29 @@
 					"default": "rounded",
 					"description": "Specifies the style of the graph."
 				},
+				"git-graph.graph.uncommittedChanges": {
+					"type": "string",
+					"enum": [
+						"Open Circle at the Uncommitted Changes",
+						"Open Circle at the Checked Out Commit"
+					],
+					"enumDescriptions": [
+						"Display the Uncommitted Changes as a grey open circle, connected to the commit referenced by HEAD with a solid grey line. The current file system's state is therefore always displayed as an open circle.",
+						"Display the Uncommitted Changes as a grey closed circle, connected to the commit referenced by HEAD with a dotted grey line. The commit referenced by HEAD is therefore always displayed as an open circle."
+					],
+					"default": "Open Circle at the Uncommitted Changes",
+					"description": "Specifies how the Uncommitted Changes are displayed on the graph."
+				},
 				"git-graph.integratedTerminalShell": {
 					"type": "string",
 					"default": "",
 					"description": "Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when it is opened by Git Graph. For example, to use Git Bash on Windows this setting would commonly be set to \"C:\\Program Files\\Git\\bin\\bash.exe\". If this setting is left blank, the default Shell is used.",
 					"scope": "machine"
+				},
+				"git-graph.markdown": {
+					"type": "boolean",
+					"default": true,
+					"description": "Parse and render a frequently used subset of inline Markdown formatting rules in commit messages and tag details (bold, italics, bold & italics, and inline code blocks)."
 				},
 				"git-graph.maxDepthOfRepoSearch": {
 					"type": "number",
@@ -1237,15 +1260,15 @@
 		"iconv-lite": "0.5.0"
 	},
 	"devDependencies": {
-		"@types/jest": "25.2.3",
+		"@types/jest": "26.0.14",
 		"@types/node": "8.10.62",
 		"@types/vscode": "1.38.0",
-		"@typescript-eslint/eslint-plugin": "3.7.1",
-		"@typescript-eslint/parser": "3.7.1",
-		"eslint": "7.6.0",
-		"jest": "25.5.4",
-		"ts-jest": "25.5.1",
-		"typescript": "3.7.2",
+		"@typescript-eslint/eslint-plugin": "4.1.0",
+		"@typescript-eslint/parser": "4.1.0",
+		"eslint": "7.9.0",
+		"jest": "26.4.2",
+		"ts-jest": "26.3.0",
+		"typescript": "4.0.2",
 		"uglify-js": "3.10.0"
 	}
 }

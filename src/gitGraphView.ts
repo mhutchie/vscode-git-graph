@@ -597,6 +597,7 @@ export class GitGraphView extends Disposable {
 				graph: config.graph,
 				includeCommitsMentionedByReflogs: config.includeCommitsMentionedByReflogs,
 				initialLoadCommits: config.initialLoadCommits,
+				keybindings: config.keybindings,
 				loadMoreCommits: config.loadMoreCommits,
 				loadMoreCommitsAutomatically: config.loadMoreCommitsAutomatically,
 				markdown: config.markdown,

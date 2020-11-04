@@ -17,6 +17,7 @@ import {
 	GraphConfig,
 	GraphStyle,
 	GraphUncommittedChangesStyle,
+	KeybindingConfig,
 	MuteCommitsConfig,
 	OnRepoLoadConfig,
 	RefLabelAlignment,
@@ -45,6 +46,8 @@ const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
  */
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
+
+	private static readonly KEYBINDING_REGEXP = /^CTRL\/CMD \+ [A-Z]$/;
 
 	/**
 	 * Creates a Config instance.
@@ -274,6 +277,18 @@ class Config {
 	 */
 	get integratedTerminalShell() {
 		return this.config.get('integratedTerminalShell', '');
+	}
+
+	/**
+	 * Get the keybinding configuration from the `git-graph.keybinding.*` Extension Settings.
+	 */
+	get keybindings(): KeybindingConfig {
+		return {
+			find: this.getKeybinding('keyboardShortcut.find', 'f'),
+			refresh: this.getKeybinding('keyboardShortcut.refresh', 'r'),
+			scrollToHead: this.getKeybinding('keyboardShortcut.scrollToHead', 'h'),
+			scrollToStash: this.getKeybinding('keyboardShortcut.scrollToStash', 's')
+		};
 	}
 
 	/**
@@ -511,6 +526,21 @@ class Config {
 			return configValue.filter((value) => typeof value === 'string');
 		} else {
 			return [];
+		}
+	}
+
+	/**
+	 * Get the normalised keybinding located by the provided section.
+	 * @param section The section locating the keybinding setting.
+	 * @param defaultValue The default keybinding.
+	 * @returns The normalised keybinding.
+	 */
+	private getKeybinding(section: string, defaultValue: string) {
+		const configValue = this.config.get<string>(section);
+		if (typeof configValue === 'string' && Config.KEYBINDING_REGEXP.test(configValue)) {
+			return configValue.substring(11).toLowerCase();
+		} else {
+			return defaultValue;
 		}
 	}
 

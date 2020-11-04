@@ -1882,17 +1882,17 @@ class GitGraphView {
 				}
 			} else if (e.ctrlKey || e.metaKey) {
 				const key = e.key.toLowerCase();
-				if (key === 's') {
+				if (key === this.config.keybindings.scrollToStash) {
 					this.scrollToStash(!e.shiftKey);
 					handledEvent(e);
 				} else if (!e.shiftKey) {
-					if (key === 'r') {
+					if (key === this.config.keybindings.refresh) {
 						this.refresh(true);
 						handledEvent(e);
-					} else if (key === 'f') {
+					} else if (key === this.config.keybindings.find) {
 						this.findWidget.show(true);
 						handledEvent(e);
-					} else if (key === 'h' && this.commitHead !== null) {
+					} else if (key === this.config.keybindings.scrollToHead && this.commitHead !== null) {
 						this.scrollToCommit(this.commitHead, true, true);
 						handledEvent(e);
 					}

@@ -225,6 +225,7 @@ export interface GitGraphViewConfig {
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
+	readonly keybindings: KeybindingConfig
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
 	readonly markdown: boolean;
@@ -254,6 +255,13 @@ export interface GraphConfig {
 	readonly style: GraphStyle;
 	readonly grid: { x: number, y: number, offsetX: number, offsetY: number, expandY: number };
 	readonly uncommittedChanges: GraphUncommittedChangesStyle;
+}
+
+export interface KeybindingConfig {
+	readonly find: string;
+	readonly refresh: string;
+	readonly scrollToHead: string;
+	readonly scrollToStash: string;
 }
 
 export type LoadGitGraphViewTo = {

@@ -1798,6 +1798,236 @@ describe('Config', () => {
 		});
 	});
 
+	describe('keybindings', () => {
+		describe('find', () => {
+			const mockFindKeybindingExtensionSetting = (value?: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+			};
+
+			it('Should return the configured keybinding', () => {
+				// Setup
+				mockFindKeybindingExtensionSetting('CTRL/CMD + A');
+
+				// Run
+				const value = config.keybindings.find;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.find');
+				expect(value).toBe('a');
+			});
+
+			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
+				// Setup
+				mockFindKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+
+				// Run
+				const value = config.keybindings.find;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.find');
+				expect(value).toBe('f');
+			});
+
+			it('Should return the default keybinding when the value is invalid', () => {
+				// Setup
+				mockFindKeybindingExtensionSetting(5);
+
+				// Run
+				const value = config.keybindings.find;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.find');
+				expect(value).toBe('f');
+			});
+
+			it('Should return the default keybinding', () => {
+				// Setup
+				mockFindKeybindingExtensionSetting();
+
+				// Run
+				const value = config.keybindings.find;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.find');
+				expect(value).toBe('f');
+			});
+		});
+
+		describe('refresh', () => {
+			const mockRefreshKeybindingExtensionSetting = (value?: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+			};
+
+			it('Should return the configured keybinding', () => {
+				// Setup
+				mockRefreshKeybindingExtensionSetting('CTRL/CMD + A');
+
+				// Run
+				const value = config.keybindings.refresh;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.refresh');
+				expect(value).toBe('a');
+			});
+
+			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
+				// Setup
+				mockRefreshKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+
+				// Run
+				const value = config.keybindings.refresh;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.refresh');
+				expect(value).toBe('r');
+			});
+
+			it('Should return the default keybinding when the value is invalid', () => {
+				// Setup
+				mockRefreshKeybindingExtensionSetting(5);
+
+				// Run
+				const value = config.keybindings.refresh;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.refresh');
+				expect(value).toBe('r');
+			});
+
+			it('Should return the default keybinding', () => {
+				// Setup
+				mockRefreshKeybindingExtensionSetting();
+
+				// Run
+				const value = config.keybindings.refresh;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.refresh');
+				expect(value).toBe('r');
+			});
+		});
+
+		describe('scrollToHead', () => {
+			const mockScrollToHeadKeybindingExtensionSetting = (value?: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+			};
+
+			it('Should return the configured keybinding', () => {
+				// Setup
+				mockScrollToHeadKeybindingExtensionSetting('CTRL/CMD + A');
+
+				// Run
+				const value = config.keybindings.scrollToHead;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToHead');
+				expect(value).toBe('a');
+			});
+
+			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
+				// Setup
+				mockScrollToHeadKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+
+				// Run
+				const value = config.keybindings.scrollToHead;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToHead');
+				expect(value).toBe('h');
+			});
+
+			it('Should return the default keybinding when the value is invalid', () => {
+				// Setup
+				mockScrollToHeadKeybindingExtensionSetting(5);
+
+				// Run
+				const value = config.keybindings.scrollToHead;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToHead');
+				expect(value).toBe('h');
+			});
+
+			it('Should return the default keybinding', () => {
+				// Setup
+				mockScrollToHeadKeybindingExtensionSetting();
+
+				// Run
+				const value = config.keybindings.scrollToHead;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToHead');
+				expect(value).toBe('h');
+			});
+		});
+
+		describe('scrollToStash', () => {
+			const mockScrollToStashKeybindingExtensionSetting = (value?: any) => {
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
+			};
+
+			it('Should return the configured keybinding', () => {
+				// Setup
+				mockScrollToStashKeybindingExtensionSetting('CTRL/CMD + A');
+
+				// Run
+				const value = config.keybindings.scrollToStash;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToStash');
+				expect(value).toBe('a');
+			});
+
+			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
+				// Setup
+				mockScrollToStashKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+
+				// Run
+				const value = config.keybindings.scrollToStash;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToStash');
+				expect(value).toBe('s');
+			});
+
+			it('Should return the default keybinding when the value is invalid', () => {
+				// Setup
+				mockScrollToStashKeybindingExtensionSetting(5);
+
+				// Run
+				const value = config.keybindings.scrollToStash;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToStash');
+				expect(value).toBe('s');
+			});
+
+			it('Should return the default keybinding', () => {
+				// Setup
+				mockScrollToStashKeybindingExtensionSetting();
+
+				// Run
+				const value = config.keybindings.scrollToStash;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToStash');
+				expect(value).toBe('s');
+			});
+		});
+	});
+
 	describe('markdown', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
@@ -1868,6 +2098,7 @@ describe('Config', () => {
 			// Run
 			const value = config.maxDepthOfRepoSearch;
 
+			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('maxDepthOfRepoSearch', 0);
 			expect(value).toBe(5);
 		});

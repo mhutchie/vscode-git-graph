@@ -49,6 +49,7 @@ class GitGraphView {
 	private readonly viewElem: HTMLElement;
 	private readonly controlsElem: HTMLElement;
 	private readonly tableElem: HTMLElement;
+	private tableColHeadersElem: HTMLElement | null;
 	private readonly footerElem: HTMLElement;
 	private readonly showRemoteBranchesElem: HTMLInputElement;
 	private readonly refreshBtnElem: HTMLElement;
@@ -72,6 +73,7 @@ class GitGraphView {
 
 		this.controlsElem = document.getElementById('controls')!;
 		this.tableElem = document.getElementById('commitTable')!;
+		this.tableColHeadersElem = document.getElementById('tableColHeaders')!;
 		this.footerElem = document.getElementById('footer')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 
@@ -920,6 +922,11 @@ class GitGraphView {
 					}
 				}
 			}
+		}
+
+		if (this.config.stickyHeader) {
+			this.tableColHeadersElem = document.getElementById('tableColHeaders');
+			this.alignTableHeaderToControls();
 		}
 	}
 
@@ -1882,6 +1889,22 @@ class GitGraphView {
 		this.requestLoadRepoInfoAndCommits(false, true);
 	}
 
+	private alignTableHeaderToControls() {
+		if (!this.tableColHeadersElem) {
+			return;
+		}
+
+		const controlsHeight = this.controlsElem.offsetHeight;
+		const controlsWidth = this.controlsElem.offsetWidth;
+		const tableColHeadersHeight = this.tableColHeadersElem.offsetHeight;
+		const bottomBorderWidth = 1;
+		const shadowYPos = controlsHeight + tableColHeadersHeight + bottomBorderWidth;
+
+		this.tableColHeadersElem.style.top = `${controlsHeight}px`;
+		this.scrollShadowElem.style.top = `${shadowYPos}px`;
+		this.scrollShadowElem.style.width = `${controlsWidth}px`;
+	}
+
 
 	/* Observers */
 
@@ -1893,6 +1916,10 @@ class GitGraphView {
 			} else {
 				windowWidth = window.outerWidth;
 				windowHeight = window.outerHeight;
+			}
+
+			if (this.config.stickyHeader) {
+				this.alignTableHeaderToControls();
 			}
 		});
 	}

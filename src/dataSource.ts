@@ -13,7 +13,8 @@ import { Event } from './utils/event';
 
 const DRIVE_LETTER_PATH_REGEX = /^[a-z]:\//;
 const EOL_REGEX = /\r\n|\r|\n/g;
-const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
+const INVALID_BRANCH_REGEXP = /^\(.* .*\)$/;
+const REMOTE_HEAD_BRANCH_REGEXP = /^remotes\/.*\/HEAD$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export const GIT_CONFIG_USER_NAME = 'user.name';
@@ -149,7 +150,7 @@ export class DataSource extends Disposable {
 		const config = getConfig();
 		return Promise.all([
 			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
-			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
+			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
 			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
@@ -1151,14 +1152,17 @@ export class DataSource extends Disposable {
 		if (showRemoteBranches) args.push('-a');
 		args.push('--no-color');
 
-		let hideRemotePatterns = hideRemotes.map((remote) => 'remotes/' + remote + '/');
+		const hideRemotePatterns = hideRemotes.map((remote) => 'remotes/' + remote + '/');
+		const showRemoteHeads = getConfig().showRemoteHeads;
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let branchData: GitBranchData = { branches: [], head: null, error: null };
 			let lines = stdout.split(EOL_REGEX);
 			for (let i = 0; i < lines.length - 1; i++) {
 				let name = lines[i].substring(2).split(' -> ')[0];
-				if (INVALID_BRANCH_REGEX.test(name) || hideRemotePatterns.some((pattern) => name.startsWith(pattern))) continue;
+				if (INVALID_BRANCH_REGEXP.test(name) || hideRemotePatterns.some((pattern) => name.startsWith(pattern)) || (!showRemoteHeads && REMOTE_HEAD_BRANCH_REGEXP.test(name))) {
+					continue;
+				}
 
 				if (lines[i][0] === '*') {
 					branchData.head = name;
@@ -1338,15 +1342,16 @@ export class DataSource extends Disposable {
 	 * Get the references in a repository.
 	 * @param repo The path of the repository.
 	 * @param showRemoteBranches Are remote branches shown.
+	 * @param showRemoteHeads Are remote heads shown.
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The references data.
 	 */
-	private getRefs(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>) {
+	private getRefs(repo: string, showRemoteBranches: boolean, showRemoteHeads: boolean, hideRemotes: ReadonlyArray<string>) {
 		let args = ['show-ref'];
 		if (!showRemoteBranches) args.push('--heads', '--tags');
 		args.push('-d', '--head');
 
-		let hideRemotePatterns = hideRemotes.map((remote) => 'refs/remotes/' + remote + '/');
+		const hideRemotePatterns = hideRemotes.map((remote) => 'refs/remotes/' + remote + '/');
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
@@ -1364,7 +1369,7 @@ export class DataSource extends Disposable {
 					let annotated = ref.endsWith('^{}');
 					refData.tags.push({ hash: hash, name: (annotated ? ref.substring(10, ref.length - 3) : ref.substring(10)), annotated: annotated });
 				} else if (ref.startsWith('refs/remotes/')) {
-					if (!hideRemotePatterns.some((pattern) => ref.startsWith(pattern))) {
+					if (!hideRemotePatterns.some((pattern) => ref.startsWith(pattern)) && (showRemoteHeads || !ref.endsWith('/HEAD'))) {
 						refData.remotes.push({ hash: hash, name: ref.substring(13) });
 					}
 				} else if (ref === 'HEAD') {

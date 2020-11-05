@@ -843,6 +843,11 @@
 					"default": true,
 					"description": "Show Remote Branches in Git Graph by default. This can be overridden per repository from the Git Graph View's Control Bar."
 				},
+				"git-graph.repository.showRemoteHeads": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show Remote HEAD Symbolic References in Git Graph (e.g. \"origin/HEAD\")."
+				},
 				"git-graph.repository.showTags": {
 					"type": "boolean",
 					"default": true,

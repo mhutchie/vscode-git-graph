@@ -439,6 +439,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.showRemoteHeads` Extension Setting.
+	 */
+	get showRemoteHeads() {
+		return !!this.config.get('repository.showRemoteHeads', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.showTags` Extension Setting.
 	 */
 	get showTags() {

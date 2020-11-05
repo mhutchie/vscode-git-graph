@@ -746,7 +746,10 @@ class GitGraphView {
 			let commit = this.commits[i];
 			let message = '<span class="text">' + textFormatter.format(commit.message) + '</span>';
 			let date = formatShortDate(commit.date);
-			let branchLabels = getBranchLabels(commit.heads, commit.remotes);
+			let branchLabels = getBranchLabels(
+				this.config.branchLabelHideRegex ? commit.heads.filter((name: string) => !name.match(this.config.branchLabelHideRegex)) : commit.heads,
+				this.config.branchLabelHideRegex ? commit.remotes.filter((remote: { name: string; }) => !remote.name.match(this.config.branchLabelHideRegex)) : commit.remotes
+			);
 			let refBranches = '', refTags = '', j, k, refName, remoteName, refActive, refHtml, branchCheckedOutAtCommit: string | null = null;
 
 			for (j = 0; j < branchLabels.heads.length; j++) {

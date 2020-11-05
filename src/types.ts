@@ -213,6 +213,7 @@ export interface GitGraphViewConfig {
 	readonly commitOrdering: CommitOrdering;
 	readonly contextMenuActionsVisibility: ContextMenuActionsVisibility;
 	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
+	readonly branchLabelHideRegex: string;
 	readonly customEmojiShortcodeMappings: ReadonlyArray<CustomEmojiShortcodeMapping>;
 	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
 	readonly dateFormat: DateFormat;

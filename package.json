@@ -360,6 +360,10 @@
 					"default": [],
 					"description": "An array of Custom Branch Glob Patterns to be shown in the 'Branches' dropdown. Example: [{\"name\": \"Feature Requests\", \"glob\": \"heads/feature/*\"}]"
 				},
+				"git-graph.branchLabelHideRegex": {
+					"type": "string",
+					"description": "Regex formatted string. If it matches branch name or remote name label will be hidden"
+				},
 				"git-graph.customEmojiShortcodeMappings": {
 					"type": "array",
 					"items": {

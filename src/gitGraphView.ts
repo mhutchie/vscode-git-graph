@@ -585,6 +585,7 @@ export class GitGraphView extends Disposable {
 				commitOrdering: config.commitOrder,
 				contextMenuActionsVisibility: config.contextMenuActionsVisibility,
 				customBranchGlobPatterns: config.customBranchGlobPatterns,
+				branchLabelHideRegex: config.branchLabelHideRegex,
 				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings,
 				customPullRequestProviders: config.customPullRequestProviders,
 				dateFormat: config.dateFormat,

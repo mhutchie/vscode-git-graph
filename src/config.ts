@@ -100,6 +100,10 @@ class Config {
 		return outPatterns;
 	}
 
+	get branchLabelHideRegex(): string {
+		return this.config.get('branchLabelHideRegex', <string>'');
+	}
+
 	/**
 	 * Get the value of the `git-graph.customEmojiShortcodeMappings` Extension Setting.
 	 */

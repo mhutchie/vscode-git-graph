@@ -482,6 +482,33 @@ describe('Config', () => {
 		});
 	});
 
+	describe('branchLabelHideRegex', () => {
+		it('Should return a string based on the configuration value', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce('master');
+
+			// Run
+			const value = config.branchLabelHideRegex;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideRegex', '');
+			expect(value).toHaveLength(6);
+			expect(value).toStrictEqual('master');
+		});
+
+		it('Should return the default value "" when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.branchLabelHideRegex;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideRegex', '');
+			expect(value).toHaveLength(0);
+		});
+	});
+
 	describe('customEmojiShortcodeMappings', () => {
 		it('Should return a filtered array of emoji shortcode mappings based on the configuration value', () => {
 			// Setup

@@ -3995,6 +3995,7 @@ describe('DataSource', () => {
 		it('Should add a lightweight tag to a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.tags
 
 			// Run
 			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, '');
@@ -4007,6 +4008,7 @@ describe('DataSource', () => {
 		it('Should add an annotated tag to a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.tags
 
 			// Run
 			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, 'message');
@@ -4016,9 +4018,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['tag', '-a', 'tag-name', '-m', 'message', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should add a signed tag to a commit', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.tags
+
+			// Run
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, 'message');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['tag', '-s', 'tag-name', '-m', 'message', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.tags
 
 			// Run
 			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, '');
@@ -4561,6 +4577,7 @@ describe('DataSource', () => {
 		it('Should pull a remote branch into the current branch', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, false);
@@ -4574,6 +4591,7 @@ describe('DataSource', () => {
 		it('Should pull a remote branch into the current branch (always creating a new commit)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, false);
@@ -4584,19 +4602,35 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--no-ff'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should pull a remote branch into the current branch (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--no-ff', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should pull a remote branch into the current branch (squash and staged changes exist)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(workspaceConfiguration.get).toBeCalledTimes(1);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', expect.anything());
 			expect(spyOnSpawn).toBeCalledTimes(3);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
@@ -4604,10 +4638,33 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge branch \'origin/master\''], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should pull a remote branch into the current branch (squash and staged changes exist, signing merge commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', expect.anything());
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--squash', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-S', '-m', 'Merge branch \'origin/master\''], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should pull a remote branch into the current branch (squash and no staged changes)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4623,6 +4680,7 @@ describe('DataSource', () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4639,7 +4697,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, true);
@@ -4657,7 +4717,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG'); // dialog.pullBranch.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4673,6 +4735,7 @@ describe('DataSource', () => {
 		it('Should return an error message thrown by git (when pull fails)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4687,7 +4750,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4727,6 +4792,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, false, false);
@@ -4740,6 +4806,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (always creating a new commit)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, false, false);
@@ -4750,19 +4817,35 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--no-ff'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should merge a branch into the current branch (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, false, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--no-ff', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should merge a branch into the current branch (squash and staged changes exist)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(workspaceConfiguration.get).toBeCalledTimes(1);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', expect.anything());
 			expect(spyOnSpawn).toBeCalledTimes(3);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
@@ -4775,7 +4858,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'origin/develop', MergeActionOn.RemoteTrackingBranch, false, true, false);
@@ -4793,7 +4878,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', MergeActionOn.Commit, false, true, false);
@@ -4806,12 +4893,36 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge commit \'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b\''], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should merge a branch into the current branch (squash and staged changes exist, signing merge commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', expect.anything());
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--squash', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-S', '-m', 'Merge branch \'develop\''], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should merge a branch into the current branch (squash and staged changes exist, dialog.merge.squashMessageFormat === "Git SQUASH_MSG")', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG'); // dialog.merge.squashMessageFormat
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4828,6 +4939,7 @@ describe('DataSource', () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4842,6 +4954,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (without committing)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, false, true);
@@ -4855,6 +4968,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (squash without committing)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, true);
@@ -4868,6 +4982,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (ignore create new commit when squashing)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, true, true);
@@ -4881,6 +4996,7 @@ describe('DataSource', () => {
 		it('Should return an error message thrown by git (when merge fails)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4895,6 +5011,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4912,6 +5029,7 @@ describe('DataSource', () => {
 		it('Should rebase the current branch on a branch', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
@@ -4924,6 +5042,7 @@ describe('DataSource', () => {
 		it('Should rebase the current branch on a branch (ignoring date)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, true, false);
@@ -4933,9 +5052,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', 'develop', '--ignore-date'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should rebase the current branch on a branch (signing the new commits)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', 'develop', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
@@ -4948,6 +5081,7 @@ describe('DataSource', () => {
 			// Setup
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
@@ -4961,6 +5095,7 @@ describe('DataSource', () => {
 			// Setup
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
@@ -4970,10 +5105,25 @@ describe('DataSource', () => {
 			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'Rebase on "1a2b3c4d"');
 		});
 
+		it('Should launch the interactive rebase of the current branch on a branch in a terminal (signing the new commits)', async () => {
+			// Setup
+			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
+			spyOnOpenGitTerminal.mockReturnValueOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive -S develop', 'Rebase on "develop"');
+		});
+
 		it('Should return the "Unable to Find Git" error message when no git executable is known', async () => {
 			// Setup
 			dataSource.dispose();
 			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
@@ -5049,6 +5199,7 @@ describe('DataSource', () => {
 		it('Should cherrypick a commit (with a single parent)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, false);
@@ -5061,6 +5212,7 @@ describe('DataSource', () => {
 		it('Should cherrypick a commit (with multiple parents)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 2, false, false);
@@ -5073,6 +5225,7 @@ describe('DataSource', () => {
 		it('Should record origin when cherry picking a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, true, false);
@@ -5082,9 +5235,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['cherry-pick', '-x', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should cherrypick a commit (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['cherry-pick', '-S', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should not commit the cherrypick of a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, true);
@@ -5097,6 +5264,7 @@ describe('DataSource', () => {
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, false);
@@ -5110,6 +5278,7 @@ describe('DataSource', () => {
 		it('Should drop a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.dropCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
@@ -5119,9 +5288,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', '--onto', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should drop a commit (signing any new commits)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.dropCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', '-S', '--onto', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.dropCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
@@ -5184,6 +5367,7 @@ describe('DataSource', () => {
 		it('Should revert a commit (with a single parent)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0);
@@ -5196,18 +5380,33 @@ describe('DataSource', () => {
 		it('Should revert a commit (with multiple parents)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 2);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['revert', '--no-edit', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '-m', '2'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['revert', '--no-edit', '-m', '2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should revert a commit (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // git-graph.repository.sign.commits
+
+			// Run
+			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['revert', '--no-edit', '-S', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(false); // git-graph.repository.sign.commits
 
 			// Run
 			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 2);

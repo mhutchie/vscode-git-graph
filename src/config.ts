@@ -475,6 +475,20 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.sign.commits` Extension Setting.
+	 */
+	get signCommits() {
+		return !!this.config.get('repository.sign.commits', false);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.sign.tags` Extension Setting.
+	 */
+	get signTags() {
+		return !!this.config.get('repository.sign.tags', false);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.useMailmap` Extension Setting.
 	 */
 	get useMailmap() {

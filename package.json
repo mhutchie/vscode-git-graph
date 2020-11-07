@@ -990,6 +990,16 @@
 					"default": true,
 					"description": "Show untracked files when viewing the uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View."
 				},
+				"git-graph.repository.sign.commits": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enables commit signing with GPG or X.509."
+				},
+				"git-graph.repository.sign.tags": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enables tag signing with GPG or X.509."
+				},
 				"git-graph.repository.useMailmap": {
 					"type": "boolean",
 					"default": false,

@@ -3665,6 +3665,130 @@ describe('Config', () => {
 		});
 	});
 
+	describe('signCommits', () => {
+		it('Should return TRUE when the configuration value is TRUE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(true);
+
+			// Run
+			const value = config.signCommits;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.signCommits;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
+			expect(value).toBe(false);
+		});
+
+		it('Should return TRUE when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.signCommits;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.signCommits;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
+			expect(value).toBe(false);
+		});
+
+		it('Should return the default value (TRUE) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.signCommits;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
+			expect(value).toBe(false);
+		});
+	});
+
+	describe('signTags', () => {
+		it('Should return TRUE when the configuration value is TRUE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(true);
+
+			// Run
+			const value = config.signTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.signTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
+			expect(value).toBe(false);
+		});
+
+		it('Should return TRUE when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.signTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
+			expect(value).toBe(true);
+		});
+
+		it('Should return FALSE when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.signTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
+			expect(value).toBe(false);
+		});
+
+		it('Should return the default value (TRUE) when the configuration value is not set', () => {
+			// Setup
+			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const value = config.signTags;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
+			expect(value).toBe(false);
+		});
+	});
+
 	describe('useMailmap', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup

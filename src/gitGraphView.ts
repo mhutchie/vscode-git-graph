@@ -700,8 +700,8 @@ export class GitGraphView extends Disposable {
 					<div id="commitTable"></div>
 				</div>
 				<div id="footer"></div>
+				<div id="scrollShadow"></div>
 			</div>
-			<div id="scrollShadow"></div>
 			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)}, globalState = ${JSON.stringify(globalState)}, workspaceState = ${JSON.stringify(workspaceState)};</script>
 			<script nonce="${nonce}" src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;

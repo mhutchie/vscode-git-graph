@@ -101,7 +101,7 @@ class Config {
 	}
 
 	get branchLabelHideRegex(): string {
-		return this.config.get('branchLabelHideRegex', <string>'');
+		return this.config.get('branchLabelHideOriginHead', <boolean>true) ? '' : 'origin/HEAD';
 	}
 
 	/**

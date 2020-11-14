@@ -482,18 +482,57 @@ describe('Config', () => {
 		});
 	});
 
-	describe('branchLabelHideRegex', () => {
-		it('Should return a string based on the configuration value', () => {
+	describe('branchLabelHideOriginHead', () => {
+		it('Should return "" when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('master');
+			workspaceConfiguration.get.mockReturnValueOnce(true);
 
 			// Run
 			const value = config.branchLabelHideRegex;
 
 			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideRegex', '');
-			expect(value).toHaveLength(6);
-			expect(value).toStrictEqual('master');
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideOriginHead', true);
+			expect(value).toHaveLength(0);
+			expect(value).toStrictEqual('');
+		});
+
+		it('Should return "origin/HEAD" when the configuration value is FALSE', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(false);
+
+			// Run
+			const value = config.branchLabelHideRegex;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideOriginHead', true);
+			expect(value).toHaveLength(11);
+			expect(value).toStrictEqual('origin/HEAD');
+		});
+
+		it('Should return "" when the configuration value is truthy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(5);
+
+			// Run
+			const value = config.branchLabelHideRegex;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideOriginHead', true);
+			expect(value).toHaveLength(0);
+			expect(value).toStrictEqual('');
+		});
+
+		it('Should return "origin/HEAD" when the configuration value is falsy', () => {
+			// Setup
+			workspaceConfiguration.get.mockReturnValueOnce(0);
+
+			// Run
+			const value = config.branchLabelHideRegex;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideOriginHead', true);
+			expect(value).toHaveLength(11);
+			expect(value).toStrictEqual('origin/HEAD');
 		});
 
 		it('Should return the default value "" when the configuration value is not set', () => {
@@ -504,8 +543,9 @@ describe('Config', () => {
 			const value = config.branchLabelHideRegex;
 
 			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideRegex', '');
+			expect(workspaceConfiguration.get).toBeCalledWith('branchLabelHideOriginHead', true);
 			expect(value).toHaveLength(0);
+			expect(value).toStrictEqual('');
 		});
 	});
 

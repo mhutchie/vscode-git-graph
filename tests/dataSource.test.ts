@@ -116,6 +116,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(
 				'* develop\n' +
 				'  master\n' +
+				'  remotes/origin/HEAD\n' +
 				'  remotes/origin/develop\n' +
 				'  remotes/origin/master\n'
 			);
@@ -124,13 +125,14 @@ describe('DataSource', () => {
 				'98adab72e57a098a45cc36e43a6c0fda95c44f8bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbb30d6d4d14462e09515df02a8635e83b4278c8b1 26970361eca306caa6d6bed3baf022dbd8fa404cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{0}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592306634XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on develop: b30d6d4 y\n' +
 				'0fc3e571c275213de2b3bca9c85e852323056121XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb9157723d0856bd828800ff185ee72658ee51d19f d45009bc4224537e97b0e52883ea7ae657928fcf 9d81ce0a6cf64b6651bacd7a6c3a6ca90fd63235XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{1}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592135134XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on master: 9157723 y\n'
 			);
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
-				branches: ['develop', 'master', 'remotes/origin/develop', 'remotes/origin/master'],
+				branches: ['develop', 'master', 'remotes/origin/HEAD', 'remotes/origin/develop', 'remotes/origin/master'],
 				head: 'develop',
 				remotes: ['origin'],
 				stashes: [
@@ -170,6 +172,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
@@ -195,6 +198,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce('Commit Date'); // date.type
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
@@ -226,6 +230,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce('Commit Date'); // date.type
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
@@ -257,6 +262,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.useMailmap
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
@@ -288,6 +294,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // useMailmap
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
@@ -322,6 +329,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, ['origin']);
@@ -339,11 +347,41 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the repository info (excluding remote heads)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'* develop\n' +
+				'  master\n' +
+				'  remotes/origin/HEAD\n' +
+				'  remotes/origin/develop\n' +
+				'  remotes/origin/master\n'
+			);
+			mockGitSuccessOnce('origin\n');
+			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(false); // repository.showRemoteHeads
+
+			// Run
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				branches: ['develop', 'master', 'remotes/origin/develop', 'remotes/origin/master'],
+				head: 'develop',
+				remotes: ['origin'],
+				stashes: [],
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-a', '--no-color'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git (when getting branches)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
@@ -366,6 +404,7 @@ describe('DataSource', () => {
 			);
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce('\n');
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
@@ -388,6 +427,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitThrowingErrorOnce();
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
@@ -416,6 +456,7 @@ describe('DataSource', () => {
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
 				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/HEAD\n' +
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
 				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
@@ -427,6 +468,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -458,7 +500,11 @@ describe('DataSource', () => {
 						message: 'Commit Message 3',
 						heads: ['master'],
 						tags: [],
-						remotes: [{ name: 'origin/master', remote: 'origin' }, { name: 'other-remote/master', remote: null }],
+						remotes: [
+							{ name: 'origin/HEAD', remote: 'origin' },
+							{ name: 'origin/master', remote: 'origin' },
+							{ name: 'other-remote/master', remote: null }
+						],
 						stash: null
 					},
 					{
@@ -517,6 +563,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -601,6 +648,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -674,6 +722,7 @@ describe('DataSource', () => {
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			date.setCurrentTime(1587559259);
 
@@ -746,6 +795,7 @@ describe('DataSource', () => {
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showUncommittedChanges
 			date.setCurrentTime(1587559259);
 
@@ -821,6 +871,7 @@ describe('DataSource', () => {
 				'M modified.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -910,6 +961,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -999,6 +1051,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1087,6 +1140,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1177,6 +1231,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1267,6 +1322,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1335,6 +1391,103 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the commits (showRemoteHeads === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(false); // repository.showRemoteHeads
+			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
+			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [
+							{ name: 'origin/master', remote: 'origin' },
+							{ name: 'other-remote/master', remote: null }
+						],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return the commits (hiding the remote branches from a hidden remote)', async () => {
 			// Setup
 			mockGitSuccessOnce(
@@ -1358,6 +1511,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1447,6 +1601,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1549,6 +1704,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1689,6 +1845,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1829,6 +1986,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1926,6 +2084,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('');
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -1987,6 +2146,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce('\n');
 			mockGitThrowingErrorOnce();
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
@@ -2026,6 +2186,7 @@ describe('DataSource', () => {
 				'?? untracked.txt\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
 			date.setCurrentTime(1587559259);
@@ -2107,6 +2268,7 @@ describe('DataSource', () => {
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
@@ -2129,6 +2291,7 @@ describe('DataSource', () => {
 			);
 			mockGitThrowingErrorOnce();
 			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteHeads
 
 			// Run
 			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);

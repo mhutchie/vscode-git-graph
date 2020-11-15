@@ -65,12 +65,3 @@ function pad2(n: number) {
 function pad3(n: number) {
 	return (n > 99 ? '' : n > 9 ? '0' : '00') + n;
 }
-
-/**
- * Mask an email address for logging.
- * @param email The string containing the email address.
- * @returns The masked email address.
- */
-export function maskEmail(email: string) {
-	return email.substring(0, email.indexOf('@')) + '@*****';
-}

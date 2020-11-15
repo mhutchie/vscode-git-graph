@@ -2,7 +2,7 @@ import * as date from './mocks/date';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
-import { Logger, maskEmail } from '../src/logger';
+import { Logger } from '../src/logger';
 
 let outputChannel = vscode.mocks.outputChannel;
 
@@ -56,15 +56,5 @@ describe('Logger', () => {
 
 		// Assert
 		expect(outputChannel.appendLine).toHaveBeenCalledWith('[2020-04-22 12:40:58.010] ERROR: Test');
-	});
-});
-
-describe('maskEmail', () => {
-	it('Should mask the domain component of email addresses', () => {
-		// Run
-		const maskedEmail = maskEmail('test@example.com');
-
-		// Assert
-		expect(maskedEmail).toBe('test@*****');
 	});
 });

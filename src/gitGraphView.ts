@@ -84,7 +84,6 @@ export class GitGraphView extends Disposable {
 		this.repoManager = repoManager;
 		this.logger = logger;
 		this.loadViewTo = loadViewTo;
-		this.avatarManager.registerView(this);
 
 		const config = getConfig();
 		this.panel = vscode.window.createWebviewPanel('git-graph', 'Git Graph', column || vscode.ViewColumn.One, {
@@ -104,7 +103,6 @@ export class GitGraphView extends Disposable {
 			// Dispose Git Graph View resources when disposed
 			toDisposable(() => {
 				GitGraphView.currentPanel = undefined;
-				this.avatarManager.deregisterView();
 				this.repoFileWatcher.stop();
 			}),
 
@@ -134,6 +132,15 @@ export class GitGraphView extends Disposable {
 				} else {
 					this.respondLoadRepos(event.repos, loadViewTo);
 				}
+			}),
+
+			// Subscribe to events trigged when an avatar is available
+			avatarManager.onAvatar((event) => {
+				this.sendMessage({
+					command: 'fetchAvatar',
+					email: event.email,
+					image: event.image
+				});
 			}),
 
 			// Respond to messages sent from the Webview
@@ -722,15 +729,6 @@ export class GitGraphView extends Disposable {
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadViewTo: loadViewTo
 		});
-	}
-
-	/**
-	 * Send an avatar to the front-end.
-	 * @param email The email address identifying the avatar.
-	 * @param image A base64 encoded data URI.
-	 */
-	public respondWithAvatar(email: string, image: string) {
-		this.sendMessage({ command: 'fetchAvatar', email: email, image: image });
 	}
 }
 

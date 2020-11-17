@@ -92,6 +92,8 @@ export const workspace = {
 	workspaceFolders: <{ uri: Uri }[] | undefined>undefined
 };
 
+const mockedExtensionSettingValues: { [section: string]: any } = {};
+
 export const mocks = {
 	extensionContext: {
 		asAbsolutePath: jest.fn(),
@@ -132,19 +134,26 @@ export const mocks = {
 		show: jest.fn()
 	},
 	workspaceConfiguration: {
-		get: jest.fn(),
-		inspect: jest.fn()
+		get: jest.fn((section: string, defaultValue?: any) => {
+			return typeof mockedExtensionSettingValues[section] !== 'undefined'
+				? mockedExtensionSettingValues[section]
+				: defaultValue;
+		}),
+		inspect: jest.fn((section: string) => ({
+			workspaceValue: mockedExtensionSettingValues[section],
+			globalValue: mockedExtensionSettingValues[section]
+		}))
 	}
 };
 
-export function mockRenamedExtensionSettingReturningValueOnce(value: any) {
-	const config = typeof value !== 'undefined'
-		? {
-			workspaceValue: value,
-			globalValue: value
-		}
-		: undefined;
-	mocks.workspaceConfiguration.inspect.mockReturnValueOnce(config).mockReturnValueOnce(config);
+export function mockExtensionSettingReturnValue(section: string, value: any) {
+	mockedExtensionSettingValues[section] = value;
+}
+
+export function clearMockedExtensionSettingReturnValues() {
+	Object.keys(mockedExtensionSettingValues).forEach((section) => {
+		delete mockedExtensionSettingValues[section];
+	});
 }
 
 export function expectRenamedExtensionSettingToHaveBeenCalled(newSection: string, oldSection: string) {

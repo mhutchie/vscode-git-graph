@@ -14,8 +14,8 @@ import { URL } from 'url';
 import { ConfigurationChangeEvent } from 'vscode';
 import { AvatarEvent, AvatarManager } from '../src/avatarManager';
 import { DataSource } from '../src/dataSource';
-import { Logger } from '../src/logger';
 import { ExtensionState } from '../src/extensionState';
+import { Logger } from '../src/logger';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 

@@ -23,6 +23,7 @@ afterAll(() => {
 
 beforeEach(() => {
 	jest.clearAllMocks();
+	vscode.clearMockedExtensionSettingReturnValues();
 });
 
 describe('ExtensionState', () => {
@@ -133,7 +134,7 @@ describe('ExtensionState', () => {
 					showRemoteBranches: true
 				}
 			});
-			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteBranches
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', true);
 
 			// Run
 			const result = extensionState.getRepos();
@@ -168,7 +169,7 @@ describe('ExtensionState', () => {
 					showRemoteBranches: false
 				}
 			});
-			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteBranches
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', true);
 
 			// Run
 			const result = extensionState.getRepos();
@@ -203,7 +204,7 @@ describe('ExtensionState', () => {
 					showRemoteBranches: false
 				}
 			});
-			workspaceConfiguration.get.mockReturnValueOnce(false); // repository.showRemoteBranches
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', false);
 
 			// Run
 			const result = extensionState.getRepos();
@@ -238,7 +239,7 @@ describe('ExtensionState', () => {
 					showRemoteBranches: true
 				}
 			});
-			workspaceConfiguration.get.mockReturnValueOnce(false); // repository.showRemoteBranches
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', false);
 
 			// Run
 			const result = extensionState.getRepos();
@@ -276,7 +277,7 @@ describe('ExtensionState', () => {
 					showRemoteBranches: false
 				}
 			});
-			workspaceConfiguration.get.mockReturnValueOnce(true); // repository.showRemoteBranches
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', true);
 
 			// Run
 			const result = extensionState.getRepos();

@@ -7,9 +7,8 @@ import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, Fi
 let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
 beforeEach(() => {
-	vscode.workspace.getConfiguration.mockClear();
-	workspaceConfiguration.get.mockClear();
-	workspaceConfiguration.inspect.mockClear();
+	jest.clearAllMocks();
+	vscode.clearMockedExtensionSettingReturnValues();
 });
 
 describe('Config', () => {
@@ -20,16 +19,9 @@ describe('Config', () => {
 
 	describe('commitDetailsView', () => {
 		describe('autoCenter', () => {
-			const mockAutoCenterExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockAutoCenterExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.autoCenter', true);
 
 				// Run
 				const value = config.commitDetailsView.autoCenter;
@@ -41,7 +33,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockAutoCenterExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.autoCenter', false);
 
 				// Run
 				const value = config.commitDetailsView.autoCenter;
@@ -53,7 +45,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockAutoCenterExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.autoCenter', 5);
 
 				// Run
 				const value = config.commitDetailsView.autoCenter;
@@ -65,7 +57,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockAutoCenterExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.autoCenter', 0);
 
 				// Run
 				const value = config.commitDetailsView.autoCenter;
@@ -76,9 +68,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-				// Setup
-				mockAutoCenterExtensionSetting(undefined);
-
 				// Run
 				const value = config.commitDetailsView.autoCenter;
 
@@ -89,16 +78,9 @@ describe('Config', () => {
 		});
 
 		describe('fileTreeCompactFolders', () => {
-			const mockFileTreeCompactFoldersExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockFileTreeCompactFoldersExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.fileTree.compactFolders', true);
 
 				// Run
 				const value = config.commitDetailsView.fileTreeCompactFolders;
@@ -110,7 +92,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockFileTreeCompactFoldersExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.fileTree.compactFolders', false);
 
 				// Run
 				const value = config.commitDetailsView.fileTreeCompactFolders;
@@ -122,7 +104,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockFileTreeCompactFoldersExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.fileTree.compactFolders', 5);
 
 				// Run
 				const value = config.commitDetailsView.fileTreeCompactFolders;
@@ -134,7 +116,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockFileTreeCompactFoldersExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.fileTree.compactFolders', 0);
 
 				// Run
 				const value = config.commitDetailsView.fileTreeCompactFolders;
@@ -145,9 +127,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-				// Setup
-				mockFileTreeCompactFoldersExtensionSetting(undefined);
-
 				// Run
 				const value = config.commitDetailsView.fileTreeCompactFolders;
 
@@ -158,16 +137,9 @@ describe('Config', () => {
 		});
 
 		describe('fileViewType', () => {
-			const mockFileViewTypeExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return FileViewType.Tree when the configuration value is "File Tree"', () => {
 				// Setup
-				mockFileViewTypeExtensionSetting('File Tree');
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.type', 'File Tree');
 
 				// Run
 				const value = config.commitDetailsView.fileViewType;
@@ -179,7 +151,7 @@ describe('Config', () => {
 
 			it('Should return FileViewType.List when the configuration value is "File List"', () => {
 				// Setup
-				mockFileViewTypeExtensionSetting('File List');
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.type', 'File List');
 
 				// Run
 				const value = config.commitDetailsView.fileViewType;
@@ -191,7 +163,7 @@ describe('Config', () => {
 
 			it('Should return the default value (FileViewType.Tree) when the configuration value is invalid', () => {
 				// Setup
-				mockFileViewTypeExtensionSetting('invalid');
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.fileView.type', 'invalid');
 
 				// Run
 				const value = config.commitDetailsView.fileViewType;
@@ -202,9 +174,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (FileViewType.Tree) when the configuration value is unknown', () => {
-				// Setup
-				mockFileViewTypeExtensionSetting(undefined);
-
 				// Run
 				const value = config.commitDetailsView.fileViewType;
 
@@ -215,16 +184,9 @@ describe('Config', () => {
 		});
 
 		describe('location', () => {
-			const mockLocationExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-			};
-
 			it('Should return CommitDetailsViewLocation.Inline when the configuration value is "Inline"', () => {
 				// Setup
-				mockLocationExtensionSetting('Inline');
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.location', 'Inline');
 
 				// Run
 				const value = config.commitDetailsView.location;
@@ -236,7 +198,7 @@ describe('Config', () => {
 
 			it('Should return CommitDetailsViewLocation.DockedToBottom when the configuration value is "Docked to Bottom"', () => {
 				// Setup
-				mockLocationExtensionSetting('Docked to Bottom');
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.location', 'Docked to Bottom');
 
 				// Run
 				const value = config.commitDetailsView.location;
@@ -248,7 +210,7 @@ describe('Config', () => {
 
 			it('Should return the default value (CommitDetailsViewLocation.Inline) when the configuration value is invalid', () => {
 				// Setup
-				mockLocationExtensionSetting('invalid');
+				vscode.mockExtensionSettingReturnValue('commitDetailsView.location', 'invalid');
 
 				// Run
 				const value = config.commitDetailsView.location;
@@ -259,9 +221,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (CommitDetailsViewLocation.Inline) when the configuration value is unknown', () => {
-				// Setup
-				mockLocationExtensionSetting(undefined);
-
 				// Run
 				const value = config.commitDetailsView.location;
 
@@ -275,7 +234,7 @@ describe('Config', () => {
 	describe('contextMenuActionsVisibility', () => {
 		it('Should return the default value (all items enabled) when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(1);
+			vscode.mockExtensionSettingReturnValue('contextMenuActionsVisibility', 1);
 
 			// Run
 			const value = config.contextMenuActionsVisibility;
@@ -328,9 +287,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (all items enabled) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.contextMenuActionsVisibility;
 
@@ -383,7 +339,7 @@ describe('Config', () => {
 
 		it('Should only affect the provided configuration overrides', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce({
+			vscode.mockExtensionSettingReturnValue('contextMenuActionsVisibility', {
 				branch: {
 					rename: false
 				},
@@ -451,7 +407,7 @@ describe('Config', () => {
 	describe('customBranchGlobPatterns', () => {
 		it('Should return a filtered array of glob patterns based on the configuration value', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce([
+			vscode.mockExtensionSettingReturnValue('customBranchGlobPatterns', [
 				{ name: 'Name 1', glob: 'glob1' },
 				{ name: 'Name 2', glob: 'glob2' },
 				{ name: 'Name 3' },
@@ -470,9 +426,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value ([]) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.customBranchGlobPatterns;
 
@@ -485,7 +438,7 @@ describe('Config', () => {
 	describe('customEmojiShortcodeMappings', () => {
 		it('Should return a filtered array of emoji shortcode mappings based on the configuration value', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce([
+			vscode.mockExtensionSettingReturnValue('customEmojiShortcodeMappings', [
 				{ shortcode: 'dog', emoji: '🍎' },
 				{ shortcode: 'cat', emoji: '🎨' },
 				{ shortcode: 'bird' },
@@ -505,9 +458,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value ([]) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.customEmojiShortcodeMappings;
 
@@ -520,7 +470,7 @@ describe('Config', () => {
 	describe('customPullRequestProviders', () => {
 		it('Should return a filtered array of pull request providers based on the configuration value', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce([
+			vscode.mockExtensionSettingReturnValue('customPullRequestProviders', [
 				{ name: 'dog', templateUrl: '$1/$2' },
 				{ name: 'cat', templateUrl: '$1/$3' },
 				{ name: 'bird' },
@@ -542,7 +492,7 @@ describe('Config', () => {
 
 		it('Should return the default value ([]) when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('customPullRequestProviders', 5);
 
 			// Run
 			const value = config.customPullRequestProviders;
@@ -553,9 +503,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value ([]) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.customPullRequestProviders;
 
@@ -568,7 +515,7 @@ describe('Config', () => {
 	describe('dateFormat', () => {
 		it('Should successfully parse the configuration value "Date & Time"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Date & Time');
+			vscode.mockExtensionSettingReturnValue('date.format', 'Date & Time');
 
 			// Run
 			const value = config.dateFormat;
@@ -580,7 +527,7 @@ describe('Config', () => {
 
 		it('Should successfully parse the configuration value "Date Only"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Date Only');
+			vscode.mockExtensionSettingReturnValue('date.format', 'Date Only');
 
 			// Run
 			const value = config.dateFormat;
@@ -592,7 +539,7 @@ describe('Config', () => {
 
 		it('Should successfully parse the configuration value "ISO Date & Time"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('ISO Date & Time');
+			vscode.mockExtensionSettingReturnValue('date.format', 'ISO Date & Time');
 
 			// Run
 			const value = config.dateFormat;
@@ -604,7 +551,7 @@ describe('Config', () => {
 
 		it('Should successfully parse the configuration value "ISO Date Only"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('ISO Date Only');
+			vscode.mockExtensionSettingReturnValue('date.format', 'ISO Date Only');
 
 			// Run
 			const value = config.dateFormat;
@@ -616,7 +563,7 @@ describe('Config', () => {
 
 		it('Should successfully parse the configuration value "Relative"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Relative');
+			vscode.mockExtensionSettingReturnValue('date.format', 'Relative');
 
 			// Run
 			const value = config.dateFormat;
@@ -628,7 +575,7 @@ describe('Config', () => {
 
 		it('Should return the default value when the configuration value is invalid', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('date.format', 'invalid');
 
 			// Run
 			const value = config.dateFormat;
@@ -639,9 +586,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.dateFormat;
 
@@ -654,7 +598,7 @@ describe('Config', () => {
 	describe('dateType', () => {
 		it('Should return DateType.Author when the configuration value is "Author Date"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date');
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 
 			// Run
 			const value = config.dateType;
@@ -666,7 +610,7 @@ describe('Config', () => {
 
 		it('Should return DateType.Commit when the configuration value is "Commit Date"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Commit Date');
+			vscode.mockExtensionSettingReturnValue('date.type', 'Commit Date');
 
 			// Run
 			const value = config.dateType;
@@ -678,7 +622,7 @@ describe('Config', () => {
 
 		it('Should return the default value (DateType.Author) when the configuration value is invalid', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('date.type', 'invalid');
 
 			// Run
 			const value = config.dateType;
@@ -689,9 +633,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (DateType.Author) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.dateType;
 
@@ -704,7 +645,7 @@ describe('Config', () => {
 	describe('defaultColumnVisibility', () => {
 		it('Should successfully parse the configuration value (Date column disabled)', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce({ Date: false, Author: true, Commit: true });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: false, Author: true, Commit: true });
 
 			// Run
 			const value = config.defaultColumnVisibility;
@@ -716,7 +657,7 @@ describe('Config', () => {
 
 		it('Should successfully parse the configuration value (Author column disabled)', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce({ Date: true, Author: false, Commit: true });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: false, Commit: true });
 
 			// Run
 			const value = config.defaultColumnVisibility;
@@ -728,7 +669,7 @@ describe('Config', () => {
 
 		it('Should successfully parse the configuration value (Commit  column disabled)', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce({ Date: true, Author: true, Commit: false });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: false });
 
 			// Run
 			const value = config.defaultColumnVisibility;
@@ -740,7 +681,7 @@ describe('Config', () => {
 
 		it('Should return the default value when the configuration value is invalid (not an object)', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', 'invalid');
 
 			// Run
 			const value = config.defaultColumnVisibility;
@@ -752,7 +693,7 @@ describe('Config', () => {
 
 		it('Should return the default value when the configuration value is invalid (NULL)', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(null);
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', null);
 
 			// Run
 			const value = config.defaultColumnVisibility;
@@ -764,7 +705,7 @@ describe('Config', () => {
 
 		it('Should return the default value when the configuration value is invalid (column value is not a boolean)', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce({ Date: true, Author: true, Commit: 5 });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: 5 });
 
 			// Run
 			const value = config.defaultColumnVisibility;
@@ -775,9 +716,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.defaultColumnVisibility;
 
@@ -790,13 +728,25 @@ describe('Config', () => {
 	describe('dialogDefaults', () => {
 		it('Should return TRUE values for boolean-based configuration values when they are TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-				if (section === 'dialog.addTag.type' || section === 'dialog.resetCurrentBranchToCommit.mode' || section === 'dialog.resetUncommittedChanges.mode') {
-					return defaultValue;
-				} else {
-					return true;
-				}
-			});
+			[
+				'dialog.addTag.pushToRemote',
+				'dialog.applyStash.reinstateIndex',
+				'dialog.cherryPick.noCommit',
+				'dialog.cherryPick.recordOrigin',
+				'dialog.createBranch.checkOut',
+				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchRemote.prune',
+				'dialog.fetchRemote.pruneTags',
+				'dialog.merge.noCommit',
+				'dialog.merge.noFastForward',
+				'dialog.merge.squashCommits',
+				'dialog.popStash.reinstateIndex',
+				'dialog.pullBranch.noFastForward',
+				'dialog.pullBranch.squashCommits',
+				'dialog.rebase.ignoreDate',
+				'dialog.rebase.launchInteractiveRebase',
+				'dialog.stashUncommittedChanges.includeUntracked'
+			].forEach((section) => vscode.mockExtensionSettingReturnValue(section, true));
 
 			// Run
 			const value = config.dialogDefaults;
@@ -874,13 +824,25 @@ describe('Config', () => {
 
 		it('Should return FALSE values for boolean-based configuration values when they are FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-				if (section === 'dialog.addTag.type' || section === 'dialog.resetCurrentBranchToCommit.mode' || section === 'dialog.resetUncommittedChanges.mode') {
-					return defaultValue;
-				} else {
-					return false;
-				}
-			});
+			[
+				'dialog.addTag.pushToRemote',
+				'dialog.applyStash.reinstateIndex',
+				'dialog.cherryPick.noCommit',
+				'dialog.cherryPick.recordOrigin',
+				'dialog.createBranch.checkOut',
+				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchRemote.prune',
+				'dialog.fetchRemote.pruneTags',
+				'dialog.merge.noCommit',
+				'dialog.merge.noFastForward',
+				'dialog.merge.squashCommits',
+				'dialog.popStash.reinstateIndex',
+				'dialog.pullBranch.noFastForward',
+				'dialog.pullBranch.squashCommits',
+				'dialog.rebase.ignoreDate',
+				'dialog.rebase.launchInteractiveRebase',
+				'dialog.stashUncommittedChanges.includeUntracked'
+			].forEach((section) => vscode.mockExtensionSettingReturnValue(section, false));
 
 			// Run
 			const value = config.dialogDefaults;
@@ -958,13 +920,25 @@ describe('Config', () => {
 
 		it('Should return TRUE values for boolean-based configuration values when they are truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-				if (section === 'dialog.addTag.type' || section === 'dialog.resetCurrentBranchToCommit.mode' || section === 'dialog.resetUncommittedChanges.mode') {
-					return defaultValue;
-				} else {
-					return 1;
-				}
-			});
+			[
+				'dialog.addTag.pushToRemote',
+				'dialog.applyStash.reinstateIndex',
+				'dialog.cherryPick.noCommit',
+				'dialog.cherryPick.recordOrigin',
+				'dialog.createBranch.checkOut',
+				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchRemote.prune',
+				'dialog.fetchRemote.pruneTags',
+				'dialog.merge.noCommit',
+				'dialog.merge.noFastForward',
+				'dialog.merge.squashCommits',
+				'dialog.popStash.reinstateIndex',
+				'dialog.pullBranch.noFastForward',
+				'dialog.pullBranch.squashCommits',
+				'dialog.rebase.ignoreDate',
+				'dialog.rebase.launchInteractiveRebase',
+				'dialog.stashUncommittedChanges.includeUntracked'
+			].forEach((section) => vscode.mockExtensionSettingReturnValue(section, 1));
 
 			// Run
 			const value = config.dialogDefaults;
@@ -1042,13 +1016,25 @@ describe('Config', () => {
 
 		it('Should return FALSE values for boolean-based configuration values when they are falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-				if (section === 'dialog.addTag.type' || section === 'dialog.resetCurrentBranchToCommit.mode' || section === 'dialog.resetUncommittedChanges.mode') {
-					return defaultValue;
-				} else {
-					return 0;
-				}
-			});
+			[
+				'dialog.addTag.pushToRemote',
+				'dialog.applyStash.reinstateIndex',
+				'dialog.cherryPick.noCommit',
+				'dialog.cherryPick.recordOrigin',
+				'dialog.createBranch.checkOut',
+				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchRemote.prune',
+				'dialog.fetchRemote.pruneTags',
+				'dialog.merge.noCommit',
+				'dialog.merge.noFastForward',
+				'dialog.merge.squashCommits',
+				'dialog.popStash.reinstateIndex',
+				'dialog.pullBranch.noFastForward',
+				'dialog.pullBranch.squashCommits',
+				'dialog.rebase.ignoreDate',
+				'dialog.rebase.launchInteractiveRebase',
+				'dialog.stashUncommittedChanges.includeUntracked'
+			].forEach((section) => vscode.mockExtensionSettingReturnValue(section, 0));
 
 			// Run
 			const value = config.dialogDefaults;
@@ -1126,13 +1112,11 @@ describe('Config', () => {
 
 		it('Should return the default values for text-based configuration values when they are invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-				if (section === 'dialog.addTag.type' || section === 'dialog.resetCurrentBranchToCommit.mode' || section === 'dialog.resetUncommittedChanges.mode') {
-					return 'invalid';
-				} else {
-					return defaultValue;
-				}
-			});
+			[
+				'dialog.addTag.type',
+				'dialog.resetCurrentBranchToCommit.mode',
+				'dialog.resetUncommittedChanges.mode'
+			].forEach((section) => vscode.mockExtensionSettingReturnValue(section, 'invalid'));
 
 			// Run
 			const value = config.dialogDefaults;
@@ -1209,9 +1193,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default values when the configuration values are not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementation((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.dialogDefaults;
 
@@ -1289,13 +1270,7 @@ describe('Config', () => {
 		describe('dialogDefaults.addTag.type', () => {
 			it('Should return "annotated" the configuration value is "Annotated"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.addTag.type') {
-						return 'Annotated';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.addTag.type', 'Annotated');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1306,13 +1281,7 @@ describe('Config', () => {
 
 			it('Should return "lightweight" the configuration value is "Annotated"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.addTag.type') {
-						return 'Lightweight';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.addTag.type', 'Lightweight');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1325,13 +1294,7 @@ describe('Config', () => {
 		describe('dialogDefaults.resetCommit.mode', () => {
 			it('Should return GitResetMode.Hard the configuration value is "Hard"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.resetCurrentBranchToCommit.mode') {
-						return 'Hard';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.resetCurrentBranchToCommit.mode', 'Hard');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1342,13 +1305,7 @@ describe('Config', () => {
 
 			it('Should return GitResetMode.Mixed the configuration value is "Mixed"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.resetCurrentBranchToCommit.mode') {
-						return 'Mixed';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1359,13 +1316,7 @@ describe('Config', () => {
 
 			it('Should return GitResetMode.Soft the configuration value is "Soft"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.resetCurrentBranchToCommit.mode') {
-						return 'Soft';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.resetCurrentBranchToCommit.mode', 'Soft');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1378,13 +1329,7 @@ describe('Config', () => {
 		describe('dialogDefaults.resetUncommitted.mode', () => {
 			it('Should return GitResetMode.Hard the configuration value is "Hard"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.resetUncommittedChanges.mode') {
-						return 'Hard';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.resetUncommittedChanges.mode', 'Hard');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1395,13 +1340,7 @@ describe('Config', () => {
 
 			it('Should return GitResetMode.Mixed the configuration value is "Mixed"', () => {
 				// Setup
-				workspaceConfiguration.get.mockImplementation((section, defaultValue) => {
-					if (section === 'dialog.resetUncommittedChanges.mode') {
-						return 'Mixed';
-					} else {
-						return defaultValue;
-					}
-				});
+				vscode.mockExtensionSettingReturnValue('dialog.resetUncommittedChanges.mode', 'Mixed');
 
 				// Run
 				const value = config.dialogDefaults;
@@ -1415,7 +1354,7 @@ describe('Config', () => {
 	describe('squashMergeMessageFormat', () => {
 		it('Should return SquashMessageFormat.Default when the configuration value is "Default"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('Default');
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Default');
 
 			// Run
 			const value = config.squashMergeMessageFormat;
@@ -1427,7 +1366,7 @@ describe('Config', () => {
 
 		it('Should return SquashMessageFormat.GitSquashMsg when the configuration value is "Git SQUASH_MSG"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG');
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Git SQUASH_MSG');
 
 			// Run
 			const value = config.squashMergeMessageFormat;
@@ -1439,7 +1378,7 @@ describe('Config', () => {
 
 		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'invalid');
 
 			// Run
 			const value = config.squashMergeMessageFormat;
@@ -1450,9 +1389,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.squashMergeMessageFormat;
 
@@ -1465,7 +1401,7 @@ describe('Config', () => {
 	describe('squashPullMessageFormat', () => {
 		it('Should return SquashMessageFormat.Default when the configuration value is "Default"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('Default');
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Default');
 
 			// Run
 			const value = config.squashPullMessageFormat;
@@ -1477,7 +1413,7 @@ describe('Config', () => {
 
 		it('Should return SquashMessageFormat.GitSquashMsg when the configuration value is "Git SQUASH_MSG"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG');
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Git SQUASH_MSG');
 
 			// Run
 			const value = config.squashPullMessageFormat;
@@ -1489,7 +1425,7 @@ describe('Config', () => {
 
 		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'invalid');
 
 			// Run
 			const value = config.squashPullMessageFormat;
@@ -1500,9 +1436,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (SquashMessageFormat.Default) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.squashPullMessageFormat;
 
@@ -1515,7 +1448,7 @@ describe('Config', () => {
 	describe('enhancedAccessibility', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', true);
 
 			// Run
 			const value = config.enhancedAccessibility;
@@ -1527,7 +1460,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', false);
 
 			// Run
 			const value = config.enhancedAccessibility;
@@ -1539,7 +1472,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', 5);
 
 			// Run
 			const value = config.enhancedAccessibility;
@@ -1551,7 +1484,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', 0);
 
 			// Run
 			const value = config.enhancedAccessibility;
@@ -1562,9 +1495,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.enhancedAccessibility;
 
@@ -1577,7 +1507,7 @@ describe('Config', () => {
 	describe('fileEncoding', () => {
 		it('Should return the configured value', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('file-encoding');
+			vscode.mockExtensionSettingReturnValue('fileEncoding', 'file-encoding');
 
 			// Run
 			const value = config.fileEncoding;
@@ -1587,9 +1517,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default configuration value ("utf8")', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.fileEncoding;
 
@@ -1601,15 +1528,9 @@ describe('Config', () => {
 
 	describe('graph', () => {
 		describe('colours', () => {
-			const mockColoursExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-			};
-
 			it('Should return a filtered array of colours based on the configuration value', () => {
 				// Setup
-				mockColoursExtensionSetting(['#ff0000', '#0000000', '#00ff0088', 'rgb(1,2,3)', 'rgb(1,2,x)']);
+				vscode.mockExtensionSettingReturnValue('graph.colours', ['#ff0000', '#0000000', '#00ff0088', 'rgb(1,2,3)', 'rgb(1,2,x)']);
 
 				// Run
 				const value = config.graph.colours;
@@ -1624,7 +1545,7 @@ describe('Config', () => {
 
 			it('Should return the default value when the configuration value is invalid (not an array)', () => {
 				// Setup
-				mockColoursExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('graph.colours', 5);
 
 				// Run
 				const value = config.graph.colours;
@@ -1636,7 +1557,7 @@ describe('Config', () => {
 
 			it('Should return the default value when the configuration value is invalid (an empty array)', () => {
 				// Setup
-				mockColoursExtensionSetting([]);
+				vscode.mockExtensionSettingReturnValue('graph.colours', []);
 
 				// Run
 				const value = config.graph.colours;
@@ -1647,9 +1568,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value when the configuration value is unknown', () => {
-				// Setup
-				mockColoursExtensionSetting(undefined);
-
 				// Run
 				const value = config.graph.colours;
 
@@ -1660,15 +1578,9 @@ describe('Config', () => {
 		});
 
 		describe('style', () => {
-			const mockStyleExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-			};
-
 			it('Should return GraphStyle.Rounded when the configuration value is "rounded"', () => {
 				// Setup
-				mockStyleExtensionSetting('rounded');
+				vscode.mockExtensionSettingReturnValue('graph.style', 'rounded');
 
 				// Run
 				const value = config.graph.style;
@@ -1680,7 +1592,7 @@ describe('Config', () => {
 
 			it('Should return GraphStyle.Angular when the configuration value is "angular"', () => {
 				// Setup
-				mockStyleExtensionSetting('angular');
+				vscode.mockExtensionSettingReturnValue('graph.style', 'angular');
 
 				// Run
 				const value = config.graph.style;
@@ -1692,7 +1604,7 @@ describe('Config', () => {
 
 			it('Should return the default value (GraphStyle.Rounded) when the configuration value is invalid', () => {
 				// Setup
-				mockStyleExtensionSetting('invalid');
+				vscode.mockExtensionSettingReturnValue('graph.style', 'invalid');
 
 				// Run
 				const value = config.graph.style;
@@ -1703,9 +1615,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (GraphStyle.Rounded) when the configuration value is unknown', () => {
-				// Setup
-				mockStyleExtensionSetting(undefined);
-
 				// Run
 				const value = config.graph.style;
 
@@ -1716,15 +1625,9 @@ describe('Config', () => {
 		});
 
 		describe('uncommittedChanges', () => {
-			const mockUncommittedChangesExtensionSetting = (value?: string) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
-			};
-
 			it('Should return GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges when the configuration value is "Open Circle at the Uncommitted Changes"', () => {
 				// Setup
-				mockUncommittedChangesExtensionSetting('Open Circle at the Uncommitted Changes');
+				vscode.mockExtensionSettingReturnValue('graph.uncommittedChanges', 'Open Circle at the Uncommitted Changes');
 
 				// Run
 				const value = config.graph.uncommittedChanges;
@@ -1736,7 +1639,7 @@ describe('Config', () => {
 
 			it('Should return GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit when the configuration value is "Open Circle at the Checked Out Commit"', () => {
 				// Setup
-				mockUncommittedChangesExtensionSetting('Open Circle at the Checked Out Commit');
+				vscode.mockExtensionSettingReturnValue('graph.uncommittedChanges', 'Open Circle at the Checked Out Commit');
 
 				// Run
 				const value = config.graph.uncommittedChanges;
@@ -1748,7 +1651,7 @@ describe('Config', () => {
 
 			it('Should return the default value (GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) when the configuration value is invalid', () => {
 				// Setup
-				mockUncommittedChangesExtensionSetting('invalid');
+				vscode.mockExtensionSettingReturnValue('graph.uncommittedChanges', 'invalid');
 
 				// Run
 				const value = config.graph.uncommittedChanges;
@@ -1759,9 +1662,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) when the configuration value is unknown', () => {
-				// Setup
-				mockUncommittedChangesExtensionSetting(undefined);
-
 				// Run
 				const value = config.graph.uncommittedChanges;
 
@@ -1775,7 +1675,7 @@ describe('Config', () => {
 	describe('integratedTerminalShell', () => {
 		it('Should return the configured value', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('/path/to/shell');
+			vscode.mockExtensionSettingReturnValue('integratedTerminalShell', '/path/to/shell');
 
 			// Run
 			const value = config.integratedTerminalShell;
@@ -1786,9 +1686,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default configuration value ("")', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.integratedTerminalShell;
 
@@ -1800,16 +1697,9 @@ describe('Config', () => {
 
 	describe('keybindings', () => {
 		describe('find', () => {
-			const mockFindKeybindingExtensionSetting = (value?: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-			};
-
 			it('Should return the configured keybinding', () => {
 				// Setup
-				mockFindKeybindingExtensionSetting('CTRL/CMD + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.find', 'CTRL/CMD + A');
 
 				// Run
 				const value = config.keybindings.find;
@@ -1821,7 +1711,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
 				// Setup
-				mockFindKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.find', 'CTRL/CMD + Shift + A');
 
 				// Run
 				const value = config.keybindings.find;
@@ -1833,7 +1723,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is invalid', () => {
 				// Setup
-				mockFindKeybindingExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.find', 5);
 
 				// Run
 				const value = config.keybindings.find;
@@ -1844,9 +1734,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default keybinding', () => {
-				// Setup
-				mockFindKeybindingExtensionSetting();
-
 				// Run
 				const value = config.keybindings.find;
 
@@ -1857,16 +1744,9 @@ describe('Config', () => {
 		});
 
 		describe('refresh', () => {
-			const mockRefreshKeybindingExtensionSetting = (value?: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-			};
-
 			it('Should return the configured keybinding', () => {
 				// Setup
-				mockRefreshKeybindingExtensionSetting('CTRL/CMD + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.refresh', 'CTRL/CMD + A');
 
 				// Run
 				const value = config.keybindings.refresh;
@@ -1878,7 +1758,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
 				// Setup
-				mockRefreshKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.refresh', 'CTRL/CMD + Shift + A');
 
 				// Run
 				const value = config.keybindings.refresh;
@@ -1890,7 +1770,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is invalid', () => {
 				// Setup
-				mockRefreshKeybindingExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.refresh', 5);
 
 				// Run
 				const value = config.keybindings.refresh;
@@ -1901,9 +1781,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default keybinding', () => {
-				// Setup
-				mockRefreshKeybindingExtensionSetting();
-
 				// Run
 				const value = config.keybindings.refresh;
 
@@ -1914,16 +1791,9 @@ describe('Config', () => {
 		});
 
 		describe('scrollToHead', () => {
-			const mockScrollToHeadKeybindingExtensionSetting = (value?: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-			};
-
 			it('Should return the configured keybinding', () => {
 				// Setup
-				mockScrollToHeadKeybindingExtensionSetting('CTRL/CMD + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToHead', 'CTRL/CMD + A');
 
 				// Run
 				const value = config.keybindings.scrollToHead;
@@ -1935,7 +1805,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
 				// Setup
-				mockScrollToHeadKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToHead', 'CTRL/CMD + Shift + A');
 
 				// Run
 				const value = config.keybindings.scrollToHead;
@@ -1947,7 +1817,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is invalid', () => {
 				// Setup
-				mockScrollToHeadKeybindingExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToHead', 5);
 
 				// Run
 				const value = config.keybindings.scrollToHead;
@@ -1958,9 +1828,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default keybinding', () => {
-				// Setup
-				mockScrollToHeadKeybindingExtensionSetting();
-
 				// Run
 				const value = config.keybindings.scrollToHead;
 
@@ -1971,16 +1838,9 @@ describe('Config', () => {
 		});
 
 		describe('scrollToStash', () => {
-			const mockScrollToStashKeybindingExtensionSetting = (value?: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => typeof value !== 'undefined' ? value : defaultValue);
-			};
-
 			it('Should return the configured keybinding', () => {
 				// Setup
-				mockScrollToStashKeybindingExtensionSetting('CTRL/CMD + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToStash', 'CTRL/CMD + A');
 
 				// Run
 				const value = config.keybindings.scrollToStash;
@@ -1992,7 +1852,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
 				// Setup
-				mockScrollToStashKeybindingExtensionSetting('CTRL/CMD + Shift + A');
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToStash', 'CTRL/CMD + Shift + A');
 
 				// Run
 				const value = config.keybindings.scrollToStash;
@@ -2004,7 +1864,7 @@ describe('Config', () => {
 
 			it('Should return the default keybinding when the value is invalid', () => {
 				// Setup
-				mockScrollToStashKeybindingExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToStash', 5);
 
 				// Run
 				const value = config.keybindings.scrollToStash;
@@ -2015,9 +1875,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default keybinding', () => {
-				// Setup
-				mockScrollToStashKeybindingExtensionSetting();
-
 				// Run
 				const value = config.keybindings.scrollToStash;
 
@@ -2031,7 +1888,7 @@ describe('Config', () => {
 	describe('markdown', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('markdown', true);
 
 			// Run
 			const value = config.markdown;
@@ -2043,7 +1900,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('markdown', false);
 
 			// Run
 			const value = config.markdown;
@@ -2055,7 +1912,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('markdown', 5);
 
 			// Run
 			const value = config.markdown;
@@ -2067,7 +1924,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('markdown', 0);
 
 			// Run
 			const value = config.markdown;
@@ -2078,9 +1935,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.markdown;
 
@@ -2093,7 +1947,7 @@ describe('Config', () => {
 	describe('maxDepthOfRepoSearch', () => {
 		it('Should return the configured value', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('maxDepthOfRepoSearch', 5);
 
 			// Run
 			const value = config.maxDepthOfRepoSearch;
@@ -2104,9 +1958,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default configuration value (0)', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.maxDepthOfRepoSearch;
 
@@ -2119,7 +1970,7 @@ describe('Config', () => {
 	describe('openNewTabEditorGroup', () => {
 		it('Should return vscode.ViewColumn.Active when the configuration value is "Active"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Active');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Active');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2131,7 +1982,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Beside when the configuration value is "Beside"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Beside');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Beside');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2143,7 +1994,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.One when the configuration value is "One"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('One');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'One');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2155,7 +2006,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Two when the configuration value is "Two"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Two');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Two');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2167,7 +2018,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Three when the configuration value is "Three"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Three');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Three');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2179,7 +2030,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Four when the configuration value is "Four"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Four');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Four');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2191,7 +2042,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Five when the configuration value is "Five"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Five');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Five');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2203,7 +2054,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Six when the configuration value is "Six"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Six');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Six');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2215,7 +2066,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Seven when the configuration value is "Seven"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Seven');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Seven');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2227,7 +2078,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Eight when the configuration value is "Eight"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Eight');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Eight');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2239,7 +2090,7 @@ describe('Config', () => {
 
 		it('Should return vscode.ViewColumn.Nine when the configuration value is "Nine"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Nine');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'Nine');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2251,7 +2102,7 @@ describe('Config', () => {
 
 		it('Should return the default value (vscode.ViewColumn.Active) when the configuration value is invalid', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('openNewTabEditorGroup', 'invalid');
 
 			// Run
 			const value = config.openNewTabEditorGroup;
@@ -2262,9 +2113,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (vscode.ViewColumn.Active) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.openNewTabEditorGroup;
 
@@ -2277,7 +2125,7 @@ describe('Config', () => {
 	describe('openToTheRepoOfTheActiveTextEditorDocument', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', true);
 
 			// Run
 			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
@@ -2289,7 +2137,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', false);
 
 			// Run
 			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
@@ -2301,7 +2149,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', 5);
 
 			// Run
 			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
@@ -2313,7 +2161,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', 0);
 
 			// Run
 			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
@@ -2324,9 +2172,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
 
@@ -2338,14 +2183,9 @@ describe('Config', () => {
 
 	describe('referenceLabels', () => {
 		describe('combineLocalAndRemoteBranchLabels', () => {
-			const mockCombineLocalAndRemoteBranchLabelsExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockCombineLocalAndRemoteBranchLabelsExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('referenceLabels.combineLocalAndRemoteBranchLabels', true);
 
 				// Run
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
@@ -2357,7 +2197,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockCombineLocalAndRemoteBranchLabelsExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('referenceLabels.combineLocalAndRemoteBranchLabels', false);
 
 				// Run
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
@@ -2369,7 +2209,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockCombineLocalAndRemoteBranchLabelsExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('referenceLabels.combineLocalAndRemoteBranchLabels', 5);
 
 				// Run
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
@@ -2381,7 +2221,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockCombineLocalAndRemoteBranchLabelsExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('referenceLabels.combineLocalAndRemoteBranchLabels', 0);
 
 				// Run
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
@@ -2392,9 +2232,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-				// Setup
-				mockCombineLocalAndRemoteBranchLabelsExtensionSetting(undefined);
-
 				// Run
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
 
@@ -2405,14 +2242,9 @@ describe('Config', () => {
 		});
 
 		describe('branchLabelsAlignedToGraph & tagLabelsOnRight', () => {
-			const mockAlignmentExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return correct alignment values when the configuration value is "Normal"', () => {
 				// Setup
-				mockAlignmentExtensionSetting('Normal');
+				vscode.mockExtensionSettingReturnValue('referenceLabels.alignment', 'Normal');
 
 				// Run
 				const value = config.referenceLabels;
@@ -2425,7 +2257,7 @@ describe('Config', () => {
 
 			it('Should return correct alignment values when the configuration value is "Branches (on the left) & Tags (on the right)"', () => {
 				// Setup
-				mockAlignmentExtensionSetting('Branches (on the left) & Tags (on the right)');
+				vscode.mockExtensionSettingReturnValue('referenceLabels.alignment', 'Branches (on the left) & Tags (on the right)');
 
 				// Run
 				const value = config.referenceLabels;
@@ -2438,7 +2270,7 @@ describe('Config', () => {
 
 			it('Should return correct alignment values when the configuration value is "Branches (aligned to the graph) & Tags (on the right)"', () => {
 				// Setup
-				mockAlignmentExtensionSetting('Branches (aligned to the graph) & Tags (on the right)');
+				vscode.mockExtensionSettingReturnValue('referenceLabels.alignment', 'Branches (aligned to the graph) & Tags (on the right)');
 
 				// Run
 				const value = config.referenceLabels;
@@ -2451,7 +2283,7 @@ describe('Config', () => {
 
 			it('Should return the default values when the configuration value is invalid', () => {
 				// Setup
-				mockAlignmentExtensionSetting('invalid');
+				vscode.mockExtensionSettingReturnValue('referenceLabels.alignment', 'invalid');
 
 				// Run
 				const value = config.referenceLabels;
@@ -2463,9 +2295,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default values when the configuration value is unknown', () => {
-				// Setup
-				mockAlignmentExtensionSetting(undefined);
-
 				// Run
 				const value = config.referenceLabels;
 
@@ -2480,7 +2309,7 @@ describe('Config', () => {
 	describe('fetchAvatars', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', true);
 
 			// Run
 			const value = config.fetchAvatars;
@@ -2492,7 +2321,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', false);
 
 			// Run
 			const value = config.fetchAvatars;
@@ -2504,7 +2333,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', 5);
 
 			// Run
 			const value = config.fetchAvatars;
@@ -2516,7 +2345,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', 0);
 
 			// Run
 			const value = config.fetchAvatars;
@@ -2527,9 +2356,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.fetchAvatars;
 
@@ -2542,7 +2368,7 @@ describe('Config', () => {
 	describe('initialLoadCommits', () => {
 		it('Should return the configured value', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(600);
+			vscode.mockExtensionSettingReturnValue('repository.commits.initialLoad', 600);
 
 			// Run
 			const value = config.initialLoadCommits;
@@ -2553,9 +2379,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default configuration value (300)', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.initialLoadCommits;
 
@@ -2568,7 +2391,7 @@ describe('Config', () => {
 	describe('loadMoreCommits', () => {
 		it('Should return the configured value', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(200);
+			vscode.mockExtensionSettingReturnValue('repository.commits.loadMore', 200);
 
 			// Run
 			const value = config.loadMoreCommits;
@@ -2579,9 +2402,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default configuration value (100)', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.loadMoreCommits;
 
@@ -2594,7 +2414,7 @@ describe('Config', () => {
 	describe('loadMoreCommitsAutomatically', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', true);
 
 			// Run
 			const value = config.loadMoreCommitsAutomatically;
@@ -2606,7 +2426,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', false);
 
 			// Run
 			const value = config.loadMoreCommitsAutomatically;
@@ -2618,7 +2438,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', 5);
 
 			// Run
 			const value = config.loadMoreCommitsAutomatically;
@@ -2630,7 +2450,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', 0);
 
 			// Run
 			const value = config.loadMoreCommitsAutomatically;
@@ -2641,9 +2461,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.loadMoreCommitsAutomatically;
 
@@ -2655,14 +2472,9 @@ describe('Config', () => {
 
 	describe('muteCommits', () => {
 		describe('commitsNotAncestorsOfHead', () => {
-			const mockCommitsNotAncestorsOfHeadExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockCommitsNotAncestorsOfHeadExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.commitsThatAreNotAncestorsOfHead', true);
 
 				// Run
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
@@ -2674,7 +2486,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockCommitsNotAncestorsOfHeadExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.commitsThatAreNotAncestorsOfHead', false);
 
 				// Run
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
@@ -2686,7 +2498,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockCommitsNotAncestorsOfHeadExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 5);
 
 				// Run
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
@@ -2698,7 +2510,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockCommitsNotAncestorsOfHeadExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 0);
 
 				// Run
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
@@ -2709,9 +2521,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-				// Setup
-				mockCommitsNotAncestorsOfHeadExtensionSetting(undefined);
-
 				// Run
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
 
@@ -2722,14 +2531,9 @@ describe('Config', () => {
 		});
 
 		describe('mergeCommits', () => {
-			const mockMergeCommitsExtensionSetting = (value: any) => {
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockMergeCommitsExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.mergeCommits', true);
 
 				// Run
 				const value = config.muteCommits.mergeCommits;
@@ -2741,7 +2545,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockMergeCommitsExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.mergeCommits', false);
 
 				// Run
 				const value = config.muteCommits.mergeCommits;
@@ -2753,7 +2557,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockMergeCommitsExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.mergeCommits', 5);
 
 				// Run
 				const value = config.muteCommits.mergeCommits;
@@ -2765,7 +2569,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockMergeCommitsExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('repository.commits.mute.mergeCommits', 0);
 
 				// Run
 				const value = config.muteCommits.mergeCommits;
@@ -2776,9 +2580,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-				// Setup
-				mockMergeCommitsExtensionSetting(undefined);
-
 				// Run
 				const value = config.muteCommits.mergeCommits;
 
@@ -2792,7 +2593,7 @@ describe('Config', () => {
 	describe('commitOrder', () => {
 		it('Should return CommitOrdering.Date when the configuration value is "date"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('date');
+			vscode.mockExtensionSettingReturnValue('repository.commits.order', 'date');
 
 			// Run
 			const value = config.commitOrder;
@@ -2804,7 +2605,7 @@ describe('Config', () => {
 
 		it('Should return CommitOrdering.AuthorDate when the configuration value is "author-date"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('author-date');
+			vscode.mockExtensionSettingReturnValue('repository.commits.order', 'author-date');
 
 			// Run
 			const value = config.commitOrder;
@@ -2816,7 +2617,7 @@ describe('Config', () => {
 
 		it('Should return CommitOrdering.Topological when the configuration value is "topo"', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('topo');
+			vscode.mockExtensionSettingReturnValue('repository.commits.order', 'topo');
 
 			// Run
 			const value = config.commitOrder;
@@ -2828,7 +2629,7 @@ describe('Config', () => {
 
 		it('Should return the default value (CommitOrdering.Date) when the configuration value is invalid', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('repository.commits.order', 'invalid');
 
 			// Run
 			const value = config.commitOrder;
@@ -2839,9 +2640,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (CommitOrdering.Date) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.commitOrder;
 
@@ -2854,7 +2652,7 @@ describe('Config', () => {
 	describe('fetchAndPrune', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', true);
 
 			// Run
 			const value = config.fetchAndPrune;
@@ -2866,7 +2664,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', false);
 
 			// Run
 			const value = config.fetchAndPrune;
@@ -2878,7 +2676,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', 5);
 
 			// Run
 			const value = config.fetchAndPrune;
@@ -2890,7 +2688,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', 0);
 
 			// Run
 			const value = config.fetchAndPrune;
@@ -2901,9 +2699,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.fetchAndPrune;
 
@@ -2916,7 +2711,7 @@ describe('Config', () => {
 	describe('fetchAndPruneTags', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', true);
 
 			// Run
 			const value = config.fetchAndPruneTags;
@@ -2928,7 +2723,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', false);
 
 			// Run
 			const value = config.fetchAndPruneTags;
@@ -2940,7 +2735,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', 5);
 
 			// Run
 			const value = config.fetchAndPruneTags;
@@ -2952,7 +2747,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', 0);
 
 			// Run
 			const value = config.fetchAndPruneTags;
@@ -2963,9 +2758,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.fetchAndPruneTags;
 
@@ -2978,7 +2770,7 @@ describe('Config', () => {
 	describe('includeCommitsMentionedByReflogs', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', true);
 
 			// Run
 			const value = config.includeCommitsMentionedByReflogs;
@@ -2990,7 +2782,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', false);
 
 			// Run
 			const value = config.includeCommitsMentionedByReflogs;
@@ -3002,7 +2794,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', 5);
 
 			// Run
 			const value = config.includeCommitsMentionedByReflogs;
@@ -3014,7 +2806,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', 0);
 
 			// Run
 			const value = config.includeCommitsMentionedByReflogs;
@@ -3025,9 +2817,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.includeCommitsMentionedByReflogs;
 
@@ -3039,15 +2828,9 @@ describe('Config', () => {
 
 	describe('onRepoLoad', () => {
 		describe('scrollToHead', () => {
-			const mockScrollToHeadExtensionSetting = (value: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockScrollToHeadExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.scrollToHead', true);
 
 				// Run
 				const value = config.onRepoLoad.scrollToHead;
@@ -3059,7 +2842,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockScrollToHeadExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.scrollToHead', false);
 
 				// Run
 				const value = config.onRepoLoad.scrollToHead;
@@ -3071,7 +2854,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockScrollToHeadExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.scrollToHead', 5);
 
 				// Run
 				const value = config.onRepoLoad.scrollToHead;
@@ -3083,7 +2866,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockScrollToHeadExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.scrollToHead', 0);
 
 				// Run
 				const value = config.onRepoLoad.scrollToHead;
@@ -3094,9 +2877,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-				// Setup
-				mockScrollToHeadExtensionSetting(undefined);
-
 				// Run
 				const value = config.onRepoLoad.scrollToHead;
 
@@ -3107,15 +2887,9 @@ describe('Config', () => {
 		});
 
 		describe('showCheckedOutBranch', () => {
-			const mockShowCheckedOutBranchExtensionSetting = (value: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(value);
-			};
-
 			it('Should return TRUE when the configuration value is TRUE', () => {
 				// Setup
-				mockShowCheckedOutBranchExtensionSetting(true);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showCheckedOutBranch', true);
 
 				// Run
 				const value = config.onRepoLoad.showCheckedOutBranch;
@@ -3127,7 +2901,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is FALSE', () => {
 				// Setup
-				mockShowCheckedOutBranchExtensionSetting(false);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showCheckedOutBranch', false);
 
 				// Run
 				const value = config.onRepoLoad.showCheckedOutBranch;
@@ -3139,7 +2913,7 @@ describe('Config', () => {
 
 			it('Should return TRUE when the configuration value is truthy', () => {
 				// Setup
-				mockShowCheckedOutBranchExtensionSetting(5);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showCheckedOutBranch', 5);
 
 				// Run
 				const value = config.onRepoLoad.showCheckedOutBranch;
@@ -3151,7 +2925,7 @@ describe('Config', () => {
 
 			it('Should return FALSE when the configuration value is falsy', () => {
 				// Setup
-				mockShowCheckedOutBranchExtensionSetting(0);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showCheckedOutBranch', 0);
 
 				// Run
 				const value = config.onRepoLoad.showCheckedOutBranch;
@@ -3162,9 +2936,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-				// Setup
-				mockShowCheckedOutBranchExtensionSetting(undefined);
-
 				// Run
 				const value = config.onRepoLoad.showCheckedOutBranch;
 
@@ -3175,15 +2946,9 @@ describe('Config', () => {
 		});
 
 		describe('showSpecificBranches', () => {
-			const mockShowSpecificBranchesExtensionSetting = (value: any) => {
-				workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => value || defaultValue);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-				vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-			};
-
 			it('Should return all branches when correctly configured', () => {
 				// Setup
-				mockShowSpecificBranchesExtensionSetting(['master', 'develop']);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showSpecificBranches', ['master', 'develop']);
 
 				// Run
 				const value = config.onRepoLoad.showSpecificBranches;
@@ -3195,7 +2960,7 @@ describe('Config', () => {
 
 			it('Should filter out all non-string branches', () => {
 				// Setup
-				mockShowSpecificBranchesExtensionSetting(['master', 5, 'develop']);
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showSpecificBranches', ['master', 5, 'develop']);
 
 				// Run
 				const value = config.onRepoLoad.showSpecificBranches;
@@ -3207,7 +2972,7 @@ describe('Config', () => {
 
 			it('Should return the default value ([]) when the configuration value is invalid', () => {
 				// Setup
-				mockShowSpecificBranchesExtensionSetting('master');
+				vscode.mockExtensionSettingReturnValue('repository.onLoad.showSpecificBranches', 'master');
 
 				// Run
 				const value = config.onRepoLoad.showSpecificBranches;
@@ -3218,9 +2983,6 @@ describe('Config', () => {
 			});
 
 			it('Should return the default value ([]) when the configuration value is unknown', () => {
-				// Setup
-				mockShowSpecificBranchesExtensionSetting(undefined);
-
 				// Run
 				const value = config.onRepoLoad.showSpecificBranches;
 
@@ -3234,7 +2996,7 @@ describe('Config', () => {
 	describe('onlyFollowFirstParent', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', true);
 
 			// Run
 			const value = config.onlyFollowFirstParent;
@@ -3246,7 +3008,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', false);
 
 			// Run
 			const value = config.onlyFollowFirstParent;
@@ -3258,7 +3020,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', 5);
 
 			// Run
 			const value = config.onlyFollowFirstParent;
@@ -3270,7 +3032,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', 0);
 
 			// Run
 			const value = config.onlyFollowFirstParent;
@@ -3281,9 +3043,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.onlyFollowFirstParent;
 
@@ -3296,7 +3055,7 @@ describe('Config', () => {
 	describe('showCommitsOnlyReferencedByTags', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
 
 			// Run
 			const value = config.showCommitsOnlyReferencedByTags;
@@ -3308,7 +3067,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', false);
 
 			// Run
 			const value = config.showCommitsOnlyReferencedByTags;
@@ -3320,7 +3079,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', 5);
 
 			// Run
 			const value = config.showCommitsOnlyReferencedByTags;
@@ -3332,7 +3091,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', 0);
 
 			// Run
 			const value = config.showCommitsOnlyReferencedByTags;
@@ -3343,9 +3102,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.showCommitsOnlyReferencedByTags;
 
@@ -3358,7 +3114,7 @@ describe('Config', () => {
 	describe('showSignatureStatus', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
 
 			// Run
 			const value = config.showSignatureStatus;
@@ -3370,7 +3126,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
 
 			// Run
 			const value = config.showSignatureStatus;
@@ -3382,7 +3138,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', 5);
 
 			// Run
 			const value = config.showSignatureStatus;
@@ -3394,7 +3150,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', 0);
 
 			// Run
 			const value = config.showSignatureStatus;
@@ -3405,9 +3161,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.showSignatureStatus;
 
@@ -3420,7 +3173,7 @@ describe('Config', () => {
 	describe('showRemoteBranches', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', true);
 
 			// Run
 			const value = config.showRemoteBranches;
@@ -3432,7 +3185,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', false);
 
 			// Run
 			const value = config.showRemoteBranches;
@@ -3444,7 +3197,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', 5);
 
 			// Run
 			const value = config.showRemoteBranches;
@@ -3456,7 +3209,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', 0);
 
 			// Run
 			const value = config.showRemoteBranches;
@@ -3467,9 +3220,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.showRemoteBranches;
 
@@ -3482,7 +3232,7 @@ describe('Config', () => {
 	describe('showRemoteHeads', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const value = config.showRemoteHeads;
@@ -3494,7 +3244,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', false);
 
 			// Run
 			const value = config.showRemoteHeads;
@@ -3506,7 +3256,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', 5);
 
 			// Run
 			const value = config.showRemoteHeads;
@@ -3518,7 +3268,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', 0);
 
 			// Run
 			const value = config.showRemoteHeads;
@@ -3529,9 +3279,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.showRemoteHeads;
 
@@ -3544,7 +3291,7 @@ describe('Config', () => {
 	describe('showTags', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.showTags', true);
 
 			// Run
 			const value = config.showTags;
@@ -3556,7 +3303,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.showTags', false);
 
 			// Run
 			const value = config.showTags;
@@ -3568,7 +3315,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.showTags', 5);
 
 			// Run
 			const value = config.showTags;
@@ -3580,7 +3327,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.showTags', 0);
 
 			// Run
 			const value = config.showTags;
@@ -3591,9 +3338,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.showTags;
 
@@ -3606,7 +3350,7 @@ describe('Config', () => {
 	describe('showUncommittedChanges', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
 
 			// Run
 			const value = config.showUncommittedChanges;
@@ -3618,7 +3362,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', false);
 
 			// Run
 			const value = config.showUncommittedChanges;
@@ -3630,7 +3374,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', 5);
 
 			// Run
 			const value = config.showUncommittedChanges;
@@ -3642,7 +3386,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', 0);
 
 			// Run
 			const value = config.showUncommittedChanges;
@@ -3653,9 +3397,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.showUncommittedChanges;
 
@@ -3668,7 +3409,7 @@ describe('Config', () => {
 	describe('showUntrackedFiles', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const value = config.showUntrackedFiles;
@@ -3680,7 +3421,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', false);
 
 			// Run
 			const value = config.showUntrackedFiles;
@@ -3692,7 +3433,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', 5);
 
 			// Run
 			const value = config.showUntrackedFiles;
@@ -3704,7 +3445,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', 0);
 
 			// Run
 			const value = config.showUntrackedFiles;
@@ -3715,9 +3456,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.showUntrackedFiles;
 
@@ -3730,7 +3468,7 @@ describe('Config', () => {
 	describe('signCommits', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
 
 			// Run
 			const value = config.signCommits;
@@ -3742,7 +3480,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const value = config.signCommits;
@@ -3754,7 +3492,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', 5);
 
 			// Run
 			const value = config.signCommits;
@@ -3766,7 +3504,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', 0);
 
 			// Run
 			const value = config.signCommits;
@@ -3777,9 +3515,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.signCommits;
 
@@ -3792,7 +3527,7 @@ describe('Config', () => {
 	describe('signTags', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', true);
 
 			// Run
 			const value = config.signTags;
@@ -3804,7 +3539,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
 
 			// Run
 			const value = config.signTags;
@@ -3816,7 +3551,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', 5);
 
 			// Run
 			const value = config.signTags;
@@ -3828,7 +3563,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', 0);
 
 			// Run
 			const value = config.signTags;
@@ -3839,9 +3574,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.signTags;
 
@@ -3854,7 +3586,7 @@ describe('Config', () => {
 	describe('useMailmap', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', true);
 
 			// Run
 			const value = config.useMailmap;
@@ -3866,7 +3598,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 
 			// Run
 			const value = config.useMailmap;
@@ -3878,7 +3610,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', 5);
 
 			// Run
 			const value = config.useMailmap;
@@ -3890,7 +3622,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', 0);
 
 			// Run
 			const value = config.useMailmap;
@@ -3901,9 +3633,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Setup
-			vscode.mockRenamedExtensionSettingReturningValueOnce(undefined);
-
 			// Run
 			const value = config.useMailmap;
 
@@ -3916,7 +3645,7 @@ describe('Config', () => {
 	describe('repoDropdownOrder', () => {
 		it('Should return RepoDropdownOrder.Name when the configuration value is "Name"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('Name');
+			vscode.mockExtensionSettingReturnValue('repositoryDropdownOrder', 'Name');
 
 			// Run
 			const value = config.repoDropdownOrder;
@@ -3928,7 +3657,7 @@ describe('Config', () => {
 
 		it('Should return RepoDropdownOrder.FullPath when the configuration value is "Full Path"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('Full Path');
+			vscode.mockExtensionSettingReturnValue('repositoryDropdownOrder', 'Full Path');
 
 			// Run
 			const value = config.repoDropdownOrder;
@@ -3940,7 +3669,7 @@ describe('Config', () => {
 
 		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('repositoryDropdownOrder', 'invalid');
 
 			// Run
 			const value = config.repoDropdownOrder;
@@ -3951,9 +3680,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.repoDropdownOrder;
 
@@ -3966,7 +3692,7 @@ describe('Config', () => {
 	describe('retainContextWhenHidden', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', true);
 
 			// Run
 			const value = config.retainContextWhenHidden;
@@ -3978,7 +3704,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', false);
 
 			// Run
 			const value = config.retainContextWhenHidden;
@@ -3990,7 +3716,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', 5);
 
 			// Run
 			const value = config.retainContextWhenHidden;
@@ -4002,7 +3728,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', 0);
 
 			// Run
 			const value = config.retainContextWhenHidden;
@@ -4013,9 +3739,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.retainContextWhenHidden;
 
@@ -4028,7 +3751,7 @@ describe('Config', () => {
 	describe('showStatusBarItem', () => {
 		it('Should return TRUE when the configuration value is TRUE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(true);
+			vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
 
 			// Run
 			const value = config.showStatusBarItem;
@@ -4040,7 +3763,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is FALSE', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(false);
+			vscode.mockExtensionSettingReturnValue('showStatusBarItem', false);
 
 			// Run
 			const value = config.showStatusBarItem;
@@ -4052,7 +3775,7 @@ describe('Config', () => {
 
 		it('Should return TRUE when the configuration value is truthy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(5);
+			vscode.mockExtensionSettingReturnValue('showStatusBarItem', 5);
 
 			// Run
 			const value = config.showStatusBarItem;
@@ -4064,7 +3787,7 @@ describe('Config', () => {
 
 		it('Should return FALSE when the configuration value is falsy', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(0);
+			vscode.mockExtensionSettingReturnValue('showStatusBarItem', 0);
 
 			// Run
 			const value = config.showStatusBarItem;
@@ -4075,9 +3798,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.showStatusBarItem;
 
@@ -4090,7 +3810,7 @@ describe('Config', () => {
 	describe('tabIconColourTheme', () => {
 		it('Should return TabIconColourTheme.Colour when the configuration value is "colour"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('colour');
+			vscode.mockExtensionSettingReturnValue('tabIconColourTheme', 'colour');
 
 			// Run
 			const value = config.tabIconColourTheme;
@@ -4102,7 +3822,7 @@ describe('Config', () => {
 
 		it('Should return TabIconColourTheme.Grey when the configuration value is "grey"', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('grey');
+			vscode.mockExtensionSettingReturnValue('tabIconColourTheme', 'grey');
 
 			// Run
 			const value = config.tabIconColourTheme;
@@ -4114,7 +3834,7 @@ describe('Config', () => {
 
 		it('Should return the default value (TabIconColourTheme.Colour) when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('invalid');
+			vscode.mockExtensionSettingReturnValue('tabIconColourTheme', 'invalid');
 
 			// Run
 			const value = config.tabIconColourTheme;
@@ -4125,9 +3845,6 @@ describe('Config', () => {
 		});
 
 		it('Should return the default value (TabIconColourTheme.Colour) when the configuration value is not set', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.tabIconColourTheme;
 
@@ -4140,7 +3857,7 @@ describe('Config', () => {
 	describe('gitPaths', () => {
 		it('Should return the configured path', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce('/path/to/git');
+			vscode.mockExtensionSettingReturnValue('path', '/path/to/git');
 
 			// Run
 			const value = config.gitPaths;
@@ -4153,7 +3870,7 @@ describe('Config', () => {
 
 		it('Should return the valid configured paths', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(['/path/to/first/git', '/path/to/second/git', 4, {}, null, '/path/to/third/git']);
+			vscode.mockExtensionSettingReturnValue('path', ['/path/to/first/git', '/path/to/second/git', 4, {}, null, '/path/to/third/git']);
 
 			// Run
 			const value = config.gitPaths;
@@ -4166,7 +3883,7 @@ describe('Config', () => {
 
 		it('Should return an empty array when the configuration value is NULL', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(null);
+			vscode.mockExtensionSettingReturnValue('path', null);
 
 			// Run
 			const value = config.gitPaths;
@@ -4179,7 +3896,7 @@ describe('Config', () => {
 
 		it('Should return an empty array when the configuration value is invalid', () => {
 			// Setup
-			workspaceConfiguration.get.mockReturnValueOnce(4);
+			vscode.mockExtensionSettingReturnValue('path', 4);
 
 			// Run
 			const value = config.gitPaths;
@@ -4191,9 +3908,6 @@ describe('Config', () => {
 		});
 
 		it('Should return an empty array when the default configuration value (NULL) is received', () => {
-			// Setup
-			workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue);
-
 			// Run
 			const value = config.gitPaths;
 

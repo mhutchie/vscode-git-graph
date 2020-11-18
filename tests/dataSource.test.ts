@@ -3392,6 +3392,13 @@ describe('DataSource', () => {
 			// Assert
 			expect(result.toString()).toBe('File contents.\n');
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b:subdirectory/file.txt'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith('git-graph', {
+				scheme: 'file',
+				authority: '',
+				path: '/path/to/repo',
+				query: '',
+				fragment: ''
+			});
 			expect(spyOnDecode).toBeCalledWith(expect.anything(), 'cp1252');
 		});
 
@@ -3407,6 +3414,13 @@ describe('DataSource', () => {
 			// Assert
 			expect(result.toString()).toBe('File contents.\n');
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b:subdirectory/file.txt'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith('git-graph', {
+				scheme: 'file',
+				authority: '',
+				path: '/path/to/repo',
+				query: '',
+				fragment: ''
+			});
 			expect(spyOnDecode).toBeCalledWith(expect.anything(), 'utf8');
 		});
 	});

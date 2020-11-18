@@ -51,9 +51,11 @@ class Config {
 
 	/**
 	 * Creates a Config instance.
+	 * @param repo An option path of a repository (to be used for Workspace Folder Scoped Configuration Values).
+	 * @returns A Config instance.
 	 */
-	constructor() {
-		this.config = vscode.workspace.getConfiguration('git-graph');
+	constructor(repo?: string) {
+		this.config = vscode.workspace.getConfiguration('git-graph', repo ? vscode.Uri.file(repo) : undefined);
 	}
 
 	/**
@@ -584,9 +586,11 @@ class Config {
 
 /**
  * Get a Config instance for retrieving the users configuration of Git Graph Extension Settings.
+ * @param repo An option path of a repository (to be used for Workspace Folder Scoped Configuration Values).
+ * @returns A Config instance.
  */
-export function getConfig() {
-	return new Config();
+export function getConfig(repo?: string) {
+	return new Config(repo);
 }
 
 /**

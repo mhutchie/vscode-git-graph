@@ -361,7 +361,7 @@ export class DataSource extends Disposable {
 	 */
 	public getCommitFile(repo: string, commitHash: string, filePath: string) {
 		return this._spawnGit(['show', commitHash + ':' + filePath], repo, stdout => {
-			let encoding = getConfig().fileEncoding;
+			const encoding = getConfig(repo).fileEncoding;
 			return decode(stdout, encodingExists(encoding) ? encoding : 'utf8');
 		});
 	}

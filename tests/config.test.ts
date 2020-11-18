@@ -12,6 +12,28 @@ describe('Config', () => {
 		config = getConfig();
 	});
 
+	it('Should construct a Config instance', () => {
+		// Run
+		getConfig();
+
+		// Assert
+		expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith('git-graph', undefined);
+	});
+
+	it('Should construct a Config instance (for a specific repository)', () => {
+		// Run
+		getConfig('/path/to/repo');
+
+		// Assert
+		expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith('git-graph', {
+			scheme: 'file',
+			authority: '',
+			path: '/path/to/repo',
+			query: '',
+			fragment: ''
+		});
+	});
+
 	describe('commitDetailsView', () => {
 		describe('autoCenter', () => {
 			it('Should return TRUE when the configuration value is TRUE', () => {

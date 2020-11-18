@@ -15,8 +15,6 @@ import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 import { FileViewType, GitRepoSet, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from '../src/types';
 
-let createFileSystemWatcher = vscode.workspace.createFileSystemWatcher;
-let extensionContext = vscode.mocks.extensionContext;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 let logger: Logger;
@@ -29,7 +27,7 @@ beforeAll(() => {
 	onDidChangeGitExecutable = new EventEmitter<utils.GitExecutable>();
 	logger = new Logger();
 	dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
-	extensionState = new ExtensionState(extensionContext, onDidChangeGitExecutable.subscribe);
+	extensionState = new ExtensionState(vscode.mocks.extensionContext, onDidChangeGitExecutable.subscribe);
 	spyOnGetRepos = jest.spyOn(extensionState, 'getRepos');
 	spyOnGetIgnoredRepos = jest.spyOn(extensionState, 'getIgnoredRepos');
 	spyOnSetIgnoredRepos = jest.spyOn(extensionState, 'setIgnoredRepos');
@@ -48,11 +46,6 @@ afterAll(() => {
 	logger.dispose();
 	onDidChangeConfiguration.dispose();
 	onDidChangeGitExecutable.dispose();
-});
-
-beforeEach(() => {
-	jest.clearAllMocks();
-	vscode.clearMockedExtensionSettingReturnValues();
 });
 
 describe('RepoManager', () => {
@@ -101,8 +94,8 @@ describe('RepoManager', () => {
 				}
 			]);
 			expect(spyOnLog).toHaveBeenCalledWith('Added new repo: /path/to/workspace-folder1');
-			expect(createFileSystemWatcher).toHaveBeenCalledTimes(1);
-			expect(createFileSystemWatcher).toHaveBeenLastCalledWith('/path/to/workspace-folder1/**');
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledTimes(1);
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenLastCalledWith('/path/to/workspace-folder1/**');
 
 			// Teardown
 			repoManager.dispose();
@@ -292,8 +285,8 @@ describe('RepoManager', () => {
 			expect(repoManager.getRepos()).toStrictEqual({
 				'/path/to/workspace-folder1/repo1': DEFAULT_REPO_STATE
 			});
-			expect(createFileSystemWatcher).toHaveBeenCalledTimes(1);
-			expect(createFileSystemWatcher).toHaveBeenLastCalledWith('/path/to/workspace-folder1/**');
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledTimes(1);
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenLastCalledWith('/path/to/workspace-folder1/**');
 
 			// Run
 			repoManager.dispose();

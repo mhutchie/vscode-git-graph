@@ -27,8 +27,8 @@ import { GitFileStatus, PullRequestProvider } from '../src/types';
 import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
-let extensionContext = vscode.mocks.extensionContext;
-let terminal = vscode.mocks.terminal;
+const extensionContext = vscode.mocks.extensionContext;
+const terminal = vscode.mocks.terminal;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;
 let logger: Logger;
@@ -40,6 +40,7 @@ beforeAll(() => {
 	onDidChangeGitExecutable = new EventEmitter<GitExecutable>();
 	logger = new Logger();
 	dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
 afterAll(() => {
@@ -47,12 +48,6 @@ afterAll(() => {
 	logger.dispose();
 	onDidChangeConfiguration.dispose();
 	onDidChangeGitExecutable.dispose();
-});
-
-beforeEach(() => {
-	jest.clearAllMocks();
-	vscode.clearMockedExtensionSettingReturnValues();
-	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
 const mockSpawnGitVersionSuccessOnce = () => {
@@ -317,7 +312,7 @@ describe('resolveToSymbolicPath', () => {
 describe('abbrevCommit', () => {
 	it('Truncates a commit hash to eight characters', () => {
 		// Run
-		const abbrev = abbrevCommit('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f');
+		const abbrev = abbrevCommit('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
 
 		// Assert
 		expect(abbrev).toBe('1a2b3c4d');

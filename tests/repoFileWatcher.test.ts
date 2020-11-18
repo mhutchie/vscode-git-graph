@@ -6,7 +6,7 @@ jest.mock('../src/logger');
 import { Logger } from '../src/logger';
 import { RepoFileWatcher } from '../src/repoFileWatcher';
 
-let fsWatcher = vscode.mocks.fileSystemWater;
+const fsWatcher = vscode.mocks.fileSystemWater;
 let logger: Logger;
 
 beforeAll(() => {
@@ -16,10 +16,6 @@ beforeAll(() => {
 
 afterAll(() => {
 	logger.dispose();
-});
-
-beforeEach(() => {
-	jest.clearAllMocks();
 });
 
 describe('RepoFileWatcher', () => {

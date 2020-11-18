@@ -16,16 +16,18 @@ import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, Mer
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
-let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
+const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 let logger: Logger;
+let spyOnSpawn: jest.SpyInstance;
 
 beforeAll(() => {
 	onDidChangeConfiguration = new EventEmitter<ConfigurationChangeEvent>();
 	onDidChangeGitExecutable = new EventEmitter<utils.GitExecutable>();
 	logger = new Logger();
 	jest.spyOn(path, 'normalize').mockImplementation((p) => p);
+	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
 afterAll(() => {
@@ -34,18 +36,10 @@ afterAll(() => {
 	onDidChangeGitExecutable.dispose();
 });
 
-beforeEach(() => {
-	jest.clearAllMocks();
-	vscode.clearMockedExtensionSettingReturnValues();
-});
-
 describe('DataSource', () => {
 	let dataSource: DataSource;
-	let spyOnSpawn: jest.SpyInstance;
 	beforeEach(() => {
 		dataSource = new DataSource({ path: '/path/to/git', version: '2.25.0' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
-		jest.clearAllMocks();
-		spyOnSpawn = jest.spyOn(cp, 'spawn');
 	});
 	afterEach(() => {
 		dataSource.dispose();

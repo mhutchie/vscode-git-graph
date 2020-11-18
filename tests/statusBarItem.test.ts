@@ -8,7 +8,7 @@ import { RepoChangeEvent } from '../src/repoManager';
 import { StatusBarItem } from '../src/statusBarItem';
 import { EventEmitter } from '../src/utils/event';
 
-let vscodeStatusBarItem = vscode.mocks.statusBarItem;
+const vscodeStatusBarItem = vscode.mocks.statusBarItem;
 let onDidChangeRepos: EventEmitter<RepoChangeEvent>;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let logger: Logger;
@@ -21,11 +21,6 @@ beforeAll(() => {
 
 afterAll(() => {
 	logger.dispose();
-});
-
-beforeEach(() => {
-	jest.clearAllMocks();
-	vscode.clearMockedExtensionSettingReturnValues();
 });
 
 describe('StatusBarItem', () => {

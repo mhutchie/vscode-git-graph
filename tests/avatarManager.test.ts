@@ -19,7 +19,6 @@ import { Logger } from '../src/logger';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
-let extensionContext = vscode.mocks.extensionContext;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;
 let logger: Logger;
@@ -32,7 +31,7 @@ beforeAll(() => {
 	onDidChangeGitExecutable = new EventEmitter<GitExecutable>();
 	logger = new Logger();
 	dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
-	extensionState = new ExtensionState(extensionContext, onDidChangeGitExecutable.subscribe);
+	extensionState = new ExtensionState(vscode.mocks.extensionContext, onDidChangeGitExecutable.subscribe);
 	spyOnSaveAvatar = jest.spyOn(extensionState, 'saveAvatar');
 	spyOnRemoveAvatarFromCache = jest.spyOn(extensionState, 'removeAvatarFromCache');
 	spyOnHttpsGet = jest.spyOn(https, 'get');
@@ -48,10 +47,6 @@ afterAll(() => {
 	logger.dispose();
 	onDidChangeConfiguration.dispose();
 	onDidChangeGitExecutable.dispose();
-});
-
-beforeEach(() => {
-	jest.clearAllMocks();
 });
 
 describe('AvatarManager', () => {

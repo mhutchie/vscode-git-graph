@@ -21,11 +21,6 @@ afterAll(() => {
 	onDidChangeGitExecutable.dispose();
 });
 
-beforeEach(() => {
-	jest.clearAllMocks();
-	vscode.clearMockedExtensionSettingReturnValues();
-});
-
 describe('ExtensionState', () => {
 	let extensionState: ExtensionState;
 	beforeEach(() => {

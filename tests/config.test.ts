@@ -4,12 +4,7 @@ jest.mock('vscode', () => vscode, { virtual: true });
 import { getConfig } from '../src/config';
 import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
 
-let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
-
-beforeEach(() => {
-	jest.clearAllMocks();
-	vscode.clearMockedExtensionSettingReturnValues();
-});
+const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
 describe('Config', () => {
 	let config: ReturnType<typeof getConfig>;

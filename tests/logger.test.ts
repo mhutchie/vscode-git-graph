@@ -4,11 +4,7 @@ jest.mock('vscode', () => vscode, { virtual: true });
 
 import { Logger } from '../src/logger';
 
-let outputChannel = vscode.mocks.outputChannel;
-
-beforeEach(() => {
-	jest.clearAllMocks();
-});
+const outputChannel = vscode.mocks.outputChannel;
 
 describe('Logger', () => {
 	let logger: Logger;

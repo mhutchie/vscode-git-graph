@@ -266,10 +266,11 @@ export interface KeybindingConfig {
 
 export type LoadGitGraphViewTo = {
 	readonly repo: string,
-	readonly commitDetails: {
+	readonly commitDetails?: {
 		readonly commitHash: string,
 		readonly compareWithHash: string | null
-	} | null
+	},
+	readonly runCommandOnLoad?: 'fetch'
 } | null;
 
 export interface MuteCommitsConfig {

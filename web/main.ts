@@ -129,7 +129,7 @@ class GitGraphView {
 
 		let loadViewTo = initialState.loadViewTo;
 		if (loadViewTo === null && prevState && prevState.currentRepoLoading && typeof prevState.currentRepo !== 'undefined') {
-			loadViewTo = { repo: prevState.currentRepo, commitDetails: null };
+			loadViewTo = { repo: prevState.currentRepo };
 		}
 
 		if (!this.loadRepos(this.gitRepos, initialState.lastActiveRepo, loadViewTo)) {
@@ -143,9 +143,7 @@ class GitGraphView {
 		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
-		fetchBtn.addEventListener('click', () => {
-			runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune, pruneTags: this.config.fetchAndPruneTags }, 'Fetching from Remote(s)');
-		});
+		fetchBtn.addEventListener('click', () => this.fetchFromRemotesAction());
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
@@ -401,21 +399,29 @@ class GitGraphView {
 	}
 
 	private finaliseLoadViewTo() {
-		if (this.loadViewTo !== null && this.currentRepo === this.loadViewTo.repo && this.loadViewTo.commitDetails !== null && (this.expandedCommit === null || this.expandedCommit.commitHash !== this.loadViewTo.commitDetails.commitHash || this.expandedCommit.compareWithHash !== this.loadViewTo.commitDetails.compareWithHash)) {
-			const commitIndex = this.getCommitId(this.loadViewTo.commitDetails.commitHash);
-			const compareWithIndex = this.loadViewTo.commitDetails.compareWithHash !== null ? this.getCommitId(this.loadViewTo.commitDetails.compareWithHash) : null;
-			const commitElems = getCommitElems();
-			const commitElem = findCommitElemWithId(commitElems, commitIndex);
-			const compareWithElem = findCommitElemWithId(commitElems, compareWithIndex);
+		if (this.loadViewTo !== null && this.currentRepo === this.loadViewTo.repo) {
+			if (this.loadViewTo.commitDetails && (this.expandedCommit === null || this.expandedCommit.commitHash !== this.loadViewTo.commitDetails.commitHash || this.expandedCommit.compareWithHash !== this.loadViewTo.commitDetails.compareWithHash)) {
+				const commitIndex = this.getCommitId(this.loadViewTo.commitDetails.commitHash);
+				const compareWithIndex = this.loadViewTo.commitDetails.compareWithHash !== null ? this.getCommitId(this.loadViewTo.commitDetails.compareWithHash) : null;
+				const commitElems = getCommitElems();
+				const commitElem = findCommitElemWithId(commitElems, commitIndex);
+				const compareWithElem = findCommitElemWithId(commitElems, compareWithIndex);
 
-			if (commitElem !== null && (this.loadViewTo.commitDetails.compareWithHash === null || compareWithElem !== null)) {
-				if (compareWithElem !== null) {
-					this.loadCommitComparison(commitElem, compareWithElem);
+				if (commitElem !== null && (this.loadViewTo.commitDetails.compareWithHash === null || compareWithElem !== null)) {
+					if (compareWithElem !== null) {
+						this.loadCommitComparison(commitElem, compareWithElem);
+					} else {
+						this.loadCommitDetails(commitElem);
+					}
 				} else {
-					this.loadCommitDetails(commitElem);
+					showErrorMessage('Unable to resume Code Review, it could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
 				}
-			} else {
-				showErrorMessage('Unable to resume Code Review, it could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
+			} else if (this.loadViewTo.runCommandOnLoad) {
+				switch (this.loadViewTo.runCommandOnLoad) {
+					case 'fetch':
+						this.fetchFromRemotesAction();
+						break;
+				}
 			}
 		}
 		this.loadViewTo = null;
@@ -1480,6 +1486,10 @@ class GitGraphView {
 
 	private deleteTagAction(refName: string, deleteOnRemote: string | null) {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
+	}
+
+	private fetchFromRemotesAction() {
+		runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune, pruneTags: this.config.fetchAndPruneTags }, 'Fetching from Remote(s)');
 	}
 
 	private mergeAction(obj: string, name: string, actionOn: GG.MergeActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
@@ -2645,8 +2655,7 @@ class GitGraphView {
 		addListenerToClass('fileTreeRepo', 'click', (e) => {
 			if (e.target === null) return;
 			this.loadRepos(this.gitRepos, null, {
-				repo: decodeURIComponent((<HTMLElement>(<Element>e.target).closest('.fileTreeRepo')).dataset.path!),
-				commitDetails: null
+				repo: decodeURIComponent((<HTMLElement>(<Element>e.target).closest('.fileTreeRepo')).dataset.path!)
 			});
 		});
 

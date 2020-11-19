@@ -67,7 +67,7 @@ describe('CommandManager', () => {
 
 	it('Should construct a CommandManager, and be disposed', () => {
 		// Assert
-		expect(commandManager['disposables']).toHaveLength(9);
+		expect(commandManager['disposables']).toHaveLength(10);
 		expect(commandManager['gitExecutable']).toStrictEqual({
 			path: '/path/to/git',
 			version: '2.25.0'
@@ -118,7 +118,7 @@ describe('CommandManager', () => {
 
 			// Assert
 			await waitForExpect(() => {
-				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder/repo', commitDetails: null });
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder/repo' });
 			});
 		});
 
@@ -133,7 +133,7 @@ describe('CommandManager', () => {
 
 			// Assert
 			await waitForExpect(() => {
-				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder/repo', commitDetails: null });
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder/repo' });
 			});
 		});
 
@@ -147,7 +147,7 @@ describe('CommandManager', () => {
 
 			// Assert
 			await waitForExpect(() => {
-				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder', commitDetails: null });
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder' });
 			});
 		});
 	});
@@ -429,6 +429,222 @@ describe('CommandManager', () => {
 
 			// Assert
 			expect(spyOnClearCache).toBeCalledTimes(1);
+		});
+	});
+
+	describe('git-graph.fetch', () => {
+		let spyOnGetLastActiveRepo: jest.SpyInstance;
+		beforeAll(() => {
+			spyOnGetLastActiveRepo = jest.spyOn(extensionState, 'getLastActiveRepo');
+		});
+
+		it('Should display a quick pick to select a repository to open in the Git Graph View (with last active repository first)', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({
+				'/path/to/repo1': { name: null },
+				'/path/to/repo2': { name: 'Custom Name' }
+			});
+			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo2');
+			vscode.window.showQuickPick.mockResolvedValueOnce({
+				label: 'repo1',
+				description: '/path/to/repo1'
+			});
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
+					[
+						{
+							label: 'Custom Name',
+							description: '/path/to/repo2'
+						},
+						{
+							label: 'repo1',
+							description: '/path/to/repo1'
+						}
+					],
+					{
+						placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
+						canPickMany: false
+					}
+				);
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo1', runCommandOnLoad: 'fetch' });
+			});
+		});
+
+		it('Should display a quick pick to select a repository to open in the Git Graph View (no last active repository)', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({
+				'/path/to/repo1': { name: null },
+				'/path/to/repo2': { name: 'Custom Name' }
+			});
+			spyOnGetLastActiveRepo.mockReturnValueOnce(null);
+			vscode.window.showQuickPick.mockResolvedValueOnce({
+				label: 'repo1',
+				description: '/path/to/repo1'
+			});
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
+					[
+						{
+							label: 'repo1',
+							description: '/path/to/repo1'
+						},
+						{
+							label: 'Custom Name',
+							description: '/path/to/repo2'
+						}
+					],
+					{
+						placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
+						canPickMany: false
+					}
+				);
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo1', runCommandOnLoad: 'fetch' });
+			});
+		});
+
+		it('Should display a quick pick to select a repository to open in the Git Graph View (last active repository is unknown)', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({
+				'/path/to/repo1': { name: null },
+				'/path/to/repo2': { name: 'Custom Name' }
+			});
+			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo3');
+			vscode.window.showQuickPick.mockResolvedValueOnce({
+				label: 'repo1',
+				description: '/path/to/repo1'
+			});
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
+					[
+						{
+							label: 'repo1',
+							description: '/path/to/repo1'
+						},
+						{
+							label: 'Custom Name',
+							description: '/path/to/repo2'
+						}
+					],
+					{
+						placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
+						canPickMany: false
+					}
+				);
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo1', runCommandOnLoad: 'fetch' });
+			});
+		});
+
+		it('Shouldn\'t open the Git Graph View when no item is selected in the quick pick', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({
+				'/path/to/repo1': { name: null },
+				'/path/to/repo2': { name: 'Custom Name' }
+			});
+			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo3');
+			vscode.window.showQuickPick.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
+					[
+						{
+							label: 'repo1',
+							description: '/path/to/repo1'
+						},
+						{
+							label: 'Custom Name',
+							description: '/path/to/repo2'
+						}
+					],
+					{
+						placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
+						canPickMany: false
+					}
+				);
+				expect(spyOnGitGraphViewCreateOrShow).not.toHaveBeenCalled();
+			});
+		});
+
+		it('Should display an error message when showQuickPick rejects', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({
+				'/path/to/repo1': { name: null },
+				'/path/to/repo2': { name: 'Custom Name' }
+			});
+			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo2');
+			vscode.window.showQuickPick.mockRejectedValueOnce(null);
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
+					[
+						{
+							label: 'Custom Name',
+							description: '/path/to/repo2'
+						},
+						{
+							label: 'repo1',
+							description: '/path/to/repo1'
+						}
+					],
+					{
+						placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
+						canPickMany: false
+					}
+				);
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('An unexpected error occurred while running the command "Fetch from Remote(s)".');
+				expect(spyOnGitGraphViewCreateOrShow).not.toHaveBeenCalled();
+			});
+		});
+
+		it('Should open the Git Graph View immediately when there is only one repository', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({
+				'/path/to/repo1': DEFAULT_REPO_STATE
+			});
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo1', runCommandOnLoad: 'fetch' });
+			});
+		});
+
+		it('Should open the Git Graph View immediately when there are no repositories', async () => {
+			// Setup
+			spyOnGetRepos.mockReturnValueOnce({});
+
+			// Run
+			vscode.commands.executeCommand('git-graph.fetch');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			});
 		});
 	});
 

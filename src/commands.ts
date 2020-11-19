@@ -48,6 +48,7 @@ export class CommandManager extends Disposable {
 		this.registerCommand('git-graph.addGitRepository', () => this.addGitRepository());
 		this.registerCommand('git-graph.removeGitRepository', () => this.removeGitRepository());
 		this.registerCommand('git-graph.clearAvatarCache', () => this.clearAvatarCache());
+		this.registerCommand('git-graph.fetch', () => this.fetch());
 		this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => this.endAllWorkspaceCodeReviews());
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
 		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
@@ -94,7 +95,7 @@ export class CommandManager extends Disposable {
 			loadRepo = this.repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 		}
 
-		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo, commitDetails: null } : null);
+		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo } : null);
 	}
 
 	/**
@@ -158,6 +159,51 @@ export class CommandManager extends Disposable {
 	 */
 	private clearAvatarCache() {
 		this.avatarManager.clearCache();
+	}
+
+	/**
+	 * The method run when the `git-graph.fetch` command is invoked.
+	 */
+	private fetch() {
+		const repos = this.repoManager.getRepos();
+		const repoPaths = Object.keys(repos);
+
+		if (repoPaths.length > 1) {
+			const items: vscode.QuickPickItem[] = Object.keys(repos).map((path) => ({
+				label: repos[path].name || getRepoName(path),
+				description: path
+			}));
+
+			const lastActiveRepo = this.extensionState.getLastActiveRepo();
+			if (lastActiveRepo !== null) {
+				let lastActiveRepoIndex = items.findIndex((item) => item.description === lastActiveRepo);
+				if (lastActiveRepoIndex > -1) {
+					const item = items.splice(lastActiveRepoIndex, 1)[0];
+					items.unshift(item);
+				}
+			}
+
+			vscode.window.showQuickPick(items, {
+				placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
+				canPickMany: false
+			}).then((item) => {
+				if (item && item.description) {
+					GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+						repo: item.description,
+						runCommandOnLoad: 'fetch'
+					});
+				}
+			}, () => {
+				showErrorMessage('An unexpected error occurred while running the command "Fetch from Remote(s)".');
+			});
+		} else if (repoPaths.length === 1) {
+			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+				repo: repoPaths[0],
+				runCommandOnLoad: 'fetch'
+			});
+		} else {
+			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, null);
+		}
 	}
 
 	/**

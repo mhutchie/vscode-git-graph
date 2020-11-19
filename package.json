@@ -72,6 +72,11 @@
 			},
 			{
 				"category": "Git Graph",
+				"command": "git-graph.fetch",
+				"title": "Fetch from Remote(s)"
+			},
+			{
+				"category": "Git Graph",
 				"command": "git-graph.removeGitRepository",
 				"title": "Remove Git Repository..."
 			},

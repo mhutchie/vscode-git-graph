@@ -125,7 +125,7 @@ export class GitGraphView extends Disposable {
 			// Subscribe to events triggered when a repository is added or deleted from Git Graph
 			repoManager.onDidChangeRepos((event) => {
 				if (!this.panel.visible) return;
-				const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo, commitDetails: null } : null;
+				const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo } : null;
 				if ((event.numRepos === 0 && this.isGraphViewLoaded) || (event.numRepos > 0 && !this.isGraphViewLoaded)) {
 					this.loadViewTo = loadViewTo;
 					this.update();

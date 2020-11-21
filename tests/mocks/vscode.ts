@@ -176,8 +176,3 @@ beforeEach(() => {
 export function mockExtensionSettingReturnValue(section: string, value: any) {
 	mockedExtensionSettingValues[section] = value;
 }
-
-export function expectRenamedExtensionSettingToHaveBeenCalled(newSection: string, oldSection: string) {
-	expect(mocks.workspaceConfiguration.inspect).toBeCalledWith(newSection);
-	expect(mocks.workspaceConfiguration.inspect).toBeCalledWith(oldSection);
-}

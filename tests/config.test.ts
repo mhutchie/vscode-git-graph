@@ -1,3 +1,5 @@
+import { expectRenamedExtensionSettingToHaveBeenCalled } from './helpers/expectations';
+
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
@@ -44,7 +46,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.autoCenter;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
 				expect(value).toBe(true);
 			});
 
@@ -56,7 +58,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.autoCenter;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
 				expect(value).toBe(false);
 			});
 
@@ -68,7 +70,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.autoCenter;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
 				expect(value).toBe(true);
 			});
 
@@ -80,7 +82,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.autoCenter;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
 				expect(value).toBe(false);
 			});
 
@@ -89,7 +91,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.autoCenter;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.autoCenter', 'autoCenterCommitDetailsView');
 				expect(value).toBe(true);
 			});
 		});
@@ -103,7 +105,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileTreeCompactFolders;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
 				expect(value).toBe(true);
 			});
 
@@ -115,7 +117,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileTreeCompactFolders;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
 				expect(value).toBe(false);
 			});
 
@@ -127,7 +129,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileTreeCompactFolders;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
 				expect(value).toBe(true);
 			});
 
@@ -139,7 +141,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileTreeCompactFolders;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
 				expect(value).toBe(false);
 			});
 
@@ -148,7 +150,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileTreeCompactFolders;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.fileTree.compactFolders', 'commitDetailsViewFileTreeCompactFolders');
 				expect(value).toBe(true);
 			});
 		});
@@ -162,7 +164,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileViewType;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
 				expect(value).toBe(FileViewType.Tree);
 			});
 
@@ -174,7 +176,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileViewType;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
 				expect(value).toBe(FileViewType.List);
 			});
 
@@ -186,7 +188,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileViewType;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
 				expect(value).toBe(FileViewType.Tree);
 			});
 
@@ -195,7 +197,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.fileViewType;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.fileView.type', 'defaultFileViewType');
 				expect(value).toBe(FileViewType.Tree);
 			});
 		});
@@ -209,7 +211,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.location;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
 				expect(value).toBe(CommitDetailsViewLocation.Inline);
 			});
 
@@ -221,7 +223,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.location;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
 				expect(value).toBe(CommitDetailsViewLocation.DockedToBottom);
 			});
 
@@ -233,7 +235,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.location;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
 				expect(value).toBe(CommitDetailsViewLocation.Inline);
 			});
 
@@ -242,7 +244,7 @@ describe('Config', () => {
 				const value = config.commitDetailsView.location;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
+				expectRenamedExtensionSettingToHaveBeenCalled('commitDetailsView.location', 'commitDetailsViewLocation');
 				expect(value).toBe(CommitDetailsViewLocation.Inline);
 			});
 		});
@@ -538,7 +540,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.DateAndTime, iso: false });
 		});
 
@@ -550,7 +552,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.DateOnly, iso: false });
 		});
 
@@ -562,7 +564,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.DateAndTime, iso: true });
 		});
 
@@ -574,7 +576,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.DateOnly, iso: true });
 		});
 
@@ -586,7 +588,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.Relative, iso: false });
 		});
 
@@ -598,7 +600,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.DateAndTime, iso: false });
 		});
 
@@ -607,7 +609,7 @@ describe('Config', () => {
 			const value = config.dateFormat;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.format', 'dateFormat');
 			expect(value).toStrictEqual({ type: DateFormatType.DateAndTime, iso: false });
 		});
 	});
@@ -621,7 +623,7 @@ describe('Config', () => {
 			const value = config.dateType;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
 			expect(value).toBe(DateType.Author);
 		});
 
@@ -633,7 +635,7 @@ describe('Config', () => {
 			const value = config.dateType;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
 			expect(value).toBe(DateType.Commit);
 		});
 
@@ -645,7 +647,7 @@ describe('Config', () => {
 			const value = config.dateType;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
 			expect(value).toBe(DateType.Author);
 		});
 
@@ -654,7 +656,7 @@ describe('Config', () => {
 			const value = config.dateType;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
+			expectRenamedExtensionSettingToHaveBeenCalled('date.type', 'dateType');
 			expect(value).toBe(DateType.Author);
 		});
 	});
@@ -1553,7 +1555,7 @@ describe('Config', () => {
 				const value = config.graph.colours;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
 				expect(value).toHaveLength(3);
 				expect(value[0]).toBe('#ff0000');
 				expect(value[1]).toBe('#00ff0088');
@@ -1568,7 +1570,7 @@ describe('Config', () => {
 				const value = config.graph.colours;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
 				expect(value).toStrictEqual(['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000', '#00d9cc', '#e138e8', '#85d900', '#dc5b23', '#6f24d6', '#ffcc00']);
 			});
 
@@ -1580,7 +1582,7 @@ describe('Config', () => {
 				const value = config.graph.colours;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
 				expect(value).toStrictEqual(['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000', '#00d9cc', '#e138e8', '#85d900', '#dc5b23', '#6f24d6', '#ffcc00']);
 			});
 
@@ -1589,7 +1591,7 @@ describe('Config', () => {
 				const value = config.graph.colours;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.colours', 'graphColours');
 				expect(value).toStrictEqual(['#0085d9', '#d9008f', '#00d90a', '#d98500', '#a300d9', '#ff0000', '#00d9cc', '#e138e8', '#85d900', '#dc5b23', '#6f24d6', '#ffcc00']);
 			});
 		});
@@ -1603,7 +1605,7 @@ describe('Config', () => {
 				const value = config.graph.style;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
 				expect(value).toBe(GraphStyle.Rounded);
 			});
 
@@ -1615,7 +1617,7 @@ describe('Config', () => {
 				const value = config.graph.style;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
 				expect(value).toBe(GraphStyle.Angular);
 			});
 
@@ -1627,7 +1629,7 @@ describe('Config', () => {
 				const value = config.graph.style;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
 				expect(value).toBe(GraphStyle.Rounded);
 			});
 
@@ -1636,7 +1638,7 @@ describe('Config', () => {
 				const value = config.graph.style;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
+				expectRenamedExtensionSettingToHaveBeenCalled('graph.style', 'graphStyle');
 				expect(value).toBe(GraphStyle.Rounded);
 			});
 		});
@@ -1993,7 +1995,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Active);
 		});
 
@@ -2005,7 +2007,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Beside);
 		});
 
@@ -2017,7 +2019,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.One);
 		});
 
@@ -2029,7 +2031,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Two);
 		});
 
@@ -2041,7 +2043,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Three);
 		});
 
@@ -2053,7 +2055,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Four);
 		});
 
@@ -2065,7 +2067,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Five);
 		});
 
@@ -2077,7 +2079,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Six);
 		});
 
@@ -2089,7 +2091,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Seven);
 		});
 
@@ -2101,7 +2103,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Eight);
 		});
 
@@ -2113,7 +2115,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Nine);
 		});
 
@@ -2125,7 +2127,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Active);
 		});
 
@@ -2134,7 +2136,7 @@ describe('Config', () => {
 			const value = config.openNewTabEditorGroup;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
+			expectRenamedExtensionSettingToHaveBeenCalled('openNewTabEditorGroup', 'openDiffTabLocation');
 			expect(value).toBe(vscode.ViewColumn.Active);
 		});
 	});
@@ -2208,7 +2210,7 @@ describe('Config', () => {
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
 				expect(value).toBe(true);
 			});
 
@@ -2220,7 +2222,7 @@ describe('Config', () => {
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
 				expect(value).toBe(false);
 			});
 
@@ -2232,7 +2234,7 @@ describe('Config', () => {
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
 				expect(value).toBe(true);
 			});
 
@@ -2244,7 +2246,7 @@ describe('Config', () => {
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
 				expect(value).toBe(false);
 			});
 
@@ -2253,7 +2255,7 @@ describe('Config', () => {
 				const value = config.referenceLabels.combineLocalAndRemoteBranchLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.combineLocalAndRemoteBranchLabels', 'combineLocalAndRemoteBranchLabels');
 				expect(value).toBe(true);
 			});
 		});
@@ -2267,7 +2269,7 @@ describe('Config', () => {
 				const value = config.referenceLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
 				expect(value.branchLabelsAlignedToGraph).toBe(false);
 				expect(value.tagLabelsOnRight).toBe(false);
 			});
@@ -2280,7 +2282,7 @@ describe('Config', () => {
 				const value = config.referenceLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
 				expect(value.branchLabelsAlignedToGraph).toBe(false);
 				expect(value.tagLabelsOnRight).toBe(true);
 			});
@@ -2293,7 +2295,7 @@ describe('Config', () => {
 				const value = config.referenceLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
 				expect(value.branchLabelsAlignedToGraph).toBe(true);
 				expect(value.tagLabelsOnRight).toBe(true);
 			});
@@ -2306,7 +2308,7 @@ describe('Config', () => {
 				const value = config.referenceLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
 				expect(value.branchLabelsAlignedToGraph).toBe(false);
 				expect(value.tagLabelsOnRight).toBe(false);
 			});
@@ -2316,7 +2318,7 @@ describe('Config', () => {
 				const value = config.referenceLabels;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
+				expectRenamedExtensionSettingToHaveBeenCalled('referenceLabels.alignment', 'referenceLabelAlignment');
 				expect(value.branchLabelsAlignedToGraph).toBe(false);
 				expect(value.tagLabelsOnRight).toBe(false);
 			});
@@ -2332,7 +2334,7 @@ describe('Config', () => {
 			const value = config.fetchAvatars;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
 			expect(value).toBe(true);
 		});
 
@@ -2344,7 +2346,7 @@ describe('Config', () => {
 			const value = config.fetchAvatars;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
 			expect(value).toBe(false);
 		});
 
@@ -2356,7 +2358,7 @@ describe('Config', () => {
 			const value = config.fetchAvatars;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
 			expect(value).toBe(true);
 		});
 
@@ -2368,7 +2370,7 @@ describe('Config', () => {
 			const value = config.fetchAvatars;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
 			expect(value).toBe(false);
 		});
 
@@ -2377,7 +2379,7 @@ describe('Config', () => {
 			const value = config.fetchAvatars;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
 			expect(value).toBe(false);
 		});
 	});
@@ -2391,7 +2393,7 @@ describe('Config', () => {
 			const value = config.initialLoadCommits;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.initialLoad', 'initialLoadCommits');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.initialLoad', 'initialLoadCommits');
 			expect(value).toBe(600);
 		});
 
@@ -2400,7 +2402,7 @@ describe('Config', () => {
 			const value = config.initialLoadCommits;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.initialLoad', 'initialLoadCommits');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.initialLoad', 'initialLoadCommits');
 			expect(value).toBe(300);
 		});
 	});
@@ -2414,7 +2416,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommits;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMore', 'loadMoreCommits');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMore', 'loadMoreCommits');
 			expect(value).toBe(200);
 		});
 
@@ -2423,7 +2425,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommits;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMore', 'loadMoreCommits');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMore', 'loadMoreCommits');
 			expect(value).toBe(100);
 		});
 	});
@@ -2437,7 +2439,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommitsAutomatically;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
 			expect(value).toBe(true);
 		});
 
@@ -2449,7 +2451,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommitsAutomatically;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
 			expect(value).toBe(false);
 		});
 
@@ -2461,7 +2463,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommitsAutomatically;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
 			expect(value).toBe(true);
 		});
 
@@ -2473,7 +2475,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommitsAutomatically;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
 			expect(value).toBe(false);
 		});
 
@@ -2482,7 +2484,7 @@ describe('Config', () => {
 			const value = config.loadMoreCommitsAutomatically;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
 			expect(value).toBe(true);
 		});
 	});
@@ -2497,7 +2499,7 @@ describe('Config', () => {
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
 				expect(value).toBe(true);
 			});
 
@@ -2509,7 +2511,7 @@ describe('Config', () => {
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
 				expect(value).toBe(false);
 			});
 
@@ -2521,7 +2523,7 @@ describe('Config', () => {
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
 				expect(value).toBe(true);
 			});
 
@@ -2533,7 +2535,7 @@ describe('Config', () => {
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
 				expect(value).toBe(false);
 			});
 
@@ -2542,7 +2544,7 @@ describe('Config', () => {
 				const value = config.muteCommits.commitsNotAncestorsOfHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.commitsThatAreNotAncestorsOfHead', 'muteCommitsThatAreNotAncestorsOfHead');
 				expect(value).toBe(false);
 			});
 		});
@@ -2556,7 +2558,7 @@ describe('Config', () => {
 				const value = config.muteCommits.mergeCommits;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
 				expect(value).toBe(true);
 			});
 
@@ -2568,7 +2570,7 @@ describe('Config', () => {
 				const value = config.muteCommits.mergeCommits;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
 				expect(value).toBe(false);
 			});
 
@@ -2580,7 +2582,7 @@ describe('Config', () => {
 				const value = config.muteCommits.mergeCommits;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
 				expect(value).toBe(true);
 			});
 
@@ -2592,7 +2594,7 @@ describe('Config', () => {
 				const value = config.muteCommits.mergeCommits;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
 				expect(value).toBe(false);
 			});
 
@@ -2601,7 +2603,7 @@ describe('Config', () => {
 				const value = config.muteCommits.mergeCommits;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.mute.mergeCommits', 'muteMergeCommits');
 				expect(value).toBe(true);
 			});
 		});
@@ -2616,7 +2618,7 @@ describe('Config', () => {
 			const value = config.commitOrder;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
 			expect(value).toBe(CommitOrdering.Date);
 		});
 
@@ -2628,7 +2630,7 @@ describe('Config', () => {
 			const value = config.commitOrder;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
 			expect(value).toBe(CommitOrdering.AuthorDate);
 		});
 
@@ -2640,7 +2642,7 @@ describe('Config', () => {
 			const value = config.commitOrder;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
 			expect(value).toBe(CommitOrdering.Topological);
 		});
 
@@ -2652,7 +2654,7 @@ describe('Config', () => {
 			const value = config.commitOrder;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
 			expect(value).toBe(CommitOrdering.Date);
 		});
 
@@ -2661,7 +2663,7 @@ describe('Config', () => {
 			const value = config.commitOrder;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.order', 'commitOrdering');
 			expect(value).toBe(CommitOrdering.Date);
 		});
 	});
@@ -2675,7 +2677,7 @@ describe('Config', () => {
 			const value = config.fetchAndPrune;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
 			expect(value).toBe(true);
 		});
 
@@ -2687,7 +2689,7 @@ describe('Config', () => {
 			const value = config.fetchAndPrune;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
 			expect(value).toBe(false);
 		});
 
@@ -2699,7 +2701,7 @@ describe('Config', () => {
 			const value = config.fetchAndPrune;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
 			expect(value).toBe(true);
 		});
 
@@ -2711,7 +2713,7 @@ describe('Config', () => {
 			const value = config.fetchAndPrune;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
 			expect(value).toBe(false);
 		});
 
@@ -2720,7 +2722,7 @@ describe('Config', () => {
 			const value = config.fetchAndPrune;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
 			expect(value).toBe(false);
 		});
 	});
@@ -2793,7 +2795,7 @@ describe('Config', () => {
 			const value = config.includeCommitsMentionedByReflogs;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
 			expect(value).toBe(true);
 		});
 
@@ -2805,7 +2807,7 @@ describe('Config', () => {
 			const value = config.includeCommitsMentionedByReflogs;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
 			expect(value).toBe(false);
 		});
 
@@ -2817,7 +2819,7 @@ describe('Config', () => {
 			const value = config.includeCommitsMentionedByReflogs;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
 			expect(value).toBe(true);
 		});
 
@@ -2829,7 +2831,7 @@ describe('Config', () => {
 			const value = config.includeCommitsMentionedByReflogs;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
 			expect(value).toBe(false);
 		});
 
@@ -2838,7 +2840,7 @@ describe('Config', () => {
 			const value = config.includeCommitsMentionedByReflogs;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
 			expect(value).toBe(false);
 		});
 	});
@@ -2853,7 +2855,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.scrollToHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
 				expect(value).toBe(true);
 			});
 
@@ -2865,7 +2867,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.scrollToHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
 				expect(value).toBe(false);
 			});
 
@@ -2877,7 +2879,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.scrollToHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
 				expect(value).toBe(true);
 			});
 
@@ -2889,7 +2891,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.scrollToHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
 				expect(value).toBe(false);
 			});
 
@@ -2898,7 +2900,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.scrollToHead;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.scrollToHead', 'openRepoToHead');
 				expect(value).toBe(false);
 			});
 		});
@@ -2912,7 +2914,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.showCheckedOutBranch;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
 				expect(value).toBe(true);
 			});
 
@@ -2924,7 +2926,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.showCheckedOutBranch;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
 				expect(value).toBe(false);
 			});
 
@@ -2936,7 +2938,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.showCheckedOutBranch;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
 				expect(value).toBe(true);
 			});
 
@@ -2948,7 +2950,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.showCheckedOutBranch;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
 				expect(value).toBe(false);
 			});
 
@@ -2957,7 +2959,7 @@ describe('Config', () => {
 				const value = config.onRepoLoad.showCheckedOutBranch;
 
 				// Assert
-				vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
+				expectRenamedExtensionSettingToHaveBeenCalled('repository.onLoad.showCheckedOutBranch', 'showCurrentBranchByDefault');
 				expect(value).toBe(false);
 			});
 		});
@@ -3019,7 +3021,7 @@ describe('Config', () => {
 			const value = config.onlyFollowFirstParent;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
 			expect(value).toBe(true);
 		});
 
@@ -3031,7 +3033,7 @@ describe('Config', () => {
 			const value = config.onlyFollowFirstParent;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
 			expect(value).toBe(false);
 		});
 
@@ -3043,7 +3045,7 @@ describe('Config', () => {
 			const value = config.onlyFollowFirstParent;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
 			expect(value).toBe(true);
 		});
 
@@ -3055,7 +3057,7 @@ describe('Config', () => {
 			const value = config.onlyFollowFirstParent;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
 			expect(value).toBe(false);
 		});
 
@@ -3064,7 +3066,7 @@ describe('Config', () => {
 			const value = config.onlyFollowFirstParent;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
 			expect(value).toBe(false);
 		});
 	});
@@ -3078,7 +3080,7 @@ describe('Config', () => {
 			const value = config.showCommitsOnlyReferencedByTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
 			expect(value).toBe(true);
 		});
 
@@ -3090,7 +3092,7 @@ describe('Config', () => {
 			const value = config.showCommitsOnlyReferencedByTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
 			expect(value).toBe(false);
 		});
 
@@ -3102,7 +3104,7 @@ describe('Config', () => {
 			const value = config.showCommitsOnlyReferencedByTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
 			expect(value).toBe(true);
 		});
 
@@ -3114,7 +3116,7 @@ describe('Config', () => {
 			const value = config.showCommitsOnlyReferencedByTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
 			expect(value).toBe(false);
 		});
 
@@ -3123,7 +3125,7 @@ describe('Config', () => {
 			const value = config.showCommitsOnlyReferencedByTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
 			expect(value).toBe(true);
 		});
 	});
@@ -3137,7 +3139,7 @@ describe('Config', () => {
 			const value = config.showSignatureStatus;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
 			expect(value).toBe(true);
 		});
 
@@ -3149,7 +3151,7 @@ describe('Config', () => {
 			const value = config.showSignatureStatus;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
 			expect(value).toBe(false);
 		});
 
@@ -3161,7 +3163,7 @@ describe('Config', () => {
 			const value = config.showSignatureStatus;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
 			expect(value).toBe(true);
 		});
 
@@ -3173,7 +3175,7 @@ describe('Config', () => {
 			const value = config.showSignatureStatus;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
 			expect(value).toBe(false);
 		});
 
@@ -3182,7 +3184,7 @@ describe('Config', () => {
 			const value = config.showSignatureStatus;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
 			expect(value).toBe(false);
 		});
 	});
@@ -3314,7 +3316,7 @@ describe('Config', () => {
 			const value = config.showTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
 			expect(value).toBe(true);
 		});
 
@@ -3326,7 +3328,7 @@ describe('Config', () => {
 			const value = config.showTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
 			expect(value).toBe(false);
 		});
 
@@ -3338,7 +3340,7 @@ describe('Config', () => {
 			const value = config.showTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
 			expect(value).toBe(true);
 		});
 
@@ -3350,7 +3352,7 @@ describe('Config', () => {
 			const value = config.showTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
 			expect(value).toBe(false);
 		});
 
@@ -3359,7 +3361,7 @@ describe('Config', () => {
 			const value = config.showTags;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
 			expect(value).toBe(true);
 		});
 	});
@@ -3373,7 +3375,7 @@ describe('Config', () => {
 			const value = config.showUncommittedChanges;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
 			expect(value).toBe(true);
 		});
 
@@ -3385,7 +3387,7 @@ describe('Config', () => {
 			const value = config.showUncommittedChanges;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
 			expect(value).toBe(false);
 		});
 
@@ -3397,7 +3399,7 @@ describe('Config', () => {
 			const value = config.showUncommittedChanges;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
 			expect(value).toBe(true);
 		});
 
@@ -3409,7 +3411,7 @@ describe('Config', () => {
 			const value = config.showUncommittedChanges;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
 			expect(value).toBe(false);
 		});
 
@@ -3418,7 +3420,7 @@ describe('Config', () => {
 			const value = config.showUncommittedChanges;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
 			expect(value).toBe(true);
 		});
 	});
@@ -3432,7 +3434,7 @@ describe('Config', () => {
 			const value = config.showUntrackedFiles;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
 			expect(value).toBe(true);
 		});
 
@@ -3444,7 +3446,7 @@ describe('Config', () => {
 			const value = config.showUntrackedFiles;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
 			expect(value).toBe(false);
 		});
 
@@ -3456,7 +3458,7 @@ describe('Config', () => {
 			const value = config.showUntrackedFiles;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
 			expect(value).toBe(true);
 		});
 
@@ -3468,7 +3470,7 @@ describe('Config', () => {
 			const value = config.showUntrackedFiles;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
 			expect(value).toBe(false);
 		});
 
@@ -3477,7 +3479,7 @@ describe('Config', () => {
 			const value = config.showUntrackedFiles;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
 			expect(value).toBe(true);
 		});
 	});
@@ -3609,7 +3611,7 @@ describe('Config', () => {
 			const value = config.useMailmap;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
 			expect(value).toBe(true);
 		});
 
@@ -3621,7 +3623,7 @@ describe('Config', () => {
 			const value = config.useMailmap;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
 			expect(value).toBe(false);
 		});
 
@@ -3633,7 +3635,7 @@ describe('Config', () => {
 			const value = config.useMailmap;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
 			expect(value).toBe(true);
 		});
 
@@ -3645,7 +3647,7 @@ describe('Config', () => {
 			const value = config.useMailmap;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
 			expect(value).toBe(false);
 		});
 
@@ -3654,7 +3656,7 @@ describe('Config', () => {
 			const value = config.useMailmap;
 
 			// Assert
-			vscode.expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
+			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
 			expect(value).toBe(false);
 		});
 	});

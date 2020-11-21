@@ -1,3 +1,5 @@
+import { waitForExpect } from './helpers/expectations';
+
 import * as date from './mocks/date';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
@@ -1735,24 +1737,6 @@ function expectFileToHaveBeenWritten(name: string, data: string) {
 
 function expectFileToHaveBeenRead(name: string) {
 	expect(spyOnReadFile.mock.calls.some((args) => args[0] === name)).toBe(true);
-}
-
-function waitForExpect(expect: () => void) {
-	return new Promise((resolve, reject) => {
-		let attempts = 0;
-		const testInterval = setInterval(async () => {
-			try {
-				attempts++;
-				expect();
-				resolve();
-			} catch (e) {
-				if (attempts === 100) {
-					clearInterval(testInterval);
-					reject(e);
-				}
-			}
-		}, 50);
-	});
 }
 
 function waitForEvents(avatarManager: AvatarManager, n: number, runPendingTimers = false) {

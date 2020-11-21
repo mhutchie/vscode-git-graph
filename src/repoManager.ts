@@ -6,6 +6,7 @@ import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { GitRepoSet, GitRepoState } from './types';
 import { evalPromises, getPathFromUri, pathWithTrailingSlash, realpath } from './utils';
+import { BufferedQueue } from './utils/bufferedQueue';
 import { Disposable, toDisposable } from './utils/disposable';
 import { Event, EventEmitter } from './utils/event';
 
@@ -22,18 +23,16 @@ export class RepoManager extends Disposable {
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
+
 	private repos: GitRepoSet;
 	private ignoredRepos: string[];
 	private maxDepthOfRepoSearch: number;
+
 	private readonly folderWatchers: { [workspace: string]: vscode.FileSystemWatcher } = {};
 	private readonly repoEventEmitter: EventEmitter<RepoChangeEvent>;
 
-	private readonly createEventQueue: string[] = [];
-	private readonly changeEventQueue: string[] = [];
-	private processCreateEventsTimeout: NodeJS.Timer | null = null;
-	private processChangeEventsTimeout: NodeJS.Timer | null = null;
-	private processingCreateEvents: boolean = false;
-	private processingChangeEvents: boolean = false;
+	private readonly onWatcherCreateQueue: BufferedQueue<string>;
+	private readonly onWatcherChangeQueue: BufferedQueue<string>;
 
 	/**
 	 * Creates the Git Graph Repository Manager, and runs startup tasks.
@@ -49,7 +48,12 @@ export class RepoManager extends Disposable {
 		this.repos = extensionState.getRepos();
 		this.ignoredRepos = extensionState.getIgnoredRepos();
 		this.maxDepthOfRepoSearch = getConfig().maxDepthOfRepoSearch;
+
 		this.repoEventEmitter = new EventEmitter<RepoChangeEvent>();
+
+		this.onWatcherCreateQueue = new BufferedQueue<string>(this.processOnWatcherCreateEvent.bind(this), this.sendRepos.bind(this));
+		this.onWatcherChangeQueue = new BufferedQueue<string>(this.processOnWatcherChangeEvent.bind(this), this.sendRepos.bind(this));
+
 		this.startupTasks();
 
 		this.registerDisposables(
@@ -82,6 +86,12 @@ export class RepoManager extends Disposable {
 
 			// Dispose the Repository Event Emitter when disposed
 			this.repoEventEmitter,
+
+			// Dispose the onWatcherCreateQueue
+			this.onWatcherCreateQueue,
+
+			// Dispose the onWatcherChangeQueue
+			this.onWatcherChangeQueue,
 
 			// Stop watching folders when disposed
 			toDisposable(() => {
@@ -483,9 +493,9 @@ export class RepoManager extends Disposable {
 	 */
 	private startWatchingFolder(path: string) {
 		let watcher = vscode.workspace.createFileSystemWatcher(path + '/**');
-		watcher.onDidCreate(uri => this.onWatcherCreate(uri));
-		watcher.onDidChange(uri => this.onWatcherChange(uri));
-		watcher.onDidDelete(uri => this.onWatcherDelete(uri));
+		watcher.onDidCreate((uri) => this.onWatcherCreate(uri));
+		watcher.onDidChange((uri) => this.onWatcherChange(uri));
+		watcher.onDidDelete((uri) => this.onWatcherDelete(uri));
 		this.folderWatchers[path] = watcher;
 	}
 
@@ -499,53 +509,29 @@ export class RepoManager extends Disposable {
 	}
 
 	/**
-	 * Process a file system creation event.
+	 * Handle a file system creation event.
 	 * @param uri The URI of the creation event.
 	 */
 	private onWatcherCreate(uri: vscode.Uri) {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
 		if (path.endsWith('/.git')) path = path.slice(0, -5);
-		if (this.createEventQueue.indexOf(path) > -1) return;
-
-		this.createEventQueue.push(path);
-
-		if (!this.processingCreateEvents) {
-			if (this.processCreateEventsTimeout !== null) {
-				clearTimeout(this.processCreateEventsTimeout);
-			}
-			this.processCreateEventsTimeout = setTimeout(() => {
-				this.processCreateEventsTimeout = null;
-				this.processCreateEvents();
-			}, 1000);
-		}
+		this.onWatcherCreateQueue.enqueue(path);
 	}
 
 	/**
-	 * Process a file system change event.
+	 * Handle a file system change event.
 	 * @param uri The URI of the change event.
 	 */
 	private onWatcherChange(uri: vscode.Uri) {
 		let path = getPathFromUri(uri);
 		if (path.indexOf('/.git/') > -1) return;
 		if (path.endsWith('/.git')) path = path.slice(0, -5);
-		if (this.changeEventQueue.indexOf(path) > -1) return;
-
-		this.changeEventQueue.push(path);
-
-		if (!this.processingChangeEvents) {
-			if (this.processChangeEventsTimeout !== null) {
-				clearTimeout(this.processChangeEventsTimeout);
-			}
-			this.processChangeEventsTimeout = setTimeout(() => {
-				this.processChangeEventsTimeout = null;
-				this.processChangeEvents();
-			}, 1000);
-		}
+		this.onWatcherChangeQueue.enqueue(path);
 	}
 
 	/**
-	 * Process a file system deletion event.
+	 * Handle a file system deletion event.
 	 * @param uri The URI of the deletion event.
 	 */
 	private onWatcherDelete(uri: vscode.Uri) {
@@ -556,33 +542,31 @@ export class RepoManager extends Disposable {
 	}
 
 	/**
-	 * Process the queue of file system creation events.
+	 * Process a file system creation event.
+	 * @param path The path of the file that was created.
+	 * @returns TRUE => Change was made. FALSE => No change was made.
 	 */
-	private async processCreateEvents() {
-		this.processingCreateEvents = true;
-		let path, changes = false;
-		while (path = this.createEventQueue.shift()) {
-			if (await isDirectory(path)) {
-				if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
+	private async processOnWatcherCreateEvent(path: string) {
+		if (await isDirectory(path)) {
+			if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) {
+				return true;
 			}
 		}
-		this.processingCreateEvents = false;
-		if (changes) this.sendRepos();
+		return false;
 	}
 
 	/**
-	 * Process the queue of file system change events
+	 * Process a file system change event.
+	 * @param path The path of the file that was changed.
+	 * @returns TRUE => Change was made. FALSE => No change was made.
 	 */
-	private async processChangeEvents() {
-		this.processingChangeEvents = true;
-		let path, changes = false;
-		while (path = this.changeEventQueue.shift()) {
-			if (!await doesPathExist(path)) {
-				if (this.removeReposWithinFolder(path)) changes = true;
+	private async processOnWatcherChangeEvent(path: string) {
+		if (!await doesPathExist(path)) {
+			if (this.removeReposWithinFolder(path)) {
+				return true;
 			}
 		}
-		this.processingChangeEvents = false;
-		if (changes) this.sendRepos();
+		return false;
 	}
 }
 

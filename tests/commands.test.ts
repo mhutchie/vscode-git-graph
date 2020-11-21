@@ -1,3 +1,5 @@
+import { waitForExpect } from './helpers/expectations';
+
 import * as date from './mocks/date';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
@@ -1117,21 +1119,3 @@ describe('CommandManager', () => {
 		});
 	});
 });
-
-function waitForExpect(expect: () => void) {
-	return new Promise((resolve, reject) => {
-		let attempts = 0;
-		const testInterval = setInterval(async () => {
-			try {
-				attempts++;
-				expect();
-				resolve();
-			} catch (e) {
-				if (attempts === 100) {
-					clearInterval(testInterval);
-					reject(e);
-				}
-			}
-		}, 50);
-	});
-}

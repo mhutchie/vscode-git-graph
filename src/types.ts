@@ -184,16 +184,16 @@ export interface GitRepoState {
 	commitOrdering: RepoCommitOrdering;
 	fileViewType: FileViewType;
 	hideRemotes: string[];
-	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
+	includeCommitsMentionedByReflogs: BooleanOverride;
 	issueLinkingConfig: IssueLinkingConfig | null;
 	name: string | null;
-	onlyFollowFirstParent: OnlyFollowFirstParent;
-	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch;
+	onlyFollowFirstParent: BooleanOverride;
+	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
-	showRemoteBranchesV2: ShowRemoteBranches;
-	showTags: ShowTags;
+	showRemoteBranchesV2: BooleanOverride;
+	showTags: BooleanOverride;
 }
 
 
@@ -292,6 +292,12 @@ export interface ReferenceLabelsConfig {
 
 
 /* Extension Settings Types */
+
+export const enum BooleanOverride {
+	Default,
+	Enabled,
+	Disabled
+}
 
 export const enum CommitDetailsViewLocation {
 	Inline,
@@ -464,24 +470,6 @@ export const enum GraphUncommittedChangesStyle {
 	OpenCircleAtTheCheckedOutCommit
 }
 
-export const enum IncludeCommitsMentionedByReflogs {
-	Default,
-	Enabled,
-	Disabled
-}
-
-export const enum OnlyFollowFirstParent {
-	Default,
-	Enabled,
-	Disabled
-}
-
-export const enum ShowCheckedOutBranch {
-	Default,
-	Enabled,
-	Disabled
-}
-
 export const enum RefLabelAlignment {
 	Normal,
 	BranchesOnLeftAndTagsOnRight,
@@ -498,18 +486,6 @@ export const enum RepoCommitOrdering {
 export const enum RepoDropdownOrder {
 	FullPath,
 	Name
-}
-
-export const enum ShowRemoteBranches {
-	Default,
-	Show,
-	Hide
-}
-
-export const enum ShowTags {
-	Default,
-	Show,
-	Hide
 }
 
 export const enum SquashMessageFormat {

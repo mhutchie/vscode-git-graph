@@ -87,7 +87,7 @@ class GitGraphView {
 
 		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 		this.showRemoteBranchesElem.addEventListener('change', () => {
-			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.ShowRemoteBranches.Show : GG.ShowRemoteBranches.Hide);
+			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
 			this.refresh(true);
 		});
 
@@ -3300,34 +3300,34 @@ function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering 
 	}
 }
 
-function getShowRemoteBranches(repoValue: GG.ShowRemoteBranches) {
-	return repoValue === GG.ShowRemoteBranches.Default
+function getShowRemoteBranches(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.showRemoteBranches
-		: repoValue === GG.ShowRemoteBranches.Show;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getShowTags(repoValue: GG.ShowTags) {
-	return repoValue === GG.ShowTags.Default
+function getShowTags(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.showTags
-		: repoValue === GG.ShowTags.Show;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getIncludeCommitsMentionedByReflogs(repoValue: GG.IncludeCommitsMentionedByReflogs) {
-	return repoValue === GG.IncludeCommitsMentionedByReflogs.Default
+function getIncludeCommitsMentionedByReflogs(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.includeCommitsMentionedByReflogs
-		: repoValue === GG.IncludeCommitsMentionedByReflogs.Enabled;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getOnlyFollowFirstParent(repoValue: GG.OnlyFollowFirstParent) {
-	return repoValue === GG.OnlyFollowFirstParent.Default
+function getOnlyFollowFirstParent(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.onlyFollowFirstParent
-		: repoValue === GG.OnlyFollowFirstParent.Enabled;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.ShowCheckedOutBranch) {
-	return repoValue === GG.ShowCheckedOutBranch.Default
+function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.onRepoLoad.showCheckedOutBranch
-		: repoValue === GG.ShowCheckedOutBranch.Enabled;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
 function getOnRepoLoadShowSpecificBranches(repoValue: string[] | null) {

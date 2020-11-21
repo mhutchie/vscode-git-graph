@@ -5,7 +5,7 @@ jest.mock('fs');
 
 import * as fs from 'fs';
 import { ExtensionState } from '../src/extensionState';
-import { FileViewType, GitGraphViewGlobalState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from '../src/types';
+import { BooleanOverride, FileViewType, GitGraphViewGlobalState, RepoCommitOrdering } from '../src/types';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -63,16 +63,16 @@ describe('ExtensionState', () => {
 				commitOrdering: RepoCommitOrdering.AuthorDate,
 				fileViewType: FileViewType.List,
 				hideRemotes: [],
-				includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Enabled,
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
 				issueLinkingConfig: null,
 				name: 'Custom Name',
-				onlyFollowFirstParent: OnlyFollowFirstParent.Disabled,
-				onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Enabled,
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
 				onRepoLoadShowSpecificBranches: ['master'],
 				pullRequestConfig: null,
 				showRemoteBranches: true,
-				showRemoteBranchesV2: ShowRemoteBranches.Show,
-				showTags: ShowTags.Show
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled
 			};
 			extensionContext.workspaceState.get.mockReturnValueOnce({
 				'/path/to/repo': repoState
@@ -108,16 +108,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Default,
+					showTags: BooleanOverride.Default
 				}
 			});
 		});
@@ -143,16 +143,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Default,
+					showTags: BooleanOverride.Default
 				}
 			});
 		});
@@ -178,16 +178,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: false,
-					showRemoteBranchesV2: ShowRemoteBranches.Hide,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Disabled,
+					showTags: BooleanOverride.Default
 				}
 			});
 		});
@@ -213,16 +213,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: false,
-					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Default,
+					showTags: BooleanOverride.Default
 				}
 			});
 		});
@@ -248,16 +248,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showRemoteBranchesV2: ShowRemoteBranches.Show,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Enabled,
+					showTags: BooleanOverride.Default
 				}
 			});
 		});
@@ -286,16 +286,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showRemoteBranchesV2: ShowRemoteBranches.Default,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Default,
+					showTags: BooleanOverride.Default
 				},
 				'/path/to/repo-2': {
 					cdvDivider: 0.5,
@@ -304,16 +304,16 @@ describe('ExtensionState', () => {
 					commitOrdering: RepoCommitOrdering.Default,
 					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					name: null,
-					onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-					onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: false,
-					showRemoteBranchesV2: ShowRemoteBranches.Hide,
-					showTags: ShowTags.Default
+					showRemoteBranchesV2: BooleanOverride.Disabled,
+					showTags: BooleanOverride.Default
 				}
 			});
 			expect(workspaceConfiguration.get).toHaveBeenCalledTimes(1);

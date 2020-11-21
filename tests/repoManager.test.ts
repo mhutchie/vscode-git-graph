@@ -13,7 +13,7 @@ import { Logger } from '../src/logger';
 import { RepoChangeEvent, RepoManager } from '../src/repoManager';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
-import { FileViewType, GitRepoSet, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from '../src/types';
+import { BooleanOverride, FileViewType, GitRepoSet, RepoCommitOrdering } from '../src/types';
 
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
@@ -907,16 +907,16 @@ describe('RepoManager', () => {
 				commitOrdering: RepoCommitOrdering.Default,
 				fileViewType: FileViewType.Default,
 				hideRemotes: [],
-				includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+				includeCommitsMentionedByReflogs: BooleanOverride.Default,
 				issueLinkingConfig: null,
 				name: null,
-				onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-				onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+				onlyFollowFirstParent: BooleanOverride.Default,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 				onRepoLoadShowSpecificBranches: null,
 				pullRequestConfig: null,
 				showRemoteBranches: true,
-				showRemoteBranchesV2: ShowRemoteBranches.Default,
-				showTags: ShowTags.Default
+				showRemoteBranchesV2: BooleanOverride.Default,
+				showTags: BooleanOverride.Default
 			};
 
 			// Run

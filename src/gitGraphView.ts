@@ -384,6 +384,12 @@ export class GitGraphView extends Disposable {
 			case 'endCodeReview':
 				this.extensionState.endCodeReview(msg.repo, msg.id);
 				break;
+			case 'exportRepoConfig':
+				this.sendMessage({
+					command: 'exportRepoConfig',
+					error: await this.repoManager.exportRepoConfig(msg.repo)
+				});
+				break;
 			case 'getSettings':
 				this.sendMessage({
 					command: 'getSettings',

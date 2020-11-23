@@ -213,8 +213,10 @@ class SettingsWidget {
 			}
 			html += '</div>';
 
-			html += '<div class="settingsSection"><h3>Extension Settings</h3>';
-			html += '<div class="settingsSectionButtons"><div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div></div></div>';
+			html += '<div class="settingsSection"><h3>Git Graph Configuration</h3><div class="settingsSectionButtons">' +
+				'<div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div><br/>' +
+				'<div id="exportRepositoryConfig">' + SVG_ICONS.package + 'Export Repository Configuration</div>' +
+				'</div></div>';
 
 			this.contentsElem.innerHTML = html;
 
@@ -472,6 +474,13 @@ class SettingsWidget {
 
 			document.getElementById('openExtensionSettings')!.addEventListener('click', () => {
 				sendMessage({ command: 'openExtensionSettings' });
+			});
+
+			document.getElementById('exportRepositoryConfig')!.addEventListener('click', () => {
+				dialog.showConfirmation('Exporting the Git Graph Repository Configuration will generate a file that can be committed in this repository. It allows others working in this repository to use the same configuration.', 'Yes, export', () => {
+					if (this.currentRepo === null) return;
+					runAction({ command: 'exportRepoConfig', repo: this.currentRepo }, 'Exporting Repository Configuration');
+				}, null);
 			});
 		}
 		alterClass(this.widgetElem, CLASS_LOADING, this.loading);

@@ -143,7 +143,7 @@ export interface IssueLinkingConfig {
 	readonly url: string;
 }
 
-interface PullRequestConfigBase {
+export interface PullRequestConfigBase {
 	readonly hostRootUrl: string;
 	readonly sourceRemote: string;
 	readonly sourceOwner: string;
@@ -186,6 +186,7 @@ export interface GitRepoState {
 	hideRemotes: string[];
 	includeCommitsMentionedByReflogs: BooleanOverride;
 	issueLinkingConfig: IssueLinkingConfig | null;
+	lastImportAt: number;
 	name: string | null;
 	onlyFollowFirstParent: BooleanOverride;
 	onRepoLoadShowCheckedOutBranch: BooleanOverride;
@@ -790,6 +791,13 @@ export interface RequestEndCodeReview extends RepoRequest {
 	readonly id: string;
 }
 
+export interface RequestExportRepoConfig extends RepoRequest {
+	readonly command: 'exportRepoConfig';
+}
+export interface ResponseExportRepoConfig extends ResponseWithErrorInfo {
+	readonly command: 'exportRepoConfig';
+}
+
 export interface RequestFetch extends RepoRequest {
 	readonly command: 'fetch';
 	readonly name: string | null; // null => Fetch all remotes
@@ -1134,6 +1142,7 @@ export type RequestMessage =
 	| RequestEditRemote
 	| RequestEditUserDetails
 	| RequestEndCodeReview
+	| RequestExportRepoConfig
 	| RequestFetch
 	| RequestFetchAvatar
 	| RequestFetchIntoLocalBranch
@@ -1190,6 +1199,7 @@ export type ResponseMessage =
 	| ResponseDropStash
 	| ResponseEditRemote
 	| ResponseEditUserDetails
+	| ResponseExportRepoConfig
 	| ResponseFetch
 	| ResponseFetchAvatar
 	| ResponseFetchIntoLocalBranch

@@ -6,11 +6,12 @@ jest.mock('../src/logger');
 import { Logger } from '../src/logger';
 import { RepoFileWatcher } from '../src/repoFileWatcher';
 
-const fsWatcher = vscode.mocks.fileSystemWater;
 let logger: Logger;
+let spyOnLog: jest.SpyInstance;
 
 beforeAll(() => {
 	logger = new Logger();
+	spyOnLog = jest.spyOn(logger, 'log');
 	jest.useFakeTimers();
 });
 
@@ -28,16 +29,15 @@ describe('RepoFileWatcher', () => {
 
 	it('Should start and receive file events', () => {
 		// Setup
-		let onCreateCallback: jest.Mock, onChangeCallback: jest.Mock, onDeleteCallback: jest.Mock;
-		fsWatcher.onDidCreate.mockImplementationOnce((callback) => onCreateCallback = callback);
-		fsWatcher.onDidChange.mockImplementationOnce((callback) => onChangeCallback = callback);
-		fsWatcher.onDidDelete.mockImplementationOnce((callback) => onDeleteCallback = callback);
+		repoFileWatcher.start('/path/to/repo');
+		const onDidCreate = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidCreate).mock.calls[0][0];
+		const onDidChange = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidChange).mock.calls[0][0];
+		const onDidDelete = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidDelete).mock.calls[0][0];
 
 		// Run
-		repoFileWatcher.start('/path/to/repo');
-		onCreateCallback!(vscode.Uri.file('/path/to/repo/file'));
-		onChangeCallback!(vscode.Uri.file('/path/to/repo/file'));
-		onDeleteCallback!(vscode.Uri.file('/path/to/repo/file'));
+		onDidCreate(vscode.Uri.file('/path/to/repo/file'));
+		onDidChange(vscode.Uri.file('/path/to/repo/file'));
+		onDidDelete(vscode.Uri.file('/path/to/repo/file'));
 		jest.runOnlyPendingTimers();
 
 		// Assert
@@ -47,17 +47,17 @@ describe('RepoFileWatcher', () => {
 
 	it('Should stop a previous active File System Watcher before creating a new one', () => {
 		// Setup
-		let onCreateCallback: jest.Mock;
-		fsWatcher.onDidCreate.mockImplementationOnce((callback) => onCreateCallback = callback);
+		repoFileWatcher.start('/path/to/repo1');
+		const watcher = repoFileWatcher['fsWatcher']!;
+		const onDidCreate = (<jest.Mock<any, any>>watcher.onDidCreate).mock.calls[0][0];
 
 		// Run
-		repoFileWatcher.start('/path/to/repo1');
-		onCreateCallback!(vscode.Uri.file('/path/to/repo1/file'));
+		onDidCreate(vscode.Uri.file('/path/to/repo1/file'));
 		repoFileWatcher.start('/path/to/repo2');
 		jest.runOnlyPendingTimers();
 
 		// Assert
-		expect(fsWatcher.dispose).toHaveBeenCalledTimes(1);
+		expect(<jest.Mock<any, any>>watcher.dispose).toHaveBeenCalledTimes(1);
 		expect(callback).toHaveBeenCalledTimes(0);
 	});
 
@@ -66,18 +66,17 @@ describe('RepoFileWatcher', () => {
 		repoFileWatcher.stop();
 
 		// Assert
-		expect(fsWatcher.dispose).toHaveBeenCalledTimes(0);
+		expect(spyOnLog).toHaveBeenCalledTimes(0);
 	});
 
 	it('Should ignore file system events while muted', () => {
 		// Setup
-		let onCreateCallback: jest.Mock;
-		fsWatcher.onDidCreate.mockImplementationOnce((callback) => onCreateCallback = callback);
+		repoFileWatcher.start('/path/to/repo');
+		const onDidCreate = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidCreate).mock.calls[0][0];
 
 		// Run
-		repoFileWatcher.start('/path/to/repo');
 		repoFileWatcher.mute();
-		onCreateCallback!(vscode.Uri.file('/path/to/repo/file'));
+		onDidCreate(vscode.Uri.file('/path/to/repo/file'));
 		jest.runOnlyPendingTimers();
 
 		// Assert
@@ -86,18 +85,17 @@ describe('RepoFileWatcher', () => {
 
 	it('Should resume reporting file events after 1.5 seconds', () => {
 		// Setup
-		let onCreateCallback: jest.Mock, onChangeCallback: jest.Mock;
-		fsWatcher.onDidCreate.mockImplementationOnce((callback) => onCreateCallback = callback);
-		fsWatcher.onDidChange.mockImplementationOnce((callback) => onChangeCallback = callback);
 		date.setCurrentTime(1587559258);
+		repoFileWatcher.start('/path/to/repo');
+		const onDidCreate = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidCreate).mock.calls[0][0];
+		const onDidChange = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidChange).mock.calls[0][0];
 
 		// Run 
-		repoFileWatcher.start('/path/to/repo');
 		repoFileWatcher.mute();
 		repoFileWatcher.unmute();
-		onCreateCallback!(vscode.Uri.file('/path/to/repo/file'));
+		onDidCreate(vscode.Uri.file('/path/to/repo/file'));
 		date.setCurrentTime(1587559260);
-		onChangeCallback!(vscode.Uri.file('/path/to/repo/file'));
+		onDidChange(vscode.Uri.file('/path/to/repo/file'));
 		jest.runOnlyPendingTimers();
 
 		// Assert
@@ -106,12 +104,11 @@ describe('RepoFileWatcher', () => {
 
 	it('Should ignore file system events on files ignored within .git directory', () => {
 		// Setup
-		let onCreateCallback: jest.Mock;
-		fsWatcher.onDidCreate.mockImplementationOnce((callback) => onCreateCallback = callback);
+		repoFileWatcher.start('/path/to/repo');
+		const onDidCreate = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidCreate).mock.calls[0][0];
 
 		// Run
-		repoFileWatcher.start('/path/to/repo');
-		onCreateCallback!(vscode.Uri.file('/path/to/repo/.git/config-x'));
+		onDidCreate(vscode.Uri.file('/path/to/repo/.git/config-x'));
 		jest.runOnlyPendingTimers();
 
 		// Assert

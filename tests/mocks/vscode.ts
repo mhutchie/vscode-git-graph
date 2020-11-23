@@ -20,12 +20,6 @@ export const mocks = {
 			update: jest.fn()
 		}
 	},
-	fileSystemWater: {
-		onDidCreate: jest.fn(),
-		onDidChange: jest.fn(),
-		onDidDelete: jest.fn(),
-		dispose: jest.fn()
-	},
 	outputChannel: {
 		appendLine: jest.fn(),
 		dispose: jest.fn()
@@ -154,7 +148,12 @@ export const window = {
 };
 
 export const workspace = {
-	createFileSystemWatcher: jest.fn(() => mocks.fileSystemWater),
+	createFileSystemWatcher: jest.fn(() => ({
+		onDidCreate: jest.fn(),
+		onDidChange: jest.fn(),
+		onDidDelete: jest.fn(),
+		dispose: jest.fn()
+	})),
 	getConfiguration: jest.fn(() => mocks.workspaceConfiguration),
 	onDidChangeWorkspaceFolders: jest.fn((_: () => Promise<void>) => ({ dispose: jest.fn() })),
 	onDidCloseTextDocument: jest.fn((_: () => void) => ({ dispose: jest.fn() })),

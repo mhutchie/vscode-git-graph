@@ -25,6 +25,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	hideRemotes: [],
 	includeCommitsMentionedByReflogs: BooleanOverride.Default,
 	issueLinkingConfig: null,
+	lastImportAt: 0,
 	name: null,
 	onlyFollowFirstParent: BooleanOverride.Default,
 	onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,

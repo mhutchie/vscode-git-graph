@@ -195,14 +195,17 @@
 .settingsSectionButtons > div.addBtn svg{
 	transform:rotate(45deg);
 }
-.settingsSectionButtons > div.removeBtn svg, #openExtensionSettings svg{
+.settingsSectionButtons > div.removeBtn svg, #openExtensionSettings svg, #exportRepositoryConfig svg{
 	vertical-align:top;
 	width:14px !important;
 	height:14px !important;
 	margin:5px;
 }
-#openExtensionSettings svg{
+#openExtensionSettings svg, #exportRepositoryConfig svg{
 	margin-top:6px;
+}
+#exportRepositoryConfig svg{
+	margin-right:7px;
 }
 
 #settingsLoading{

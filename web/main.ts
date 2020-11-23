@@ -2910,6 +2910,9 @@ window.addEventListener('load', () => {
 					settingsWidget.refresh();
 				}, true);
 				break;
+			case 'exportRepoConfig':
+				refreshOrDisplayError(msg.error, 'Unable to Export Repository Configuration');
+				break;
 			case 'fetch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch from Remote(s)');
 				break;

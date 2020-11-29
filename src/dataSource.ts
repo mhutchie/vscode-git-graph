@@ -635,12 +635,10 @@ export class DataSource extends Disposable {
 	 */
 	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
 		const args = ['tag'];
-		if (getConfig().signTags) {
-			args.push('-s', tagName, '-m', message);
-		} else if (lightweight) {
+		if (lightweight) {
 			args.push(tagName);
 		} else {
-			args.push('-a', tagName, '-m', message);
+			args.push(getConfig().signTags ? '-s' : '-a', tagName, '-m', message);
 		}
 		args.push(commitHash);
 		return this.runGitCommand(args, repo);

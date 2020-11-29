@@ -4167,7 +4167,6 @@ describe('DataSource', () => {
 		it('Should add a lightweight tag to a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
-			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
 
 			// Run
 			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, '');

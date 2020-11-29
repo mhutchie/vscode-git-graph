@@ -1829,6 +1829,7 @@ describe('RepoManager', () => {
 			// Setup
 			mockDirectoryThatsNotRepository();
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
+			const spyOnIsKnownRepo = jest.spyOn(repoManager, 'isKnownRepo');
 			mockRepositoryWithNoSubmodules();
 			mockFsReadFileOnce(null, '{');
 
@@ -1839,6 +1840,28 @@ describe('RepoManager', () => {
 			expect(repoManager.getRepos()).toStrictEqual({
 				'/path/to/workspace-folder1/repo': DEFAULT_REPO_STATE
 			});
+			expect(spyOnIsKnownRepo).not.toHaveBeenCalled();
+
+			// Teardown
+			repoManager.dispose();
+		});
+
+		it('Shouldn\'t proceed with processing config if it isn\'t an object', async () => {
+			// Setup
+			mockDirectoryThatsNotRepository();
+			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
+			const spyOnIsKnownRepo = jest.spyOn(repoManager, 'isKnownRepo');
+			mockRepositoryWithNoSubmodules();
+			mockFsReadFileOnce(null, 'true');
+
+			// Run
+			await repoManager.registerRepo('/path/to/workspace-folder1/repo', false);
+
+			// Assert
+			expect(repoManager.getRepos()).toStrictEqual({
+				'/path/to/workspace-folder1/repo': DEFAULT_REPO_STATE
+			});
+			expect(spyOnIsKnownRepo).not.toHaveBeenCalled();
 
 			// Teardown
 			repoManager.dispose();

@@ -689,7 +689,6 @@ function doesPathExist(path: string) {
 export namespace ExternalRepoConfig {
 
 	export const enum FileViewType {
-		Default = 'default',
 		Tree = 'tree',
 		List = 'list'
 	}
@@ -751,7 +750,8 @@ function readExternalConfigFile(repo: string) {
 				resolve(null);
 			} else {
 				try {
-					resolve(JSON.parse(data.toString()));
+					const contents = JSON.parse(data.toString());
+					resolve(typeof contents === 'object' ? contents : null);
 				} catch (_) {
 					resolve(null);
 				}
@@ -980,10 +980,10 @@ function applyExternalConfigFile(file: Readonly<ExternalRepoConfig.File>, state:
 		}
 		state.pullRequestConfig = <PullRequestConfig>{
 			provider: provider,
-			custom: file.pullRequestConfig.custom !== null
+			custom: provider === PullRequestProvider.Custom
 				? {
-					name: file.pullRequestConfig.custom.name,
-					templateUrl: file.pullRequestConfig.custom.templateUrl
+					name: file.pullRequestConfig.custom!.name,
+					templateUrl: file.pullRequestConfig.custom!.templateUrl
 				}
 				: null,
 			hostRootUrl: file.pullRequestConfig.hostRootUrl,

@@ -169,7 +169,7 @@ export class CommandManager extends Disposable {
 		const repoPaths = Object.keys(repos);
 
 		if (repoPaths.length > 1) {
-			const items: vscode.QuickPickItem[] = Object.keys(repos).map((path) => ({
+			const items: vscode.QuickPickItem[] = repoPaths.map((path) => ({
 				label: repos[path].name || getRepoName(path),
 				description: path
 			}));

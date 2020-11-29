@@ -361,7 +361,7 @@ export class AvatarManager extends Disposable {
 	 * Download and save an avatar image.
 	 * @param email The email address identifying the avatar.
 	 * @param imageUrl The URL the avatar can be downloaded from.
-	 * @returns The image name of the avatar on disk, or NULL if downloading failed.
+	 * @returns A promise that resolves to the image name of the avatar on disk, or NULL if downloading failed.
 	 */
 	private downloadAvatarImage(email: string, imageUrl: string) {
 		return (new Promise<string | null>((resolve) => {
@@ -369,10 +369,10 @@ export class AvatarManager extends Disposable {
 			const imgUrl = url.parse(imageUrl);
 
 			let completed = false;
-			const complete = (data: string | null = null) => {
+			const complete = (fileName: string | null = null) => {
 				if (!completed) {
 					completed = true;
-					resolve(data);
+					resolve(fileName);
 				}
 			};
 
@@ -478,7 +478,7 @@ class AvatarRequestQueue {
 		const existingRequest = this.queue.find((request) => request.email === email && request.repo === repo);
 		if (existingRequest) {
 			commits.forEach((commit) => {
-				if (existingRequest.commits.indexOf(commit) === -1) {
+				if (!existingRequest.commits.includes(commit)) {
 					existingRequest.commits.push(commit);
 				}
 			});

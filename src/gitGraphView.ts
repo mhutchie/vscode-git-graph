@@ -134,7 +134,7 @@ export class GitGraphView extends Disposable {
 				}
 			}),
 
-			// Subscribe to events trigged when an avatar is available
+			// Subscribe to events triggered when an avatar is available
 			avatarManager.onAvatar((event) => {
 				this.sendMessage({
 					command: 'fetchAvatar',

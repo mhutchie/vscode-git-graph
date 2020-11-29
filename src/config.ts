@@ -282,7 +282,7 @@ class Config {
 	}
 
 	/**
-	 * Get the keybinding configuration from the `git-graph.keybinding.*` Extension Settings.
+	 * Get the keybinding configuration from the `git-graph.keyboardShortcut.*` Extension Settings.
 	 */
 	get keybindings(): KeybindingConfig {
 		return {
@@ -586,7 +586,7 @@ class Config {
 
 /**
  * Get a Config instance for retrieving the users configuration of Git Graph Extension Settings.
- * @param repo An option path of a repository (to be used for Workspace Folder Scoped Configuration Values).
+ * @param repo An optional path of a repository (to be used for Workspace Folder Scoped Configuration Values).
  * @returns A Config instance.
  */
 export function getConfig(repo?: string) {

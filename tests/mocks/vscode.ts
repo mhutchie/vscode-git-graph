@@ -1,7 +1,64 @@
 import * as vscode from 'vscode';
 
+const mockedExtensionSettingValues: { [section: string]: any } = {};
+const mockedCommands: { [command: string]: (...args: any[]) => any } = {};
+
+export const mocks = {
+	extensionContext: {
+		asAbsolutePath: jest.fn(),
+		extensionPath: '/path/to/extension',
+		globalState: {
+			get: jest.fn(),
+			update: jest.fn()
+		},
+		globalStoragePath: '/path/to/globalStorage',
+		logPath: '/path/to/logs',
+		storagePath: '/path/to/storage',
+		subscriptions: [],
+		workspaceState: {
+			get: jest.fn(),
+			update: jest.fn()
+		}
+	},
+	outputChannel: {
+		appendLine: jest.fn(),
+		dispose: jest.fn()
+	},
+	statusBarItem: {
+		text: '',
+		tooltip: '',
+		command: '',
+		show: jest.fn(),
+		hide: jest.fn(),
+		dispose: jest.fn()
+	},
+	terminal: {
+		sendText: jest.fn(),
+		show: jest.fn()
+	},
+	workspaceConfiguration: {
+		get: jest.fn((section: string, defaultValue?: any) => {
+			return typeof mockedExtensionSettingValues[section] !== 'undefined'
+				? mockedExtensionSettingValues[section]
+				: defaultValue;
+		}),
+		inspect: jest.fn((section: string) => ({
+			workspaceValue: mockedExtensionSettingValues[section],
+			globalValue: mockedExtensionSettingValues[section]
+		}))
+	}
+};
+
 export const commands = {
-	executeCommand: jest.fn()
+	executeCommand: jest.fn((command: string, ...rest: any[]) => mockedCommands[command](...rest)),
+	registerCommand: jest.fn((command: string, callback: (...args: any[]) => any) => {
+		mockedCommands[command] = callback;
+		return {
+			dispose: () => {
+				delete mockedCommands[command];
+			}
+		};
+	})
 };
 
 export const env = {
@@ -62,6 +119,8 @@ export enum StatusBarAlignment {
 	Right = 2
 }
 
+export const version = '1.51.0';
+
 export enum ViewColumn {
 	Active = -1,
 	Beside = -2,
@@ -77,77 +136,42 @@ export enum ViewColumn {
 }
 
 export const window = {
+	activeTextEditor: { document: { uri: Uri.file('/path/to/workspace-folder/active-file.txt') } },
 	createOutputChannel: jest.fn(() => mocks.outputChannel),
 	createStatusBarItem: jest.fn(() => mocks.statusBarItem),
 	createTerminal: jest.fn(() => mocks.terminal),
 	showErrorMessage: jest.fn(),
 	showInformationMessage: jest.fn(),
+	showOpenDialog: jest.fn(),
+	showQuickPick: jest.fn(),
 	showSaveDialog: jest.fn()
 };
 
 export const workspace = {
-	createFileSystemWatcher: jest.fn(() => mocks.fileSystemWater),
-	getConfiguration: jest.fn(() => mocks.workspaceConfiguration),
-	onDidCloseTextDocument: jest.fn((_: () => void) => ({ dispose: jest.fn() })),
-	workspaceFolders: <{ uri: Uri }[] | undefined>undefined
-};
-
-export const mocks = {
-	extensionContext: {
-		asAbsolutePath: jest.fn(),
-		extensionPath: '/path/to/extension',
-		globalState: {
-			get: jest.fn(),
-			update: jest.fn()
-		},
-		globalStoragePath: '/path/to/globalStorage',
-		logPath: '/path/to/logs',
-		storagePath: '/path/to/storage',
-		subscriptions: [],
-		workspaceState: {
-			get: jest.fn(),
-			update: jest.fn()
-		}
-	},
-	fileSystemWater: {
+	createFileSystemWatcher: jest.fn(() => ({
 		onDidCreate: jest.fn(),
 		onDidChange: jest.fn(),
 		onDidDelete: jest.fn(),
 		dispose: jest.fn()
-	},
-	outputChannel: {
-		appendLine: jest.fn(),
-		dispose: jest.fn()
-	},
-	statusBarItem: {
-		text: '',
-		tooltip: '',
-		command: '',
-		show: jest.fn(),
-		hide: jest.fn(),
-		dispose: jest.fn()
-	},
-	terminal: {
-		sendText: jest.fn(),
-		show: jest.fn()
-	},
-	workspaceConfiguration: {
-		get: jest.fn(),
-		inspect: jest.fn()
-	}
+	})),
+	getConfiguration: jest.fn(() => mocks.workspaceConfiguration),
+	onDidChangeWorkspaceFolders: jest.fn((_: () => Promise<void>) => ({ dispose: jest.fn() })),
+	onDidCloseTextDocument: jest.fn((_: () => void) => ({ dispose: jest.fn() })),
+	workspaceFolders: <{ uri: Uri }[] | undefined>undefined
 };
 
-export function mockRenamedExtensionSettingReturningValueOnce(value: any) {
-	const config = typeof value !== 'undefined'
-		? {
-			workspaceValue: value,
-			globalValue: value
-		}
-		: undefined;
-	mocks.workspaceConfiguration.inspect.mockReturnValueOnce(config).mockReturnValueOnce(config);
-}
 
-export function expectRenamedExtensionSettingToHaveBeenCalled(newSection: string, oldSection: string) {
-	expect(mocks.workspaceConfiguration.inspect).toBeCalledWith(newSection);
-	expect(mocks.workspaceConfiguration.inspect).toBeCalledWith(oldSection);
+/* Utilities */
+
+beforeEach(() => {
+	jest.clearAllMocks();
+
+	// Clear any mocked extension setting values before each test
+	Object.keys(mockedExtensionSettingValues).forEach((section) => {
+		delete mockedExtensionSettingValues[section];
+	});
+});
+
+export function mockExtensionSettingReturnValue(section: string, value: any) {
+	mockedExtensionSettingValues[section] = value;
 }

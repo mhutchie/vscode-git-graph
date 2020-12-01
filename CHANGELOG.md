@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.28.0 - 2020-12-01
+* #399 Sign Commits and Tags created by actions in the Git Graph View, by enabling the new extension settings `git-graph.repository.sign.commits` and `git-graph.repository.sign.tags` respectively. This is an alternative to the existing method using Git config (`commit.gpgSign` and `tag.gpgSign`).
+* #406 The keybindings for all Git Graph View keyboard shortcuts can now be configured using new extension settings `git-graph.keyboardShortcut.*`.
+* #407 Control whether Remote Head Symbolic References (e.g. origin/HEAD) are displayed in Git Graph via the new extension setting `git-graph.repository.showRemoteHeads`. Thanks [Maciej Wilk (@wilkmaciej)](https://github.com/wilkmaciej) for helping with this!
+* #409 Include built-in support for new emoji shortcodes recently added to [gitmoji](https://gitmoji.carloscuesta.me/).
+* #412 New "Git Graph: Fetch from Remote(s)" command contributed to Visual Studio Code, that opens the Git Graph View and immediately runs "Fetch from Remote(s)".
+* #414 Your Git Graph Repository Configuration can now be exported to a file that can be committed in the repository. It allows others working in the same repository to automatically use the same Git Graph configuration. To export your configuration, click the "Export Repository Configuration" button at the bottom of the Repository Settings Widget (on the Git Graph View).
+* #416 The existing file encoding extension setting `git-graph.fileEncoding` can now also be configured at a Workspace Folder Scope.
+* #419 On dialogs that refer to the "current branch" (Merge, Pull, Rebase, and Reset), the current branch is now explicitly mentioned.
+* #420 Fixed an issue that prevented files that overflow horizontally in the Commit Details View Files View from being left-clicked (i.e. those shortened with an ellipsis). _(issue introduced via #381)_
+* Significant code improvements.
+
 ## 1.27.0 - 2020-11-01
 * #281 For the Repository Settings Widget, read values defined in additional Git config files when they're included via [include directives](https://git-scm.com/docs/git-config#_includes) in local or global Git config files.
 * #364 Parse and render a frequently used subset of inline Markdown formatting rules in commit messages and tag details (bold, italics, bold & italics, and inline code blocks). Markdown parsing can be disabled using the extension setting `git-graph.markdown`.

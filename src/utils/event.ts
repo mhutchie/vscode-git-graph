@@ -54,6 +54,14 @@ export class EventEmitter<T> implements vscode.Disposable {
 	}
 
 	/**
+	 * Does the EventEmitter have any registered listeners.
+	 * @returns TRUE => There are one or more registered subscribers, FALSE => There are no registered subscribers
+	 */
+	public hasSubscribers() {
+		return this.listeners.length > 0;
+	}
+
+	/**
 	 * Get the Event of this EventEmitter, which can be used to subscribe to the emitted events.
 	 * @returns The Event.
 	 */

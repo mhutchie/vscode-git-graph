@@ -16,16 +16,18 @@ import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, Mer
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
-let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
+const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 let logger: Logger;
+let spyOnSpawn: jest.SpyInstance;
 
 beforeAll(() => {
 	onDidChangeConfiguration = new EventEmitter<ConfigurationChangeEvent>();
 	onDidChangeGitExecutable = new EventEmitter<utils.GitExecutable>();
 	logger = new Logger();
 	jest.spyOn(path, 'normalize').mockImplementation((p) => p);
+	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
 afterAll(() => {
@@ -34,17 +36,10 @@ afterAll(() => {
 	onDidChangeGitExecutable.dispose();
 });
 
-beforeEach(() => {
-	jest.clearAllMocks();
-});
-
 describe('DataSource', () => {
 	let dataSource: DataSource;
-	let spyOnSpawn: jest.SpyInstance;
 	beforeEach(() => {
 		dataSource = new DataSource({ path: '/path/to/git', version: '2.25.0' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
-		jest.clearAllMocks();
-		spyOnSpawn = jest.spyOn(cp, 'spawn');
 	});
 	afterEach(() => {
 		dataSource.dispose();
@@ -116,6 +111,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(
 				'* develop\n' +
 				'  master\n' +
+				'  remotes/origin/HEAD\n' +
 				'  remotes/origin/develop\n' +
 				'  remotes/origin/master\n'
 			);
@@ -124,13 +120,14 @@ describe('DataSource', () => {
 				'98adab72e57a098a45cc36e43a6c0fda95c44f8bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbb30d6d4d14462e09515df02a8635e83b4278c8b1 26970361eca306caa6d6bed3baf022dbd8fa404cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{0}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592306634XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on develop: b30d6d4 y\n' +
 				'0fc3e571c275213de2b3bca9c85e852323056121XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb9157723d0856bd828800ff185ee72658ee51d19f d45009bc4224537e97b0e52883ea7ae657928fcf 9d81ce0a6cf64b6651bacd7a6c3a6ca90fd63235XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbrefs/stash@{1}XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1592135134XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbWIP on master: 9157723 y\n'
 			);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
-				branches: ['develop', 'master', 'remotes/origin/develop', 'remotes/origin/master'],
+				branches: ['develop', 'master', 'remotes/origin/HEAD', 'remotes/origin/develop', 'remotes/origin/master'],
 				head: 'develop',
 				remotes: ['origin'],
 				stashes: [
@@ -170,6 +167,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
@@ -195,9 +193,10 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Commit Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('date.type', 'Commit Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -226,9 +225,10 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Commit Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('date.type', 'Commit Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -257,9 +257,10 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', true);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -288,9 +289,10 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
+			vscode.mockExtensionSettingReturnValue('useMailmap', true);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -322,6 +324,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, ['origin']);
@@ -339,11 +342,41 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the repository info (excluding remote heads)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'* develop\n' +
+				'  master\n' +
+				'  remotes/origin/HEAD\n' +
+				'  remotes/origin/develop\n' +
+				'  remotes/origin/master\n'
+			);
+			mockGitSuccessOnce('origin\n');
+			mockGitSuccessOnce('\n');
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', false);
+
+			// Run
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				branches: ['develop', 'master', 'remotes/origin/develop', 'remotes/origin/master'],
+				head: 'develop',
+				remotes: ['origin'],
+				stashes: [],
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-a', '--no-color'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git (when getting branches)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce('origin\n');
 			mockGitSuccessOnce('\n');
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
@@ -366,6 +399,7 @@ describe('DataSource', () => {
 			);
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce('\n');
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
@@ -388,6 +422,7 @@ describe('DataSource', () => {
 			);
 			mockGitSuccessOnce('origin\n');
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
@@ -416,6 +451,7 @@ describe('DataSource', () => {
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
 				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/HEAD\n' +
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
 				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
@@ -426,9 +462,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -458,7 +495,11 @@ describe('DataSource', () => {
 						message: 'Commit Message 3',
 						heads: ['master'],
 						tags: [],
-						remotes: [{ name: 'origin/master', remote: 'origin' }, { name: 'other-remote/master', remote: null }],
+						remotes: [
+							{ name: 'origin/HEAD', remote: 'origin' },
+							{ name: 'origin/master', remote: 'origin' },
+							{ name: 'other-remote/master', remote: null }
+						],
 						stash: null
 					},
 					{
@@ -516,9 +557,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -600,9 +642,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -673,8 +716,9 @@ describe('DataSource', () => {
 				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -745,8 +789,9 @@ describe('DataSource', () => {
 				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showUncommittedChanges
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', false);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -820,9 +865,10 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(
 				'M modified.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', false);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -909,9 +955,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -998,9 +1045,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', false);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1086,9 +1134,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1176,9 +1225,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1266,9 +1316,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1335,6 +1386,103 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the commits (showRemoteHeads === FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 3\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3cXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559257XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 2\n' +
+				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
+			);
+			mockGitSuccessOnce(
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/heads/master\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/heads/develop\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/heads/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/origin/master\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/HEAD\n' +
+				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
+				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+			);
+			mockGitSuccessOnce(
+				'M modified.txt\n' +
+				'?? untracked.txt\n'
+			);
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', false);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
+			date.setCurrentTime(1587559259);
+
+			// Run
+			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commits: [
+					{
+						hash: '*',
+						parents: ['1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'],
+						author: '*',
+						email: '',
+						date: 1587559259,
+						message: 'Uncommitted Changes (2)',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+						parents: ['2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559258,
+						message: 'Commit Message 3',
+						heads: ['master'],
+						tags: [],
+						remotes: [
+							{ name: 'origin/master', remote: 'origin' },
+							{ name: 'other-remote/master', remote: null }
+						],
+						stash: null
+					},
+					{
+						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+						parents: ['3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559257,
+						message: 'Commit Message 2',
+						heads: ['develop'],
+						tags: [{ name: 'tag1', annotated: true }],
+						remotes: [],
+						stash: null
+					},
+					{
+						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+						parents: [],
+						author: 'Test Name',
+						email: 'test@mhutchie.com',
+						date: 1587559256,
+						message: 'Commit Message 1',
+						heads: [],
+						tags: [],
+						remotes: [],
+						stash: null
+					}
+				],
+				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				moreCommitsAvailable: false,
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return the commits (hiding the remote branches from a hidden remote)', async () => {
 			// Setup
 			mockGitSuccessOnce(
@@ -1357,9 +1505,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1446,9 +1595,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1548,9 +1698,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1688,9 +1839,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1828,9 +1980,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1925,9 +2078,10 @@ describe('DataSource', () => {
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
 			mockGitSuccessOnce('');
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -1986,7 +2140,8 @@ describe('DataSource', () => {
 			// Setup
 			mockGitSuccessOnce('\n');
 			mockGitThrowingErrorOnce();
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
@@ -2025,9 +2180,10 @@ describe('DataSource', () => {
 				'M modified.txt\n' +
 				'?? untracked.txt\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUncommittedChanges
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 			date.setCurrentTime(1587559259);
 
 			// Run
@@ -2106,7 +2262,8 @@ describe('DataSource', () => {
 				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
 				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
 			);
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
@@ -2128,7 +2285,8 @@ describe('DataSource', () => {
 				'3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4dXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest NameXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559256XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message 1\n'
 			);
 			mockGitThrowingErrorOnce();
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showCommitsOnlyReferencedByTags
+			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
+			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
 			const result = await dataSource.getCommits('/path/to/repo', null, 300, true, true, false, false, CommitOrdering.Date, ['origin'], [], []);
@@ -2255,9 +2413,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbGXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest Signer <test-signer@mhutchie.com> XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb0123456789ABCDEFXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2318,9 +2476,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbGXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest Signer <test-signer@mhutchie.com> XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb0123456789ABCDEFXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
+			vscode.mockExtensionSettingReturnValue('showSignatureStatus', true);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2381,9 +2539,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
 
 			// Run
 			onDidChangeGitExecutable.emit({
@@ -2441,9 +2599,9 @@ describe('DataSource', () => {
 			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce('Author Date'); // date.type
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.useMailmap
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.commits.showSignatureStatus
+			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
+			vscode.mockExtensionSettingReturnValue('repository.useMailmap', true);
+			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2873,7 +3031,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -2935,7 +3093,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(false); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', false);
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -2990,7 +3148,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['M', 'dir/modified.txt', ''].join('\0'));
 			mockGitSuccessOnce(['1	1	dir/modified.txt', '1	1	modified.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', ' D ', 'M  dir/modified.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -3034,7 +3192,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -3051,7 +3209,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce([' D dir/deleted.txt', 'M  dir/modified.txt', 'R  dir/renamed-new.txt', 'dir/renamed-old.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getUncommittedDetails('/path/to/repo');
@@ -3086,7 +3244,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['M', 'dir/modified.txt', 'R051', 'dir/renamed-old.txt', 'dir/renamed-new.txt', 'A', 'added.txt', ''].join('\0'));
 			mockGitSuccessOnce(['1	1	dir/modified.txt', '1	2	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', '2	0	added.txt', ''].join('\0'));
 			mockGitSuccessOnce(['MM dir/modified.txt', 'A  added.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getCommitComparison('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED);
@@ -3176,7 +3334,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce(['1	1	dir/modified.txt', '1	2	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', '2	0	added.txt', ''].join('\0'));
 			mockGitSuccessOnce(['MM dir/modified.txt', 'A  added.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getCommitComparison('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED);
@@ -3193,7 +3351,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(['M', 'dir/modified.txt', 'R051', 'dir/renamed-old.txt', 'dir/renamed-new.txt', 'A', 'added.txt', ''].join('\0'));
 			mockGitThrowingErrorOnce();
 			mockGitSuccessOnce(['MM dir/modified.txt', 'A  added.txt', '?? untracked.txt'].join('\0'));
-			vscode.mockRenamedExtensionSettingReturningValueOnce(true); // repository.showUntrackedFiles
+			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
 
 			// Run
 			const result = await dataSource.getCommitComparison('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED);
@@ -3225,7 +3383,7 @@ describe('DataSource', () => {
 		it('Should return the file contents', async () => {
 			// Setup
 			mockGitSuccessOnce('File contents.\n');
-			workspaceConfiguration.get.mockReturnValueOnce('cp1252'); // fileEncoding
+			vscode.mockExtensionSettingReturnValue('fileEncoding', 'cp1252');
 			const spyOnDecode = jest.spyOn(iconv, 'decode');
 
 			// Run
@@ -3234,13 +3392,20 @@ describe('DataSource', () => {
 			// Assert
 			expect(result.toString()).toBe('File contents.\n');
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b:subdirectory/file.txt'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith('git-graph', {
+				scheme: 'file',
+				authority: '',
+				path: '/path/to/repo',
+				query: '',
+				fragment: ''
+			});
 			expect(spyOnDecode).toBeCalledWith(expect.anything(), 'cp1252');
 		});
 
 		it('Should return the file contents (falling back to utf8 if the encoding is unknown)', async () => {
 			// Setup
 			mockGitSuccessOnce('File contents.\n');
-			workspaceConfiguration.get.mockReturnValueOnce('xyz'); // fileEncoding
+			vscode.mockExtensionSettingReturnValue('fileEncoding', 'xyz');
 			const spyOnDecode = jest.spyOn(iconv, 'decode');
 
 			// Run
@@ -3249,6 +3414,13 @@ describe('DataSource', () => {
 			// Assert
 			expect(result.toString()).toBe('File contents.\n');
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b:subdirectory/file.txt'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith('git-graph', {
+				scheme: 'file',
+				authority: '',
+				path: '/path/to/repo',
+				query: '',
+				fragment: ''
+			});
 			expect(spyOnDecode).toBeCalledWith(expect.anything(), 'utf8');
 		});
 	});
@@ -4007,6 +4179,7 @@ describe('DataSource', () => {
 		it('Should add an annotated tag to a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
 
 			// Run
 			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, 'message');
@@ -4016,9 +4189,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['tag', '-a', 'tag-name', '-m', 'message', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should add a signed tag to a commit', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', true);
+
+			// Run
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, 'message');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['tag', '-s', 'tag-name', '-m', 'message', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
 
 			// Run
 			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, '');
@@ -4561,6 +4748,7 @@ describe('DataSource', () => {
 		it('Should pull a remote branch into the current branch', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, false);
@@ -4574,6 +4762,7 @@ describe('DataSource', () => {
 		it('Should pull a remote branch into the current branch (always creating a new commit)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, false);
@@ -4584,19 +4773,34 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--no-ff'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should pull a remote branch into the current branch (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--no-ff', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should pull a remote branch into the current branch (squash and staged changes exist)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Default');
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(workspaceConfiguration.get).toBeCalledTimes(1);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', expect.anything());
 			expect(spyOnSpawn).toBeCalledTimes(3);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
@@ -4604,10 +4808,32 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge branch \'origin/master\''], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should pull a remote branch into the current branch (squash and staged changes exist, signing merge commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Default');
+
+			// Run
+			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.pullBranch.squashMessageFormat', expect.anything());
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['pull', 'origin', 'master', '--squash', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-S', '-m', 'Merge branch \'origin/master\''], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should pull a remote branch into the current branch (squash and no staged changes)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4623,6 +4849,7 @@ describe('DataSource', () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4639,7 +4866,8 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Default');
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', true, true);
@@ -4657,7 +4885,8 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG'); // dialog.pullBranch.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Git SQUASH_MSG');
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4673,6 +4902,7 @@ describe('DataSource', () => {
 		it('Should return an error message thrown by git (when pull fails)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4687,7 +4917,8 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitThrowingErrorOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.pullBranch.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.pullBranch.squashMessageFormat', 'Default');
 
 			// Run
 			const result = await dataSource.pullBranch('/path/to/repo', 'master', 'origin', false, true);
@@ -4727,6 +4958,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, false, false);
@@ -4740,6 +4972,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (always creating a new commit)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, false, false);
@@ -4750,19 +4983,34 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--no-ff'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should merge a branch into the current branch (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, false, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--no-ff', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should merge a branch into the current branch (squash and staged changes exist)', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Default');
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(workspaceConfiguration.get).toBeCalledTimes(1);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', expect.anything());
 			expect(spyOnSpawn).toBeCalledTimes(3);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--squash'], expect.objectContaining({ cwd: '/path/to/repo' }));
@@ -4775,7 +5023,8 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Default');
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'origin/develop', MergeActionOn.RemoteTrackingBranch, false, true, false);
@@ -4793,7 +5042,8 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Default'); // dialog.merge.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Default');
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', MergeActionOn.Commit, false, true, false);
@@ -4806,12 +5056,34 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-m', 'Merge commit \'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b\''], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should merge a branch into the current branch (squash and staged changes exist, signing merge commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Default');
+
+			// Run
+			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(workspaceConfiguration.get).toBeCalledTimes(3);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashMessageFormat', expect.anything());
+			expect(spyOnSpawn).toBeCalledTimes(3);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['merge', 'develop', '--squash', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-index', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['commit', '-S', '-m', 'Merge branch \'develop\''], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should merge a branch into the current branch (squash and staged changes exist, dialog.merge.squashMessageFormat === "Git SQUASH_MSG")', async () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitSuccessOnce();
-			workspaceConfiguration.get.mockReturnValueOnce('Git SQUASH_MSG'); // dialog.merge.squashMessageFormat
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
+			vscode.mockExtensionSettingReturnValue('dialog.merge.squashMessageFormat', 'Git SQUASH_MSG');
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4828,6 +5100,7 @@ describe('DataSource', () => {
 			// Setup
 			mockGitSuccessOnce();
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4842,6 +5115,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (without committing)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, false, true);
@@ -4855,6 +5129,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (squash without committing)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, true);
@@ -4868,6 +5143,7 @@ describe('DataSource', () => {
 		it('Should merge a branch into the current branch (ignore create new commit when squashing)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, true, true, true);
@@ -4881,6 +5157,7 @@ describe('DataSource', () => {
 		it('Should return an error message thrown by git (when merge fails)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4895,6 +5172,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 			mockGitSuccessOnce(':100644 100644 f592752b794040422c9d3b884f15564e6143954b 0000000000000000000000000000000000000000 M      README.md');
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.merge('/path/to/repo', 'develop', MergeActionOn.Branch, false, true, false);
@@ -4912,6 +5190,7 @@ describe('DataSource', () => {
 		it('Should rebase the current branch on a branch', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
@@ -4924,6 +5203,7 @@ describe('DataSource', () => {
 		it('Should rebase the current branch on a branch (ignoring date)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, true, false);
@@ -4933,9 +5213,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', 'develop', '--ignore-date'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should rebase the current branch on a branch (signing the new commits)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', 'develop', '-S'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, false);
@@ -4948,6 +5242,7 @@ describe('DataSource', () => {
 			// Setup
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
@@ -4961,6 +5256,7 @@ describe('DataSource', () => {
 			// Setup
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
@@ -4970,10 +5266,25 @@ describe('DataSource', () => {
 			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'Rebase on "1a2b3c4d"');
 		});
 
+		it('Should launch the interactive rebase of the current branch on a branch in a terminal (signing the new commits)', async () => {
+			// Setup
+			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
+			spyOnOpenGitTerminal.mockReturnValueOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'rebase --interactive -S develop', 'Rebase on "develop"');
+		});
+
 		it('Should return the "Unable to Find Git" error message when no git executable is known', async () => {
 			// Setup
 			dataSource.dispose();
 			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
@@ -5049,6 +5360,7 @@ describe('DataSource', () => {
 		it('Should cherrypick a commit (with a single parent)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, false);
@@ -5061,6 +5373,7 @@ describe('DataSource', () => {
 		it('Should cherrypick a commit (with multiple parents)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 2, false, false);
@@ -5073,6 +5386,7 @@ describe('DataSource', () => {
 		it('Should record origin when cherry picking a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, true, false);
@@ -5082,9 +5396,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['cherry-pick', '-x', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should cherrypick a commit (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['cherry-pick', '-S', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should not commit the cherrypick of a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, true);
@@ -5097,6 +5425,7 @@ describe('DataSource', () => {
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.cherrypickCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0, false, false);
@@ -5110,6 +5439,7 @@ describe('DataSource', () => {
 		it('Should drop a commit', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.dropCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
@@ -5119,9 +5449,23 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', '--onto', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should drop a commit (signing any new commits)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.dropCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['rebase', '-S', '--onto', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.dropCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
@@ -5184,6 +5528,7 @@ describe('DataSource', () => {
 		it('Should revert a commit (with a single parent)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0);
@@ -5196,18 +5541,33 @@ describe('DataSource', () => {
 		it('Should revert a commit (with multiple parents)', async () => {
 			// Setup
 			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 2);
 
 			// Assert
 			expect(result).toBe(null);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['revert', '--no-edit', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '-m', '2'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['revert', '--no-edit', '-m', '2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should revert a commit (signing the new commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
+
+			// Run
+			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 0);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['revert', '--no-edit', '-S', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
 			const result = await dataSource.revertCommit('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 2);

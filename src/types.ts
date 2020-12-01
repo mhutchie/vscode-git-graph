@@ -143,7 +143,7 @@ export interface IssueLinkingConfig {
 	readonly url: string;
 }
 
-interface PullRequestConfigBase {
+export interface PullRequestConfigBase {
 	readonly hostRootUrl: string;
 	readonly sourceRemote: string;
 	readonly sourceOwner: string;
@@ -184,16 +184,17 @@ export interface GitRepoState {
 	commitOrdering: RepoCommitOrdering;
 	fileViewType: FileViewType;
 	hideRemotes: string[];
-	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs;
+	includeCommitsMentionedByReflogs: BooleanOverride;
 	issueLinkingConfig: IssueLinkingConfig | null;
+	lastImportAt: number;
 	name: string | null;
-	onlyFollowFirstParent: OnlyFollowFirstParent;
-	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch;
+	onlyFollowFirstParent: BooleanOverride;
+	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
-	showRemoteBranchesV2: ShowRemoteBranches;
-	showTags: ShowTags;
+	showRemoteBranchesV2: BooleanOverride;
+	showTags: BooleanOverride;
 }
 
 
@@ -225,6 +226,7 @@ export interface GitGraphViewConfig {
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
+	readonly keybindings: KeybindingConfig
 	readonly loadMoreCommits: number;
 	readonly loadMoreCommitsAutomatically: boolean;
 	readonly markdown: boolean;
@@ -256,12 +258,20 @@ export interface GraphConfig {
 	readonly uncommittedChanges: GraphUncommittedChangesStyle;
 }
 
+export interface KeybindingConfig {
+	readonly find: string;
+	readonly refresh: string;
+	readonly scrollToHead: string;
+	readonly scrollToStash: string;
+}
+
 export type LoadGitGraphViewTo = {
 	readonly repo: string,
-	readonly commitDetails: {
+	readonly commitDetails?: {
 		readonly commitHash: string,
 		readonly compareWithHash: string | null
-	} | null
+	},
+	readonly runCommandOnLoad?: 'fetch'
 } | null;
 
 export interface MuteCommitsConfig {
@@ -283,6 +293,12 @@ export interface ReferenceLabelsConfig {
 
 
 /* Extension Settings Types */
+
+export const enum BooleanOverride {
+	Default,
+	Enabled,
+	Disabled
+}
 
 export const enum CommitDetailsViewLocation {
 	Inline,
@@ -455,24 +471,6 @@ export const enum GraphUncommittedChangesStyle {
 	OpenCircleAtTheCheckedOutCommit
 }
 
-export const enum IncludeCommitsMentionedByReflogs {
-	Default,
-	Enabled,
-	Disabled
-}
-
-export const enum OnlyFollowFirstParent {
-	Default,
-	Enabled,
-	Disabled
-}
-
-export const enum ShowCheckedOutBranch {
-	Default,
-	Enabled,
-	Disabled
-}
-
 export const enum RefLabelAlignment {
 	Normal,
 	BranchesOnLeftAndTagsOnRight,
@@ -489,18 +487,6 @@ export const enum RepoCommitOrdering {
 export const enum RepoDropdownOrder {
 	FullPath,
 	Name
-}
-
-export const enum ShowRemoteBranches {
-	Default,
-	Show,
-	Hide
-}
-
-export const enum ShowTags {
-	Default,
-	Show,
-	Hide
 }
 
 export const enum SquashMessageFormat {
@@ -803,6 +789,13 @@ export interface ResponseEditUserDetails extends ResponseWithMultiErrorInfo {
 export interface RequestEndCodeReview extends RepoRequest {
 	readonly command: 'endCodeReview';
 	readonly id: string;
+}
+
+export interface RequestExportRepoConfig extends RepoRequest {
+	readonly command: 'exportRepoConfig';
+}
+export interface ResponseExportRepoConfig extends ResponseWithErrorInfo {
+	readonly command: 'exportRepoConfig';
 }
 
 export interface RequestFetch extends RepoRequest {
@@ -1149,6 +1142,7 @@ export type RequestMessage =
 	| RequestEditRemote
 	| RequestEditUserDetails
 	| RequestEndCodeReview
+	| RequestExportRepoConfig
 	| RequestFetch
 	| RequestFetchAvatar
 	| RequestFetchIntoLocalBranch
@@ -1205,6 +1199,7 @@ export type ResponseMessage =
 	| ResponseDropStash
 	| ResponseEditRemote
 	| ResponseEditUserDetails
+	| ResponseExportRepoConfig
 	| ResponseFetch
 	| ResponseFetchAvatar
 	| ResponseFetchIntoLocalBranch

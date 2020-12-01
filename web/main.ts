@@ -87,7 +87,7 @@ class GitGraphView {
 
 		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
 		this.showRemoteBranchesElem.addEventListener('change', () => {
-			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.ShowRemoteBranches.Show : GG.ShowRemoteBranches.Hide);
+			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
 			this.refresh(true);
 		});
 
@@ -129,7 +129,7 @@ class GitGraphView {
 
 		let loadViewTo = initialState.loadViewTo;
 		if (loadViewTo === null && prevState && prevState.currentRepoLoading && typeof prevState.currentRepo !== 'undefined') {
-			loadViewTo = { repo: prevState.currentRepo, commitDetails: null };
+			loadViewTo = { repo: prevState.currentRepo };
 		}
 
 		if (!this.loadRepos(this.gitRepos, initialState.lastActiveRepo, loadViewTo)) {
@@ -143,9 +143,7 @@ class GitGraphView {
 		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
-		fetchBtn.addEventListener('click', () => {
-			runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune, pruneTags: this.config.fetchAndPruneTags }, 'Fetching from Remote(s)');
-		});
+		fetchBtn.addEventListener('click', () => this.fetchFromRemotesAction());
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
@@ -401,21 +399,29 @@ class GitGraphView {
 	}
 
 	private finaliseLoadViewTo() {
-		if (this.loadViewTo !== null && this.currentRepo === this.loadViewTo.repo && this.loadViewTo.commitDetails !== null && (this.expandedCommit === null || this.expandedCommit.commitHash !== this.loadViewTo.commitDetails.commitHash || this.expandedCommit.compareWithHash !== this.loadViewTo.commitDetails.compareWithHash)) {
-			const commitIndex = this.getCommitId(this.loadViewTo.commitDetails.commitHash);
-			const compareWithIndex = this.loadViewTo.commitDetails.compareWithHash !== null ? this.getCommitId(this.loadViewTo.commitDetails.compareWithHash) : null;
-			const commitElems = getCommitElems();
-			const commitElem = findCommitElemWithId(commitElems, commitIndex);
-			const compareWithElem = findCommitElemWithId(commitElems, compareWithIndex);
+		if (this.loadViewTo !== null && this.currentRepo === this.loadViewTo.repo) {
+			if (this.loadViewTo.commitDetails && (this.expandedCommit === null || this.expandedCommit.commitHash !== this.loadViewTo.commitDetails.commitHash || this.expandedCommit.compareWithHash !== this.loadViewTo.commitDetails.compareWithHash)) {
+				const commitIndex = this.getCommitId(this.loadViewTo.commitDetails.commitHash);
+				const compareWithIndex = this.loadViewTo.commitDetails.compareWithHash !== null ? this.getCommitId(this.loadViewTo.commitDetails.compareWithHash) : null;
+				const commitElems = getCommitElems();
+				const commitElem = findCommitElemWithId(commitElems, commitIndex);
+				const compareWithElem = findCommitElemWithId(commitElems, compareWithIndex);
 
-			if (commitElem !== null && (this.loadViewTo.commitDetails.compareWithHash === null || compareWithElem !== null)) {
-				if (compareWithElem !== null) {
-					this.loadCommitComparison(commitElem, compareWithElem);
+				if (commitElem !== null && (this.loadViewTo.commitDetails.compareWithHash === null || compareWithElem !== null)) {
+					if (compareWithElem !== null) {
+						this.loadCommitComparison(commitElem, compareWithElem);
+					} else {
+						this.loadCommitDetails(commitElem);
+					}
 				} else {
-					this.loadCommitDetails(commitElem);
+					showErrorMessage('Unable to resume Code Review, it could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
 				}
-			} else {
-				showErrorMessage('Unable to resume Code Review, it could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
+			} else if (this.loadViewTo.runCommandOnLoad) {
+				switch (this.loadViewTo.runCommandOnLoad) {
+					case 'fetch':
+						this.fetchFromRemotesAction();
+						break;
+				}
 			}
 		}
 		this.loadViewTo = null;
@@ -1153,7 +1159,7 @@ class GitGraphView {
 				title: 'Reset current branch to this Commit' + ELLIPSIS,
 				visible: visibility.reset,
 				onClick: () => {
-					dialog.showSelect('Are you sure you want to reset the <b>current branch</b> to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', this.config.dialogDefaults.resetCommit.mode, [
+					dialog.showSelect('Are you sure you want to reset ' + (this.gitBranchHead !== null ? '<b><i>' + escapeHtml(this.gitBranchHead) + '</i></b> (the current branch)' : 'the current branch') + ' to commit <b><i>' + abbrevCommit(hash) + '</i></b>?', this.config.dialogDefaults.resetCommit.mode, [
 						{ name: 'Soft - Keep all changes, but reset head', value: GG.GitResetMode.Soft },
 						{ name: 'Mixed - Keep working tree, but reset index', value: GG.GitResetMode.Mixed },
 						{ name: 'Hard - Discard all changes', value: GG.GitResetMode.Hard }
@@ -1212,7 +1218,7 @@ class GitGraphView {
 				title: 'Pull into current branch' + ELLIPSIS,
 				visible: visibility.pull && remote !== '',
 				onClick: () => {
-					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the current branch? If a merge is required:', [
+					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into ' + (this.gitBranchHead !== null ? '<b><i>' + escapeHtml(this.gitBranchHead) + '</i></b> (the current branch)' : 'the current branch') + '? If a merge is required:', [
 						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.pullBranch.noFastForward },
 						{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.pullBranch.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this remote branch.' }
 					], 'Yes, pull', (values) => {
@@ -1482,8 +1488,12 @@ class GitGraphView {
 		runAction({ command: 'deleteTag', repo: this.currentRepo, tagName: refName, deleteOnRemote: deleteOnRemote }, 'Deleting Tag');
 	}
 
+	private fetchFromRemotesAction() {
+		runAction({ command: 'fetch', repo: this.currentRepo, name: null, prune: this.config.fetchAndPrune, pruneTags: this.config.fetchAndPruneTags }, 'Fetching from Remote(s)');
+	}
+
 	private mergeAction(obj: string, name: string, actionOn: GG.MergeActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
-		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into the current branch?', [
+		dialog.showForm('Are you sure you want to merge ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b> into ' + (this.gitBranchHead !== null ? '<b><i>' + escapeHtml(this.gitBranchHead) + '</i></b> (the current branch)' : 'the current branch') + '?', [
 			{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.merge.noFastForward },
 			{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.merge.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this ' + actionOn.toLowerCase() + '.' },
 			{ type: DialogInputType.Checkbox, name: 'No Commit', value: this.config.dialogDefaults.merge.noCommit, info: 'The changes of the merge will be staged but not committed, so that you can review and/or modify the merge result before committing.' }
@@ -1493,7 +1503,7 @@ class GitGraphView {
 	}
 
 	private rebaseAction(obj: string, name: string, actionOn: GG.RebaseActionOn, target: DialogTarget & (CommitTarget | RefTarget)) {
-		dialog.showForm('Are you sure you want to rebase the current branch on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
+		dialog.showForm('Are you sure you want to rebase ' + (this.gitBranchHead !== null ? '<b><i>' + escapeHtml(this.gitBranchHead) + '</i></b> (the current branch)' : 'the current branch') + ' on ' + actionOn.toLowerCase() + ' <b><i>' + escapeHtml(name) + '</i></b>?', [
 			{ type: DialogInputType.Checkbox, name: 'Launch Interactive Rebase in new Terminal', value: this.config.dialogDefaults.rebase.interactive },
 			{ type: DialogInputType.Checkbox, name: 'Ignore Date', value: this.config.dialogDefaults.rebase.ignoreDate, info: 'Only applicable to a non-interactive rebase.' }
 		], 'Yes, rebase', (values) => {
@@ -1882,17 +1892,17 @@ class GitGraphView {
 				}
 			} else if (e.ctrlKey || e.metaKey) {
 				const key = e.key.toLowerCase();
-				if (key === 's') {
+				if (key === this.config.keybindings.scrollToStash) {
 					this.scrollToStash(!e.shiftKey);
 					handledEvent(e);
 				} else if (!e.shiftKey) {
-					if (key === 'r') {
+					if (key === this.config.keybindings.refresh) {
 						this.refresh(true);
 						handledEvent(e);
-					} else if (key === 'f') {
+					} else if (key === this.config.keybindings.find) {
 						this.findWidget.show(true);
 						handledEvent(e);
-					} else if (key === 'h' && this.commitHead !== null) {
+					} else if (key === this.config.keybindings.scrollToHead && this.commitHead !== null) {
 						this.scrollToCommit(this.commitHead, true, true);
 						handledEvent(e);
 					}
@@ -2645,8 +2655,7 @@ class GitGraphView {
 		addListenerToClass('fileTreeRepo', 'click', (e) => {
 			if (e.target === null) return;
 			this.loadRepos(this.gitRepos, null, {
-				repo: decodeURIComponent((<HTMLElement>(<Element>e.target).closest('.fileTreeRepo')).dataset.path!),
-				commitDetails: null
+				repo: decodeURIComponent((<HTMLElement>(<Element>e.target).closest('.fileTreeRepo')).dataset.path!)
 			});
 		});
 
@@ -2683,7 +2692,7 @@ class GitGraphView {
 			triggerOpenFile(getFileOfFileElem(expandedCommit.fileChanges, fileElem), fileElem);
 		});
 
-		addListenerToClass('fileTreeFileDetails', 'contextmenu', (e: Event) => {
+		addListenerToClass('fileTreeFileRecord', 'contextmenu', (e: Event) => {
 			handledEvent(e);
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null || expandedCommit.fileChanges === null || e.target === null) return;
@@ -2900,6 +2909,9 @@ window.addEventListener('load', () => {
 				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => {
 					settingsWidget.refresh();
 				}, true);
+				break;
+			case 'exportRepoConfig':
+				refreshOrDisplayError(msg.error, 'Unable to Export Repository Configuration');
 				break;
 			case 'fetch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch from Remote(s)');
@@ -3121,10 +3133,9 @@ function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: Re
 		const textFile = fileTreeFile.additions !== null && fileTreeFile.deletions !== null;
 		const diffPossible = fileTreeFile.type === GG.GitFileStatus.Untracked || textFile;
 		const changeTypeMessage = GIT_FILE_CHANGE_TYPES[fileTreeFile.type] + (fileTreeFile.type === GG.GitFileStatus.Renamed ? ' (' + escapeHtml(fileTreeFile.oldFilePath) + ' → ' + escapeHtml(fileTreeFile.newFilePath) + ')' : '');
-		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeFileRecord' + (leaf.index === fileContextMenuOpen ? ' ' + CLASS_CONTEXT_MENU_ACTIVE : '') + '" data-index="' + leaf.index + '"><span class="fileTreeFileDetails"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + (leaf.reviewed ? '' : ' pendingReview') + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== GG.GitFileStatus.Deleted ? ' (this is a binary file)' : '')) + ' • ' + changeTypeMessage + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapedName + '</span></span>' +
+		return '<li data-pathseg="' + encodedName + '"><span class="fileTreeFileRecord' + (leaf.index === fileContextMenuOpen ? ' ' + CLASS_CONTEXT_MENU_ACTIVE : '') + '" data-index="' + leaf.index + '"><span class="fileTreeFile' + (diffPossible ? ' gitDiffPossible' : '') + (leaf.reviewed ? '' : ' ' + CLASS_PENDING_REVIEW) + '" title="' + (diffPossible ? 'Click to View Diff' : 'Unable to View Diff' + (fileTreeFile.type !== GG.GitFileStatus.Deleted ? ' (this is a binary file)' : '')) + ' • ' + changeTypeMessage + '"><span class="fileTreeFileIcon">' + SVG_ICONS.file + '</span><span class="gitFileName ' + fileTreeFile.type + '">' + escapedName + '</span></span>' +
 			(initialState.config.enhancedAccessibility ? '<span class="fileTreeFileType" title="' + changeTypeMessage + '">' + fileTreeFile.type + '</span>' : '') +
 			(fileTreeFile.type !== GG.GitFileStatus.Added && fileTreeFile.type !== GG.GitFileStatus.Untracked && fileTreeFile.type !== GG.GitFileStatus.Deleted && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
-			'</span>' +
 			(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
 			'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard">' + SVG_ICONS.copy + '</span>' +
 			(fileTreeFile.type !== GG.GitFileStatus.Deleted
@@ -3215,7 +3226,7 @@ function updateFileTreeHtml(elem: HTMLElement, folder: FileTreeFolder) {
 			alterClass(<HTMLSpanElement>li.children[0], CLASS_PENDING_REVIEW, !child.reviewed);
 			updateFileTreeHtml(li, child);
 		} else if (child.type === 'file') {
-			alterClass(<HTMLSpanElement>li.children[0].children[0].children[0], CLASS_PENDING_REVIEW, !child.reviewed);
+			alterClass(<HTMLSpanElement>li.children[0].children[0], CLASS_PENDING_REVIEW, !child.reviewed);
 		}
 	}
 }
@@ -3236,7 +3247,7 @@ function updateFileTreeHtmlFileReviewed(elem: HTMLElement, folder: FileTreeFolde
 					path = path.substring(pathSeg.length + 1);
 					update(li, child);
 				} else if (child.type === 'file') {
-					alterClass(<HTMLSpanElement>li.children[0].children[0].children[0], CLASS_PENDING_REVIEW, !child.reviewed);
+					alterClass(<HTMLSpanElement>li.children[0].children[0], CLASS_PENDING_REVIEW, !child.reviewed);
 				}
 				break;
 			}
@@ -3292,34 +3303,34 @@ function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering 
 	}
 }
 
-function getShowRemoteBranches(repoValue: GG.ShowRemoteBranches) {
-	return repoValue === GG.ShowRemoteBranches.Default
+function getShowRemoteBranches(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.showRemoteBranches
-		: repoValue === GG.ShowRemoteBranches.Show;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getShowTags(repoValue: GG.ShowTags) {
-	return repoValue === GG.ShowTags.Default
+function getShowTags(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.showTags
-		: repoValue === GG.ShowTags.Show;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getIncludeCommitsMentionedByReflogs(repoValue: GG.IncludeCommitsMentionedByReflogs) {
-	return repoValue === GG.IncludeCommitsMentionedByReflogs.Default
+function getIncludeCommitsMentionedByReflogs(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.includeCommitsMentionedByReflogs
-		: repoValue === GG.IncludeCommitsMentionedByReflogs.Enabled;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getOnlyFollowFirstParent(repoValue: GG.OnlyFollowFirstParent) {
-	return repoValue === GG.OnlyFollowFirstParent.Default
+function getOnlyFollowFirstParent(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.onlyFollowFirstParent
-		: repoValue === GG.OnlyFollowFirstParent.Enabled;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
-function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.ShowCheckedOutBranch) {
-	return repoValue === GG.ShowCheckedOutBranch.Default
+function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.onRepoLoad.showCheckedOutBranch
-		: repoValue === GG.ShowCheckedOutBranch.Enabled;
+		: repoValue === GG.BooleanOverride.Enabled;
 }
 
 function getOnRepoLoadShowSpecificBranches(repoValue: string[] | null) {

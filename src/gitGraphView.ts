@@ -84,7 +84,6 @@ export class GitGraphView extends Disposable {
 		this.repoManager = repoManager;
 		this.logger = logger;
 		this.loadViewTo = loadViewTo;
-		this.avatarManager.registerView(this);
 
 		const config = getConfig();
 		this.panel = vscode.window.createWebviewPanel('git-graph', 'Git Graph', column || vscode.ViewColumn.One, {
@@ -104,7 +103,6 @@ export class GitGraphView extends Disposable {
 			// Dispose Git Graph View resources when disposed
 			toDisposable(() => {
 				GitGraphView.currentPanel = undefined;
-				this.avatarManager.deregisterView();
 				this.repoFileWatcher.stop();
 			}),
 
@@ -127,13 +125,22 @@ export class GitGraphView extends Disposable {
 			// Subscribe to events triggered when a repository is added or deleted from Git Graph
 			repoManager.onDidChangeRepos((event) => {
 				if (!this.panel.visible) return;
-				const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo, commitDetails: null } : null;
+				const loadViewTo = event.loadRepo !== null ? { repo: event.loadRepo } : null;
 				if ((event.numRepos === 0 && this.isGraphViewLoaded) || (event.numRepos > 0 && !this.isGraphViewLoaded)) {
 					this.loadViewTo = loadViewTo;
 					this.update();
 				} else {
 					this.respondLoadRepos(event.repos, loadViewTo);
 				}
+			}),
+
+			// Subscribe to events triggered when an avatar is available
+			avatarManager.onAvatar((event) => {
+				this.sendMessage({
+					command: 'fetchAvatar',
+					email: event.email,
+					image: event.image
+				});
 			}),
 
 			// Respond to messages sent from the Webview
@@ -377,6 +384,12 @@ export class GitGraphView extends Disposable {
 			case 'endCodeReview':
 				this.extensionState.endCodeReview(msg.repo, msg.id);
 				break;
+			case 'exportRepoConfig':
+				this.sendMessage({
+					command: 'exportRepoConfig',
+					error: await this.repoManager.exportRepoConfig(msg.repo)
+				});
+				break;
 			case 'getSettings':
 				this.sendMessage({
 					command: 'getSettings',
@@ -597,6 +610,7 @@ export class GitGraphView extends Disposable {
 				graph: config.graph,
 				includeCommitsMentionedByReflogs: config.includeCommitsMentionedByReflogs,
 				initialLoadCommits: config.initialLoadCommits,
+				keybindings: config.keybindings,
 				loadMoreCommits: config.loadMoreCommits,
 				loadMoreCommitsAutomatically: config.loadMoreCommitsAutomatically,
 				markdown: config.markdown,
@@ -721,15 +735,6 @@ export class GitGraphView extends Disposable {
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadViewTo: loadViewTo
 		});
-	}
-
-	/**
-	 * Send an avatar to the front-end.
-	 * @param email The email address identifying the avatar.
-	 * @param image A base64 encoded data URI.
-	 */
-	public respondWithAvatar(email: string, image: string) {
-		this.sendMessage({ command: 'fetchAvatar', email: email, image: image });
 	}
 }
 

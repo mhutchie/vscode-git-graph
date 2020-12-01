@@ -12,13 +12,14 @@ describe('Event Emitter', () => {
 		emitter.subscribe(mockSubscriber2);
 
 		// Assert
+		expect(emitter.hasSubscribers()).toBe(true);
 		expect(emitter['listeners'].length).toBe(2);
 
 		// Run
 		emitter.dispose();
 
 		// Assert
-		expect(emitter['listeners'].length).toBe(0);
+		expect(emitter.hasSubscribers()).toBe(false);
 	});
 
 	it('Disposes a specific subscriber', () => {
@@ -33,6 +34,7 @@ describe('Event Emitter', () => {
 		disposable.dispose();
 
 		// Assert
+		expect(emitter.hasSubscribers()).toBe(true);
 		expect(emitter['listeners'].length).toBe(1);
 		expect(emitter['listeners'][0]).toBe(mockSubscriber2);
 
@@ -51,7 +53,7 @@ describe('Event Emitter', () => {
 		disposable.dispose();
 
 		// Assert
-		expect(emitter['listeners'].length).toBe(0);
+		expect(emitter.hasSubscribers()).toBe(false);
 
 		// Teardown
 		emitter.dispose();

@@ -17,6 +17,7 @@ import {
 	GraphConfig,
 	GraphStyle,
 	GraphUncommittedChangesStyle,
+	KeybindingConfig,
 	MuteCommitsConfig,
 	OnRepoLoadConfig,
 	RefLabelAlignment,
@@ -46,11 +47,15 @@ const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
 class Config {
 	private readonly config: vscode.WorkspaceConfiguration;
 
+	private static readonly KEYBINDING_REGEXP = /^CTRL\/CMD \+ [A-Z]$/;
+
 	/**
 	 * Creates a Config instance.
+	 * @param repo An option path of a repository (to be used for Workspace Folder Scoped Configuration Values).
+	 * @returns A Config instance.
 	 */
-	constructor() {
-		this.config = vscode.workspace.getConfiguration('git-graph');
+	constructor(repo?: string) {
+		this.config = vscode.workspace.getConfiguration('git-graph', repo ? vscode.Uri.file(repo) : undefined);
 	}
 
 	/**
@@ -277,6 +282,18 @@ class Config {
 	}
 
 	/**
+	 * Get the keybinding configuration from the `git-graph.keyboardShortcut.*` Extension Settings.
+	 */
+	get keybindings(): KeybindingConfig {
+		return {
+			find: this.getKeybinding('keyboardShortcut.find', 'f'),
+			refresh: this.getKeybinding('keyboardShortcut.refresh', 'r'),
+			scrollToHead: this.getKeybinding('keyboardShortcut.scrollToHead', 'h'),
+			scrollToStash: this.getKeybinding('keyboardShortcut.scrollToStash', 's')
+		};
+	}
+
+	/**
 	 * Get the value of the `git-graph.maxDepthOfRepoSearch` Extension Setting.
 	 */
 	get maxDepthOfRepoSearch() {
@@ -439,6 +456,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.showRemoteHeads` Extension Setting.
+	 */
+	get showRemoteHeads() {
+		return !!this.config.get('repository.showRemoteHeads', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.showTags` Extension Setting.
 	 */
 	get showTags() {
@@ -457,6 +481,20 @@ class Config {
 	 */
 	get showUntrackedFiles() {
 		return !!this.getRenamedExtensionSetting('repository.showUntrackedFiles', 'showUntrackedFiles', true);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.sign.commits` Extension Setting.
+	 */
+	get signCommits() {
+		return !!this.config.get('repository.sign.commits', false);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.sign.tags` Extension Setting.
+	 */
+	get signTags() {
+		return !!this.config.get('repository.sign.tags', false);
 	}
 
 	/**
@@ -515,6 +553,21 @@ class Config {
 	}
 
 	/**
+	 * Get the normalised keybinding located by the provided section.
+	 * @param section The section locating the keybinding setting.
+	 * @param defaultValue The default keybinding.
+	 * @returns The normalised keybinding.
+	 */
+	private getKeybinding(section: string, defaultValue: string) {
+		const configValue = this.config.get<string>(section);
+		if (typeof configValue === 'string' && Config.KEYBINDING_REGEXP.test(configValue)) {
+			return configValue.substring(11).toLowerCase();
+		} else {
+			return defaultValue;
+		}
+	}
+
+	/**
 	 * Get the value of a renamed extension setting.
 	 * @param newSection The section locating the new setting.
 	 * @param oldSection The section location the old setting.
@@ -533,9 +586,11 @@ class Config {
 
 /**
  * Get a Config instance for retrieving the users configuration of Git Graph Extension Settings.
+ * @param repo An optional path of a repository (to be used for Workspace Folder Scoped Configuration Values).
+ * @returns A Config instance.
  */
-export function getConfig() {
-	return new Config();
+export function getConfig(repo?: string) {
+	return new Config(repo);
 }
 
 /**

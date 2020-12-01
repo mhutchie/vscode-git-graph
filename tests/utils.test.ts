@@ -27,9 +27,8 @@ import { GitFileStatus, PullRequestProvider } from '../src/types';
 import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
-let extensionContext = vscode.mocks.extensionContext;
-let terminal = vscode.mocks.terminal;
-let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
+const extensionContext = vscode.mocks.extensionContext;
+const terminal = vscode.mocks.terminal;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;
 let logger: Logger;
@@ -41,6 +40,7 @@ beforeAll(() => {
 	onDidChangeGitExecutable = new EventEmitter<GitExecutable>();
 	logger = new Logger();
 	dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
 afterAll(() => {
@@ -48,11 +48,6 @@ afterAll(() => {
 	logger.dispose();
 	onDidChangeConfiguration.dispose();
 	onDidChangeGitExecutable.dispose();
-});
-
-beforeEach(() => {
-	jest.clearAllMocks();
-	spyOnSpawn = jest.spyOn(cp, 'spawn');
 });
 
 const mockSpawnGitVersionSuccessOnce = () => {
@@ -317,7 +312,7 @@ describe('resolveToSymbolicPath', () => {
 describe('abbrevCommit', () => {
 	it('Truncates a commit hash to eight characters', () => {
 		// Run
-		const abbrev = abbrevCommit('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f');
+		const abbrev = abbrevCommit('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b');
 
 		// Assert
 		expect(abbrev).toBe('1a2b3c4d');
@@ -1258,9 +1253,6 @@ describe('openGitTerminal', () => {
 	});
 
 	it('Should open a new terminal', () => {
-		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
-
 		// Run
 		openGitTerminal('/path/to/repo', '/path/to/git/git', null, 'Name');
 
@@ -1277,9 +1269,6 @@ describe('openGitTerminal', () => {
 	});
 
 	it('Should open a new terminal and run the git command', () => {
-		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
-
 		// Run
 		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
 
@@ -1297,7 +1286,6 @@ describe('openGitTerminal', () => {
 
 	it('Should open a new terminal and run the git command (with initially empty PATH)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		process.env.PATH = '';
 
 		// Run
@@ -1317,7 +1305,7 @@ describe('openGitTerminal', () => {
 
 	it('Should open a new terminal and run the git command (with specific shell path)', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce('/path/to/shell'); // integratedTerminalShell
+		vscode.mockExtensionSettingReturnValue('integratedTerminalShell', '/path/to/shell');
 
 		// Run
 		openGitTerminal('/path/to/repo', '/path/to/git/git', 'rebase', 'Name');
@@ -1337,7 +1325,6 @@ describe('openGitTerminal', () => {
 
 	it('Should open a new terminal and run the git command (platform: win32)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		Object.defineProperty(process, 'platform', { value: 'win32' });
 
 		// Run
@@ -1357,7 +1344,6 @@ describe('openGitTerminal', () => {
 
 	it('Should open a new terminal and run the git command (ostype: cygwin)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		process.env.OSTYPE = 'cygwin';
 
 		// Run
@@ -1377,7 +1363,6 @@ describe('openGitTerminal', () => {
 
 	it('Should open a new terminal and run the git command (ostype: msys)', () => {
 		// Setup
-		workspaceConfiguration.get.mockImplementationOnce((_, defaultValue) => defaultValue); // integratedTerminalShell
 		process.env.OSTYPE = 'msys';
 
 		// Run
@@ -1583,7 +1568,7 @@ describe('findGit', () => {
 	it('Should use the users git.path if the last known Git executable path no longer exists', async () => {
 		// Setup
 		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce('/path/to/not-git');
-		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // git.path
+		vscode.mockExtensionSettingReturnValue('path', '/path/to/git');
 		mockSpawnGitVersionThrowingErrorOnce();
 		mockSpawnGitVersionSuccessOnce();
 
@@ -1601,7 +1586,7 @@ describe('findGit', () => {
 	it('Should use the users git.path if there is no last known Git executable path', async () => {
 		// Setup
 		jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-		workspaceConfiguration.get.mockReturnValueOnce('/path/to/git'); // git.path
+		vscode.mockExtensionSettingReturnValue('path', '/path/to/git');
 		mockSpawnGitVersionSuccessOnce();
 
 		// Run
@@ -1619,7 +1604,7 @@ describe('findGit', () => {
 		let spyOnExec: jest.SpyInstance;
 		beforeEach(() => {
 			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-			workspaceConfiguration.get.mockReturnValueOnce(null); // git.path
+			vscode.mockExtensionSettingReturnValue('path', null);
 			Object.defineProperty(process, 'platform', { value: 'darwin' });
 			spyOnExec = jest.spyOn(cp, 'exec');
 		});
@@ -1739,7 +1724,7 @@ describe('findGit', () => {
 		let programW6432: string | undefined, programFilesX86: string | undefined, programFiles: string | undefined, localAppData: string | undefined, envPath: string | undefined;
 		beforeEach(() => {
 			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-			workspaceConfiguration.get.mockReturnValueOnce([]); // git.path
+			vscode.mockExtensionSettingReturnValue('path', []);
 			programW6432 = process.env['ProgramW6432'];
 			programFilesX86 = process.env['ProgramFiles(x86)'];
 			programFiles = process.env['ProgramFiles'];
@@ -1896,7 +1881,7 @@ describe('findGit', () => {
 	describe('process.platform === \'unknown\'', () => {
 		beforeEach(() => {
 			jest.spyOn(extensionState, 'getLastKnownGitPath').mockReturnValueOnce(null);
-			workspaceConfiguration.get.mockReturnValueOnce(null); // git.path
+			vscode.mockExtensionSettingReturnValue('path', null);
 			Object.defineProperty(process, 'platform', { value: 'unknown' });
 		});
 

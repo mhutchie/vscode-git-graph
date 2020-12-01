@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.27.0",
+	"version": "1.28.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -69,6 +69,11 @@
 				"category": "Git Graph",
 				"command": "git-graph.endSpecificWorkspaceCodeReview",
 				"title": "End a specific Code Review in Workspace..."
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.fetch",
+				"title": "Fetch from Remote(s)"
 			},
 			{
 				"category": "Git Graph",
@@ -621,7 +626,8 @@
 				"git-graph.fileEncoding": {
 					"type": "string",
 					"default": "utf8",
-					"markdownDescription": "The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings)."
+					"markdownDescription": "The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings).",
+					"scope": "resource"
 				},
 				"git-graph.graph.colours": {
 					"type": "array",
@@ -677,6 +683,138 @@
 					"default": "",
 					"description": "Specifies the path and filename of the Shell executable to be used by the Visual Studio Code Integrated Terminal, when it is opened by Git Graph. For example, to use Git Bash on Windows this setting would commonly be set to \"C:\\Program Files\\Git\\bin\\bash.exe\". If this setting is left blank, the default Shell is used.",
 					"scope": "machine"
+				},
+				"git-graph.keyboardShortcut.find": {
+					"type": "string",
+					"enum": [
+						"CTRL/CMD + A",
+						"CTRL/CMD + B",
+						"CTRL/CMD + C",
+						"CTRL/CMD + D",
+						"CTRL/CMD + E",
+						"CTRL/CMD + F",
+						"CTRL/CMD + G",
+						"CTRL/CMD + H",
+						"CTRL/CMD + I",
+						"CTRL/CMD + J",
+						"CTRL/CMD + K",
+						"CTRL/CMD + L",
+						"CTRL/CMD + M",
+						"CTRL/CMD + N",
+						"CTRL/CMD + O",
+						"CTRL/CMD + P",
+						"CTRL/CMD + Q",
+						"CTRL/CMD + R",
+						"CTRL/CMD + S",
+						"CTRL/CMD + T",
+						"CTRL/CMD + U",
+						"CTRL/CMD + V",
+						"CTRL/CMD + W",
+						"CTRL/CMD + X",
+						"CTRL/CMD + Y",
+						"CTRL/CMD + Z"
+					],
+					"default": "CTRL/CMD + F",
+					"description": "The keybinding for the keyboard shortcut that opens the Find Widget in the Git Graph View."
+				},
+				"git-graph.keyboardShortcut.refresh": {
+					"type": "string",
+					"enum": [
+						"CTRL/CMD + A",
+						"CTRL/CMD + B",
+						"CTRL/CMD + C",
+						"CTRL/CMD + D",
+						"CTRL/CMD + E",
+						"CTRL/CMD + F",
+						"CTRL/CMD + G",
+						"CTRL/CMD + H",
+						"CTRL/CMD + I",
+						"CTRL/CMD + J",
+						"CTRL/CMD + K",
+						"CTRL/CMD + L",
+						"CTRL/CMD + M",
+						"CTRL/CMD + N",
+						"CTRL/CMD + O",
+						"CTRL/CMD + P",
+						"CTRL/CMD + Q",
+						"CTRL/CMD + R",
+						"CTRL/CMD + S",
+						"CTRL/CMD + T",
+						"CTRL/CMD + U",
+						"CTRL/CMD + V",
+						"CTRL/CMD + W",
+						"CTRL/CMD + X",
+						"CTRL/CMD + Y",
+						"CTRL/CMD + Z"
+					],
+					"default": "CTRL/CMD + R",
+					"description": "The keybinding for the keyboard shortcut that refreshes the Git Graph View."
+				},
+				"git-graph.keyboardShortcut.scrollToHead": {
+					"type": "string",
+					"enum": [
+						"CTRL/CMD + A",
+						"CTRL/CMD + B",
+						"CTRL/CMD + C",
+						"CTRL/CMD + D",
+						"CTRL/CMD + E",
+						"CTRL/CMD + F",
+						"CTRL/CMD + G",
+						"CTRL/CMD + H",
+						"CTRL/CMD + I",
+						"CTRL/CMD + J",
+						"CTRL/CMD + K",
+						"CTRL/CMD + L",
+						"CTRL/CMD + M",
+						"CTRL/CMD + N",
+						"CTRL/CMD + O",
+						"CTRL/CMD + P",
+						"CTRL/CMD + Q",
+						"CTRL/CMD + R",
+						"CTRL/CMD + S",
+						"CTRL/CMD + T",
+						"CTRL/CMD + U",
+						"CTRL/CMD + V",
+						"CTRL/CMD + W",
+						"CTRL/CMD + X",
+						"CTRL/CMD + Y",
+						"CTRL/CMD + Z"
+					],
+					"default": "CTRL/CMD + H",
+					"description": "The keybinding for the keyboard shortcut that scrolls the Git Graph View to be centered on the commit referenced by HEAD."
+				},
+				"git-graph.keyboardShortcut.scrollToStash": {
+					"type": "string",
+					"enum": [
+						"CTRL/CMD + A",
+						"CTRL/CMD + B",
+						"CTRL/CMD + C",
+						"CTRL/CMD + D",
+						"CTRL/CMD + E",
+						"CTRL/CMD + F",
+						"CTRL/CMD + G",
+						"CTRL/CMD + H",
+						"CTRL/CMD + I",
+						"CTRL/CMD + J",
+						"CTRL/CMD + K",
+						"CTRL/CMD + L",
+						"CTRL/CMD + M",
+						"CTRL/CMD + N",
+						"CTRL/CMD + O",
+						"CTRL/CMD + P",
+						"CTRL/CMD + Q",
+						"CTRL/CMD + R",
+						"CTRL/CMD + S",
+						"CTRL/CMD + T",
+						"CTRL/CMD + U",
+						"CTRL/CMD + V",
+						"CTRL/CMD + W",
+						"CTRL/CMD + X",
+						"CTRL/CMD + Y",
+						"CTRL/CMD + Z"
+					],
+					"default": "CTRL/CMD + S",
+					"description": "The keybinding for the keyboard shortcut that scrolls the Git Graph View to the first (or next) stash in the loaded commits. The Shift Key Modifier can be applied to this keybinding to scroll the Git Graph View to the last (or previous) stash in the loaded commits."
 				},
 				"git-graph.markdown": {
 					"type": "boolean",
@@ -843,6 +981,11 @@
 					"default": true,
 					"description": "Show Remote Branches in Git Graph by default. This can be overridden per repository from the Git Graph View's Control Bar."
 				},
+				"git-graph.repository.showRemoteHeads": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show Remote HEAD Symbolic References in Git Graph (e.g. \"origin/HEAD\")."
+				},
 				"git-graph.repository.showTags": {
 					"type": "boolean",
 					"default": true,
@@ -857,6 +1000,16 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Show untracked files when viewing the uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View."
+				},
+				"git-graph.repository.sign.commits": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enables commit signing with GPG or X.509."
+				},
+				"git-graph.repository.sign.tags": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enables tag signing with GPG or X.509."
 				},
 				"git-graph.repository.useMailmap": {
 					"type": "boolean",

@@ -115,7 +115,7 @@ class SettingsWidget {
 		if (this.currentRepo !== null && this.repo !== null && this.settings !== null) {
 			const escapedRepoName = escapeHtml(this.repo.name || getRepoName(this.currentRepo));
 
-			const initialBranchesLocallyConfigured = this.repo.onRepoLoadShowCheckedOutBranch !== GG.ShowCheckedOutBranch.Default || this.repo.onRepoLoadShowSpecificBranches !== null;
+			const initialBranchesLocallyConfigured = this.repo.onRepoLoadShowCheckedOutBranch !== GG.BooleanOverride.Default || this.repo.onRepoLoadShowSpecificBranches !== null;
 			const initialBranches: string[] = [];
 			if (getOnRepoLoadShowCheckedOutBranch(this.repo.onRepoLoadShowCheckedOutBranch)) {
 				initialBranches.push('Checked Out');
@@ -213,8 +213,10 @@ class SettingsWidget {
 			}
 			html += '</div>';
 
-			html += '<div class="settingsSection"><h3>Extension Settings</h3>';
-			html += '<div class="settingsSectionButtons"><div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div></div></div>';
+			html += '<div class="settingsSection"><h3>Git Graph Configuration</h3><div class="settingsSectionButtons">' +
+				'<div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div><br/>' +
+				'<div id="exportRepositoryConfig">' + SVG_ICONS.package + 'Export Repository Configuration</div>' +
+				'</div></div>';
 
 			this.contentsElem.innerHTML = html;
 
@@ -252,7 +254,7 @@ class SettingsWidget {
 				], 'Save Configuration', (values) => {
 					if (this.currentRepo === null) return;
 					if (showCheckedOutBranch !== values[0] || !arraysStrictlyEqualIgnoringOrder(showSpecificBranches, <string[]>values[1])) {
-						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowCheckedOutBranch', values[0] ? GG.ShowCheckedOutBranch.Enabled : GG.ShowCheckedOutBranch.Disabled);
+						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowCheckedOutBranch', values[0] ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
 						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowSpecificBranches', <string[]>values[1]);
 						this.render();
 					}
@@ -263,7 +265,7 @@ class SettingsWidget {
 				document.getElementById('clearInitialBranches')!.addEventListener('click', () => {
 					dialog.showConfirmation('Are you sure you want to clear the branches that are initially shown when this repository is loaded in the Git Graph View?', 'Yes, clear', () => {
 						if (this.currentRepo === null) return;
-						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowCheckedOutBranch', GG.ShowCheckedOutBranch.Default);
+						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowCheckedOutBranch', GG.BooleanOverride.Default);
 						this.view.saveRepoStateValue(this.currentRepo, 'onRepoLoadShowSpecificBranches', null);
 						this.render();
 					}, null);
@@ -276,7 +278,7 @@ class SettingsWidget {
 				if (this.currentRepo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsShowTagsCheckbox');
 				if (elem === null) return;
-				this.view.saveRepoStateValue(this.currentRepo, 'showTags', elem.checked ? GG.ShowTags.Show : GG.ShowTags.Hide);
+				this.view.saveRepoStateValue(this.currentRepo, 'showTags', elem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
 				this.view.refresh(true);
 			});
 
@@ -286,7 +288,7 @@ class SettingsWidget {
 				if (this.currentRepo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsIncludeCommitsMentionedByReflogsCheckbox');
 				if (elem === null) return;
-				this.view.saveRepoStateValue(this.currentRepo, 'includeCommitsMentionedByReflogs', elem.checked ? GG.IncludeCommitsMentionedByReflogs.Enabled : GG.IncludeCommitsMentionedByReflogs.Disabled);
+				this.view.saveRepoStateValue(this.currentRepo, 'includeCommitsMentionedByReflogs', elem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
 				this.view.refresh(true);
 			});
 
@@ -296,7 +298,7 @@ class SettingsWidget {
 				if (this.currentRepo === null) return;
 				const elem = <HTMLInputElement | null>document.getElementById('settingsOnlyFollowFirstParentCheckbox');
 				if (elem === null) return;
-				this.view.saveRepoStateValue(this.currentRepo, 'onlyFollowFirstParent', elem.checked ? GG.OnlyFollowFirstParent.Enabled : GG.OnlyFollowFirstParent.Disabled);
+				this.view.saveRepoStateValue(this.currentRepo, 'onlyFollowFirstParent', elem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
 				this.view.refresh(true);
 			});
 
@@ -472,6 +474,13 @@ class SettingsWidget {
 
 			document.getElementById('openExtensionSettings')!.addEventListener('click', () => {
 				sendMessage({ command: 'openExtensionSettings' });
+			});
+
+			document.getElementById('exportRepositoryConfig')!.addEventListener('click', () => {
+				dialog.showConfirmation('Exporting the Git Graph Repository Configuration will generate a file that can be committed in this repository. It allows others working in this repository to use the same configuration.', 'Yes, export', () => {
+					if (this.currentRepo === null) return;
+					runAction({ command: 'exportRepoConfig', repo: this.currentRepo }, 'Exporting Repository Configuration');
+				}, null);
 			});
 		}
 		alterClass(this.widgetElem, CLASS_LOADING, this.loading);
@@ -738,7 +747,7 @@ class SettingsWidget {
 				matches: commits.filter((commit) => regexp.test(commit.message)).length
 			};
 		}).sort((a, b) => b.matches - a.matches);
-	
+
 		if (patterns[0].matches > 0.1 * commits.length) {
 			// If the most common pattern was matched in more than 10% of commits, return the pattern
 			return patterns[0].pattern;

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { getConfig } from './config';
-import { CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, IncludeCommitsMentionedByReflogs, OnlyFollowFirstParent, RepoCommitOrdering, ShowCheckedOutBranch, ShowRemoteBranches, ShowTags } from './types';
+import { BooleanOverride, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -23,16 +23,17 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	commitOrdering: RepoCommitOrdering.Default,
 	fileViewType: FileViewType.Default,
 	hideRemotes: [],
-	includeCommitsMentionedByReflogs: IncludeCommitsMentionedByReflogs.Default,
+	includeCommitsMentionedByReflogs: BooleanOverride.Default,
 	issueLinkingConfig: null,
+	lastImportAt: 0,
 	name: null,
-	onlyFollowFirstParent: OnlyFollowFirstParent.Default,
-	onRepoLoadShowCheckedOutBranch: ShowCheckedOutBranch.Default,
+	onlyFollowFirstParent: BooleanOverride.Default,
+	onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 	onRepoLoadShowSpecificBranches: null,
 	pullRequestConfig: null,
 	showRemoteBranches: true,
-	showRemoteBranchesV2: ShowRemoteBranches.Default,
-	showTags: ShowTags.Default
+	showRemoteBranchesV2: BooleanOverride.Default,
+	showTags: BooleanOverride.Default
 };
 
 const DEFAULT_GLOBAL_VIEW_STATE: GitGraphViewGlobalState = {
@@ -107,7 +108,7 @@ export class ExtensionState extends Disposable {
 					showRemoteBranchesDefaultValue = getConfig().showRemoteBranches;
 				}
 				if (repoSet[repo].showRemoteBranches !== showRemoteBranchesDefaultValue) {
-					outputSet[repo].showRemoteBranchesV2 = repoSet[repo].showRemoteBranches ? ShowRemoteBranches.Show : ShowRemoteBranches.Hide;
+					outputSet[repo].showRemoteBranchesV2 = repoSet[repo].showRemoteBranches ? BooleanOverride.Enabled : BooleanOverride.Disabled;
 				}
 			}
 		});

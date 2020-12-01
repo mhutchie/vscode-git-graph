@@ -13,7 +13,8 @@ import { Event } from './utils/event';
 
 const DRIVE_LETTER_PATH_REGEX = /^[a-z]:\//;
 const EOL_REGEX = /\r\n|\r|\n/g;
-const INVALID_BRANCH_REGEX = /^\(.* .*\)$/;
+const INVALID_BRANCH_REGEXP = /^\(.* .*\)$/;
+const REMOTE_HEAD_BRANCH_REGEXP = /^remotes\/.*\/HEAD$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
 export const GIT_CONFIG_USER_NAME = 'user.name';
@@ -149,7 +150,7 @@ export class DataSource extends Disposable {
 		const config = getConfig();
 		return Promise.all([
 			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
-			this.getRefs(repo, showRemoteBranches, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
+			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
 			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
@@ -360,7 +361,7 @@ export class DataSource extends Disposable {
 	 */
 	public getCommitFile(repo: string, commitHash: string, filePath: string) {
 		return this._spawnGit(['show', commitHash + ':' + filePath], repo, stdout => {
-			let encoding = getConfig().fileEncoding;
+			const encoding = getConfig(repo).fileEncoding;
 			return decode(stdout, encodingExists(encoding) ? encoding : 'utf8');
 		});
 	}
@@ -633,11 +634,11 @@ export class DataSource extends Disposable {
 	 * @returns The ErrorInfo from the executed command.
 	 */
 	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
-		let args = ['tag'];
+		const args = ['tag'];
 		if (lightweight) {
 			args.push(tagName);
 		} else {
-			args.push('-a', tagName, '-m', message);
+			args.push(getConfig().signTags ? '-s' : '-a', tagName, '-m', message);
 		}
 		args.push(commitHash);
 		return this.runGitCommand(args, repo);
@@ -848,13 +849,18 @@ export class DataSource extends Disposable {
 	 * @returns The ErrorInfo from the executed command.
 	 */
 	public pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
-		let args = ['pull', remote, branchName];
-		if (squash) args.push('--squash');
-		else if (createNewCommit) args.push('--no-ff');
-
+		const args = ['pull', remote, branchName], config = getConfig();
+		if (squash) {
+			args.push('--squash');
+		} else if (createNewCommit) {
+			args.push('--no-ff');
+		}
+		if (config.signCommits) {
+			args.push('-S');
+		}
 		return this.runGitCommand(args, repo).then((pullStatus) => {
 			return pullStatus === null && squash
-				? this.commitSquashIfStagedChangesExist(repo, remote + '/' + branchName, MergeActionOn.Branch, getConfig().squashPullMessageFormat)
+				? this.commitSquashIfStagedChangesExist(repo, remote + '/' + branchName, MergeActionOn.Branch, config.squashPullMessageFormat, config.signCommits)
 				: pullStatus;
 		});
 	}
@@ -884,16 +890,21 @@ export class DataSource extends Disposable {
 	 * @returns The ErrorInfo from the executed command.
 	 */
 	public merge(repo: string, obj: string, actionOn: MergeActionOn, createNewCommit: boolean, squash: boolean, noCommit: boolean) {
-		let args = ['merge', obj];
-
-		if (squash) args.push('--squash');
-		else if (createNewCommit) args.push('--no-ff');
-
-		if (noCommit) args.push('--no-commit');
-
+		const args = ['merge', obj], config = getConfig();
+		if (squash) {
+			args.push('--squash');
+		} else if (createNewCommit) {
+			args.push('--no-ff');
+		}
+		if (noCommit) {
+			args.push('--no-commit');
+		}
+		if (config.signCommits) {
+			args.push('-S');
+		}
 		return this.runGitCommand(args, repo).then((mergeStatus) => {
 			return mergeStatus === null && squash && !noCommit
-				? this.commitSquashIfStagedChangesExist(repo, obj, actionOn, getConfig().squashMergeMessageFormat)
+				? this.commitSquashIfStagedChangesExist(repo, obj, actionOn, config.squashMergeMessageFormat, config.signCommits)
 				: mergeStatus;
 		});
 	}
@@ -911,12 +922,17 @@ export class DataSource extends Disposable {
 		if (interactive) {
 			return this.openGitTerminal(
 				repo,
-				'rebase --interactive ' + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
+				'rebase --interactive ' + (getConfig().signCommits ? '-S ' : '') + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
 				'Rebase on "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"'
 			);
 		} else {
-			let args = ['rebase', obj];
-			if (ignoreDate) args.push('--ignore-date');
+			const args = ['rebase', obj];
+			if (ignoreDate) {
+				args.push('--ignore-date');
+			}
+			if (getConfig().signCommits) {
+				args.push('-S');
+			}
 			return this.runGitCommand(args, repo);
 		}
 	}
@@ -959,10 +975,19 @@ export class DataSource extends Disposable {
 	 * @returns The ErrorInfo from the executed command.
 	 */
 	public cherrypickCommit(repo: string, commitHash: string, parentIndex: number, recordOrigin: boolean, noCommit: boolean) {
-		let args = ['cherry-pick'];
-		if (noCommit) args.push('--no-commit');
-		if (recordOrigin) args.push('-x');
-		if (parentIndex > 0) args.push('-m', parentIndex.toString());
+		const args = ['cherry-pick'];
+		if (noCommit) {
+			args.push('--no-commit');
+		}
+		if (recordOrigin) {
+			args.push('-x');
+		}
+		if (getConfig().signCommits) {
+			args.push('-S');
+		}
+		if (parentIndex > 0) {
+			args.push('-m', parentIndex.toString());
+		}
 		args.push(commitHash);
 		return this.runGitCommand(args, repo);
 	}
@@ -974,7 +999,12 @@ export class DataSource extends Disposable {
 	 * @returns The ErrorInfo from the executed command.
 	 */
 	public dropCommit(repo: string, commitHash: string) {
-		return this.runGitCommand(['rebase', '--onto', commitHash + '^', commitHash], repo);
+		const args = ['rebase'];
+		if (getConfig().signCommits) {
+			args.push('-S');
+		}
+		args.push('--onto', commitHash + '^', commitHash);
+		return this.runGitCommand(args, repo);
 	}
 
 	/**
@@ -996,8 +1026,14 @@ export class DataSource extends Disposable {
 	 * @returns The ErrorInfo from the executed command.
 	 */
 	public revertCommit(repo: string, commitHash: string, parentIndex: number) {
-		let args = ['revert', '--no-edit', commitHash];
-		if (parentIndex > 0) args.push('-m', parentIndex.toString());
+		const args = ['revert', '--no-edit'];
+		if (getConfig().signCommits) {
+			args.push('-S');
+		}
+		if (parentIndex > 0) {
+			args.push('-m', parentIndex.toString());
+		}
+		args.push(commitHash);
 		return this.runGitCommand(args, repo);
 	}
 
@@ -1151,14 +1187,17 @@ export class DataSource extends Disposable {
 		if (showRemoteBranches) args.push('-a');
 		args.push('--no-color');
 
-		let hideRemotePatterns = hideRemotes.map((remote) => 'remotes/' + remote + '/');
+		const hideRemotePatterns = hideRemotes.map((remote) => 'remotes/' + remote + '/');
+		const showRemoteHeads = getConfig().showRemoteHeads;
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let branchData: GitBranchData = { branches: [], head: null, error: null };
 			let lines = stdout.split(EOL_REGEX);
 			for (let i = 0; i < lines.length - 1; i++) {
 				let name = lines[i].substring(2).split(' -> ')[0];
-				if (INVALID_BRANCH_REGEX.test(name) || hideRemotePatterns.some((pattern) => name.startsWith(pattern))) continue;
+				if (INVALID_BRANCH_REGEXP.test(name) || hideRemotePatterns.some((pattern) => name.startsWith(pattern)) || (!showRemoteHeads && REMOTE_HEAD_BRANCH_REGEXP.test(name))) {
+					continue;
+				}
 
 				if (lines[i][0] === '*') {
 					branchData.head = name;
@@ -1338,15 +1377,16 @@ export class DataSource extends Disposable {
 	 * Get the references in a repository.
 	 * @param repo The path of the repository.
 	 * @param showRemoteBranches Are remote branches shown.
+	 * @param showRemoteHeads Are remote heads shown.
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The references data.
 	 */
-	private getRefs(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>) {
+	private getRefs(repo: string, showRemoteBranches: boolean, showRemoteHeads: boolean, hideRemotes: ReadonlyArray<string>) {
 		let args = ['show-ref'];
 		if (!showRemoteBranches) args.push('--heads', '--tags');
 		args.push('-d', '--head');
 
-		let hideRemotePatterns = hideRemotes.map((remote) => 'refs/remotes/' + remote + '/');
+		const hideRemotePatterns = hideRemotes.map((remote) => 'refs/remotes/' + remote + '/');
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
@@ -1364,7 +1404,7 @@ export class DataSource extends Disposable {
 					let annotated = ref.endsWith('^{}');
 					refData.tags.push({ hash: hash, name: (annotated ? ref.substring(10, ref.length - 3) : ref.substring(10)), annotated: annotated });
 				} else if (ref.startsWith('refs/remotes/')) {
-					if (!hideRemotePatterns.some((pattern) => ref.startsWith(pattern))) {
+					if (!hideRemotePatterns.some((pattern) => ref.startsWith(pattern)) && (showRemoteHeads || !ref.endsWith('/HEAD'))) {
 						refData.remotes.push({ hash: hash, name: ref.substring(13) });
 					}
 				} else if (ref === 'HEAD') {
@@ -1468,10 +1508,13 @@ export class DataSource extends Disposable {
 	 * @param squashMessageFormat The format to be used in the commit message of the squash.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	private commitSquashIfStagedChangesExist(repo: string, obj: string, actionOn: MergeActionOn, squashMessageFormat: SquashMessageFormat): Promise<ErrorInfo> {
+	private commitSquashIfStagedChangesExist(repo: string, obj: string, actionOn: MergeActionOn, squashMessageFormat: SquashMessageFormat, signCommits: boolean): Promise<ErrorInfo> {
 		return this.areStagedChanges(repo).then((changes) => {
 			if (changes) {
-				let args = ['commit'];
+				const args = ['commit'];
+				if (signCommits) {
+					args.push('-S');
+				}
 				if (squashMessageFormat === SquashMessageFormat.Default) {
 					args.push('-m', 'Merge ' + actionOn.toLowerCase() + ' \'' + obj + '\'');
 				} else {

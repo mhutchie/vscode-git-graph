@@ -31,10 +31,6 @@ afterAll(() => {
 	onDidChangeGitExecutable.dispose();
 });
 
-beforeEach(() => {
-	jest.clearAllMocks();
-});
-
 describe('DiffDocProvider', () => {
 	it('Should construct a DiffDocProvider, provide a document, and be disposed', async () => {
 		// Setup

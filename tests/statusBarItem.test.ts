@@ -8,8 +8,7 @@ import { RepoChangeEvent } from '../src/repoManager';
 import { StatusBarItem } from '../src/statusBarItem';
 import { EventEmitter } from '../src/utils/event';
 
-let vscodeStatusBarItem = vscode.mocks.statusBarItem;
-let workspaceConfiguration = vscode.mocks.workspaceConfiguration;
+const vscodeStatusBarItem = vscode.mocks.statusBarItem;
 let onDidChangeRepos: EventEmitter<RepoChangeEvent>;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let logger: Logger;
@@ -24,14 +23,10 @@ afterAll(() => {
 	logger.dispose();
 });
 
-beforeEach(() => {
-	jest.clearAllMocks();
-});
-
 describe('StatusBarItem', () => {
 	it('Should show the Status Bar Item on vscode startup', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
+		vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
 
 		// Run
 		const statusBarItem = new StatusBarItem(1, onDidChangeRepos.subscribe, onDidChangeConfiguration.subscribe, logger);
@@ -54,8 +49,7 @@ describe('StatusBarItem', () => {
 
 	it('Should hide the Status Bar Item after the number of repositories becomes zero', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
+		vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
 
 		// Run
 		const statusBarItem = new StatusBarItem(1, onDidChangeRepos.subscribe, onDidChangeConfiguration.subscribe, logger);
@@ -81,8 +75,7 @@ describe('StatusBarItem', () => {
 
 	it('Should show the Status Bar Item after the number of repositories increases above zero', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
+		vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
 
 		// Run
 		const statusBarItem = new StatusBarItem(0, onDidChangeRepos.subscribe, onDidChangeConfiguration.subscribe, logger);
@@ -108,8 +101,7 @@ describe('StatusBarItem', () => {
 
 	it('Should hide the Status Bar Item the extension setting git-graph.showStatusBarItem becomes disabled', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
-		workspaceConfiguration.get.mockReturnValueOnce(false); // showStatusBarItem
+		vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
 
 		// Run
 		const statusBarItem = new StatusBarItem(1, onDidChangeRepos.subscribe, onDidChangeConfiguration.subscribe, logger);
@@ -119,6 +111,7 @@ describe('StatusBarItem', () => {
 		expect(vscodeStatusBarItem.hide).toHaveBeenCalledTimes(0);
 
 		// Run
+		vscode.mockExtensionSettingReturnValue('showStatusBarItem', false);
 		onDidChangeConfiguration.emit({
 			affectsConfiguration: () => true
 		});
@@ -133,8 +126,7 @@ describe('StatusBarItem', () => {
 
 	it('Should ignore extension setting changes unrelated to git-graph.showStatusBarItem', () => {
 		// Setup
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
-		workspaceConfiguration.get.mockReturnValueOnce(true); // showStatusBarItem
+		vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
 
 		// Run
 		const statusBarItem = new StatusBarItem(1, onDidChangeRepos.subscribe, onDidChangeConfiguration.subscribe, logger);

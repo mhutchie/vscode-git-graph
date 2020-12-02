@@ -1755,6 +1755,11 @@ describe('RepoManager', () => {
 					'pullRequestConfig', { provider: PullRequestProvider.GitLab, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
 					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.GitLab, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
 				));
+
+				it('Should export a GitHub config with no destination remote correctly', testApplyField(
+					'pullRequestConfig', { provider: PullRequestProvider.GitHub, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: null, destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
+					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.GitHub, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: null, destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
+				));
 			});
 
 			describe('showRemoteBranches', () => {
@@ -1806,7 +1811,7 @@ describe('RepoManager', () => {
 			it('Should display a validation error when "onRepoLoadShowSpecificBranches" is invalid (not an array)', testValidationOfField('onRepoLoadShowSpecificBranches', 'invalid'));
 			it('Should display a validation error when "onRepoLoadShowSpecificBranches" is invalid (array doesn\'t contain strings)', testValidationOfField('onRepoLoadShowSpecificBranches', ['master', 5]));
 			it('Should display a validation error when "pullRequestConfig" is invalid (not an object)', testValidationOfField('pullRequestConfig', 'invalid'));
-			it('Should display a validation error when "pullRequestConfig" is invalid (null)', testValidationOfField('pullRequestConfig', 'null'));
+			it('Should display a validation error when "pullRequestConfig" is invalid (null)', testValidationOfField('pullRequestConfig', null));
 			it('Should display a validation error when "pullRequestConfig" is invalid (unknown provider)', testValidationOfField('pullRequestConfig', { provider: 'invalid' }));
 			it('Should display a validation error when "pullRequestConfig" is invalid (no custom provider config)', testValidationOfField('pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.Custom }));
 			it('Should display a validation error when "pullRequestConfig" is invalid (custom provider config is null)', testValidationOfField('pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.Custom, custom: null }));

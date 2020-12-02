@@ -8,8 +8,10 @@ import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, Fi
 
 const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
+type Config = ReturnType<typeof getConfig>;
+
 describe('Config', () => {
-	let config: ReturnType<typeof getConfig>;
+	let config: Config;
 	beforeEach(() => {
 		config = getConfig();
 	});
@@ -260,49 +262,63 @@ describe('Config', () => {
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('contextMenuActionsVisibility', {});
-			expect(value.branch.checkout).toBe(true);
-			expect(value.branch.rename).toBe(true);
-			expect(value.branch.delete).toBe(true);
-			expect(value.branch.merge).toBe(true);
-			expect(value.branch.rebase).toBe(true);
-			expect(value.branch.push).toBe(true);
-			expect(value.branch.createPullRequest).toBe(true);
-			expect(value.branch.createArchive).toBe(true);
-			expect(value.branch.copyName).toBe(true);
-			expect(value.commit.addTag).toBe(true);
-			expect(value.commit.createBranch).toBe(true);
-			expect(value.commit.checkout).toBe(true);
-			expect(value.commit.cherrypick).toBe(true);
-			expect(value.commit.revert).toBe(true);
-			expect(value.commit.drop).toBe(true);
-			expect(value.commit.merge).toBe(true);
-			expect(value.commit.rebase).toBe(true);
-			expect(value.commit.reset).toBe(true);
-			expect(value.commit.copyHash).toBe(true);
-			expect(value.commit.copySubject).toBe(true);
-			expect(value.remoteBranch.checkout).toBe(true);
-			expect(value.remoteBranch.delete).toBe(true);
-			expect(value.remoteBranch.fetch).toBe(true);
-			expect(value.remoteBranch.merge).toBe(true);
-			expect(value.remoteBranch.pull).toBe(true);
-			expect(value.remoteBranch.createPullRequest).toBe(true);
-			expect(value.remoteBranch.createArchive).toBe(true);
-			expect(value.remoteBranch.copyName).toBe(true);
-			expect(value.stash.apply).toBe(true);
-			expect(value.stash.createBranch).toBe(true);
-			expect(value.stash.pop).toBe(true);
-			expect(value.stash.drop).toBe(true);
-			expect(value.stash.copyName).toBe(true);
-			expect(value.stash.copyHash).toBe(true);
-			expect(value.tag.viewDetails).toBe(true);
-			expect(value.tag.delete).toBe(true);
-			expect(value.tag.push).toBe(true);
-			expect(value.tag.createArchive).toBe(true);
-			expect(value.tag.copyName).toBe(true);
-			expect(value.uncommittedChanges.stash).toBe(true);
-			expect(value.uncommittedChanges.reset).toBe(true);
-			expect(value.uncommittedChanges.clean).toBe(true);
-			expect(value.uncommittedChanges.openSourceControlView).toBe(true);
+			expect(value).toStrictEqual({
+				branch: {
+					checkout: true,
+					rename: true,
+					delete: true,
+					merge: true,
+					rebase: true,
+					push: true,
+					createPullRequest: true,
+					createArchive: true,
+					copyName: true
+				},
+				commit: {
+					addTag: true,
+					createBranch: true,
+					checkout: true,
+					cherrypick: true,
+					revert: true,
+					drop: true,
+					merge: true,
+					rebase: true,
+					reset: true,
+					copyHash: true,
+					copySubject: true
+				},
+				remoteBranch: {
+					checkout: true,
+					delete: true,
+					fetch: true,
+					merge: true,
+					pull: true,
+					createPullRequest: true,
+					createArchive: true,
+					copyName: true
+				},
+				stash: {
+					apply: true,
+					createBranch: true,
+					pop: true,
+					drop: true,
+					copyName: true,
+					copyHash: true
+				},
+				tag: {
+					viewDetails: true,
+					delete: true,
+					push: true,
+					createArchive: true,
+					copyName: true
+				},
+				uncommittedChanges: {
+					stash: true,
+					reset: true,
+					clean: true,
+					openSourceControlView: true
+				}
+			});
 		});
 
 		it('Should return the default value (all items enabled) when the configuration value is not set', () => {
@@ -311,49 +327,63 @@ describe('Config', () => {
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('contextMenuActionsVisibility', {});
-			expect(value.branch.checkout).toBe(true);
-			expect(value.branch.rename).toBe(true);
-			expect(value.branch.delete).toBe(true);
-			expect(value.branch.merge).toBe(true);
-			expect(value.branch.rebase).toBe(true);
-			expect(value.branch.push).toBe(true);
-			expect(value.branch.createPullRequest).toBe(true);
-			expect(value.branch.createArchive).toBe(true);
-			expect(value.branch.copyName).toBe(true);
-			expect(value.commit.addTag).toBe(true);
-			expect(value.commit.createBranch).toBe(true);
-			expect(value.commit.checkout).toBe(true);
-			expect(value.commit.cherrypick).toBe(true);
-			expect(value.commit.revert).toBe(true);
-			expect(value.commit.drop).toBe(true);
-			expect(value.commit.merge).toBe(true);
-			expect(value.commit.rebase).toBe(true);
-			expect(value.commit.reset).toBe(true);
-			expect(value.commit.copyHash).toBe(true);
-			expect(value.commit.copySubject).toBe(true);
-			expect(value.remoteBranch.checkout).toBe(true);
-			expect(value.remoteBranch.delete).toBe(true);
-			expect(value.remoteBranch.fetch).toBe(true);
-			expect(value.remoteBranch.merge).toBe(true);
-			expect(value.remoteBranch.pull).toBe(true);
-			expect(value.remoteBranch.createPullRequest).toBe(true);
-			expect(value.remoteBranch.createArchive).toBe(true);
-			expect(value.remoteBranch.copyName).toBe(true);
-			expect(value.stash.apply).toBe(true);
-			expect(value.stash.createBranch).toBe(true);
-			expect(value.stash.pop).toBe(true);
-			expect(value.stash.drop).toBe(true);
-			expect(value.stash.copyName).toBe(true);
-			expect(value.stash.copyHash).toBe(true);
-			expect(value.tag.viewDetails).toBe(true);
-			expect(value.tag.delete).toBe(true);
-			expect(value.tag.push).toBe(true);
-			expect(value.tag.createArchive).toBe(true);
-			expect(value.tag.copyName).toBe(true);
-			expect(value.uncommittedChanges.stash).toBe(true);
-			expect(value.uncommittedChanges.reset).toBe(true);
-			expect(value.uncommittedChanges.clean).toBe(true);
-			expect(value.uncommittedChanges.openSourceControlView).toBe(true);
+			expect(value).toStrictEqual({
+				branch: {
+					checkout: true,
+					rename: true,
+					delete: true,
+					merge: true,
+					rebase: true,
+					push: true,
+					createPullRequest: true,
+					createArchive: true,
+					copyName: true
+				},
+				commit: {
+					addTag: true,
+					createBranch: true,
+					checkout: true,
+					cherrypick: true,
+					revert: true,
+					drop: true,
+					merge: true,
+					rebase: true,
+					reset: true,
+					copyHash: true,
+					copySubject: true
+				},
+				remoteBranch: {
+					checkout: true,
+					delete: true,
+					fetch: true,
+					merge: true,
+					pull: true,
+					createPullRequest: true,
+					createArchive: true,
+					copyName: true
+				},
+				stash: {
+					apply: true,
+					createBranch: true,
+					pop: true,
+					drop: true,
+					copyName: true,
+					copyHash: true
+				},
+				tag: {
+					viewDetails: true,
+					delete: true,
+					push: true,
+					createArchive: true,
+					copyName: true
+				},
+				uncommittedChanges: {
+					stash: true,
+					reset: true,
+					clean: true,
+					openSourceControlView: true
+				}
+			});
 		});
 
 		it('Should only affect the provided configuration overrides', () => {
@@ -377,49 +407,63 @@ describe('Config', () => {
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('contextMenuActionsVisibility', {});
-			expect(value.branch.checkout).toBe(true);
-			expect(value.branch.rename).toBe(false);
-			expect(value.branch.delete).toBe(true);
-			expect(value.branch.merge).toBe(true);
-			expect(value.branch.rebase).toBe(true);
-			expect(value.branch.push).toBe(true);
-			expect(value.branch.createPullRequest).toBe(true);
-			expect(value.branch.createArchive).toBe(true);
-			expect(value.branch.copyName).toBe(true);
-			expect(value.commit.addTag).toBe(true);
-			expect(value.commit.createBranch).toBe(true);
-			expect(value.commit.checkout).toBe(false);
-			expect(value.commit.cherrypick).toBe(true);
-			expect(value.commit.revert).toBe(true);
-			expect(value.commit.drop).toBe(true);
-			expect(value.commit.merge).toBe(true);
-			expect(value.commit.rebase).toBe(true);
-			expect(value.commit.reset).toBe(true);
-			expect(value.commit.copyHash).toBe(true);
-			expect(value.commit.copySubject).toBe(true);
-			expect(value.remoteBranch.checkout).toBe(true);
-			expect(value.remoteBranch.delete).toBe(true);
-			expect(value.remoteBranch.fetch).toBe(false);
-			expect(value.remoteBranch.merge).toBe(true);
-			expect(value.remoteBranch.pull).toBe(true);
-			expect(value.remoteBranch.createPullRequest).toBe(true);
-			expect(value.remoteBranch.createArchive).toBe(true);
-			expect(value.remoteBranch.copyName).toBe(true);
-			expect(value.stash.apply).toBe(true);
-			expect(value.stash.createBranch).toBe(true);
-			expect(value.stash.pop).toBe(true);
-			expect(value.stash.drop).toBe(true);
-			expect(value.stash.copyName).toBe(true);
-			expect(value.stash.copyHash).toBe(true);
-			expect(value.tag.viewDetails).toBe(true);
-			expect(value.tag.delete).toBe(true);
-			expect(value.tag.push).toBe(true);
-			expect(value.tag.createArchive).toBe(true);
-			expect(value.tag.copyName).toBe(true);
-			expect(value.uncommittedChanges.stash).toBe(true);
-			expect(value.uncommittedChanges.reset).toBe(true);
-			expect(value.uncommittedChanges.clean).toBe(true);
-			expect(value.uncommittedChanges.openSourceControlView).toBe(true);
+			expect(value).toStrictEqual({
+				branch: {
+					checkout: true,
+					rename: false,
+					delete: true,
+					merge: true,
+					rebase: true,
+					push: true,
+					createPullRequest: true,
+					createArchive: true,
+					copyName: true
+				},
+				commit: {
+					addTag: true,
+					createBranch: true,
+					checkout: false,
+					cherrypick: true,
+					revert: true,
+					drop: true,
+					merge: true,
+					rebase: true,
+					reset: true,
+					copyHash: true,
+					copySubject: true
+				},
+				remoteBranch: {
+					checkout: true,
+					delete: true,
+					fetch: false,
+					merge: true,
+					pull: true,
+					createPullRequest: true,
+					createArchive: true,
+					copyName: true
+				},
+				stash: {
+					apply: true,
+					createBranch: true,
+					pop: true,
+					drop: true,
+					copyName: true,
+					copyHash: true
+				},
+				tag: {
+					viewDetails: true,
+					delete: true,
+					push: true,
+					createArchive: true,
+					copyName: true
+				},
+				uncommittedChanges: {
+					stash: true,
+					reset: true,
+					clean: true,
+					openSourceControlView: true
+				}
+			});
 		});
 	});
 
@@ -1464,64 +1508,7 @@ describe('Config', () => {
 		});
 	});
 
-	describe('enhancedAccessibility', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', true);
-
-			// Run
-			const value = config.enhancedAccessibility;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('enhancedAccessibility', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', false);
-
-			// Run
-			const value = config.enhancedAccessibility;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('enhancedAccessibility', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', 5);
-
-			// Run
-			const value = config.enhancedAccessibility;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('enhancedAccessibility', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('enhancedAccessibility', 0);
-
-			// Run
-			const value = config.enhancedAccessibility;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('enhancedAccessibility', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Run
-			const value = config.enhancedAccessibility;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('enhancedAccessibility', false);
-			expect(value).toBe(false);
-		});
-	});
+	describe('enhancedAccessibility', testBooleanExtensionSetting('enhancedAccessibility', 'enhancedAccessibility', false));
 
 	describe('fileEncoding', () => {
 		it('Should return the configured value', () => {
@@ -1904,64 +1891,7 @@ describe('Config', () => {
 		});
 	});
 
-	describe('markdown', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('markdown', true);
-
-			// Run
-			const value = config.markdown;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('markdown', false);
-
-			// Run
-			const value = config.markdown;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('markdown', 5);
-
-			// Run
-			const value = config.markdown;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('markdown', 0);
-
-			// Run
-			const value = config.markdown;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Run
-			const value = config.markdown;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('markdown', true);
-			expect(value).toBe(true);
-		});
-	});
+	describe('markdown', testBooleanExtensionSetting('markdown', 'markdown', true));
 
 	describe('maxDepthOfRepoSearch', () => {
 		it('Should return the configured value', () => {
@@ -2141,64 +2071,7 @@ describe('Config', () => {
 		});
 	});
 
-	describe('openToTheRepoOfTheActiveTextEditorDocument', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', true);
-
-			// Run
-			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('openToTheRepoOfTheActiveTextEditorDocument', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', false);
-
-			// Run
-			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('openToTheRepoOfTheActiveTextEditorDocument', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', 5);
-
-			// Run
-			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('openToTheRepoOfTheActiveTextEditorDocument', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', 0);
-
-			// Run
-			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('openToTheRepoOfTheActiveTextEditorDocument', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Run
-			const value = config.openToTheRepoOfTheActiveTextEditorDocument;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('openToTheRepoOfTheActiveTextEditorDocument', false);
-			expect(value).toBe(false);
-		});
-	});
+	describe('openToTheRepoOfTheActiveTextEditorDocument', testBooleanExtensionSetting('openToTheRepoOfTheActiveTextEditorDocument', 'openToTheRepoOfTheActiveTextEditorDocument', false));
 
 	describe('referenceLabels', () => {
 		describe('combineLocalAndRemoteBranchLabels', () => {
@@ -2325,64 +2198,7 @@ describe('Config', () => {
 		});
 	});
 
-	describe('fetchAvatars', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', true);
-
-			// Run
-			const value = config.fetchAvatars;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', false);
-
-			// Run
-			const value = config.fetchAvatars;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', 5);
-
-			// Run
-			const value = config.fetchAvatars;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', 0);
-
-			// Run
-			const value = config.fetchAvatars;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.fetchAvatars;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.fetchAvatars', 'fetchAvatars');
-			expect(value).toBe(false);
-		});
-	});
+	describe('fetchAvatars', testRenamedBooleanExtensionSetting('fetchAvatars', 'repository.commits.fetchAvatars', 'fetchAvatars', false));
 
 	describe('initialLoadCommits', () => {
 		it('Should return the configured value', () => {
@@ -2430,64 +2246,7 @@ describe('Config', () => {
 		});
 	});
 
-	describe('loadMoreCommitsAutomatically', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', true);
-
-			// Run
-			const value = config.loadMoreCommitsAutomatically;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', false);
-
-			// Run
-			const value = config.loadMoreCommitsAutomatically;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', 5);
-
-			// Run
-			const value = config.loadMoreCommitsAutomatically;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.loadMoreAutomatically', 0);
-
-			// Run
-			const value = config.loadMoreCommitsAutomatically;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.loadMoreCommitsAutomatically;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically');
-			expect(value).toBe(true);
-		});
-	});
+	describe('loadMoreCommitsAutomatically', testRenamedBooleanExtensionSetting('loadMoreCommitsAutomatically', 'repository.commits.loadMoreAutomatically', 'loadMoreCommitsAutomatically', true));
 
 	describe('muteCommits', () => {
 		describe('commitsNotAncestorsOfHead', () => {
@@ -2668,182 +2427,11 @@ describe('Config', () => {
 		});
 	});
 
-	describe('fetchAndPrune', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', true);
+	describe('fetchAndPrune', testRenamedBooleanExtensionSetting('fetchAndPrune', 'repository.fetchAndPrune', 'fetchAndPrune', false));
 
-			// Run
-			const value = config.fetchAndPrune;
+	describe('fetchAndPruneTags', testBooleanExtensionSetting('fetchAndPruneTags', 'repository.fetchAndPruneTags', false));
 
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', false);
-
-			// Run
-			const value = config.fetchAndPrune;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', 5);
-
-			// Run
-			const value = config.fetchAndPrune;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPrune', 0);
-
-			// Run
-			const value = config.fetchAndPrune;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.fetchAndPrune;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.fetchAndPrune', 'fetchAndPrune');
-			expect(value).toBe(false);
-		});
-	});
-
-	describe('fetchAndPruneTags', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', true);
-
-			// Run
-			const value = config.fetchAndPruneTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', false);
-
-			// Run
-			const value = config.fetchAndPruneTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', 5);
-
-			// Run
-			const value = config.fetchAndPruneTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.fetchAndPruneTags', 0);
-
-			// Run
-			const value = config.fetchAndPruneTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is not set', () => {
-			// Run
-			const value = config.fetchAndPruneTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.fetchAndPruneTags', false);
-			expect(value).toBe(false);
-		});
-	});
-
-	describe('includeCommitsMentionedByReflogs', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', true);
-
-			// Run
-			const value = config.includeCommitsMentionedByReflogs;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', false);
-
-			// Run
-			const value = config.includeCommitsMentionedByReflogs;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', 5);
-
-			// Run
-			const value = config.includeCommitsMentionedByReflogs;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.includeCommitsMentionedByReflogs', 0);
-
-			// Run
-			const value = config.includeCommitsMentionedByReflogs;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.includeCommitsMentionedByReflogs;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs');
-			expect(value).toBe(false);
-		});
-	});
+	describe('includeCommitsMentionedByReflogs', testRenamedBooleanExtensionSetting('includeCommitsMentionedByReflogs', 'repository.includeCommitsMentionedByReflogs', 'includeCommitsMentionedByReflogs', false));
 
 	describe('onRepoLoad', () => {
 		describe('scrollToHead', () => {
@@ -3012,654 +2600,27 @@ describe('Config', () => {
 		});
 	});
 
-	describe('onlyFollowFirstParent', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', true);
+	describe('onlyFollowFirstParent', testRenamedBooleanExtensionSetting('onlyFollowFirstParent', 'repository.onlyFollowFirstParent', 'onlyFollowFirstParent', false));
 
-			// Run
-			const value = config.onlyFollowFirstParent;
+	describe('showCommitsOnlyReferencedByTags', testRenamedBooleanExtensionSetting('showCommitsOnlyReferencedByTags', 'repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags', true));
 
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
-			expect(value).toBe(true);
-		});
+	describe('showSignatureStatus', testRenamedBooleanExtensionSetting('showSignatureStatus', 'repository.commits.showSignatureStatus', 'showSignatureStatus', false));
 
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', false);
+	describe('showRemoteBranches', testBooleanExtensionSetting('showRemoteBranches', 'repository.showRemoteBranches', true));
 
-			// Run
-			const value = config.onlyFollowFirstParent;
+	describe('showRemoteHeads', testBooleanExtensionSetting('showRemoteHeads', 'repository.showRemoteHeads', true));
 
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
-			expect(value).toBe(false);
-		});
+	describe('showTags', testRenamedBooleanExtensionSetting('showTags', 'repository.showTags', 'showTags', true));
 
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', 5);
+	describe('showUncommittedChanges', testRenamedBooleanExtensionSetting('showUncommittedChanges', 'repository.showUncommittedChanges', 'showUncommittedChanges', true));
 
-			// Run
-			const value = config.onlyFollowFirstParent;
+	describe('showUntrackedFiles', testRenamedBooleanExtensionSetting('showUntrackedFiles', 'repository.showUntrackedFiles', 'showUntrackedFiles', true));
 
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
-			expect(value).toBe(true);
-		});
+	describe('signCommits', testBooleanExtensionSetting('signCommits', 'repository.sign.commits', false));
 
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.onlyFollowFirstParent', 0);
+	describe('signTags', testBooleanExtensionSetting('signTags', 'repository.sign.tags', false));
 
-			// Run
-			const value = config.onlyFollowFirstParent;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.onlyFollowFirstParent;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.onlyFollowFirstParent', 'onlyFollowFirstParent');
-			expect(value).toBe(false);
-		});
-	});
-
-	describe('showCommitsOnlyReferencedByTags', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', true);
-
-			// Run
-			const value = config.showCommitsOnlyReferencedByTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', false);
-
-			// Run
-			const value = config.showCommitsOnlyReferencedByTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', 5);
-
-			// Run
-			const value = config.showCommitsOnlyReferencedByTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showCommitsOnlyReferencedByTags', 0);
-
-			// Run
-			const value = config.showCommitsOnlyReferencedByTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.showCommitsOnlyReferencedByTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showCommitsOnlyReferencedByTags', 'showCommitsOnlyReferencedByTags');
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('showSignatureStatus', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
-
-			// Run
-			const value = config.showSignatureStatus;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', false);
-
-			// Run
-			const value = config.showSignatureStatus;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', 5);
-
-			// Run
-			const value = config.showSignatureStatus;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', 0);
-
-			// Run
-			const value = config.showSignatureStatus;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.showSignatureStatus;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.commits.showSignatureStatus', 'showSignatureStatus');
-			expect(value).toBe(false);
-		});
-	});
-
-	describe('showRemoteBranches', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', true);
-
-			// Run
-			const value = config.showRemoteBranches;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteBranches', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', false);
-
-			// Run
-			const value = config.showRemoteBranches;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteBranches', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', 5);
-
-			// Run
-			const value = config.showRemoteBranches;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteBranches', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteBranches', 0);
-
-			// Run
-			const value = config.showRemoteBranches;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteBranches', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Run
-			const value = config.showRemoteBranches;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteBranches', true);
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('showRemoteHeads', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
-
-			// Run
-			const value = config.showRemoteHeads;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteHeads', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', false);
-
-			// Run
-			const value = config.showRemoteHeads;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteHeads', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', 5);
-
-			// Run
-			const value = config.showRemoteHeads;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteHeads', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', 0);
-
-			// Run
-			const value = config.showRemoteHeads;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteHeads', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Run
-			const value = config.showRemoteHeads;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.showRemoteHeads', true);
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('showTags', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showTags', true);
-
-			// Run
-			const value = config.showTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showTags', false);
-
-			// Run
-			const value = config.showTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showTags', 5);
-
-			// Run
-			const value = config.showTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showTags', 0);
-
-			// Run
-			const value = config.showTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.showTags;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showTags', 'showTags');
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('showUncommittedChanges', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', true);
-
-			// Run
-			const value = config.showUncommittedChanges;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', false);
-
-			// Run
-			const value = config.showUncommittedChanges;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', 5);
-
-			// Run
-			const value = config.showUncommittedChanges;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUncommittedChanges', 0);
-
-			// Run
-			const value = config.showUncommittedChanges;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.showUncommittedChanges;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUncommittedChanges', 'showUncommittedChanges');
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('showUntrackedFiles', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', true);
-
-			// Run
-			const value = config.showUntrackedFiles;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', false);
-
-			// Run
-			const value = config.showUntrackedFiles;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', 5);
-
-			// Run
-			const value = config.showUntrackedFiles;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.showUntrackedFiles', 0);
-
-			// Run
-			const value = config.showUntrackedFiles;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.showUntrackedFiles;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.showUntrackedFiles', 'showUntrackedFiles');
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('signCommits', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
-
-			// Run
-			const value = config.signCommits;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
-
-			// Run
-			const value = config.signCommits;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.commits', 5);
-
-			// Run
-			const value = config.signCommits;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.commits', 0);
-
-			// Run
-			const value = config.signCommits;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Run
-			const value = config.signCommits;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.commits', false);
-			expect(value).toBe(false);
-		});
-	});
-
-	describe('signTags', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.tags', true);
-
-			// Run
-			const value = config.signTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
-
-			// Run
-			const value = config.signTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.tags', 5);
-
-			// Run
-			const value = config.signTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.sign.tags', 0);
-
-			// Run
-			const value = config.signTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Run
-			const value = config.signTags;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repository.sign.tags', false);
-			expect(value).toBe(false);
-		});
-	});
-
-	describe('useMailmap', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.useMailmap', true);
-
-			// Run
-			const value = config.useMailmap;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
-
-			// Run
-			const value = config.useMailmap;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.useMailmap', 5);
-
-			// Run
-			const value = config.useMailmap;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('repository.useMailmap', 0);
-
-			// Run
-			const value = config.useMailmap;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (FALSE) when the configuration value is unknown', () => {
-			// Run
-			const value = config.useMailmap;
-
-			// Assert
-			expectRenamedExtensionSettingToHaveBeenCalled('repository.useMailmap', 'useMailmap');
-			expect(value).toBe(false);
-		});
-	});
+	describe('useMailmap', testRenamedBooleanExtensionSetting('useMailmap', 'repository.useMailmap', 'useMailmap', false));
 
 	describe('repoDropdownOrder', () => {
 		it('Should return RepoDropdownOrder.Name when the configuration value is "Name"', () => {
@@ -3708,123 +2669,9 @@ describe('Config', () => {
 		});
 	});
 
-	describe('retainContextWhenHidden', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', true);
+	describe('retainContextWhenHidden', testBooleanExtensionSetting('retainContextWhenHidden', 'retainContextWhenHidden', true));
 
-			// Run
-			const value = config.retainContextWhenHidden;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('retainContextWhenHidden', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', false);
-
-			// Run
-			const value = config.retainContextWhenHidden;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('retainContextWhenHidden', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', 5);
-
-			// Run
-			const value = config.retainContextWhenHidden;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('retainContextWhenHidden', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', 0);
-
-			// Run
-			const value = config.retainContextWhenHidden;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('retainContextWhenHidden', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Run
-			const value = config.retainContextWhenHidden;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('retainContextWhenHidden', true);
-			expect(value).toBe(true);
-		});
-	});
-
-	describe('showStatusBarItem', () => {
-		it('Should return TRUE when the configuration value is TRUE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('showStatusBarItem', true);
-
-			// Run
-			const value = config.showStatusBarItem;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('showStatusBarItem', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is FALSE', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('showStatusBarItem', false);
-
-			// Run
-			const value = config.showStatusBarItem;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('showStatusBarItem', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return TRUE when the configuration value is truthy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('showStatusBarItem', 5);
-
-			// Run
-			const value = config.showStatusBarItem;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('showStatusBarItem', true);
-			expect(value).toBe(true);
-		});
-
-		it('Should return FALSE when the configuration value is falsy', () => {
-			// Setup
-			vscode.mockExtensionSettingReturnValue('showStatusBarItem', 0);
-
-			// Run
-			const value = config.showStatusBarItem;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('showStatusBarItem', true);
-			expect(value).toBe(false);
-		});
-
-		it('Should return the default value (TRUE) when the configuration value is not set', () => {
-			// Run
-			const value = config.showStatusBarItem;
-
-			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('showStatusBarItem', true);
-			expect(value).toBe(true);
-		});
-	});
+	describe('showStatusBarItem', testBooleanExtensionSetting('showStatusBarItem', 'showStatusBarItem', true));
 
 	describe('tabIconColourTheme', () => {
 		it('Should return TabIconColourTheme.Colour when the configuration value is "colour"', () => {
@@ -4028,4 +2875,126 @@ describe('Config', () => {
 			expect(value).toBe(false);
 		});
 	});
+
+	function testBooleanExtensionSetting(configKey: keyof Config, section: string, defaultValue: boolean) {
+		return () => {
+			it('Should return TRUE when the configuration value is TRUE', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, true);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith(section, defaultValue);
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is FALSE', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, false);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith(section, defaultValue);
+				expect(value).toBe(false);
+			});
+
+			it('Should return TRUE when the configuration value is truthy', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, 5);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith(section, defaultValue);
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is falsy', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, 0);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith(section, defaultValue);
+				expect(value).toBe(false);
+			});
+
+			it('Should return the default value (' + (defaultValue ? 'TRUE' : 'FALSE') + ') when the configuration value is not set', () => {
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith(section, defaultValue);
+				expect(value).toBe(defaultValue);
+			});
+		};
+	}
+
+	function testRenamedBooleanExtensionSetting(configKey: keyof Config, section: string, oldSection: string, defaultValue: boolean) {
+		return () => {
+			it('Should return TRUE when the configuration value is TRUE', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, true);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expectRenamedExtensionSettingToHaveBeenCalled(section, oldSection);
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is FALSE', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, false);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expectRenamedExtensionSettingToHaveBeenCalled(section, oldSection);
+				expect(value).toBe(false);
+			});
+
+			it('Should return TRUE when the configuration value is truthy', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, 5);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expectRenamedExtensionSettingToHaveBeenCalled(section, oldSection);
+				expect(value).toBe(true);
+			});
+
+			it('Should return FALSE when the configuration value is falsy', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue(section, 0);
+
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expectRenamedExtensionSettingToHaveBeenCalled(section, oldSection);
+				expect(value).toBe(false);
+			});
+
+			it('Should return the default value (' + (defaultValue ? 'TRUE' : 'FALSE') + ') when the configuration value is not set', () => {
+				// Run
+				const value = config[configKey];
+
+				// Assert
+				expectRenamedExtensionSettingToHaveBeenCalled(section, oldSection);
+				expect(value).toBe(defaultValue);
+			});
+		};
+	}
 });

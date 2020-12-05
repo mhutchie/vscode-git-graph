@@ -713,6 +713,9 @@ export interface RequestDeleteBranch extends RepoRequest {
 }
 export interface ResponseDeleteBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'deleteBranch';
+	readonly repo: string;
+	readonly branchName: string;
+	readonly deleteOnRemotes: ReadonlyArray<string>;
 }
 
 export interface RequestDeleteRemote extends RepoRequest {

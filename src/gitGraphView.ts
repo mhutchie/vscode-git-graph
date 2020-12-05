@@ -294,10 +294,18 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'deleteBranch':
 				errorInfos = [await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)];
-				for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
-					errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
+				if (errorInfos[0] === null) {
+					for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
+						errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
+					}
 				}
-				this.sendMessage({ command: 'deleteBranch', errors: errorInfos });
+				this.sendMessage({
+					command: 'deleteBranch',
+					repo: msg.repo,
+					branchName: msg.branchName,
+					deleteOnRemotes: msg.deleteOnRemotes,
+					errors: errorInfos
+				});
 				break;
 			case 'deleteRemote':
 				this.sendMessage({

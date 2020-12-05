@@ -934,7 +934,7 @@ class GitGraphView {
 							value: false
 						});
 					}
-					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Delete Branch', (values) => {
+					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Yes, delete', (values) => {
 						runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: <boolean>values[0], deleteOnRemotes: remotesWithBranch.length > 0 && <boolean>values[1] ? remotesWithBranch : [] }, 'Deleting Branch');
 					}, target);
 				}
@@ -2889,7 +2889,7 @@ window.addEventListener('load', () => {
 				}, true);
 				break;
 			case 'deleteBranch':
-				refreshAndDisplayErrors(msg.errors, 'Unable to Delete Branch');
+				handleResponseDeleteBranch(msg);
 				break;
 			case 'deleteRemote':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
@@ -3031,6 +3031,16 @@ window.addEventListener('load', () => {
 				break;
 		}
 	});
+
+	function handleResponseDeleteBranch(msg: GG.ResponseDeleteBranch) {
+		if (msg.errors.length > 0 && msg.errors[0] !== null && msg.errors[0].includes('git branch -D')) {
+			dialog.showConfirmation('The branch <b><i>' + escapeHtml(msg.branchName) + '</i></b> is not fully merged. Would you like to force delete it?', 'Yes, force delete branch', () => {
+				runAction({ command: 'deleteBranch', repo: msg.repo, branchName: msg.branchName, forceDelete: true, deleteOnRemotes: msg.deleteOnRemotes }, 'Deleting Branch');
+			}, { type: TargetType.Repo });
+		} else {
+			refreshAndDisplayErrors(msg.errors, 'Unable to Delete Branch');
+		}
+	}
 
 	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
 		if (error === null) {

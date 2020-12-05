@@ -488,7 +488,7 @@ class GitGraphView {
 	}
 
 
-	/* Public Get Methods checking the GitGraphView state */
+	/* Getters */
 
 	public getBranches(): ReadonlyArray<string> {
 		return this.gitBranches;
@@ -508,6 +508,15 @@ class GitGraphView {
 		return options;
 	}
 
+	public getCommitId(hash: string) {
+		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
+	}
+
+	private getCommitOfElem(elem: HTMLElement) {
+		let id = parseInt(elem.dataset.id!);
+		return id < this.commits.length ? this.commits[id] : null;
+	}
+
 	public getCommits(): ReadonlyArray<GG.GitCommit> {
 		return this.commits;
 	}
@@ -515,6 +524,8 @@ class GitGraphView {
 	public getSettingsWidget() {
 		return this.settingsWidget;
 	}
+
+
 
 
 	/* Refresh */
@@ -696,6 +707,11 @@ class GitGraphView {
 	public updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(key: K, value: GG.GitGraphViewGlobalState[K]) {
 		globalState[key] = value;
 		sendMessage({ command: 'setGlobalViewState', state: globalState });
+	}
+
+	public updateWorkspaceViewState<K extends keyof GG.GitGraphViewWorkspaceState>(key: K, value: GG.GitGraphViewWorkspaceState[K]) {
+		workspaceState[key] = value;
+		sendMessage({ command: 'setWorkspaceViewState', state: workspaceState });
 	}
 
 
@@ -1440,15 +1456,6 @@ class GitGraphView {
 		]];
 	}
 
-	private getCommitOfElem(elem: HTMLElement) {
-		let id = parseInt(elem.dataset.id!);
-		return id < this.commits.length ? this.commits[id] : null;
-	}
-
-	private getCommitId(hash: string) {
-		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
-	}
-
 
 	/* Actions */
 
@@ -2097,7 +2104,7 @@ class GitGraphView {
 
 	/* Commit Details View */
 
-	private loadCommitDetails(commitElem: HTMLElement) {
+	public loadCommitDetails(commitElem: HTMLElement) {
 		const commit = this.getCommitOfElem(commitElem);
 		if (commit === null) return;
 
@@ -2538,6 +2545,10 @@ class GitGraphView {
 
 	private isCdvDocked() {
 		return this.config.commitDetailsView.location === GG.CommitDetailsViewLocation.DockedToBottom;
+	}
+
+	public isCdvOpen(commitHash: string, compareWithHash: string | null) {
+		return this.expandedCommit !== null && this.expandedCommit.commitHash === commitHash && this.expandedCommit.compareWithHash === compareWithHash;
 	}
 
 	private getCommitOrder(hash1: string, hash2: string) {
@@ -2991,6 +3002,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'setGlobalViewState':
 				finishOrDisplayError(msg.error, 'Unable to save the Global View State');
+				break;
+			case 'setWorkspaceViewState':
+				finishOrDisplayError(msg.error, 'Unable to save the Workspace View State');
 				break;
 			case 'startCodeReview':
 				if (msg.error === null) {

@@ -3,8 +3,6 @@ const CLASS_FIND_MATCH = 'findMatch';
 
 interface FindWidgetState {
 	readonly text: string;
-	readonly isCaseSensitive: boolean;
-	readonly isRegex: boolean;
 	readonly currentHash: string | null;
 	readonly visible: boolean;
 }
@@ -12,8 +10,6 @@ interface FindWidgetState {
 class FindWidget {
 	private readonly view: GitGraphView;
 	private text: string = '';
-	private isCaseSensitive: boolean = false;
-	private isRegex: boolean = false;
 	private matches: { hash: string, elem: HTMLElement }[] = [];
 	private position: number = -1;
 	private visible: boolean = false;
@@ -30,7 +26,7 @@ class FindWidget {
 		this.view = view;
 		this.widgetElem = document.createElement('div');
 		this.widgetElem.className = 'findWidget';
-		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifier" title="Match Case">Aa</span><span id="findRegex" class="findModifier" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev" title="Previous match (Shift+Enter)"></span><span id="findNext" title="Next match (Enter)"></span><span id="findClose" title="Close (Escape)"></span>';
+		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifier" title="Match Case">Aa</span><span id="findRegex" class="findModifier" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev" title="Previous match (Shift+Enter)"></span><span id="findNext" title="Next match (Enter)"></span><span id="findOpenCdv" title="Open the Commit Details View for the current match"></span><span id="findClose" title="Close (Escape)"></span>';
 		document.body.appendChild(this.widgetElem);
 
 		this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
@@ -51,25 +47,30 @@ class FindWidget {
 						this.text = this.inputElem.value;
 						this.clearMatches();
 						this.findMatches(this.getCurrentHash(), true);
+						this.openCommitDetailsViewForCurrentMatchIfEnabled();
 					}
 				}, 200);
 			}
 		});
 
 		this.caseSensitiveElem = document.getElementById('findCaseSensitive')!;
+		alterClass(this.caseSensitiveElem, CLASS_ACTIVE, workspaceState.findIsCaseSensitive);
 		this.caseSensitiveElem.addEventListener('click', () => {
-			this.isCaseSensitive = !this.isCaseSensitive;
-			alterClass(this.caseSensitiveElem, CLASS_ACTIVE, this.isCaseSensitive);
+			this.view.updateWorkspaceViewState('findIsCaseSensitive', !workspaceState.findIsCaseSensitive);
+			alterClass(this.caseSensitiveElem, CLASS_ACTIVE, workspaceState.findIsCaseSensitive);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
+			this.openCommitDetailsViewForCurrentMatchIfEnabled();
 		});
 
 		this.regexElem = document.getElementById('findRegex')!;
+		alterClass(this.regexElem, CLASS_ACTIVE, workspaceState.findIsRegex);
 		this.regexElem.addEventListener('click', () => {
-			this.isRegex = !this.isRegex;
-			alterClass(this.regexElem, CLASS_ACTIVE, this.isRegex);
+			this.view.updateWorkspaceViewState('findIsRegex', !workspaceState.findIsRegex);
+			alterClass(this.regexElem, CLASS_ACTIVE, workspaceState.findIsRegex);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
+			this.openCommitDetailsViewForCurrentMatchIfEnabled();
 		});
 
 		this.positionElem = document.getElementById('findPosition')!;
@@ -84,9 +85,18 @@ class FindWidget {
 		this.nextElem.innerHTML = SVG_ICONS.arrowDown;
 		this.nextElem.addEventListener('click', () => this.next());
 
-		const findClose = document.getElementById('findClose')!;
-		findClose.innerHTML = SVG_ICONS.close;
-		findClose.addEventListener('click', () => this.close());
+		const openCdvElem = document.getElementById('findOpenCdv')!;
+		openCdvElem.innerHTML = SVG_ICONS.cdv;
+		alterClass(openCdvElem, CLASS_ACTIVE, workspaceState.findOpenCommitDetailsView);
+		openCdvElem.addEventListener('click', () => {
+			this.view.updateWorkspaceViewState('findOpenCommitDetailsView', !workspaceState.findOpenCommitDetailsView);
+			alterClass(openCdvElem, CLASS_ACTIVE, workspaceState.findOpenCommitDetailsView);
+			this.openCommitDetailsViewForCurrentMatchIfEnabled();
+		});
+
+		const findCloseElem = document.getElementById('findClose')!;
+		findCloseElem.innerHTML = SVG_ICONS.close;
+		findCloseElem.addEventListener('click', () => this.close());
 	}
 
 	public show(transition: boolean) {
@@ -129,39 +139,42 @@ class FindWidget {
 		document.body.style.setProperty('--git-graph-findMatchCommit', modifyColourOpacity(colour, 0.5));
 	}
 
+
 	/* State */
+
 	public getState(): FindWidgetState {
 		return {
 			text: this.text,
-			isCaseSensitive: this.isCaseSensitive,
-			isRegex: this.isRegex,
 			currentHash: this.getCurrentHash(),
 			visible: this.visible
 		};
 	}
+
 	public getCurrentHash() {
 		return this.position > -1 ? this.matches[this.position].hash : null;
 	}
+
 	public restoreState(state: FindWidgetState) {
 		if (!state.visible) return;
 		this.text = state.text;
-		this.isCaseSensitive = state.isCaseSensitive;
-		this.isRegex = state.isRegex;
-		alterClass(this.caseSensitiveElem, CLASS_ACTIVE, this.isCaseSensitive);
-		alterClass(this.regexElem, CLASS_ACTIVE, this.isRegex);
 		this.show(false);
 		if (this.text !== '') this.findMatches(state.currentHash, false);
 	}
+
 	public isVisible() {
 		return this.visible;
 	}
+
+
+	/* Matching */
 
 	private findMatches(goToCommitHash: string | null, scrollToCommit: boolean) {
 		this.matches = [];
 		this.position = -1;
 
 		if (this.text !== '') {
-			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null, regexText = this.isRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = 'u' + (this.isCaseSensitive ? '' : 'i');
+			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null;
+			const regexText = workspaceState.findIsRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = 'u' + (workspaceState.findIsCaseSensitive ? '' : 'i');
 			try {
 				findPattern = new RegExp(regexText, flags);
 				findGlobalPattern = new RegExp(regexText, 'g' + flags);
@@ -309,11 +322,27 @@ class FindWidget {
 	private prev() {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position > 0 ? this.position - 1 : this.matches.length - 1, true);
+		this.openCommitDetailsViewForCurrentMatchIfEnabled();
 	}
 
 	private next() {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
+		this.openCommitDetailsViewForCurrentMatchIfEnabled();
+	}
+
+	private openCommitDetailsViewForCurrentMatchIfEnabled() {
+		if (workspaceState.findOpenCommitDetailsView) {
+			const commitHash = this.getCurrentHash();
+			if (commitHash !== null && !this.view.isCdvOpen(commitHash, null)) {
+				const commitId = this.view.getCommitId(commitHash);
+				const commitElems = getCommitElems();
+				const commitElem = findCommitElemWithId(commitElems, commitId);
+				if (commitElem !== null) {
+					this.view.loadCommitDetails(commitElem);
+				}
+			}
+		}
 	}
 
 	private static createMatchElem(text: string) {

@@ -15,8 +15,9 @@ declare global {
 
 	type Config = GG.GitGraphViewConfig;
 
-	var globalState: GG.GitGraphViewGlobalState;
 	var initialState: GG.GitGraphViewInitialState;
+	var globalState: GG.GitGraphViewGlobalState;
+	var workspaceState: GG.GitGraphViewWorkspaceState;
 
 	type AvatarImageCollection = { [email: string]: string };
 

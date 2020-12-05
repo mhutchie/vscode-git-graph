@@ -529,6 +529,12 @@ export class GitGraphView extends Disposable {
 			case 'setRepoState':
 				this.repoManager.setRepoState(msg.repo, msg.state);
 				break;
+			case 'setWorkspaceViewState':
+				this.sendMessage({
+					command: 'setWorkspaceViewState',
+					error: await this.extensionState.setWorkspaceViewState(msg.state)
+				});
+				break;
 			case 'showErrorMessage':
 				showErrorMessage(msg.message);
 				break;
@@ -629,6 +635,7 @@ export class GitGraphView extends Disposable {
 			loadCommitsRefreshId: this.loadCommitsRefreshId
 		};
 		const globalState = this.extensionState.getGlobalViewState();
+		const workspaceState = this.extensionState.getWorkspaceViewState();
 
 		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < initialState.config.graph.colours.length; i++) {
@@ -661,7 +668,7 @@ export class GitGraphView extends Disposable {
 				<div id="footer"></div>
 			</div>
 			<div id="scrollShadow"></div>
-			<script nonce="${nonce}">var globalState = ${JSON.stringify(globalState)}, initialState = ${JSON.stringify(initialState)};</script>
+			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)}, globalState = ${JSON.stringify(globalState)}, workspaceState = ${JSON.stringify(workspaceState)};</script>
 			<script nonce="${nonce}" src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {

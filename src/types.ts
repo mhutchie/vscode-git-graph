@@ -244,6 +244,12 @@ export interface GitGraphViewGlobalState {
 	issueLinkingConfig: IssueLinkingConfig | null;
 }
 
+export interface GitGraphViewWorkspaceState {
+	findIsCaseSensitive: boolean;
+	findIsRegex: boolean;
+	findOpenCommitDetailsView: boolean;
+}
+
 export interface CommitDetailsViewConfig {
 	readonly autoCenter: boolean;
 	readonly fileTreeCompactFolders: boolean;
@@ -1051,6 +1057,14 @@ export interface RequestSetRepoState extends RepoRequest {
 	readonly state: GitRepoState;
 }
 
+export interface RequestSetWorkspaceViewState extends BaseMessage {
+	readonly command: 'setWorkspaceViewState';
+	readonly state: GitGraphViewWorkspaceState;
+}
+export interface ResponseSetWorkspaceViewState extends ResponseWithErrorInfo {
+	readonly command: 'setWorkspaceViewState';
+}
+
 export interface RequestShowErrorDialog extends BaseMessage {
 	readonly command: 'showErrorMessage';
 	readonly message: string;
@@ -1167,6 +1181,7 @@ export type RequestMessage =
 	| RequestRevertCommit
 	| RequestSetGlobalViewState
 	| RequestSetRepoState
+	| RequestSetWorkspaceViewState
 	| RequestShowErrorDialog
 	| RequestStartCodeReview
 	| RequestTagDetails
@@ -1223,6 +1238,7 @@ export type ResponseMessage =
 	| ResponseResetToCommit
 	| ResponseRevertCommit
 	| ResponseSetGlobalViewState
+	| ResponseSetWorkspaceViewState
 	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseViewDiff

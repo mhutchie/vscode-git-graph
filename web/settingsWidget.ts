@@ -155,7 +155,7 @@ class SettingsWidget {
 					'<div class="settingsSectionButtons"><div id="editUserDetails" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removeUserDetails" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
 				html += '<span>User Details (such as name and email) are used by Git to record the Author and Committer of commit objects.</span>' +
-					'<div class="settingsSectionButtons"><div id="editUserDetails" class="addBtn">' + SVG_ICONS.close + 'Add User Details</div></div>';
+					'<div class="settingsSectionButtons"><div id="editUserDetails" class="addBtn">' + SVG_ICONS.plus + 'Add User Details</div></div>';
 			}
 			html += '</div>';
 
@@ -174,7 +174,7 @@ class SettingsWidget {
 			} else {
 				html += '<tr class="lineAbove"><td colspan="4">There are no remotes configured for this repository.</td></tr>';
 			}
-			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote" class="addBtn">' + SVG_ICONS.close + 'Add Remote</div></div></div>';
+			html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddRemote" class="addBtn">' + SVG_ICONS.plus + 'Add Remote</div></div></div>';
 
 			html += '<div class="settingsSection centered"><h3>Issue Linking</h3>';
 			const issueLinkingConfig = this.repo.issueLinkingConfig || globalState.issueLinkingConfig;
@@ -184,7 +184,7 @@ class SettingsWidget {
 				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removeIssueLinking" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
 				html += '<span>Issue Linking converts issue numbers in commit messages into hyperlinks, that open the issue in your issue tracking system.</span>';
-				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="addBtn">' + SVG_ICONS.close + 'Add Issue Linking</div></div>';
+				html += '<div class="settingsSectionButtons"><div id="editIssueLinking" class="addBtn">' + SVG_ICONS.plus + 'Add Issue Linking</div></div>';
 			}
 			html += '</div>';
 
@@ -209,7 +209,7 @@ class SettingsWidget {
 					'<div class="settingsSectionButtons"><div id="editPullRequestIntegration" class="editBtn">' + SVG_ICONS.pencil + 'Edit</div><div id="removePullRequestIntegration" class="removeBtn">' + SVG_ICONS.close + 'Remove</div></div>';
 			} else {
 				html += '<span>Pull Request Creation automates the opening and pre-filling of a Pull Request form, directly from a branches context menu.</span>' +
-					'<div class="settingsSectionButtons"><div id="editPullRequestIntegration" class="addBtn">' + SVG_ICONS.close + 'Configure "Pull Request Creation" Integration</div></div>';
+					'<div class="settingsSectionButtons"><div id="editPullRequestIntegration" class="addBtn">' + SVG_ICONS.plus + 'Configure "Pull Request Creation" Integration</div></div>';
 			}
 			html += '</div>';
 

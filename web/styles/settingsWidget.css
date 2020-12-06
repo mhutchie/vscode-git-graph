@@ -186,16 +186,13 @@
 	border-color:var(--vscode-editorSuggestWidget-foreground);
 }
 
-.settingsSectionButtons > div.addBtn svg, .settingsSectionButtons > div.editBtn svg{
+.settingsSectionButtons > div.editBtn svg{
 	vertical-align:top;
 	margin:6px;
 	width:12px !important;
 	height:12px !important;
 }
-.settingsSectionButtons > div.addBtn svg{
-	transform:rotate(45deg);
-}
-.settingsSectionButtons > div.removeBtn svg, #openExtensionSettings svg, #exportRepositoryConfig svg{
+.settingsSectionButtons > div.addBtn svg, .settingsSectionButtons > div.removeBtn svg, #openExtensionSettings svg, #exportRepositoryConfig svg{
 	vertical-align:top;
 	width:14px !important;
 	height:14px !important;

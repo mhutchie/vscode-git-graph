@@ -2,6 +2,7 @@ class GitGraphView {
 	private gitRepos: GG.GitRepoSet;
 	private gitBranches: ReadonlyArray<string> = [];
 	private gitBranchHead: string | null = null;
+	private gitConfig: GG.GitRepoConfig | null = null;
 	private gitRemotes: ReadonlyArray<string> = [];
 	private gitStashes: ReadonlyArray<GG.GitStash> = [];
 	private commits: GG.GitCommit[] = [];
@@ -118,6 +119,7 @@ class GitGraphView {
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
+			this.gitConfig = prevState.gitConfig;
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
@@ -204,6 +206,7 @@ class GitGraphView {
 		this.currentRepoLoading = true;
 		this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[this.currentRepo].showRemoteBranchesV2);
 		this.maxCommits = this.config.initialLoadCommits;
+		this.gitConfig = null;
 		this.gitRemotes = [];
 		this.gitStashes = [];
 		this.renderFetchButton();
@@ -396,6 +399,10 @@ class GitGraphView {
 		if (this.loadViewTo !== null) {
 			this.finaliseLoadViewTo();
 		}
+
+		if (this.gitConfig === null) {
+			sendMessage({ command: 'loadGitConfig', repo: this.currentRepo });
+		}
 	}
 
 	private finaliseLoadViewTo() {
@@ -453,6 +460,7 @@ class GitGraphView {
 			this.displayLoadDataError('Unable to load Repository Info', msg.error);
 		}
 	}
+
 	public processLoadCommitsResponse(msg: GG.ResponseLoadCommits) {
 		if (msg.error === null) {
 			const refreshState = this.currentRepoRefreshState;
@@ -466,6 +474,16 @@ class GitGraphView {
 			this.displayLoadDataError('Unable to load Commits', error);
 		}
 	}
+
+	public processLoadGitConfig(msg: GG.ResponseLoadGitConfig) {
+		if (msg.config !== null && this.currentRepo === msg.repo) {
+			this.gitConfig = msg.config;
+			this.saveState();
+
+			this.renderCdvExternalDiffBtn();
+		}
+	}
+
 	private displayLoadDataError(message: string, reason: string) {
 		this.clearCommits();
 		this.currentRepoRefreshState.inProgress = false;
@@ -652,6 +670,7 @@ class GitGraphView {
 			gitRepos: this.gitRepos,
 			gitBranches: this.gitBranches,
 			gitBranchHead: this.gitBranchHead,
+			gitConfig: this.gitConfig,
 			gitRemotes: this.gitRemotes,
 			gitStashes: this.gitStashes,
 			commits: this.commits,
@@ -2271,8 +2290,9 @@ class GitGraphView {
 		if (expandedCommit === null || expandedCommit.commitElem === null) return;
 
 		let elem = document.getElementById('cdv'), html = '<div id="cdvContent">', isDocked = this.isCdvDocked();
-		let commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
-		let codeReviewPossible = !expandedCommit.loading && commitOrder.to !== UNCOMMITTED;
+		const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
+		const codeReviewPossible = !expandedCommit.loading && commitOrder.to !== UNCOMMITTED;
+		const externalDiffPossible = !expandedCommit.loading && (expandedCommit.compareWithHash !== null || this.commits[this.commitLookup[expandedCommit.commitHash]].parents.length > 0);
 
 		if (elem === null) {
 			elem = document.createElement(isDocked ? 'div' : 'tr');
@@ -2332,6 +2352,7 @@ class GitGraphView {
 		html += '</div><div id="cdvControls"><div id="cdvClose" class="cdvControlBtn" title="Close">' + SVG_ICONS.close + '</div>' +
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
+			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
@@ -2375,6 +2396,7 @@ class GitGraphView {
 			const filesElem = document.getElementById('cdvFiles')!;
 			this.makeCdvFileViewInteractive(filesElem);
 			this.renderCdvFileViewTypeBtns();
+			this.renderCdvExternalDiffBtn();
 			this.makeCdvDividerDraggable();
 
 			let timeout: NodeJS.Timer | null = null;
@@ -2401,15 +2423,15 @@ class GitGraphView {
 			if (codeReviewPossible) {
 				this.renderCodeReviewBtn();
 				document.getElementById('cdvCodeReview')!.addEventListener('click', (e) => {
-					let expandedCommit = this.expandedCommit;
+					const expandedCommit = this.expandedCommit;
 					if (expandedCommit === null || e.target === null) return;
 					let sourceElem = <HTMLElement>(<Element>e.target).closest('#cdvCodeReview')!;
 					if (sourceElem.classList.contains(CLASS_ACTIVE)) {
 						sendMessage({ command: 'endCodeReview', repo: this.currentRepo, id: expandedCommit.codeReview!.id });
 						this.endCodeReview();
 					} else {
-						let commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
-						let id = expandedCommit.compareWithHash !== null ? commitOrder.from + '-' + commitOrder.to : expandedCommit.commitHash;
+						const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
+						const id = expandedCommit.compareWithHash !== null ? commitOrder.from + '-' + commitOrder.to : expandedCommit.commitHash;
 						sendMessage({
 							command: 'startCodeReview',
 							repo: this.currentRepo,
@@ -2420,6 +2442,21 @@ class GitGraphView {
 							lastViewedFile: expandedCommit.lastViewedFile
 						});
 					}
+				});
+			}
+
+			if (externalDiffPossible) {
+				document.getElementById('cdvExternalDiff')!.addEventListener('click', () => {
+					const expandedCommit = this.expandedCommit;
+					if (expandedCommit === null) return;
+					const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
+					runAction({
+						command: 'openExternalDirDiff',
+						repo: this.currentRepo,
+						fromHash: commitOrder.from,
+						toHash: commitOrder.to,
+						isGui: this.gitConfig !== null && this.gitConfig.guiDiffTool !== null
+					}, 'Opening External Directory Diff');
 				});
 			}
 		}
@@ -2763,6 +2800,20 @@ class GitGraphView {
 		alterClass(listBtnElem, CLASS_ACTIVE, listView);
 	}
 
+	private renderCdvExternalDiffBtn() {
+		if (this.expandedCommit === null) return;
+		const externalDiffBtnElem = document.getElementById('cdvExternalDiff');
+		if (externalDiffBtnElem === null) return;
+
+		alterClass(externalDiffBtnElem, CLASS_DISABLED, this.gitConfig === null || (this.gitConfig.diffTool === null && this.gitConfig.guiDiffTool === null));
+		const toolName = this.gitConfig !== null
+			? this.gitConfig.guiDiffTool !== null
+				? this.gitConfig.guiDiffTool
+				: this.gitConfig.diffTool
+			: null;
+		externalDiffBtnElem.title = 'Open External Directory Diff' + (toolName !== null ? ' with "' + toolName + '"' : '');
+	}
+
 	private static closeCdvFileContextMenuIfOpen(expandedCommit: ExpandedCommit) {
 		if (expandedCommit.fileContextMenuOpen > -1) {
 			expandedCommit.fileContextMenuOpen = -1;
@@ -2941,6 +2992,9 @@ window.addEventListener('load', () => {
 			case 'loadCommits':
 				gitGraph.processLoadCommitsResponse(msg);
 				break;
+			case 'loadGitConfig':
+				gitGraph.processLoadGitConfig(msg);
+				break;
 			case 'loadRepoInfo':
 				gitGraph.processLoadRepoInfoResponse(msg);
 				break;
@@ -2952,6 +3006,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'openExtensionSettings':
 				finishOrDisplayError(msg.error, 'Unable to Open Extension Settings');
+				break;
+			case 'openExternalDirDiff':
+				finishOrDisplayError(msg.error, 'Unable to Open External Directory Diff', true);
 				break;
 			case 'openFile':
 				finishOrDisplayError(msg.error, 'Unable to Open File');

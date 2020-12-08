@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
-import { DataSource, GIT_CONFIG_USER_EMAIL, GIT_CONFIG_USER_NAME, GitCommitDetailsData } from './dataSource';
+import { DataSource, GIT_CONFIG, GitCommitDetailsData } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
@@ -328,10 +328,10 @@ export class GitGraphView extends Disposable {
 			case 'deleteUserDetails':
 				errorInfos = [];
 				if (msg.name) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_NAME, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.location));
 				}
 				if (msg.email) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.location));
 				}
 				this.sendMessage({
 					command: 'deleteUserDetails',
@@ -358,15 +358,15 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'editUserDetails':
 				errorInfos = [
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG_USER_NAME, msg.name, msg.location),
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, msg.email, msg.location)
+					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.name, msg.location),
+					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.email, msg.location)
 				];
 				if (errorInfos[0] === null && errorInfos[1] === null) {
 					if (msg.deleteLocalName) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_NAME, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, GitConfigLocation.Local));
 					}
 					if (msg.deleteLocalEmail) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, GitConfigLocation.Local));
 					}
 				}
 				this.sendMessage({
@@ -413,6 +413,13 @@ export class GitGraphView extends Disposable {
 					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
 				});
 				break;
+			case 'loadGitConfig':
+				this.sendMessage({
+					command: 'loadGitConfig',
+					repo: msg.repo,
+					...await this.dataSource.getRepoGitConfig(msg.repo)
+				});
+				break;
 			case 'loadRepoInfo':
 				this.loadRepoInfoRefreshId = msg.refreshId;
 				let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.hideRemotes), isRepo = true;
@@ -449,6 +456,12 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'openExtensionSettings',
 					error: await openExtensionSettings()
+				});
+				break;
+			case 'openExternalDirDiff':
+				this.sendMessage({
+					command: 'openExternalDirDiff',
+					error: await this.dataSource.openExternalDirDiff(msg.repo, msg.fromHash, msg.toHash, msg.isGui)
 				});
 				break;
 			case 'openFile':

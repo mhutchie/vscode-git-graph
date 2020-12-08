@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -17,8 +17,16 @@ const INVALID_BRANCH_REGEXP = /^\(.* .*\)$/;
 const REMOTE_HEAD_BRANCH_REGEXP = /^remotes\/.*\/HEAD$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
-export const GIT_CONFIG_USER_NAME = 'user.name';
-export const GIT_CONFIG_USER_EMAIL = 'user.email';
+export const GIT_CONFIG = {
+	DIFF: {
+		GUI_TOOL: 'diff.guitool',
+		TOOL: 'diff.tool'
+	},
+	USER: {
+		EMAIL: 'user.email',
+		NAME: 'user.name'
+	}
+};
 
 /**
  * Interfaces Git Graph with the Git executable to provide all Git integrations.
@@ -394,6 +402,26 @@ export class DataSource extends Disposable {
 	}
 
 	/**
+	 * Get various Git config variables for a repository that are consumed by the Git Graph View.
+	 * @param repo The path of the repository.
+	 * @returns The config data.
+	 */
+	public getRepoGitConfig(repo: string): Promise<GitRepoConfigData> {
+		return this.getConfigList(repo).then((configList) => {
+			const configs = getConfigs(configList, [GIT_CONFIG.DIFF.TOOL, GIT_CONFIG.DIFF.GUI_TOOL]);
+			return {
+				config: {
+					diffTool: configs[GIT_CONFIG.DIFF.TOOL],
+					guiDiffTool: configs[GIT_CONFIG.DIFF.GUI_TOOL]
+				},
+				error: null
+			};
+		}, (errorMessage) => {
+			return { config: null, error: errorMessage };
+		});
+	}
+
+	/**
 	 * Get the repositories settings used by the Settings Widget.
 	 * @param repo The path of the repository.
 	 * @returns The settings data.
@@ -404,8 +432,8 @@ export class DataSource extends Disposable {
 			this.getConfigList(repo, GitConfigLocation.Global),
 			this.getRemotes(repo)
 		]).then((results) => {
-			const fetchLocalConfigs = [GIT_CONFIG_USER_NAME, GIT_CONFIG_USER_EMAIL];
-			const fetchGlobalConfigs = [GIT_CONFIG_USER_NAME, GIT_CONFIG_USER_EMAIL];
+			const fetchLocalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
+			const fetchGlobalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
 			results[2].forEach((remote) => {
 				fetchLocalConfigs.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
 			});
@@ -416,12 +444,12 @@ export class DataSource extends Disposable {
 				settings: {
 					user: {
 						name: {
-							local: localConfigs[GIT_CONFIG_USER_NAME],
-							global: globalConfigs[GIT_CONFIG_USER_NAME]
+							local: localConfigs[GIT_CONFIG.USER.NAME],
+							global: globalConfigs[GIT_CONFIG.USER.NAME]
 						},
 						email: {
-							local: localConfigs[GIT_CONFIG_USER_EMAIL],
-							global: globalConfigs[GIT_CONFIG_USER_EMAIL]
+							local: localConfigs[GIT_CONFIG.USER.EMAIL],
+							global: globalConfigs[GIT_CONFIG.USER.EMAIL]
 						}
 					},
 					remotes: results[2].map((remote) => ({
@@ -1155,6 +1183,49 @@ export class DataSource extends Disposable {
 	/* Public Utils */
 
 	/**
+	 * Opens an external directory diff for the specified commits.
+	 * @param repo The path of the repository.
+	 * @param fromHash The commit hash the diff is from.
+	 * @param toHash The commit hash the diff is to.
+	 * @param isGui Is the external diff tool GUI based.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public openExternalDirDiff(repo: string, fromHash: string, toHash: string, isGui: boolean) {
+		return new Promise<ErrorInfo>((resolve) => {
+			if (this.gitExecutable === null) {
+				resolve(UNABLE_TO_FIND_GIT_MSG);
+			} else {
+				const args = ['difftool', '--dir-diff'];
+				if (isGui) {
+					args.push('-g');
+				}
+				if (fromHash === toHash) {
+					if (toHash === UNCOMMITTED) {
+						args.push('HEAD');
+					} else {
+						args.push(toHash + '^..' + toHash);
+					}
+				} else {
+					if (toHash === UNCOMMITTED) {
+						args.push(fromHash);
+					} else {
+						args.push(fromHash + '..' + toHash);
+					}
+				}
+				if (isGui) {
+					this.logger.log('External difftool for ' + args[args.length - 1] + ' is being opened');
+					this.runGitCommand(args, repo).then(() => {
+						this.logger.log('External difftool for ' + args[args.length - 1] + ' has been closed');
+					});
+				} else {
+					openGitTerminal(repo, this.gitExecutable.path, args.join(' '), 'Open External Directory Diff');
+				}
+				setTimeout(() => resolve(null), 1500);
+			}
+		});
+	}
+
+	/**
 	 * Open a new terminal, set up the Git executable, and optionally run a command.
 	 * @param repo The path of the repository.
 	 * @param command The command to run.
@@ -1247,8 +1318,13 @@ export class DataSource extends Disposable {
 	 * @param location The location of the configuration to be listed.
 	 * @returns An array of configuration records.
 	 */
-	private getConfigList(repo: string, location: GitConfigLocation) {
-		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location, '--includes'], repo, (stdout) => stdout.split(EOL_REGEX)).catch((errorMessage) => {
+	private getConfigList(repo: string, location?: GitConfigLocation) {
+		const args = ['--no-pager', 'config', '--list', '--includes'];
+		if (location) {
+			args.push('--' + location);
+		}
+
+		return this.spawnGit(args, repo, (stdout) => stdout.split(EOL_REGEX)).catch((errorMessage) => {
 			if (typeof errorMessage === 'string') {
 				const message = errorMessage.toLowerCase();
 				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
@@ -1761,6 +1837,11 @@ interface GitRefData {
 interface GitRepoInfo extends GitBranchData {
 	remotes: string[];
 	stashes: GitStash[];
+}
+
+interface GitRepoConfigData {
+	config: GitRepoConfig | null;
+	error: ErrorInfo;
 }
 
 interface GitRepoSettingsData {

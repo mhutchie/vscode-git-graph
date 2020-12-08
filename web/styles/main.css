@@ -361,6 +361,10 @@ body.selection-background-color-exists ::selection{
 	background-color:rgba(128,128,128,0.125);
 }
 
+#cdvExternalDiff.disabled{
+	display:none;
+}
+
 .cdvControlBtn svg{
 	position:absolute;
 	width:20px;

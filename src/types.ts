@@ -87,6 +87,11 @@ export const enum GitPushBranchMode {
 	ForceWithLease = 'force-with-lease'
 }
 
+export interface GitRepoConfig {
+	readonly diffTool: string | null,
+	readonly guiDiffTool: string | null
+}
+
 export interface GitRepoSettings {
 	readonly user: {
 		readonly name: {
@@ -847,22 +852,6 @@ export interface ResponseGetSettings extends ResponseWithErrorInfo {
 	readonly settings: GitRepoSettings | null;
 }
 
-export interface RequestLoadRepoInfo extends RepoRequest {
-	readonly command: 'loadRepoInfo';
-	readonly refreshId: number;
-	readonly showRemoteBranches: boolean;
-	readonly hideRemotes: ReadonlyArray<string>;
-}
-export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
-	readonly command: 'loadRepoInfo';
-	readonly refreshId: number;
-	readonly branches: ReadonlyArray<string>;
-	readonly head: string | null;
-	readonly remotes: ReadonlyArray<string>;
-	readonly stashes: ReadonlyArray<GitStash>;
-	readonly isRepo: boolean;
-}
-
 export interface RequestLoadCommits extends RepoRequest {
 	readonly command: 'loadCommits';
 	readonly refreshId: number;
@@ -884,6 +873,31 @@ export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly head: string | null;
 	readonly moreCommitsAvailable: boolean;
 	readonly onlyFollowFirstParent: boolean;
+}
+
+export interface RequestLoadGitConfig extends RepoRequest {
+	readonly command: 'loadGitConfig';
+}
+export interface ResponseLoadGitConfig extends ResponseWithErrorInfo {
+	readonly command: 'loadGitConfig';
+	readonly repo: string;
+	readonly config: GitRepoConfig | null;
+}
+
+export interface RequestLoadRepoInfo extends RepoRequest {
+	readonly command: 'loadRepoInfo';
+	readonly refreshId: number;
+	readonly showRemoteBranches: boolean;
+	readonly hideRemotes: ReadonlyArray<string>;
+}
+export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
+	readonly command: 'loadRepoInfo';
+	readonly refreshId: number;
+	readonly branches: ReadonlyArray<string>;
+	readonly head: string | null;
+	readonly remotes: ReadonlyArray<string>;
+	readonly stashes: ReadonlyArray<GitStash>;
+	readonly isRepo: boolean;
 }
 
 export interface RequestLoadRepos extends BaseMessage {
@@ -920,6 +934,16 @@ export interface RequestOpenExtensionSettings extends BaseMessage {
 }
 export interface ResponseOpenExtensionSettings extends ResponseWithErrorInfo {
 	readonly command: 'openExtensionSettings';
+}
+
+export interface RequestOpenExternalDirDiff extends RepoRequest {
+	readonly command: 'openExternalDirDiff';
+	readonly fromHash: string;
+	readonly toHash: string;
+	readonly isGui: boolean;
+}
+export interface ResponseOpenExternalDirDiff extends ResponseWithErrorInfo {
+	readonly command: 'openExternalDirDiff';
 }
 
 export interface RequestOpenFile extends RepoRequest {
@@ -1165,10 +1189,12 @@ export type RequestMessage =
 	| RequestFetchIntoLocalBranch
 	| RequestGetSettings
 	| RequestLoadCommits
+	| RequestLoadGitConfig
 	| RequestLoadRepoInfo
 	| RequestLoadRepos
 	| RequestMerge
 	| RequestOpenExtensionSettings
+	| RequestOpenExternalDirDiff
 	| RequestOpenFile
 	| RequestOpenTerminal
 	| RequestPopStash
@@ -1223,10 +1249,12 @@ export type ResponseMessage =
 	| ResponseFetchIntoLocalBranch
 	| ResponseGetSettings
 	| ResponseLoadCommits
+	| ResponseLoadGitConfig
 	| ResponseLoadRepoInfo
 	| ResponseLoadRepos
 	| ResponseMerge
 	| ResponseOpenExtensionSettings
+	| ResponseOpenExternalDirDiff
 	| ResponseOpenFile
 	| ResponseOpenTerminal
 	| ResponsePopStash

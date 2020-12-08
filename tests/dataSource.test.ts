@@ -1,3 +1,5 @@
+import { waitForExpect } from './helpers/expectations';
+
 import * as date from './mocks/date';
 import { mockSpyOnSpawn } from './mocks/spawn';
 import * as vscode from './mocks/vscode';
@@ -20,7 +22,7 @@ const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 let logger: Logger;
-let spyOnSpawn: jest.SpyInstance;
+let spyOnSpawn: jest.SpyInstance, spyOnLog: jest.SpyInstance;
 
 beforeAll(() => {
 	onDidChangeConfiguration = new EventEmitter<ConfigurationChangeEvent>();
@@ -28,6 +30,7 @@ beforeAll(() => {
 	logger = new Logger();
 	jest.spyOn(path, 'normalize').mockImplementation((p) => p);
 	spyOnSpawn = jest.spyOn(cp, 'spawn');
+	spyOnLog = jest.spyOn(logger, 'log');
 });
 
 afterAll(() => {
@@ -3475,6 +3478,64 @@ describe('DataSource', () => {
 		});
 	});
 
+	describe('getRepoGitConfig', () => {
+		it('Should return the config values', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'diff.tool=abc\n' +
+				'diff.guitool=def\n'
+			);
+
+			// Run
+			const result = await dataSource.getRepoGitConfig('/path/to/repo');
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: {
+					diffTool: 'abc',
+					guiDiffTool: 'def'
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return NULL values when the config variables aren\'t set', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'user.name=Local Name\n'
+			);
+
+			// Run
+			const result = await dataSource.getRepoGitConfig('/path/to/repo');
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: {
+					diffTool: null,
+					guiDiffTool: null
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.getRepoGitConfig('/path/to/repo');
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: null,
+				error: 'error message'
+			});
+		});
+	});
+
 	describe('getRepoSettings', () => {
 		it('Should return the repositories settings', async () => {
 			// Setup
@@ -3518,8 +3579,8 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -3560,8 +3621,8 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -3603,8 +3664,8 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--local', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--global', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -5906,6 +5967,89 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe('A newer version of Git (>= 2.13.2) is required for this feature. Git 2.13.1 is currently installed. Please install a newer version of Git to use this feature.');
+		});
+	});
+
+	describe('openExternalDirDiff', () => {
+		it('Should launch a gui directory diff (for one commit)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b is being opened');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b has been closed'));
+		});
+
+		it('Should launch a gui directory diff (between two commits)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c is being opened');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c has been closed'));
+		});
+
+		it('Should launch a gui directory diff (for uncommitted changes)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', utils.UNCOMMITTED, utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnLog).toHaveBeenCalledWith('External difftool for HEAD is being opened');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for HEAD has been closed'));
+		});
+
+		it('Should launch a gui directory diff (between a commit and the uncommitted changes)', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b is being opened');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b has been closed'));
+		});
+
+		it('Should launch a directory diff in a terminal (between two commits)', async () => {
+			// Setup
+			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
+			spyOnOpenGitTerminal.mockReturnValueOnce();
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', false);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnOpenGitTerminal).toBeCalledWith('/path/to/repo', '/path/to/git', 'difftool --dir-diff 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'Open External Directory Diff');
+		});
+
+		it('Should return the "Unable to Find Git" error message when no git executable is known', async () => {
+			// Setup
+			dataSource.dispose();
+			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', true);
+
+			// Assert
+			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
 		});
 	});
 

@@ -565,6 +565,7 @@ class GitGraphView {
 			repo: this.currentRepo,
 			refreshId: ++this.currentRepoRefreshState.loadRepoInfoRefreshId,
 			showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
+			showStashes: getShowStashes(repoState.showStashes),
 			hideRemotes: repoState.hideRemotes
 		});
 	}
@@ -3387,6 +3388,12 @@ function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering 
 function getShowRemoteBranches(repoValue: GG.BooleanOverride) {
 	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.showRemoteBranches
+		: repoValue === GG.BooleanOverride.Enabled;
+}
+
+function getShowStashes(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
+		? initialState.config.showStashes
 		: repoValue === GG.BooleanOverride.Enabled;
 }
 

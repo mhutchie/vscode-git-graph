@@ -986,6 +986,11 @@
 					"default": true,
 					"description": "Show Remote HEAD Symbolic References in Git Graph (e.g. \"origin/HEAD\")."
 				},
+				"git-graph.repository.showStashes": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show Stashes in Git Graph by default. This can be overridden per repository in the Git Graph View's Repository Settings Widget."
+				},
 				"git-graph.repository.showTags": {
 					"type": "boolean",
 					"default": true,

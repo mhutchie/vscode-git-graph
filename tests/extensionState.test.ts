@@ -73,6 +73,7 @@ describe('ExtensionState', () => {
 				pullRequestConfig: null,
 				showRemoteBranches: true,
 				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
 				showTags: BooleanOverride.Enabled
 			};
 			extensionContext.workspaceState.get.mockReturnValueOnce({
@@ -119,6 +120,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -155,6 +157,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -191,6 +194,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Disabled,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -227,6 +231,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -263,6 +268,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Enabled,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -302,6 +308,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				},
 				'/path/to/repo-2': {
@@ -321,6 +328,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Disabled,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});

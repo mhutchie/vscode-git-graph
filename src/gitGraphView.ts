@@ -422,7 +422,7 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'loadRepoInfo':
 				this.loadRepoInfoRefreshId = msg.refreshId;
-				let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.hideRemotes), isRepo = true;
+				let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.showStashes, msg.hideRemotes), isRepo = true;
 				if (repoInfo.error) {
 					// If an error occurred, check to make sure the repo still exists
 					isRepo = (await this.dataSource.repoRoot(msg.repo)) !== null;
@@ -647,6 +647,7 @@ export class GitGraphView extends Disposable {
 				referenceLabels: config.referenceLabels,
 				repoDropdownOrder: config.repoDropdownOrder,
 				showRemoteBranches: config.showRemoteBranches,
+				showStashes: config.showStashes,
 				showTags: config.showTags
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),

@@ -463,6 +463,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.showStashes` Extension Setting.
+	 */
+	get showStashes() {
+		return !!this.config.get('repository.showStashes', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.showTags` Extension Setting.
 	 */
 	get showTags() {

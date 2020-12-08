@@ -925,6 +925,7 @@ describe('RepoManager', () => {
 				pullRequestConfig: null,
 				showRemoteBranches: true,
 				showRemoteBranchesV2: BooleanOverride.Default,
+				showStashes: BooleanOverride.Default,
 				showTags: BooleanOverride.Default
 			};
 
@@ -1681,6 +1682,7 @@ describe('RepoManager', () => {
 						pullRequestConfig: null,
 						showRemoteBranches: true,
 						showRemoteBranchesV2: BooleanOverride.Default,
+						showStashes: BooleanOverride.Default,
 						showTags: BooleanOverride.Default
 					}
 				};
@@ -1767,6 +1769,11 @@ describe('RepoManager', () => {
 				it('Should export BooleanOverride.Disabled correctly', testApplyField('showRemoteBranchesV2', BooleanOverride.Disabled, 'showRemoteBranches', false));
 			});
 
+			describe('showStashes', () => {
+				it('Should export BooleanOverride.Enabled correctly', testApplyField('showStashes', BooleanOverride.Enabled, 'showStashes', true));
+				it('Should export BooleanOverride.Disabled correctly', testApplyField('showStashes', BooleanOverride.Disabled, 'showStashes', false));
+			});
+
 			describe('showTags', () => {
 				it('Should export BooleanOverride.Enabled correctly', testApplyField('showTags', BooleanOverride.Enabled, 'showTags', true));
 				it('Should export BooleanOverride.Disabled correctly', testApplyField('showTags', BooleanOverride.Disabled, 'showTags', false));
@@ -1827,6 +1834,7 @@ describe('RepoManager', () => {
 			it('Should display a validation error when "pullRequestConfig" is invalid (no destProjectId)', testValidationOfField('pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.Bitbucket, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g' }));
 			it('Should display a validation error when "pullRequestConfig" is invalid (no destBranch)', testValidationOfField('pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.Bitbucket, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h' }));
 			it('Should display a validation error when "showRemoteBranches" is invalid', testValidationOfField('showRemoteBranches', 'invalid'));
+			it('Should display a validation error when "showStashes" is invalid', testValidationOfField('showStashes', 'invalid'));
 			it('Should display a validation error when "showTags" is invalid', testValidationOfField('showTags', 'invalid'));
 		});
 
@@ -2012,20 +2020,21 @@ describe('RepoManager', () => {
 					cdvDivider: 0.5,
 					cdvHeight: 250,
 					columnWidths: null,
-					commitOrdering: 'default',
-					fileViewType: 0,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: 0,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					lastImportAt: 1587559258000,
 					name: null,
-					onlyFollowFirstParent: 0,
-					onRepoLoadShowCheckedOutBranch: 0,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showRemoteBranchesV2: 0,
-					showTags: 0
+					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
+					showTags: BooleanOverride.Default
 				}
 			});
 
@@ -2086,20 +2095,21 @@ describe('RepoManager', () => {
 					cdvDivider: 0.5,
 					cdvHeight: 250,
 					columnWidths: null,
-					commitOrdering: 'default',
-					fileViewType: 0,
+					commitOrdering: RepoCommitOrdering.Default,
+					fileViewType: FileViewType.Default,
 					hideRemotes: [],
-					includeCommitsMentionedByReflogs: 0,
+					includeCommitsMentionedByReflogs: BooleanOverride.Default,
 					issueLinkingConfig: null,
 					lastImportAt: 1587559258000,
 					name: null,
-					onlyFollowFirstParent: 0,
-					onRepoLoadShowCheckedOutBranch: 0,
+					onlyFollowFirstParent: BooleanOverride.Default,
+					onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 					onRepoLoadShowSpecificBranches: null,
 					pullRequestConfig: null,
 					showRemoteBranches: true,
-					showRemoteBranchesV2: 0,
-					showTags: 0
+					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
+					showTags: BooleanOverride.Default
 				}
 			});
 
@@ -2236,6 +2246,11 @@ describe('RepoManager', () => {
 		describe('showRemoteBranches', () => {
 			it('Should export BooleanOverride.Enabled correctly', testExportField('showRemoteBranchesV2', BooleanOverride.Enabled, 'showRemoteBranches', true));
 			it('Should export BooleanOverride.Disabled correctly', testExportField('showRemoteBranchesV2', BooleanOverride.Disabled, 'showRemoteBranches', false));
+		});
+
+		describe('showStashes', () => {
+			it('Should export BooleanOverride.Enabled correctly', testExportField('showStashes', BooleanOverride.Enabled, 'showStashes', true));
+			it('Should export BooleanOverride.Disabled correctly', testExportField('showStashes', BooleanOverride.Disabled, 'showStashes', false));
 		});
 
 		describe('showTags', () => {

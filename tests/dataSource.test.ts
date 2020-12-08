@@ -126,7 +126,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -162,7 +162,7 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should return the repository info (when show remote branches is FALSE)', async () => {
+		it('Should return the repository info (when showRemoteBranches is FALSE)', async () => {
 			// Setup
 			mockGitSuccessOnce(
 				'* develop\n' +
@@ -173,7 +173,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -205,7 +205,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.date.type'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -237,7 +237,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.dateType'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -269,7 +269,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.repository.useMailmap'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -301,7 +301,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.useMailmap'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -314,6 +314,30 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '--no-color'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['reflog', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%gDXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', 'refs/stash', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the repository info (showStashes is FALSE)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'* develop\n' +
+				'  master\n'
+			);
+			mockGitSuccessOnce('origin\n');
+
+			// Run
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, false, []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				branches: ['develop', 'master'],
+				head: 'develop',
+				remotes: ['origin'],
+				stashes: [],
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-a', '--no-color'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toHaveBeenCalledTimes(2);
 		});
 
 		it('Should return the repository info (hidden remote and an invalid branch)', async () => {
@@ -330,7 +354,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, ['origin']);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, ['origin']);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -359,7 +383,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', false);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -382,7 +406,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -405,7 +429,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -428,7 +452,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
 
 			// Assert
 			expect(result).toStrictEqual({

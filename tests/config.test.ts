@@ -2610,6 +2610,8 @@ describe('Config', () => {
 
 	describe('showRemoteHeads', testBooleanExtensionSetting('showRemoteHeads', 'repository.showRemoteHeads', true));
 
+	describe('showStashes', testBooleanExtensionSetting('showStashes', 'repository.showStashes', true));
+
 	describe('showTags', testRenamedBooleanExtensionSetting('showTags', 'repository.showTags', 'showTags', true));
 
 	describe('showUncommittedChanges', testRenamedBooleanExtensionSetting('showUncommittedChanges', 'repository.showUncommittedChanges', 'showUncommittedChanges', true));

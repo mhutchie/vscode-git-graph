@@ -199,6 +199,7 @@ export interface GitRepoState {
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
+	showStashes: BooleanOverride;
 	showTags: BooleanOverride;
 }
 
@@ -241,6 +242,7 @@ export interface GitGraphViewConfig {
 	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
 	readonly showRemoteBranches: boolean;
+	readonly showStashes: boolean;
 	readonly showTags: boolean;
 }
 
@@ -888,6 +890,7 @@ export interface RequestLoadRepoInfo extends RepoRequest {
 	readonly command: 'loadRepoInfo';
 	readonly refreshId: number;
 	readonly showRemoteBranches: boolean;
+	readonly showStashes: boolean;
 	readonly hideRemotes: ReadonlyArray<string>;
 }
 export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {

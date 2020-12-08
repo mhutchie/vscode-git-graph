@@ -124,14 +124,15 @@ export class DataSource extends Disposable {
 	 * Get the high-level information of a repository.
 	 * @param repo The path of the repository.
 	 * @param showRemoteBranches Are remote branches shown.
+	 * @param showStashes Are stashes shown.
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The repositories information.
 	 */
-	public getRepoInfo(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>): Promise<GitRepoInfo> {
+	public getRepoInfo(repo: string, showRemoteBranches: boolean, showStashes: boolean, hideRemotes: ReadonlyArray<string>): Promise<GitRepoInfo> {
 		return Promise.all([
 			this.getBranches(repo, showRemoteBranches, hideRemotes),
 			this.getRemotes(repo),
-			this.getStashes(repo)
+			showStashes ? this.getStashes(repo) : Promise.resolve([])
 		]).then((results) => {
 			return { branches: results[0].branches, head: results[0].head, remotes: results[1], stashes: results[2], error: null };
 		}).catch((errorMessage) => {

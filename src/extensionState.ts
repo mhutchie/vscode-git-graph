@@ -34,6 +34,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	pullRequestConfig: null,
 	showRemoteBranches: true,
 	showRemoteBranchesV2: BooleanOverride.Default,
+	showStashes: BooleanOverride.Default,
 	showTags: BooleanOverride.Default
 };
 

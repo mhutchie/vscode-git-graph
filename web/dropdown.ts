@@ -4,6 +4,9 @@ interface DropdownOption {
 	readonly hint?: string;
 }
 
+/**
+ * Implements the dropdown inputs used in the Git Graph View's top control bar.
+ */
 class Dropdown {
 	private options: ReadonlyArray<DropdownOption> = [];
 	private optionsSelected: boolean[] = [];
@@ -23,6 +26,15 @@ class Dropdown {
 	private readonly noResultsElem: HTMLDivElement;
 	private readonly filterInput: HTMLInputElement;
 
+	/**
+	 * Constructs a Dropdown instance.
+	 * @param id The ID of the HTML Element that the dropdown should be rendered in.
+	 * @param showInfo Should an information icon be shown on the right of each dropdown item.
+	 * @param multipleAllowed Can multiple items be selected.
+	 * @param dropdownType The type of content the dropdown is being used for.
+	 * @param changeCallback A callback to be invoked when the selected item(s) of the dropdown changes.
+	 * @returns The Dropdown instance.
+	 */
 	constructor(id: string, showInfo: boolean, multipleAllowed: boolean, dropdownType: string, changeCallback: { (values: string[]): void }) {
 		this.showInfo = showInfo;
 		this.multipleAllowed = multipleAllowed;
@@ -77,6 +89,11 @@ class Dropdown {
 		this.filterInput.addEventListener('keyup', () => this.filter());
 	}
 
+	/**
+	 * Set the options that should be displayed in the dropdown.
+	 * @param options An array of the options to display in the dropdown.
+	 * @param optionsSelected An array of the selected options in the dropdown.
+	 */
 	public setOptions(options: ReadonlyArray<DropdownOption>, optionsSelected: string[]) {
 		this.options = options;
 		this.optionsSelected = [];
@@ -101,20 +118,33 @@ class Dropdown {
 		this.clearDoubleClickTimeout();
 	}
 
+	/**
+	 * Refresh the rendered dropdown to apply style changes.
+	 */
 	public refresh() {
 		if (this.options.length > 0) this.render();
 	}
 
+	/**
+	 * Is the dropdown currently open (i.e. is the list of options visible).
+	 * @returns TRUE => The dropdown is open, FALSE => The dropdown is not open
+	 */
 	public isOpen() {
 		return this.dropdownVisible;
 	}
 
+	/**
+	 * Close the dropdown.
+	 */
 	public close() {
 		this.elem.classList.remove('dropdownOpen');
 		this.dropdownVisible = false;
 		this.clearDoubleClickTimeout();
 	}
 
+	/**
+	 * Render the dropdown.
+	 */
 	private render() {
 		this.elem.classList.add('loaded');
 
@@ -144,6 +174,9 @@ class Dropdown {
 		if (this.dropdownVisible) this.filter();
 	}
 
+	/**
+	 * Filter the options displayed in the dropdown list, based on the filter criteria specified by the user.
+	 */
 	private filter() {
 		let val = this.filterInput.value.toLowerCase(), match, matches = false;
 		for (let i = 0; i < this.options.length; i++) {
@@ -155,6 +188,11 @@ class Dropdown {
 		this.noResultsElem.style.display = matches ? 'none' : 'block';
 	}
 
+	/**
+	 * Get an array of the selected dropdown options.
+	 * @param names TRUE => Return the names of the selected options, FALSE => Return the values of the selected options.
+	 * @returns The array of the selected options.
+	 */
 	private getSelectedOptions(names: boolean) {
 		let selected = [];
 		if (this.multipleAllowed && this.optionsSelected[0]) {
@@ -167,6 +205,10 @@ class Dropdown {
 		return selected;
 	}
 
+	/**
+	 * Select a dropdown option.
+	 * @param option The index of the option to select.
+	 */
 	private selectOption(option: number) {
 		// Note: Show All is always the first option (0 index) when multiple selected items are allowed
 		let change = false;
@@ -245,6 +287,9 @@ class Dropdown {
 		}, 500);
 	}
 
+	/**
+	 * Clear the timeout used to detect double clicks.
+	 */
 	private clearDoubleClickTimeout() {
 		if (this.doubleClickTimeout !== null) {
 			clearTimeout(this.doubleClickTimeout);

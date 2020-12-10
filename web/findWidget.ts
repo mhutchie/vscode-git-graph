@@ -7,6 +7,9 @@ interface FindWidgetState {
 	readonly visible: boolean;
 }
 
+/**
+ * Implements the Git Graph View's Find Widget.
+ */
 class FindWidget {
 	private readonly view: GitGraphView;
 	private text: string = '';
@@ -22,6 +25,11 @@ class FindWidget {
 	private readonly prevElem: HTMLElement;
 	private readonly nextElem: HTMLElement;
 
+	/**
+	 * Construct a new FindWidget instance.
+	 * @param view The Git Graph View that the FindWidget is for.
+	 * @returns The FindWidget instance.
+	 */
 	constructor(view: GitGraphView) {
 		this.view = view;
 		this.widgetElem = document.createElement('div');
@@ -99,6 +107,10 @@ class FindWidget {
 		findCloseElem.addEventListener('click', () => this.close());
 	}
 
+	/**
+	 * Show the Find Widget.
+	 * @param transition Should the Find Widget animate when becoming visible (sliding down).
+	 */
 	public show(transition: boolean) {
 		if (!this.visible) {
 			this.visible = true;
@@ -111,6 +123,9 @@ class FindWidget {
 		this.inputElem.focus();
 	}
 
+	/**
+	 * Close the Find Widget, sliding it up out of view.
+	 */
 	public close() {
 		if (!this.visible) return;
 		this.visible = false;
@@ -128,12 +143,19 @@ class FindWidget {
 		this.view.saveState();
 	}
 
+	/**
+	 * Refresh the Find Widget's state / matches after the commits have changed.
+	 */
 	public refresh() {
 		if (this.visible) {
 			this.findMatches(this.getCurrentHash(), false);
 		}
 	}
 
+	/**
+	 * Set the colours used to indicate the find matches.
+	 * @param colour The base colour for the find matches.
+	 */
 	public setColour(colour: string) {
 		document.body.style.setProperty('--git-graph-findMatch', colour);
 		document.body.style.setProperty('--git-graph-findMatchCommit', modifyColourOpacity(colour, 0.5));
@@ -142,6 +164,9 @@ class FindWidget {
 
 	/* State */
 
+	/**
+	 * Get the current state of the Find Widget.
+	 */
 	public getState(): FindWidgetState {
 		return {
 			text: this.text,
@@ -150,10 +175,18 @@ class FindWidget {
 		};
 	}
 
+	/**
+	 * Get the commit hash of the current find match.
+	 * @returns The commit hash, or NULL if no commit is currently matched.
+	 */
 	public getCurrentHash() {
 		return this.position > -1 ? this.matches[this.position].hash : null;
 	}
 
+	/**
+	 * Restore the Find Widget to an existing state.
+	 * @param state The previous Find Widget state.
+	 */
 	public restoreState(state: FindWidgetState) {
 		if (!state.visible) return;
 		this.text = state.text;
@@ -161,6 +194,10 @@ class FindWidget {
 		if (this.text !== '') this.findMatches(state.currentHash, false);
 	}
 
+	/**
+	 * Is the Find Widget currently visible.
+	 * @returns TRUE => The Find Widget is visible, FALSE => The Find Widget is not visible
+	 */
 	public isVisible() {
 		return this.visible;
 	}
@@ -168,6 +205,11 @@ class FindWidget {
 
 	/* Matching */
 
+	/**
+	 * Find all matches based on the user's criteria.
+	 * @param goToCommitHash If this commit hash matches the criteria, directly go to this commit instead of starting at the first match.
+	 * @param scrollToCommit Should the resultant find match be scrolled to (so it's visible in the view).
+	 */
 	private findMatches(goToCommitHash: string | null, scrollToCommit: boolean) {
 		this.matches = [];
 		this.position = -1;
@@ -278,6 +320,9 @@ class FindWidget {
 		this.updatePosition(newPos, scrollToCommit);
 	}
 
+	/**
+	 * Clear all of the highlighted find matches in the view.
+	 */
 	private clearMatches() {
 		for (let i = 0; i < this.matches.length; i++) {
 			if (i === this.position) this.matches[i].elem.classList.remove(CLASS_FIND_CURRENT_COMMIT);
@@ -308,6 +353,11 @@ class FindWidget {
 		}
 	}
 
+	/**
+	 * Update the user's position in the set of find matches.
+	 * @param position The new position index within the find matches.
+	 * @param scrollToCommit After updating the user's position in the set of find matches, should the current match be scrolled to (so it's visible in the view).
+	 */
 	private updatePosition(position: number, scrollToCommit: boolean) {
 		if (this.position > -1) this.matches[this.position].elem.classList.remove(CLASS_FIND_CURRENT_COMMIT);
 		this.position = position;
@@ -319,18 +369,27 @@ class FindWidget {
 		this.view.saveState();
 	}
 
+	/**
+	 * Move the user's position to the previous match in the set of find matches.
+	 */
 	private prev() {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position > 0 ? this.position - 1 : this.matches.length - 1, true);
 		this.openCommitDetailsViewForCurrentMatchIfEnabled();
 	}
 
+	/**
+	 * Move the user's position to the next match in the set of find matches.
+	 */
 	private next() {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
 		this.openCommitDetailsViewForCurrentMatchIfEnabled();
 	}
 
+	/**
+	 * If the Find Widget is configured to open the Commit Details View for the current find match, load the Commit Details View accordingly. 
+	 */
 	private openCommitDetailsViewForCurrentMatchIfEnabled() {
 		if (workspaceState.findOpenCommitDetailsView) {
 			const commitHash = this.getCurrentHash();
@@ -345,6 +404,11 @@ class FindWidget {
 		}
 	}
 
+	/**
+	 * Create a find match element containing the specified text.
+	 * @param text The text content of the find match.
+	 * @returns The HTML element for the find match.
+	 */
 	private static createMatchElem(text: string) {
 		const span = document.createElement('span');
 		span.className = CLASS_FIND_MATCH;

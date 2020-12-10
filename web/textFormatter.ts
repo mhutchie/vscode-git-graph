@@ -94,6 +94,9 @@ namespace TF {
 	}
 }
 
+/**
+ * Parses text, and produces formatted HTML for the Git Graph View.
+ */
 class TextFormatter {
 	private readonly config: Readonly<{
 		commits: boolean,
@@ -121,6 +124,13 @@ class TextFormatter {
 	private static readonly EMOJI_MAPPINGS: { [shortcode: string]: string } = { 'adhesive_bandage': '🩹', 'alembic': '⚗', 'alien': '👽', 'ambulance': '🚑', 'apple': '🍎', 'arrow_down': '⬇️', 'arrow_up': '⬆️', 'art': '🎨', 'beers': '🍻', 'bento': '🍱', 'bookmark': '🔖', 'books': '📚', 'boom': '💥', 'bug': '🐛', 'building_construction': '🏗', 'bulb': '💡', 'busts_in_silhouette': '👥', 'camera_flash': '📸', 'card_file_box': '🗃', 'card_index': '📇', 'chart_with_upwards_trend': '📈', 'checkered_flag': '🏁', 'children_crossing': '🚸', 'clown_face': '🤡', 'construction': '🚧', 'construction_worker': '👷', 'dizzy': '💫', 'egg': '🥚', 'exclamation': '❗', 'fire': '🔥', 'globe_with_meridians': '🌐', 'goal_net': '🥅', 'green_apple': '🍏', 'green_heart': '💚', 'hammer': '🔨', 'heavy_check_mark': '✔️', 'heavy_minus_sign': '➖', 'heavy_plus_sign': '➕', 'iphone': '📱', 'label': '🏷️', 'lipstick': '💄', 'lock': '🔒', 'loud_sound': '🔊', 'mag': '🔍', 'memo': '📝', 'mute': '🔇', 'new': '🆕', 'ok_hand': '👌', 'package': '📦', 'page_facing_up': '📄', 'passport_control': '🛂', 'pencil': '📝', 'pencil2': '✏️', 'penguin': '🐧', 'poop': '💩', 'pushpin': '📌', 'racehorse': '🐎', 'recycle': '♻️', 'rewind': '⏪', 'robot': '🤖', 'rocket': '🚀', 'rotating_light': '🚨', 'see_no_evil': '🙈', 'seedling': '🌱', 'shirt': '👕', 'sparkles': '✨', 'speech_balloon': '💬', 'tada': '🎉', 'triangular_flag_on_post': '🚩', 'triangular_ruler': '📐', 'truck': '🚚', 'twisted_rightwards_arrows': '🔀', 'video_game': '🎮', 'wastebasket': '🗑', 'whale': '🐳', 'wheel_of_dharma': '☸️', 'wheelchair': '♿️', 'white_check_mark': '✅', 'wrench': '🔧', 'zap': '⚡️' };
 	private static readonly ENCLOSING_GROUPS: { [close: string]: string } = { ')': '(', ']': '[', '}': '{', '>': '<', '*': '*', '_': '_' };
 
+	/**
+	 * Construct a TextFormatter instance.
+	 * @param commits The array of commits currently loaded in the Git Graph View.
+	 * @param repoIssueLinkingConfig The Issue Linking Configuration of the current repository.
+	 * @param config The configuration of the TextFormatter, to determine which types of formatting should be performed.
+	 * @returns The TextFormatter instance.
+	 */
 	constructor(commits: ReadonlyArray<GG.GitCommit>, repoIssueLinkingConfig: GG.IssueLinkingConfig | null, config: TF.Config) {
 		this.config = Object.assign({ commits: false, emoji: false, issueLinking: false, markdown: false, multiline: false, urls: false }, config);
 		this.commits = commits;
@@ -140,6 +150,11 @@ class TextFormatter {
 		}
 	}
 
+	/**
+	 * Convert input plain text into formatted HTML.
+	 * @param input The input plain text.
+	 * @returns The formatted HTML.
+	 */
 	public format(input: string) {
 		if (this.config.multiline) {
 			let html = [], lines = input.split('\n'), i, j, match;
@@ -163,6 +178,11 @@ class TextFormatter {
 		}
 	}
 
+	/**
+	 * Convert a single line of input text into formatted HTML.
+	 * @param input The input plain text.
+	 * @returns The formatted HTML.
+	 */
 	private formatLine(input: string) {
 		const tree: TF.RootNode = {
 			type: TF.NodeType.Root,
@@ -439,6 +459,10 @@ class TextFormatter {
 		return html.join('');
 	}
 
+	/**
+	 * Register user-defined custom emoji mappings.
+	 * @param mappings The user-defined mappings.
+	 */
 	public static registerCustomEmojiMappings(mappings: ReadonlyArray<GG.CustomEmojiShortcodeMapping>) {
 		const validShortcodeRegExp = /^:[A-Za-z0-9-_]+:$/;
 		for (let i = 0; i < mappings.length; i++) {
@@ -448,6 +472,14 @@ class TextFormatter {
 		}
 	}
 
+	/**
+	 * Find the matching open emphasis delimiter in a stack.
+	 * @param delimiter The closing emphasis.
+	 * @param run The emphasis run containing the closing emphasis.
+	 * @param runs An array of all known emphasis runs.
+	 * @param stack The stack of open emphasis delimiters.
+	 * @returns The stack index of the matching open emphasis delimiter, or -1 if no match could be found.
+	 */
 	private static findOpenEmphasis(delimiter: TF.EmphasisDelimiter, run: TF.EmphasisRun, runs: TF.EmphasisRun[], stack: TF.EmphasisDelimiter[]) {
 		let i = stack.length - 1;
 		while (i >= 0) {
@@ -459,6 +491,10 @@ class TextFormatter {
 		return -1;
 	}
 
+	/**
+	 * Recursively traverse the tree, and combine directly nested emphasis (asterisks & underscores) into double asterisks and double underscores where possible.
+	 * @param tree The tree to traverse.
+	 */
 	private static combineNestedEmphasis(tree: TF.Node) {
 		tree.contains.forEach(TextFormatter.combineNestedEmphasis);
 		if (tree.contains.length === 1 && tree.type === tree.contains[0].type && (tree.type === TF.NodeType.Asterisk || tree.type === TF.NodeType.Underscore) && tree.start + 1 === tree.contains[0].start && tree.contains[0].end === tree.end - 1) {
@@ -469,6 +505,11 @@ class TextFormatter {
 		}
 	}
 
+	/**
+	 * Inserts a node into a tree of nodes (according to it's start and end).
+	 * @param tree The tree the node should be inserted in.
+	 * @param node The node to insert.
+	 */
 	private static insertIntoTree(tree: TF.Node, node: TF.Node) {
 		let firstChildIndexOfNode = -1, lastChildIndexOfNode = -1, curNode;
 		for (let i = 0; i < tree.contains.length; i++) {
@@ -492,6 +533,11 @@ class TextFormatter {
 		}
 	}
 
+	/**
+	 * Inserts a node into a tree of nodes (according to it's start and end), only if it doesn't overlap with an existing node in the tree.
+	 * @param tree The tree the node should be inserted in.
+	 * @param node The node to insert.
+	 */
 	private static insertIntoTreeIfNoOverlap(tree: TF.RootNode, node: TF.Node) {
 		let curNode: TF.Node, insertAtIndex = tree.contains.length;
 		for (let i = 0; i < tree.contains.length; i++) {
@@ -506,6 +552,13 @@ class TextFormatter {
 		tree.contains.splice(insertAtIndex, 0, node);
 	}
 
+	/**
+	 * Is a range included (partially or completely) within a tree. 
+	 * @param tree The tree to check.
+	 * @param start The index defining the start of the range.
+	 * @param end The index defining the end of the range.
+	 * @returns TRUE => The range overlaps with node(s) in the tree, FALSE => There is no overlap between the range and any node in the tree.
+	 */
 	private static isInTree(tree: TF.RootNode, start: number, end: number) {
 		return tree.contains.some((node) => (node.start <= start && start <= node.end) || (node.start <= end && end <= node.end) || (start <= node.start && node.end <= end));
 	}

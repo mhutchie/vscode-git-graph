@@ -3,6 +3,9 @@ interface SettingsWidgetState {
 	readonly settings: GG.GitRepoSettings | null;
 }
 
+/**
+ * Implements the Git Graph View's Settings Widget.
+ */
 class SettingsWidget {
 	private readonly view: GitGraphView;
 
@@ -15,6 +18,11 @@ class SettingsWidget {
 	private readonly contentsElem: HTMLElement;
 	private readonly loadingElem: HTMLElement;
 
+	/**
+	 * Construct a new SettingsWidget instance.
+	 * @param view The Git Graph View that the SettingsWidget is for.
+	 * @returns The SettingsWidget instance.
+	 */
 	constructor(view: GitGraphView) {
 		this.view = view;
 
@@ -31,6 +39,12 @@ class SettingsWidget {
 		settingsClose.addEventListener('click', () => this.close());
 	}
 
+	/**
+	 * Show the Settings Widget.
+	 * @param currentRepo The repository that is currently loaded in the view.
+	 * @param repo The state of the repository that is currently loaded in the view.
+	 * @param transition Should the Settings Widget animate when becoming visible (sliding down).
+	 */
 	public show(currentRepo: string, repo: Readonly<GG.GitRepoState>, transition: boolean) {
 		if (this.currentRepo !== null) return;
 		this.loading = true;
@@ -42,12 +56,18 @@ class SettingsWidget {
 		this.view.saveState();
 	}
 
+	/**
+	 * Refresh the Settings Widget after an action affecting it's content has completed.
+	 */
 	public refresh() {
 		if (this.currentRepo === null) return;
 		this.loading = true;
 		this.requestSettings();
 	}
 
+	/**
+	 * Close the Settings Widget, sliding it up out of view.
+	 */
 	public close() {
 		if (this.currentRepo === null) return;
 		this.currentRepo = null;
@@ -65,6 +85,9 @@ class SettingsWidget {
 
 	/* State */
 
+	/**
+	 * Get the current state of the Settings Widget.
+	 */
 	public getState(): SettingsWidgetState {
 		return {
 			currentRepo: this.currentRepo,
@@ -72,16 +95,29 @@ class SettingsWidget {
 		};
 	}
 
+	/**
+	 * Restore the Settings Widget to an existing state.
+	 * @param state The previous Settings Widget state.
+	 */
 	public restoreState(repo: Readonly<GG.GitRepoState>, state: SettingsWidgetState) {
 		if (state.currentRepo === null) return;
 		this.settings = state.settings;
 		this.show(state.currentRepo, repo, false);
 	}
 
+	/**
+	 * Is the Settings Widget currently visible.
+	 * @returns TRUE => The Settings Widget is visible, FALSE => The Settings Widget is not visible
+	 */
 	public isVisible() {
 		return this.currentRepo !== null;
 	}
 
+	/**
+	 * Load the specified settings in the Settings Widget.
+	 * @param settings The settings to display.
+	 * @param error An error message, if one has occurred while retrieving the settings.
+	 */
 	public loadSettings(settings: GG.GitRepoSettings | null, error: string | null) {
 		if (this.currentRepo === null || this.repo === null) return;
 		this.settings = settings;
@@ -111,6 +147,9 @@ class SettingsWidget {
 
 	/* Render Methods */
 
+	/**
+	 * Render the Settings Widget.
+	 */
 	private render() {
 		if (this.currentRepo !== null && this.repo !== null && this.settings !== null) {
 			const escapedRepoName = escapeHtml(this.repo.name || getRepoName(this.currentRepo));
@@ -501,12 +540,20 @@ class SettingsWidget {
 
 	/* Private Helper Methods */
 
+	/**
+	 * Request any repository settings that are displayed on the Settings Widget.
+	 */
 	private requestSettings() {
 		if (this.currentRepo === null) return;
 		sendMessage({ command: 'getSettings', repo: this.currentRepo });
 		this.render();
 	}
 
+	/**
+	 * Save the issue linking configuration for this repository, and refresh the view so these changes are taken into affect.
+	 * @param config The issue linking configuration to save.
+	 * @param global Should this configuration be set globally for all repositories, or locally for this specific repository.
+	 */
 	private setIssueLinkingConfig(config: GG.IssueLinkingConfig | null, global: boolean) {
 		if (this.currentRepo === null || this.repo === null) return;
 
@@ -523,12 +570,23 @@ class SettingsWidget {
 		this.render();
 	}
 
+	/**
+	 * Save the pull request configuration for this repository.
+	 * @param config The pull request configuration to save.
+	 */
 	private setPullRequestConfig(config: GG.PullRequestConfig | null) {
 		if (this.currentRepo === null) return;
 		this.view.saveRepoStateValue(this.currentRepo, 'pullRequestConfig', config);
 		this.render();
 	}
 
+	/**
+	 * Show the dialog allowing the user to configure the issue linking for this repository.
+	 * @param defaultIssueRegex The default regular expression used to match issue numbers.
+	 * @param defaultIssueUrl The default URL for the issue number to be substituted into.
+	 * @param defaultUseGlobally The default value for the checkbox determining whether the issue linking configuration should be used globally (for all repositories).
+	 * @param isEdit Is the dialog editing an existing issue linking configuration.
+	 */
 	private showIssueLinkingDialog(defaultIssueRegex: string | null, defaultIssueUrl: string | null, defaultUseGlobally: boolean, isEdit: boolean) {
 		let html = '<b>' + (isEdit ? 'Edit Issue Linking for' : 'Add Issue Linking to') + ' this Repository</b>';
 		html += '<p style="font-size:12px; margin:6px 0;">The following example links <b>#123</b> in commit messages to <b>https://github.com/mhutchie/repo/issues/123</b>:</p>';
@@ -571,6 +629,10 @@ class SettingsWidget {
 		}, null, 'Cancel', null, false);
 	}
 
+	/**
+	 * Show the first dialog for configuring the pull request integration.
+	 * @param config The pull request configuration.
+	 */
 	private showCreatePullRequestIntegrationDialog1(config: GG.DeepWriteable<GG.PullRequestConfig>) {
 		if (this.settings === null) return;
 
@@ -690,6 +752,10 @@ class SettingsWidget {
 		}, { type: TargetType.Repo });
 	}
 
+	/**
+	 * Show the second dialog for configuring the pull request integration.
+	 * @param config The pull request configuration.
+	 */
 	private showCreatePullRequestIntegrationDialog2(config: GG.DeepWriteable<GG.PullRequestConfig>) {
 		if (this.settings === null) return;
 
@@ -744,12 +810,22 @@ class SettingsWidget {
 		});
 	}
 
+	/**
+	 * Get the remote details corresponding to a mouse event.
+	 * @param e The mouse event.
+	 * @returns The details of the remote.
+	 */
 	private getRemoteForBtnEvent(e: Event) {
 		return this.settings !== null
 			? this.settings.remotes[parseInt((<HTMLElement>(<Element>e.target).closest('.remoteBtns')!).dataset.index!)]
 			: null;
 	}
 
+	/**
+	 * Automatically detect common issue number formats in the specified commits, returning the most common.
+	 * @param commits The commits to analyse.
+	 * @returns The regular expression of the most likely issue number format.
+	 */
 	private static autoDetectIssueRegex(commits: ReadonlyArray<GG.GitCommit>) {
 		const patterns = ['#(\\d+)', '^(\\d+)\\.(?=\\s|$)', '^(\\d+):(?=\\s|$)', '([A-Za-z]+-\\d+)'].map((pattern) => {
 			const regexp = new RegExp(pattern);

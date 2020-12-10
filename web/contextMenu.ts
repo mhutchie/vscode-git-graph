@@ -17,17 +17,34 @@ type ContextMenuTarget = {
 	ref?: string;
 } | RepoTarget;
 
+/**
+ * Implements the Git Graph View's context menus.
+ */
 class ContextMenu {
 	private elem: HTMLElement | null = null;
 	private onClose: (() => void) | null = null;
 	private target: ContextMenuTarget | null = null;
 
+	/**
+	 * Construct a new ContextMenu instance.
+	 * @returns The ContextMenu instance.
+	 */
 	constructor() {
 		const listener = () => this.close();
 		document.addEventListener('click', listener);
 		document.addEventListener('contextmenu', listener);
 	}
 
+	/**
+	 * Show a context menu in the Git Graph View.
+	 * @param actions The collection of actions to display in the context menu.
+	 * @param checked Should the context menu display checks to the left of each action.
+	 * @param target The target that the context menu was triggered on.
+	 * @param event The mouse event that triggered the context menu.
+	 * @param frameElem The HTML Element that the context menu should be rendered within (and be positioned relative to it's content).
+	 * @param blockUserInteractionElem An optional HTML Element that the user shouldn't be able to interact with while the context menu is open.
+	 * @param onClose An optional callback to be invoked when the context menu is closed.
+	 */
 	public show(actions: ContextMenuActions, checked: boolean, target: ContextMenuTarget | null, event: MouseEvent, frameElem: HTMLElement, blockUserInteractionElem: HTMLElement | null = null, onClose: (() => void) | null = null) {
 		let html = '', handlers: (() => void)[] = [], handlerId = 0;
 		this.close();
@@ -87,6 +104,9 @@ class ContextMenu {
 		}
 	}
 
+	/**
+	 * Close the context menu (if one is currently open in the Git Graph View).
+	 */
 	public close() {
 		if (this.elem !== null) {
 			this.elem.remove();
@@ -101,6 +121,11 @@ class ContextMenu {
 		this.target = null;
 	}
 
+	/**
+	 * Refresh the context menu (if one is currently open in the Git Graph View). If the context menu has a dynamic source,
+	 * re-link it to the newly rendered HTML Element, or close it if the target is no longer visible in the Git Graph View.
+	 * @param commits The new array of commits that is rendered in the Git Graph View.
+	 */
 	public refresh(commits: ReadonlyArray<GG.GitCommit>) {
 		if (!this.isOpen() || this.target === null || this.target.type === TargetType.Repo) {
 			// Don't need to refresh if no context menu is open, or it is not dynamic
@@ -136,10 +161,18 @@ class ContextMenu {
 		this.close();
 	}
 
+	/**
+	 * Is a context menu currently open in the Git Graph View.
+	 * @returns TRUE => A context menu is open, FALSE => No context menu is open
+	 */
 	public isOpen() {
 		return this.elem !== null;
 	}
 
+	/**
+	 * Is the target of the context menu dynamic (i.e. is it tied to a Git object & HTML Element in the Git Graph View).
+	 * @returns TRUE => The context menu is dynamic, FALSE => The context menu is not dynamic
+	 */
 	public isTargetDynamicSource() {
 		return this.isOpen() && this.target !== null;
 	}

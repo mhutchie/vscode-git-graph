@@ -103,6 +103,13 @@ const ATTR_ERROR = 'data-error';
 
 /* General Helpers */
 
+/**
+ * Are two arrays equal, such that corresponding elements at each index are equal according to the `equalElements` method.
+ * @param a An array.
+ * @param b An array.
+ * @param equalElements A function used to determine if two elements, each at the same index of `a` & `b`, are equal.
+ * @returns TRUE => The arrays are equal, FALSE => The arrays are not equal
+ */
 function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>, equalElements: (a: T, b: T) => boolean) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
@@ -111,6 +118,12 @@ function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>, equalElements:
 	return true;
 }
 
+/**
+ * Are two arrays equal, such that corresponding elements at each index are strictly equal.
+ * @param a An array.
+ * @param b An array.
+ * @returns TRUE => The arrays are equal, FALSE => The arrays are not equal
+ */
 function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
@@ -119,6 +132,12 @@ function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	return true;
 }
 
+/**
+ * Are two arrays equal, such that corresponding elements of each array are in strictly equal to an element in the other array (i.e. the order of elements doesn't matter).
+ * @param a An array.
+ * @param b An array.
+ * @returns TRUE => The arrays are equal, FALSE => The arrays are not equal
+ */
 function arraysStrictlyEqualIgnoringOrder<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
@@ -127,7 +146,12 @@ function arraysStrictlyEqualIgnoringOrder<T>(a: ReadonlyArray<T>, b: ReadonlyArr
 	return true;
 }
 
-// Modify opacity of rgb/rgba/hex colour by multiplying it by opacity (0 <= opacity <= 1)
+/**
+ * Modify the opacity of an RGB/RGBA/HEX colour by multiplying it by a new opacity.
+ * @param colour The colour to modify.
+ * @param opacity The multiplier for the opacity (between 0 & 1).
+ * @returns An equivalent RGBA colour with the applied opacity.
+ */
 function modifyColourOpacity(colour: string, opacity: number) {
 	let fadedCol = 'rgba(0,0,0,0)', match;
 	if ((match = colour.match(/rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/)) !== null) {
@@ -147,10 +171,20 @@ function modifyColourOpacity(colour: string, opacity: number) {
 	return fadedCol;
 }
 
+/**
+ * Pad a number with a leading zero, so it contains at least two digits.
+ * @param i The number to pad.
+ * @returns The padded number.
+ */
 function pad2(i: number) {
 	return i > 9 ? i : '0' + i;
 }
 
+/**
+ * Get a short name for a repository.
+ * @param path The path of the repository.
+ * @returns The short name.
+ */
 function getRepoName(path: string) {
 	let firstSep = path.indexOf('/');
 	if (firstSep === path.length - 1 || firstSep === -1) {
@@ -164,10 +198,20 @@ function getRepoName(path: string) {
 
 /* HTML Escape / Unescape */
 
+/**
+ * Escape HTML in the specified string.
+ * @param str The string to escape.
+ * @returns The escaped string.
+ */
 function escapeHtml(str: string) {
 	return str.replace(HTML_ESCAPER_REGEX, (match) => HTML_ESCAPES[match]);
 }
 
+/**
+ * Unescape HTML in the specified string.
+ * @param str The string to unescape.
+ * @returns The unescaped string.
+ */
 function unescapeHtml(str: string) {
 	return str.replace(HTML_UNESCAPER_REGEX, (match) => HTML_UNESCAPES[match]);
 }
@@ -175,6 +219,11 @@ function unescapeHtml(str: string) {
 
 /* Formatters */
 
+/**
+ * Format an array of strings as a comma separated list.
+ * @param items The array of strings.
+ * @returns A formatted comma separated string (e.g. "A, B & C").
+ */
 function formatCommaSeparatedList(items: string[]) {
 	let str = '';
 	for (let i = 0; i < items.length; i++) {
@@ -183,6 +232,11 @@ function formatCommaSeparatedList(items: string[]) {
 	return str;
 }
 
+/**
+ * Format a date (short).
+ * @param unixTimestamp The unix timestamp of the date to format.
+ * @returns The formatted date.
+ */
 function formatShortDate(unixTimestamp: number) {
 	const date = new Date(unixTimestamp * 1000), format = initialState.config.dateFormat;
 	let dateStr = format.iso
@@ -227,6 +281,11 @@ function formatShortDate(unixTimestamp: number) {
 	};
 }
 
+/**
+ * Format a date (long).
+ * @param unixTimestamp The unix timestamp of the date to format.
+ * @returns The formatted date.
+ */
 function formatLongDate(unixTimestamp: number) {
 	const date = new Date(unixTimestamp * 1000);
 	if (initialState.config.dateFormat.iso) {
@@ -242,20 +301,43 @@ function formatLongDate(unixTimestamp: number) {
 
 /* DOM Helpers */
 
+/**
+ * Add an event listener to all elements with a class name.
+ * @param className The class name used to identify the elements to add the event listener to.
+ * @param event The event to listen for on each element.
+ * @param eventListener The event listener to be called when the event occurs.
+ */
 function addListenerToClass(className: string, event: string, eventListener: EventListener) {
 	addListenerToCollectionElems(document.getElementsByClassName(className), event, eventListener);
 }
 
+/**
+ * Add an event listener to all elements in a collection of elements.
+ * @param elems The collection of elements to add the event listener to.
+ * @param event The event to listen for on each element.
+ * @param eventListener The event listener to be called when the event occurs.
+ */
 function addListenerToCollectionElems(elems: HTMLCollectionOf<Element>, event: string, eventListener: EventListener) {
 	for (let i = 0; i < elems.length; i++) {
 		elems[i].addEventListener(event, eventListener);
 	}
 }
 
+/**
+ * Insert an HTML Element directly after a reference HTML Element (as a sibling).
+ * @param newNode The HTML Element to insert.
+ * @param referenceNode The reference HTML element that `newNode` should be inserted after.
+ */
 function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
 	referenceNode.parentNode!.insertBefore(newNode, referenceNode.nextSibling);
 }
 
+/**
+ * Insert an HTML Element directly before the first child element with a specified class name.
+ * @param newChild The HTML Element to insert.
+ * @param parent The parent element that the `newChild` should be inserted into as a child.
+ * @param className The class name identifying the child that `newChild` should be inserted before.
+ */
 function insertBeforeFirstChildWithClass(newChild: HTMLElement, parent: HTMLElement, className: string) {
 	let referenceNode: Node | null = null;
 	for (let i = 0; i < parent.children.length; i++) {
@@ -267,6 +349,13 @@ function insertBeforeFirstChildWithClass(newChild: HTMLElement, parent: HTMLElem
 	parent.insertBefore(newChild, referenceNode);
 }
 
+/**
+ * Alter an HTML Element such that it contains, or doesn't contain the specified class name.
+ * @param elem The HTML Element to alter.
+ * @param className The class name.
+ * @param state TRUE => Ensure the HTML Element has the class name, FALSE => Ensure the HTML Element doesn't have the class name
+ * @returns TRUE => The HTML Element was altered, FALSE => No change was required.
+ */
 function alterClass(elem: HTMLElement, className: string, state: boolean) {
 	if (elem.classList.contains(className) !== state) {
 		if (state) {
@@ -279,6 +368,12 @@ function alterClass(elem: HTMLElement, className: string, state: boolean) {
 	return false;
 }
 
+/**
+ * Alter each HTML Element in a collection of HTML Elements, such that it contains, or doesn't contain the specified class name.
+ * @param elems The collection of HTML Elements.
+ * @param className The class name.
+ * @param state TRUE => Ensure all HTML Elements have the class name, FALSE => Ensure no HTML Elements have the class name
+ */
 function alterClassOfCollection(elems: HTMLCollectionOf<HTMLElement>, className: string, state: boolean) {
 	const lockedElems = [];
 	for (let i = 0; i < elems.length; i++) {
@@ -289,6 +384,11 @@ function alterClassOfCollection(elems: HTMLCollectionOf<HTMLElement>, className:
 	}
 }
 
+/**
+ * Recursively get all of the child nodes of a node that have text content.
+ * @param elem The node to recursively traverse.
+ * @returns An array of all child nodes that have text content.
+ */
 function getChildNodesWithTextContent(elem: Node) {
 	let textChildren: Node[] = [];
 	for (let i = 0; i < elem.childNodes.length; i++) {
@@ -301,6 +401,12 @@ function getChildNodesWithTextContent(elem: Node) {
 	return textChildren;
 }
 
+/**
+ * Recursively get all of the child elements of an element that have the specified class name.
+ * @param elem The element to recursively traverse.
+ * @param className The class name to find.
+ * @returns An array of all child elements that have the specified class name.
+ */
 function getChildrenWithClassName(elem: Element, className: string) {
 	let children: Element[] = [];
 	for (let i = 0; i < elem.children.length; i++) {
@@ -313,6 +419,11 @@ function getChildrenWithClassName(elem: Element, className: string) {
 	return children;
 }
 
+/**
+ * Get the first child of an HTML Element that is a \<ul\>.
+ * @param elem The parent HTML Element.
+ * @returns The HTML Element, or NULL if no child is a \<ul\>.
+ */
 function getChildUl(elem: HTMLElement) {
 	for (let i = 0; i < elem.children.length; i++) {
 		if (elem.children[i].tagName === 'UL') {
@@ -322,10 +433,18 @@ function getChildUl(elem: HTMLElement) {
 	return null;
 }
 
+/**
+ * Get all of the rendered commit HTML Elements.
+ * @returns A collection of all commit HTML Elements.
+ */
 function getCommitElems() {
 	return <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('commit');
 }
 
+/**
+ * Register that an event has been handled, to prevent the default behaviour from occurring, and any further handling of the event.
+ * @param event The event.
+ */
 function handledEvent(event: Event) {
 	event.preventDefault();
 	event.stopPropagation();
@@ -334,25 +453,44 @@ function handledEvent(event: Event) {
 
 /* VSCode Helpers */
 
+/**
+ * Send a message to the extension's back-end (typically to request data, or perform an action).
+ * @param msg The message to send.
+ */
 function sendMessage(msg: GG.RequestMessage) {
 	VSCODE_API.postMessage(msg);
 }
 
+/**
+ * Show a Visual Studio Code Error Message.
+ * @param message The message to display.
+ */
 function showErrorMessage(message: string) {
 	sendMessage({ command: 'showErrorMessage', message: message });
 }
 
+/**
+ * Get the value of a Visual Studio Code style variable.
+ * @param name The name of the style variable.
+ * @returns The value of the style variable.
+ */
 function getVSCodeStyle(name: string) {
 	return document.documentElement.style.getPropertyValue(name);
 }
 
 
-/* Image Resizing for Avatars */
-
+/**
+ * Resizes images for the view (e.g. commit author avatars).
+ */
 class ImageResizer {
 	private canvas: HTMLCanvasElement | null = null;
 	private context: CanvasRenderingContext2D | null = null;
 
+	/**
+	 * Resize an image to have an effective resolution of 18px x 18px. The actual resolution varies depending of the user's screen pixel ratio.
+	 * @param dataUri The data URI containing the image data.
+	 * @param callback A callback to be invoked once the image has been resized, with the resized image.
+	 */
 	public resize(dataUri: string, callback: (dataUri: string) => void) {
 		if (this.canvas === null) this.canvas = document.createElement('canvas');
 		if (this.context === null) this.context = this.canvas.getContext('2d');
@@ -381,12 +519,19 @@ class ImageResizer {
 }
 
 
-/* Event Overlay (for blocking and/or capturing mouse events on the Git Graph View) */
-
+/**
+ * Implements an Event Overlay, which is used for blocking and/or capturing mouse events in the view.
+ */
 class EventOverlay {
 	private move: EventListener | null = null;
 	private stop: EventListener | null = null;
 
+	/**
+	 * Create an event overlay.
+	 * @param className The class name to be used for the event overlay.
+	 * @param move A callback to be invoked if the user moves the mouse over the event overlay.
+	 * @param stop A callback to be invoked if the user moves the mouse off the event overlay.
+	 */
 	public create(className: string, move: EventListener | null, stop: EventListener | null) {
 		if (document.getElementById(ID_EVENT_CAPTURE_ELEM) !== null) this.remove();
 
@@ -411,6 +556,9 @@ class EventOverlay {
 		document.body.appendChild(eventOverlayElem);
 	}
 
+	/**
+	 * Remove the event overlay that is currently active in the view.
+	 */
 	public remove() {
 		let eventOverlayElem = document.getElementById(ID_EVENT_CAPTURE_ELEM);
 		if (eventOverlayElem === null) return;

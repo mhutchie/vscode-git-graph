@@ -20,7 +20,9 @@ class GitGraphView {
 		loadRepoInfoRefreshId: number;
 		loadCommitsRefreshId: number;
 		repoInfoChanges: boolean;
+		configChanges: boolean;
 		requestingRepoInfo: boolean;
+		requestingConfig: boolean;
 	};
 	private loadViewTo: GG.LoadGitGraphViewTo = null;
 
@@ -62,7 +64,9 @@ class GitGraphView {
 			loadRepoInfoRefreshId: initialState.loadRepoInfoRefreshId,
 			loadCommitsRefreshId: initialState.loadCommitsRefreshId,
 			repoInfoChanges: false,
-			requestingRepoInfo: false
+			configChanges: false,
+			requestingRepoInfo: false,
+			requestingConfig: false
 		};
 
 		this.controlsElem = document.getElementById('controls')!;
@@ -95,7 +99,7 @@ class GitGraphView {
 		this.refreshBtnElem = document.getElementById('refreshBtn')!;
 		this.refreshBtnElem.addEventListener('click', () => {
 			if (!this.refreshBtnElem.classList.contains(CLASS_REFRESHING)) {
-				this.refresh(true);
+				this.refresh(true, true);
 			}
 		});
 		this.renderRefreshButton();
@@ -123,9 +127,7 @@ class GitGraphView {
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
-			if (this.currentRepo === prevState.settingsWidget.currentRepo) {
-				this.settingsWidget.restoreState(this.gitRepos[this.currentRepo], prevState.settingsWidget);
-			}
+			this.settingsWidget.restoreState(prevState.settingsWidget);
 			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
 
@@ -149,9 +151,7 @@ class GitGraphView {
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
-		settingsBtn.addEventListener('click', () => {
-			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo], true);
-		});
+		settingsBtn.addEventListener('click', () => this.settingsWidget.show(this.currentRepo));
 		terminalBtn.innerHTML = SVG_ICONS.terminal;
 		terminalBtn.addEventListener('click', () => {
 			runAction({
@@ -196,7 +196,7 @@ class GitGraphView {
 			this.loadRepo(newRepo);
 			return true;
 		} else {
-			this.finaliseLoadViewTo();
+			this.finaliseRepoLoad(false);
 			return false;
 		}
 	}
@@ -209,10 +209,10 @@ class GitGraphView {
 		this.gitConfig = null;
 		this.gitRemotes = [];
 		this.gitStashes = [];
+		this.currentBranches = null;
 		this.renderFetchButton();
 		this.closeCommitDetails(false);
 		this.settingsWidget.close();
-		this.currentBranches = null;
 		this.saveState();
 		this.refresh(true);
 	}
@@ -278,6 +278,7 @@ class GitGraphView {
 
 		this.finaliseLoadRepoInfo(true, isRepo);
 	}
+
 	private finaliseLoadRepoInfo(repoInfoChanges: boolean, isRepo: boolean) {
 		const refreshState = this.currentRepoRefreshState;
 		if (refreshState.inProgress) {
@@ -371,6 +372,7 @@ class GitGraphView {
 		this.finaliseLoadCommits();
 		this.requestAvatars(avatarsNeeded);
 	}
+
 	private finaliseLoadCommits() {
 		const refreshState = this.currentRepoRefreshState;
 		if (refreshState.inProgress) {
@@ -396,16 +398,10 @@ class GitGraphView {
 			this.renderRefreshButton();
 		}
 
-		if (this.loadViewTo !== null) {
-			this.finaliseLoadViewTo();
-		}
-
-		if (this.gitConfig === null) {
-			sendMessage({ command: 'loadGitConfig', repo: this.currentRepo });
-		}
+		this.finaliseRepoLoad(true);
 	}
 
-	private finaliseLoadViewTo() {
+	private finaliseRepoLoad(didLoadRepoData: boolean) {
 		if (this.loadViewTo !== null && this.currentRepo === this.loadViewTo.repo) {
 			if (this.loadViewTo.commitDetails && (this.expandedCommit === null || this.expandedCommit.commitHash !== this.loadViewTo.commitDetails.commitHash || this.expandedCommit.compareWithHash !== this.loadViewTo.commitDetails.compareWithHash)) {
 				const commitIndex = this.getCommitId(this.loadViewTo.commitDetails.commitHash);
@@ -432,6 +428,10 @@ class GitGraphView {
 			}
 		}
 		this.loadViewTo = null;
+
+		if (this.gitConfig === null || (didLoadRepoData && this.currentRepoRefreshState.configChanges)) {
+			this.requestLoadConfig();
+		}
 	}
 
 	private clearCommits() {
@@ -475,13 +475,15 @@ class GitGraphView {
 		}
 	}
 
-	public processLoadGitConfig(msg: GG.ResponseLoadGitConfig) {
+	public processLoadConfig(msg: GG.ResponseLoadConfig) {
+		this.currentRepoRefreshState.requestingConfig = false;
 		if (msg.config !== null && this.currentRepo === msg.repo) {
 			this.gitConfig = msg.config;
 			this.saveState();
 
 			this.renderCdvExternalDiffBtn();
 		}
+		this.settingsWidget.refresh();
 	}
 
 	private displayLoadDataError(message: string, reason: string) {
@@ -539,20 +541,28 @@ class GitGraphView {
 		return this.commits;
 	}
 
-	public getSettingsWidget() {
-		return this.settingsWidget;
+	public getRepoConfig(): Readonly<GG.GitRepoConfig> | null {
+		return this.gitConfig;
 	}
 
+	public getRepoState(repo: string): Readonly<GG.GitRepoState> | null {
+		return typeof this.gitRepos[repo] !== 'undefined'
+			? this.gitRepos[repo]
+			: null;
+	}
 
+	public isConfigLoading(): boolean {
+		return this.currentRepoRefreshState.requestingConfig;
+	}
 
 
 	/* Refresh */
 
-	public refresh(hard: boolean) {
+	public refresh(hard: boolean, configChanges: boolean = false) {
 		if (hard) {
 			this.clearCommits();
 		}
-		this.requestLoadRepoInfoAndCommits(hard, false);
+		this.requestLoadRepoInfoAndCommits(hard, false, configChanges);
 	}
 
 
@@ -589,10 +599,11 @@ class GitGraphView {
 		});
 	}
 
-	private requestLoadRepoInfoAndCommits(hard: boolean, skipRepoInfo: boolean) {
+	private requestLoadRepoInfoAndCommits(hard: boolean, skipRepoInfo: boolean, configChanges: boolean = false) {
 		const refreshState = this.currentRepoRefreshState;
 		if (refreshState.inProgress) {
 			refreshState.hard = refreshState.hard || hard;
+			refreshState.configChanges = refreshState.configChanges || configChanges;
 			if (!skipRepoInfo) {
 				// This request will trigger a loadCommit request after the loadRepoInfo request has completed. 
 				// Invalidate any previous commit requests in progress.
@@ -602,6 +613,7 @@ class GitGraphView {
 			refreshState.hard = hard;
 			refreshState.inProgress = true;
 			refreshState.repoInfoChanges = false;
+			refreshState.configChanges = configChanges;
 			refreshState.requestingRepoInfo = false;
 		}
 
@@ -618,6 +630,12 @@ class GitGraphView {
 			refreshState.requestingRepoInfo = true;
 			this.requestLoadRepoInfo();
 		}
+	}
+
+	public requestLoadConfig() {
+		this.currentRepoRefreshState.requestingConfig = true;
+		sendMessage({ command: 'loadConfig', repo: this.currentRepo, remotes: this.gitRemotes });
+		this.settingsWidget.refresh();
 	}
 
 	public requestCommitDetails(hash: string, refresh: boolean) {
@@ -1924,7 +1942,7 @@ class GitGraphView {
 					handledEvent(e);
 				} else if (!e.shiftKey) {
 					if (key === this.config.keybindings.refresh) {
-						this.refresh(true);
+						this.refresh(true, true);
 						handledEvent(e);
 					} else if (key === this.config.keybindings.find) {
 						this.findWidget.show(true);
@@ -2400,18 +2418,9 @@ class GitGraphView {
 			this.renderCdvExternalDiffBtn();
 			this.makeCdvDividerDraggable();
 
-			let timeout: NodeJS.Timer | null = null;
-			filesElem.scroll(0, expandedCommit.fileChangesScrollTop);
-			filesElem.addEventListener('scroll', () => {
-				let filesElem = document.getElementById('cdvFiles')!;
-				if (filesElem === null) return;
-				expandedCommit.fileChangesScrollTop = filesElem.scrollTop;
-				if (timeout !== null) clearTimeout(timeout);
-				timeout = setTimeout(() => {
-					this.saveState();
-					timeout = null;
-				}, 250);
-			});
+			observeElemScroll('cdvFiles', expandedCommit.fileChangesScrollTop, (scrollTop) => {
+				expandedCommit.fileChangesScrollTop = scrollTop;
+			}, () => this.saveState());
 
 			document.getElementById('cdvFileViewTypeTree')!.addEventListener('click', () => {
 				this.changeFileViewType(GG.FileViewType.Tree);
@@ -2873,7 +2882,6 @@ window.addEventListener('load', () => {
 	if (viewElem === null) return;
 
 	const gitGraph = new GitGraphView(viewElem, VSCODE_API.getState());
-	const settingsWidget = gitGraph.getSettingsWidget();
 	const imageResizer = new ImageResizer();
 
 	/* Command Processing */
@@ -2881,8 +2889,7 @@ window.addEventListener('load', () => {
 		const msg: GG.ResponseMessage = event.data;
 		switch (msg.command) {
 			case 'addRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Add Remote');
-				settingsWidget.refresh();
+				refreshOrDisplayError(msg.error, 'Unable to Add Remote', true);
 				break;
 			case 'addTag':
 				refreshAndDisplayErrors(msg.errors, 'Unable to Add Tag');
@@ -2944,8 +2951,7 @@ window.addEventListener('load', () => {
 				handleResponseDeleteBranch(msg);
 				break;
 			case 'deleteRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
-				settingsWidget.refresh();
+				refreshOrDisplayError(msg.error, 'Unable to Delete Remote', true);
 				break;
 			case 'deleteRemoteBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
@@ -2954,9 +2960,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
 				break;
 			case 'deleteUserDetails':
-				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => {
-					settingsWidget.refresh();
-				}, true);
+				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => gitGraph.requestLoadConfig(), true);
 				break;
 			case 'dropCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Drop Commit');
@@ -2965,13 +2969,10 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Drop Stash');
 				break;
 			case 'editRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');
-				settingsWidget.refresh();
+				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote', true);
 				break;
 			case 'editUserDetails':
-				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => {
-					settingsWidget.refresh();
-				}, true);
+				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => gitGraph.requestLoadConfig(), true);
 				break;
 			case 'exportRepoConfig':
 				refreshOrDisplayError(msg.error, 'Unable to Export Repository Configuration');
@@ -2987,14 +2988,11 @@ window.addEventListener('load', () => {
 			case 'fetchIntoLocalBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');
 				break;
-			case 'getSettings':
-				settingsWidget.loadSettings(msg.settings, msg.error);
-				break;
 			case 'loadCommits':
 				gitGraph.processLoadCommitsResponse(msg);
 				break;
-			case 'loadGitConfig':
-				gitGraph.processLoadGitConfig(msg);
+			case 'loadConfig':
+				gitGraph.processLoadConfig(msg);
 				break;
 			case 'loadRepoInfo':
 				gitGraph.processLoadRepoInfoResponse(msg);
@@ -3100,9 +3098,9 @@ window.addEventListener('load', () => {
 		}
 	}
 
-	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
+	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string, configChanges: boolean = false) {
 		if (error === null) {
-			gitGraph.refresh(false);
+			gitGraph.refresh(false, configChanges);
 		} else {
 			dialog.showError(errorMessage, error, null, null);
 		}

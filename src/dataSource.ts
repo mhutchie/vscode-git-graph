@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -260,6 +260,55 @@ export class DataSource extends Disposable {
 		});
 	}
 
+	/**
+	 * Get various Git config variables for a repository that are consumed by the Git Graph View.
+	 * @param repo The path of the repository.
+	 * @param remotes An array of known remotes.
+	 * @returns The config data.
+	 */
+	public getConfig(repo: string, remotes: ReadonlyArray<string>): Promise<GitRepoConfigData> {
+		return Promise.all([
+			this.getConfigList(repo),
+			this.getConfigList(repo, GitConfigLocation.Local),
+			this.getConfigList(repo, GitConfigLocation.Global)
+		]).then((results) => {
+			const fetchLocalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
+			const fetchGlobalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
+			remotes.forEach((remote) => {
+				fetchLocalConfigs.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
+			});
+
+			const consolidatedConfigs = getConfigs(results[0], [GIT_CONFIG.DIFF.TOOL, GIT_CONFIG.DIFF.GUI_TOOL]);
+			const localConfigs = getConfigs(results[1], fetchLocalConfigs);
+			const globalConfigs = getConfigs(results[2], fetchGlobalConfigs);
+
+			return {
+				config: {
+					diffTool: consolidatedConfigs[GIT_CONFIG.DIFF.TOOL],
+					guiDiffTool: consolidatedConfigs[GIT_CONFIG.DIFF.GUI_TOOL],
+					remotes: remotes.map((remote) => ({
+						name: remote,
+						url: localConfigs['remote.' + remote + '.url'],
+						pushUrl: localConfigs['remote.' + remote + '.pushurl']
+					})),
+					user: {
+						name: {
+							local: localConfigs[GIT_CONFIG.USER.NAME],
+							global: globalConfigs[GIT_CONFIG.USER.NAME]
+						},
+						email: {
+							local: localConfigs[GIT_CONFIG.USER.EMAIL],
+							global: globalConfigs[GIT_CONFIG.USER.EMAIL]
+						}
+					}
+				},
+				error: null
+			};
+		}).catch((errorMessage) => {
+			return { config: null, error: errorMessage };
+		});
+	}
+
 
 	/* Get Data Methods - Commit Details View */
 
@@ -400,70 +449,6 @@ export class DataSource extends Disposable {
 		return this.spawnGit(['config', '--get', 'remote.' + remote + '.url'], repo, (stdout) => {
 			return stdout.split(EOL_REGEX)[0];
 		}).then((url) => url, () => null);
-	}
-
-	/**
-	 * Get various Git config variables for a repository that are consumed by the Git Graph View.
-	 * @param repo The path of the repository.
-	 * @returns The config data.
-	 */
-	public getRepoGitConfig(repo: string): Promise<GitRepoConfigData> {
-		return this.getConfigList(repo).then((configList) => {
-			const configs = getConfigs(configList, [GIT_CONFIG.DIFF.TOOL, GIT_CONFIG.DIFF.GUI_TOOL]);
-			return {
-				config: {
-					diffTool: configs[GIT_CONFIG.DIFF.TOOL],
-					guiDiffTool: configs[GIT_CONFIG.DIFF.GUI_TOOL]
-				},
-				error: null
-			};
-		}, (errorMessage) => {
-			return { config: null, error: errorMessage };
-		});
-	}
-
-	/**
-	 * Get the repositories settings used by the Settings Widget.
-	 * @param repo The path of the repository.
-	 * @returns The settings data.
-	 */
-	public getRepoSettings(repo: string): Promise<GitRepoSettingsData> {
-		return Promise.all([
-			this.getConfigList(repo, GitConfigLocation.Local),
-			this.getConfigList(repo, GitConfigLocation.Global),
-			this.getRemotes(repo)
-		]).then((results) => {
-			const fetchLocalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
-			const fetchGlobalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
-			results[2].forEach((remote) => {
-				fetchLocalConfigs.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
-			});
-
-			const localConfigs = getConfigs(results[0], fetchLocalConfigs);
-			const globalConfigs = getConfigs(results[1], fetchGlobalConfigs);
-			return {
-				settings: {
-					user: {
-						name: {
-							local: localConfigs[GIT_CONFIG.USER.NAME],
-							global: globalConfigs[GIT_CONFIG.USER.NAME]
-						},
-						email: {
-							local: localConfigs[GIT_CONFIG.USER.EMAIL],
-							global: globalConfigs[GIT_CONFIG.USER.EMAIL]
-						}
-					},
-					remotes: results[2].map((remote) => ({
-						name: remote,
-						url: localConfigs['remote.' + remote + '.url'],
-						pushUrl: localConfigs['remote.' + remote + '.pushurl']
-					}))
-				},
-				error: null
-			};
-		}).catch((errorMessage) => {
-			return { settings: null, error: errorMessage };
-		});
 	}
 
 	/**
@@ -1332,6 +1317,8 @@ export class DataSource extends Disposable {
 					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
 					return <string[]>[];
 				}
+			} else {
+				errorMessage = 'An unexpected error occurred while spawning the Git child process.';
 			}
 			throw errorMessage;
 		});
@@ -1842,11 +1829,6 @@ interface GitRepoInfo extends GitBranchData {
 
 interface GitRepoConfigData {
 	config: GitRepoConfig | null;
-	error: ErrorInfo;
-}
-
-interface GitRepoSettingsData {
-	settings: GitRepoSettings | null;
 	error: ErrorInfo;
 }
 

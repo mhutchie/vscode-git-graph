@@ -2328,6 +2328,243 @@ describe('DataSource', () => {
 		});
 	});
 
+	describe('getConfig', () => {
+		it('Should return the config values', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'diff.tool=abc\n' +
+				'diff.guitool=def\n'
+			);
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'user.email=unused@mhutchie.com\n' +
+				'user.email=local@mhutchie.com\n' +
+				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
+				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
+				'remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\n'
+			);
+			mockGitSuccessOnce(
+				'user.name=Global Name\n' +
+				'user.email=global@mhutchie.com\n'
+			);
+
+			// Run
+			const result = await dataSource.getConfig('/path/to/repo', ['origin']);
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: {
+					diffTool: 'abc',
+					guiDiffTool: 'def',
+					remotes: [
+						{
+							name: 'origin',
+							url: 'https://github.com/mhutchie/vscode-git-graph.git',
+							pushUrl: 'https://github.com/mhutchie/vscode-git-graph-push.git'
+						}
+					],
+					user: {
+						name: {
+							local: 'Local Name',
+							global: 'Global Name'
+						},
+						email: {
+							local: 'local@mhutchie.com',
+							global: 'global@mhutchie.com'
+						}
+					}
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the config values', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'diff.tool=abc\n' +
+				'diff.guitool=def\n'
+			);
+			mockGitSuccessOnce(
+				'user.email=local@mhutchie.com\n' +
+				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n'
+			);
+			mockGitSuccessOnce(
+				'user.name=Global Name\n'
+			);
+
+			// Run
+			const result = await dataSource.getConfig('/path/to/repo', ['origin']);
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: {
+					diffTool: 'abc',
+					guiDiffTool: 'def',
+					remotes: [
+						{
+							name: 'origin',
+							url: 'https://github.com/mhutchie/vscode-git-graph.git',
+							pushUrl: null
+						}
+					],
+					user: {
+						name: {
+							local: null,
+							global: 'Global Name'
+						},
+						email: {
+							local: 'local@mhutchie.com',
+							global: null
+						}
+					}
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return NULL values when the config variables aren\'t set', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'other.setting=value\n'
+			);
+			mockGitSuccessOnce(
+				'other.setting=value\n'
+			);
+			mockGitSuccessOnce(
+				'other.setting=value\n'
+			);
+
+			// Run
+			const result = await dataSource.getConfig('/path/to/repo', []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: {
+					diffTool: null,
+					guiDiffTool: null,
+					remotes: [],
+					user: {
+						name: {
+							local: null,
+							global: null
+						},
+						email: {
+							local: null,
+							global: null
+						}
+					}
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the repositories settings (ignoring Git exception when either the global or local .gitconfig file doesn\'t exist)', async () => {
+			// Setup
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'diff.tool=abc\n' +
+				'diff.guitool=def\n'
+			);
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'user.email=unused@mhutchie.com\n' +
+				'user.email=local@mhutchie.com\n' +
+				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
+				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
+				'remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\n'
+			);
+			mockGitThrowingErrorOnce('fatal: unable to read config file \'c:/users/michael/.gitconfig\': no such file or directory');
+
+			// Run
+			const result = await dataSource.getConfig('/path/to/repo', ['origin']);
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: {
+					diffTool: 'abc',
+					guiDiffTool: 'def',
+					remotes: [
+						{
+							name: 'origin',
+							url: 'https://github.com/mhutchie/vscode-git-graph.git',
+							pushUrl: 'https://github.com/mhutchie/vscode-git-graph-push.git'
+						}
+					],
+					user: {
+						name: {
+							local: 'Local Name',
+							global: null
+						},
+						email: {
+							local: 'local@mhutchie.com',
+							global: null
+						}
+					}
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+			mockGitThrowingErrorOnce();
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.getConfig('/path/to/repo', []);
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: null,
+				error: 'error message'
+			});
+		});
+
+		it('Should return an error message indicating an unexpected error occurred', async () => {
+			// Setup
+			const error = new Error();
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'diff.tool=abc\n' +
+				'diff.guitool=def\n'
+			);
+			mockGitSuccessOnce(
+				'user.name=Local Name\n' +
+				'user.email=unused@mhutchie.com\n' +
+				'user.email=local@mhutchie.com\n' +
+				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
+				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
+				'remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\n'
+			);
+			spyOnSpawn.mockImplementationOnce(() => {
+				throw error;
+			});
+
+			// Run
+			const result = await dataSource.getConfig('/path/to/repo', ['origin']);
+
+			// Assert
+			expect(result).toStrictEqual({
+				config: null,
+				error: 'An unexpected error occurred while spawning the Git child process.'
+			});
+		});
+	});
+
 	describe('getCommitDetails', () => {
 		it('Should return the commit details', async () => {
 			// Setup
@@ -3499,236 +3736,6 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe(null);
-		});
-	});
-
-	describe('getRepoGitConfig', () => {
-		it('Should return the config values', async () => {
-			// Setup
-			mockGitSuccessOnce(
-				'user.name=Local Name\n' +
-				'diff.tool=abc\n' +
-				'diff.guitool=def\n'
-			);
-
-			// Run
-			const result = await dataSource.getRepoGitConfig('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				config: {
-					diffTool: 'abc',
-					guiDiffTool: 'def'
-				},
-				error: null
-			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
-		});
-
-		it('Should return NULL values when the config variables aren\'t set', async () => {
-			// Setup
-			mockGitSuccessOnce(
-				'user.name=Local Name\n'
-			);
-
-			// Run
-			const result = await dataSource.getRepoGitConfig('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				config: {
-					diffTool: null,
-					guiDiffTool: null
-				},
-				error: null
-			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes'], expect.objectContaining({ cwd: '/path/to/repo' }));
-		});
-
-		it('Should return an error message thrown by git', async () => {
-			// Setup
-			mockGitThrowingErrorOnce();
-
-			// Run
-			const result = await dataSource.getRepoGitConfig('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				config: null,
-				error: 'error message'
-			});
-		});
-	});
-
-	describe('getRepoSettings', () => {
-		it('Should return the repositories settings', async () => {
-			// Setup
-			mockGitSuccessOnce(
-				'user.name=Local Name\n' +
-				'user.email=unused@mhutchie.com\n' +
-				'user.email=local@mhutchie.com\n' +
-				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
-				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
-				'remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\n'
-			);
-			mockGitSuccessOnce(
-				'user.name=Global Name\n' +
-				'user.email=global@mhutchie.com\n'
-			);
-			mockGitSuccessOnce('origin\n');
-
-			// Run
-			const result = await dataSource.getRepoSettings('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				settings: {
-					user: {
-						name: {
-							local: 'Local Name',
-							global: 'Global Name'
-						},
-						email: {
-							local: 'local@mhutchie.com',
-							global: 'global@mhutchie.com'
-						}
-					},
-					remotes: [
-						{
-							name: 'origin',
-							url: 'https://github.com/mhutchie/vscode-git-graph.git',
-							pushUrl: 'https://github.com/mhutchie/vscode-git-graph-push.git'
-						}
-					]
-				},
-				error: null
-			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
-		});
-
-		it('Should return the repositories settings', async () => {
-			// Setup
-			mockGitSuccessOnce(
-				'user.email=local@mhutchie.com\n' +
-				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n'
-			);
-			mockGitSuccessOnce(
-				'user.name=Global Name\n'
-			);
-			mockGitSuccessOnce('origin\n');
-
-			// Run
-			const result = await dataSource.getRepoSettings('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				settings: {
-					user: {
-						name: {
-							local: null,
-							global: 'Global Name'
-						},
-						email: {
-							local: 'local@mhutchie.com',
-							global: null
-						}
-					},
-					remotes: [
-						{
-							name: 'origin',
-							url: 'https://github.com/mhutchie/vscode-git-graph.git',
-							pushUrl: null
-						}
-					]
-				},
-				error: null
-			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
-		});
-
-		it('Should return the repositories settings (ignoring Git exception when either the global or local .gitconfig file doesn\'t exist)', async () => {
-			// Setup
-			mockGitSuccessOnce(
-				'user.name=Local Name\n' +
-				'user.email=local@mhutchie.com\n' +
-				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n' +
-				'remote.origin.pushurl=https://github.com/mhutchie/vscode-git-graph-push.git\n' +
-				'remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*\n'
-			);
-			mockGitThrowingErrorOnce('fatal: unable to read config file \'c:/users/michael/.gitconfig\': no such file or directory');
-			mockGitSuccessOnce('origin\n');
-
-			// Run
-			const result = await dataSource.getRepoSettings('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				settings: {
-					user: {
-						name: {
-							local: 'Local Name',
-							global: null
-						},
-						email: {
-							local: 'local@mhutchie.com',
-							global: null
-						}
-					},
-					remotes: [
-						{
-							name: 'origin',
-							url: 'https://github.com/mhutchie/vscode-git-graph.git',
-							pushUrl: 'https://github.com/mhutchie/vscode-git-graph-push.git'
-						}
-					]
-				},
-				error: null
-			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--local'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['--no-pager', 'config', '--list', '--includes', '--global'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['remote'], expect.objectContaining({ cwd: '/path/to/repo' }));
-		});
-
-		it('Should return an error message thrown by git', async () => {
-			// Setup
-			const error = new Error();
-			mockGitSuccessOnce(
-				'user.email=local@mhutchie.com\n' +
-				'remote.origin.url=https://github.com/mhutchie/vscode-git-graph.git\n'
-			);
-			spyOnSpawn.mockImplementationOnce(() => {
-				throw error;
-			});
-			mockGitSuccessOnce('origin\n');
-
-			// Run
-			const result = await dataSource.getRepoSettings('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				settings: null,
-				error: error
-			});
-		});
-
-		it('Should return an error message thrown by git', async () => {
-			// Setup
-			mockGitThrowingErrorOnce();
-			mockGitThrowingErrorOnce();
-			mockGitThrowingErrorOnce();
-
-			// Run
-			const result = await dataSource.getRepoSettings('/path/to/repo');
-
-			// Assert
-			expect(result).toStrictEqual({
-				settings: null,
-				error: 'error message'
-			});
 		});
 	});
 

@@ -398,12 +398,6 @@ export class GitGraphView extends Disposable {
 					error: await this.repoManager.exportRepoConfig(msg.repo)
 				});
 				break;
-			case 'getSettings':
-				this.sendMessage({
-					command: 'getSettings',
-					... await this.dataSource.getRepoSettings(msg.repo)
-				});
-				break;
 			case 'loadCommits':
 				this.loadCommitsRefreshId = msg.refreshId;
 				this.sendMessage({
@@ -413,11 +407,11 @@ export class GitGraphView extends Disposable {
 					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
 				});
 				break;
-			case 'loadGitConfig':
+			case 'loadConfig':
 				this.sendMessage({
-					command: 'loadGitConfig',
+					command: 'loadConfig',
 					repo: msg.repo,
-					...await this.dataSource.getRepoGitConfig(msg.repo)
+					...await this.dataSource.getConfig(msg.repo, msg.remotes)
 				});
 				break;
 			case 'loadRepoInfo':

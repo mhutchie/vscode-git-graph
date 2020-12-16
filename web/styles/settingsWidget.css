@@ -1,4 +1,4 @@
-.settingsWidget{
+#settingsWidget{
 	display:block;
 	position:fixed;
 	top:-158px;
@@ -20,14 +20,14 @@
 	overflow-y:auto;
 	max-height:90vh;
 }
-.settingsWidget.active{
+#settingsWidget.active{
 	top:0;
 }
-.settingsWidget.transition{
+#settingsWidget.transition{
 	transition:top .2s linear;
 }
 
-.settingsWidget h2{
+#settingsWidget h2{
 	margin:8px 10px;
 	padding:0;
 	font-size:16px;
@@ -208,20 +208,13 @@
 #settingsLoading{
 	display:none;
 	position:absolute;
-	top:27px;
+	top:0;
 	left:0;
 	right:0;
-	bottom:0;
+	height:24px;
 	z-index:32;
 	line-height:24px;
 	text-align:center;
-}
-#settingsLoading span{
-	position:absolute;
-	top:50%;
-	margin-top:-12px;
-	left:0;
-	right:0;
 }
 #settingsLoading svg{
 	display:inline-block;
@@ -253,17 +246,17 @@
 .settingsSectionButtons > div:hover svg, .settingsSection .hideRemoteBtn:hover svg, .settingsSection > table td.btns div:hover svg, #settingsClose:hover{
 	fill-opacity:1;
 }
-.settingsWidget.loading #settingsContent{
+#settingsWidget.loading #settingsContent{
 	opacity:0.1;
 }
-.settingsWidget.loading #settingsLoading{
+#settingsWidget.loading #settingsLoading{
 	display:block;
 }
 
-.settingsWidget .settingsWidgetInfo{
+#settingsWidget .settingsWidgetInfo{
 	cursor:help;
 }
-.settingsWidget .settingsWidgetInfo > svg{
+#settingsWidget .settingsWidgetInfo > svg{
 	width:15px !important;
 	height:15px !important;
 	margin-top:-2px;

@@ -88,11 +88,9 @@ export const enum GitPushBranchMode {
 }
 
 export interface GitRepoConfig {
-	readonly diffTool: string | null,
-	readonly guiDiffTool: string | null
-}
-
-export interface GitRepoSettings {
+	readonly diffTool: string | null;
+	readonly guiDiffTool: string | null;
+	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 	readonly user: {
 		readonly name: {
 			readonly local: string | null,
@@ -103,7 +101,6 @@ export interface GitRepoSettings {
 			readonly global: string | null
 		}
 	};
-	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 }
 
 export interface GitRepoSettingsRemote {
@@ -846,14 +843,6 @@ export interface ResponseFetchIntoLocalBranch extends ResponseWithErrorInfo {
 	readonly command: 'fetchIntoLocalBranch';
 }
 
-export interface RequestGetSettings extends RepoRequest {
-	readonly command: 'getSettings';
-}
-export interface ResponseGetSettings extends ResponseWithErrorInfo {
-	readonly command: 'getSettings';
-	readonly settings: GitRepoSettings | null;
-}
-
 export interface RequestLoadCommits extends RepoRequest {
 	readonly command: 'loadCommits';
 	readonly refreshId: number;
@@ -877,11 +866,12 @@ export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly onlyFollowFirstParent: boolean;
 }
 
-export interface RequestLoadGitConfig extends RepoRequest {
-	readonly command: 'loadGitConfig';
+export interface RequestLoadConfig extends RepoRequest {
+	readonly command: 'loadConfig';
+	readonly remotes: ReadonlyArray<string>;
 }
-export interface ResponseLoadGitConfig extends ResponseWithErrorInfo {
-	readonly command: 'loadGitConfig';
+export interface ResponseLoadConfig extends ResponseWithErrorInfo {
+	readonly command: 'loadConfig';
 	readonly repo: string;
 	readonly config: GitRepoConfig | null;
 }
@@ -1190,9 +1180,8 @@ export type RequestMessage =
 	| RequestFetch
 	| RequestFetchAvatar
 	| RequestFetchIntoLocalBranch
-	| RequestGetSettings
 	| RequestLoadCommits
-	| RequestLoadGitConfig
+	| RequestLoadConfig
 	| RequestLoadRepoInfo
 	| RequestLoadRepos
 	| RequestMerge
@@ -1250,9 +1239,8 @@ export type ResponseMessage =
 	| ResponseFetch
 	| ResponseFetchAvatar
 	| ResponseFetchIntoLocalBranch
-	| ResponseGetSettings
 	| ResponseLoadCommits
-	| ResponseLoadGitConfig
+	| ResponseLoadConfig
 	| ResponseLoadRepoInfo
 	| ResponseLoadRepos
 	| ResponseMerge

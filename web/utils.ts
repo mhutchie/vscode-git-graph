@@ -434,6 +434,33 @@ function getChildUl(elem: HTMLElement) {
 }
 
 /**
+ * Initialise scrollTop, and observe scroll events for an HTML Element. Invoke callbacks when the element has been scrolled, and when scrollTop should be saved.
+ * @param id The ID identifying the HTML Element.
+ * @param initialScrollTop The value used to initialise scrollTop.
+ * @param onScroll A callback to be invoked when the element has been scrolled.
+ * @param onScrolled A callback to be invoked when scrollTop should be saved.
+ */
+function observeElemScroll(id: string, initialScrollTop: number, onScroll: (scrollTop: number) => void, onScrolled: () => void) {
+	const elem = document.getElementById(id);
+	if (elem === null) return;
+
+	let timeout: NodeJS.Timer | null = null;
+	elem.scroll(0, initialScrollTop);
+	elem.addEventListener('scroll', () => {
+		const elem = document.getElementById(id);
+		if (elem === null) return;
+
+		onScroll(elem.scrollTop);
+
+		if (timeout !== null) clearTimeout(timeout);
+		timeout = setTimeout(() => {
+			onScrolled();
+			timeout = null;
+		}, 250);
+	});
+}
+
+/**
  * Get all of the rendered commit HTML Elements.
  * @returns A collection of all commit HTML Elements.
  */

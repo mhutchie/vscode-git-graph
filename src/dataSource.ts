@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -21,6 +21,9 @@ export const GIT_CONFIG = {
 	DIFF: {
 		GUI_TOOL: 'diff.guitool',
 		TOOL: 'diff.tool'
+	},
+	REMOTE: {
+		PUSH_DEFAULT: 'remote.pushdefault'
 	},
 	USER: {
 		EMAIL: 'user.email',
@@ -272,33 +275,46 @@ export class DataSource extends Disposable {
 			this.getConfigList(repo, GitConfigLocation.Local),
 			this.getConfigList(repo, GitConfigLocation.Global)
 		]).then((results) => {
-			const fetchLocalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
-			const fetchGlobalConfigs = [GIT_CONFIG.USER.NAME, GIT_CONFIG.USER.EMAIL];
-			remotes.forEach((remote) => {
-				fetchLocalConfigs.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
-			});
+			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2];
 
-			const consolidatedConfigs = getConfigs(results[0], [GIT_CONFIG.DIFF.TOOL, GIT_CONFIG.DIFF.GUI_TOOL]);
-			const localConfigs = getConfigs(results[1], fetchLocalConfigs);
-			const globalConfigs = getConfigs(results[2], fetchGlobalConfigs);
+			const branches: GitRepoConfigBranches = {};
+			Object.keys(localConfigs).forEach((key) => {
+				if (key.startsWith('branch.')) {
+					if (key.endsWith('.remote')) {
+						const branchName = key.substring(7, key.length - 7);
+						branches[branchName] = {
+							pushRemote: typeof branches[branchName] !== 'undefined' ? branches[branchName].pushRemote : null,
+							remote: localConfigs[key]
+						};
+					} else if (key.endsWith('.pushremote')) {
+						const branchName = key.substring(7, key.length - 11);
+						branches[branchName] = {
+							pushRemote: localConfigs[key],
+							remote: typeof branches[branchName] !== 'undefined' ? branches[branchName].remote : null
+						};
+					}
+				}
+			});
 
 			return {
 				config: {
-					diffTool: consolidatedConfigs[GIT_CONFIG.DIFF.TOOL],
-					guiDiffTool: consolidatedConfigs[GIT_CONFIG.DIFF.GUI_TOOL],
+					branches: branches,
+					diffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL),
+					guiDiffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL),
+					pushDefault: getConfigValue(localConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
 					remotes: remotes.map((remote) => ({
 						name: remote,
-						url: localConfigs['remote.' + remote + '.url'],
-						pushUrl: localConfigs['remote.' + remote + '.pushurl']
+						url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
+						pushUrl: getConfigValue(localConfigs, 'remote.' + remote + '.pushurl')
 					})),
 					user: {
 						name: {
-							local: localConfigs[GIT_CONFIG.USER.NAME],
-							global: globalConfigs[GIT_CONFIG.USER.NAME]
+							local: getConfigValue(localConfigs, GIT_CONFIG.USER.NAME),
+							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.NAME)
 						},
 						email: {
-							local: localConfigs[GIT_CONFIG.USER.EMAIL],
-							global: globalConfigs[GIT_CONFIG.USER.EMAIL]
+							local: getConfigValue(localConfigs, GIT_CONFIG.USER.EMAIL),
+							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.EMAIL)
 						}
 					}
 				},
@@ -1302,20 +1318,30 @@ export class DataSource extends Disposable {
 	 * Get the configuration list of a repository.
 	 * @param repo The path of the repository.
 	 * @param location The location of the configuration to be listed.
-	 * @returns An array of configuration records.
+	 * @returns A set key-value pairs of Git configuration records.
 	 */
-	private getConfigList(repo: string, location?: GitConfigLocation) {
-		const args = ['--no-pager', 'config', '--list', '--includes'];
+	private getConfigList(repo: string, location?: GitConfigLocation): Promise<GitConfigSet> {
+		const args = ['--no-pager', 'config', '--list', '-z', '--includes'];
 		if (location) {
 			args.push('--' + location);
 		}
 
-		return this.spawnGit(args, repo, (stdout) => stdout.split(EOL_REGEX)).catch((errorMessage) => {
+		return this.spawnGit(args, repo, (stdout) => {
+			const configs: GitConfigSet = {}, keyValuePairs = stdout.split('\0');
+			const numPairs = keyValuePairs.length - 1;
+			let comps, key;
+			for (let i = 0; i < numPairs; i++) {
+				comps = keyValuePairs[i].split(EOL_REGEX);
+				key = comps.shift()!;
+				configs[key] = comps.join('\n');
+			}
+			return configs;
+		}).catch((errorMessage) => {
 			if (typeof errorMessage === 'string') {
 				const message = errorMessage.toLowerCase();
 				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
 					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
-					return <string[]>[];
+					return {};
 				}
 			} else {
 				errorMessage = 'An unexpected error occurred while spawning the Git child process.';
@@ -1705,26 +1731,13 @@ function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatR
 }
 
 /**
- * Get the specified config values from the output of `git config --list`.
- * @param configList The records produced by `git config --list`.
- * @param configNames The names of the config values to retrieve.
- * @returns A set of <configName, configValue> pairs.
+ * Get the specified config value from a set of key-value config pairs.
+ * @param configs A set key-value pairs of Git configuration records.
+ * @param key The key of the desired config.
+ * @returns The value for `key` if it exists, otherwise NULL.
  */
-function getConfigs(configList: string[], configNames: string[]) {
-	let results: { [configName: string]: string | null } = {}, matchConfigs: string[] = [];
-	configNames.forEach(configName => {
-		results[configName] = null;
-		matchConfigs.push(configName + '=');
-	});
-	for (let i = 0; i < configList.length; i++) {
-		for (let j = 0; j < configNames.length; j++) {
-			if (configList[i].startsWith(matchConfigs[j])) {
-				results[configNames[j]] = configList[i].substring(configNames[j].length + 1);
-				break;
-			}
-		}
-	}
-	return results;
+function getConfigValue(configs: GitConfigSet, key: string) {
+	return typeof configs[key] !== 'undefined' ? configs[key] : null;
 }
 
 /**
@@ -1805,6 +1818,8 @@ interface GitCommitComparisonData {
 	fileChanges: GitFileChange[];
 	error: ErrorInfo;
 }
+
+type GitConfigSet = { [key: string]: string };
 
 interface GitRef {
 	hash: string;

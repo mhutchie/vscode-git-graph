@@ -491,6 +491,7 @@ export class GitGraphView extends Disposable {
 			case 'pushBranch':
 				this.sendMessage({
 					command: 'pushBranch',
+					willUpdateBranchConfig: msg.willUpdateBranchConfig,
 					errors: await this.dataSource.pushBranchToMultipleRemotes(msg.repo, msg.branchName, msg.remotes, msg.setUpstream, msg.mode)
 				});
 				break;

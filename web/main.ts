@@ -541,6 +541,18 @@ class GitGraphView {
 		return this.commits;
 	}
 
+	private getPushRemote(branch: string | null = null) {
+		const possibleRemotes = [];
+		if (this.gitConfig !== null) {
+			if (branch !== null && typeof this.gitConfig.branches[branch] !== 'undefined') {
+				possibleRemotes.push(this.gitConfig.branches[branch].pushRemote, this.gitConfig.branches[branch].remote);
+			}
+			possibleRemotes.push(this.gitConfig.pushDefault);
+		}
+		possibleRemotes.push('origin');
+		return possibleRemotes.find((remote) => remote !== null && this.gitRemotes.includes(remote)) || this.gitRemotes[0];
+	}
+
 	public getRepoConfig(): Readonly<GG.GitRepoConfig> | null {
 		return this.gitConfig;
 	}
@@ -1007,7 +1019,7 @@ class GitGraphView {
 						inputs.unshift({
 							type: DialogInputType.Select,
 							name: 'Push to Remote(s)',
-							defaults: [this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0]],
+							defaults: [this.getPushRemote(refName)],
 							options: this.gitRemotes.map((remote) => ({ name: remote, value: remote })),
 							multiple: true
 						});
@@ -1015,7 +1027,16 @@ class GitGraphView {
 
 					dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
 						const remotes = multipleRemotes ? <string[]>values.shift() : [this.gitRemotes[0]];
-						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remotes: remotes, setUpstream: <boolean>values[0], mode: <GG.GitPushBranchMode>values[1] }, 'Pushing Branch');
+						const setUpstream = <boolean>values[0];
+						runAction({
+							command: 'pushBranch',
+							repo: this.currentRepo,
+							branchName: refName,
+							remotes: remotes,
+							setUpstream: setUpstream,
+							mode: <GG.GitPushBranchMode>values[1],
+							willUpdateBranchConfig: setUpstream && remotes.length > 0 && (this.gitConfig === null || typeof this.gitConfig.branches[refName] === 'undefined' || this.gitConfig.branches[refName].remote !== remotes[remotes.length - 1])
+						}, 'Pushing Branch');
 					}, target);
 				}
 			}
@@ -1076,9 +1097,7 @@ class GitGraphView {
 						let options = [{ name: 'Don\'t push', value: '-1' }];
 						this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
 						let defaultOption = dialogConfig.pushToRemote
-							? this.gitRemotes.includes('origin')
-								? this.gitRemotes.indexOf('origin')
-								: 0
+							? this.gitRemotes.indexOf(this.getPushRemote())
 							: -1;
 						inputs.push({ type: DialogInputType.Select, name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
 					} else if (this.gitRemotes.length === 1) {
@@ -1421,7 +1440,7 @@ class GitGraphView {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remotes: [this.gitRemotes[0]] }, 'Pushing Tag');
 						}, target);
 					} else if (this.gitRemotes.length > 1) {
-						const defaults = [this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0]];
+						const defaults = [this.getPushRemote()];
 						const options = this.gitRemotes.map((remote) => ({ name: remote, value: remote }));
 						dialog.showMultiSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote(s) to push the tag to:', defaults, options, 'Yes, push', (remotes) => {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remotes: remotes }, 'Pushing Tag');
@@ -3025,7 +3044,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');
 				break;
 			case 'pushBranch':
-				refreshAndDisplayErrors(msg.errors, 'Unable to Push Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Push Branch', msg.willUpdateBranchConfig);
 				break;
 			case 'pushStash':
 				refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
@@ -3106,13 +3125,15 @@ window.addEventListener('load', () => {
 		}
 	}
 
-	function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string) {
+	function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string, configChanges: boolean = false) {
 		const reducedErrors = reduceErrorInfos(errors);
 		if (reducedErrors.error !== null) {
 			dialog.showError(errorMessage, reducedErrors.error, null, null);
 		}
 		if (reducedErrors.partialOrCompleteSuccess) {
-			gitGraph.refresh(false);
+			gitGraph.refresh(false, configChanges);
+		} else if (configChanges) {
+			gitGraph.requestLoadConfig();
 		}
 	}
 

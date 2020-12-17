@@ -88,8 +88,10 @@ export const enum GitPushBranchMode {
 }
 
 export interface GitRepoConfig {
+	readonly branches: GitRepoConfigBranches;
 	readonly diffTool: string | null;
 	readonly guiDiffTool: string | null;
+	readonly pushDefault: string | null;
 	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 	readonly user: {
 		readonly name: {
@@ -101,6 +103,13 @@ export interface GitRepoConfig {
 			readonly global: string | null
 		}
 	};
+}
+
+export type GitRepoConfigBranches = { [branchName: string]: GitRepoConfigBranch };
+
+export interface GitRepoConfigBranch {
+	readonly pushRemote: string | null;
+	readonly remote: string | null;
 }
 
 export interface GitRepoSettingsRemote {
@@ -989,9 +998,11 @@ export interface RequestPushBranch extends RepoRequest {
 	readonly remotes: string[];
 	readonly setUpstream: boolean;
 	readonly mode: GitPushBranchMode;
+	readonly willUpdateBranchConfig: boolean;
 }
 export interface ResponsePushBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushBranch';
+	readonly willUpdateBranchConfig: boolean;
 }
 
 export interface RequestPushStash extends RepoRequest {

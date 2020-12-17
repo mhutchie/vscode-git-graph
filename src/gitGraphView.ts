@@ -295,7 +295,7 @@ export class GitGraphView extends Disposable {
 			case 'deleteBranch':
 				errorInfos = [await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)];
 				if (errorInfos[0] === null) {
-					for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
+					for (let i = 0, length = msg.deleteOnRemotes.length; i < length; i++) {
 						errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
 					}
 				}
@@ -655,7 +655,7 @@ export class GitGraphView extends Disposable {
 		const workspaceState = this.extensionState.getWorkspaceViewState();
 
 		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
-		for (let i = 0; i < initialState.config.graph.colours.length; i++) {
+		for (let i = 0, length = initialState.config.graph.colours.length; i < length; i++) {
 			colorVars += '--git-graph-color' + i + ':' + initialState.config.graph.colours[i] + '; ';
 			colorParams += '[data-color="' + i + '"]{--git-graph-color:var(--git-graph-color' + i + ');} ';
 		}

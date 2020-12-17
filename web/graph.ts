@@ -259,7 +259,7 @@ class Vertex {
 	}
 
 	public getPointConnectingTo(vertex: VertexOrNull, onBranch: Branch) {
-		for (let i = 0; i < this.connections.length; i++) {
+		for (let i = 0, length = this.connections.length; i < length; i++) {
 			if (this.connections[i].connectsTo === vertex && this.connections[i].onBranch === onBranch) {
 				return { x: i, y: this.id };
 			}
@@ -539,7 +539,7 @@ class Graph {
 
 			visited[idStr] = vertex.id;
 			let children = vertex.getChildren();
-			for (let i = 0; i < children.length; i++) rec(children[i]);
+			for (let i = 0, length = children.length; i < length; i++) rec(children[i]);
 		};
 		rec(this.vertices[i]);
 		return Object.keys(visited).map((key) => visited[key]).sort((a, b) => a - b);
@@ -547,13 +547,13 @@ class Graph {
 
 	public getMutedCommits(currentHash: string | null) {
 		const muted = [];
-		for (let i = 0; i < this.commits.length; i++) {
+		for (let i = 0, length = this.commits.length; i < length; i++) {
 			muted[i] = false;
 		}
 
 		// Mute any merge commits if the Extension Setting is enabled
 		if (this.muteConfig.mergeCommits) {
-			for (let i = 0; i < this.commits.length; i++) {
+			for (let i = 0, length = this.commits.length; i < length; i++) {
 				if (this.vertices[i].isMerge() && this.commits[i].stash === null) {
 					// The commit is a merge, and is not a stash
 					muted[i] = true;
@@ -564,7 +564,7 @@ class Graph {
 		// Mute any commits that are not ancestors of the commit head if the Extension Setting is enabled, and the head commit is in the graph
 		if (this.muteConfig.commitsNotAncestorsOfHead && currentHash !== null && typeof this.commitLookup[currentHash] === 'number') {
 			let ancestor: boolean[] = [];
-			for (let i = 0; i < this.commits.length; i++) {
+			for (let i = 0, length = this.commits.length; i < length; i++) {
 				ancestor[i] = false;
 			}
 
@@ -574,11 +574,11 @@ class Graph {
 				ancestor[vertex.id] = true;
 
 				let parents = vertex.getParents();
-				for (let i = 0; i < parents.length; i++) rec(parents[i]);
+				for (let i = 0, length = parents.length; i < length; i++) rec(parents[i]);
 			};
 			rec(this.vertices[this.commitLookup[currentHash]]);
 
-			for (let i = 0; i < this.commits.length; i++) {
+			for (let i = 0, length = this.commits.length; i < length; i++) {
 				if (!ancestor[i] && (this.commits[i].stash === null || typeof this.commitLookup[this.commits[i].stash!.baseHash] !== 'number' || !ancestor[this.commitLookup[this.commits[i].stash!.baseHash]])) {
 					// Commit i is not an ancestor of currentHash, or a stash based on an ancestor of currentHash
 					muted[i] = true;
@@ -763,7 +763,7 @@ class Graph {
 	}
 
 	private getAvailableColour(startAt: number) {
-		for (let i = 0; i < this.availableColours.length; i++) {
+		for (let i = 0, length = this.availableColours.length; i < length; i++) {
 			if (startAt > this.availableColours[i]) {
 				return i;
 			}
@@ -811,11 +811,11 @@ class Graph {
 
 		const children = this.getAllChildren(id);
 		let heads: string[] = [], remotes: GG.GitCommitRemote[] = [], stashes: string[] = [], tags: string[] = [], childrenIncludesHead = false;
-		for (let i = 0; i < children.length; i++) {
+		for (let i = 0, length = children.length; i < length; i++) {
 			let commit = this.commits[children[i]];
-			for (let j = 0; j < commit.heads.length; j++) heads.push(commit.heads[j]);
-			for (let j = 0; j < commit.remotes.length; j++) remotes.push(commit.remotes[j]);
-			for (let j = 0; j < commit.tags.length; j++) tags.push(commit.tags[j].name);
+			for (let j = 0, length = commit.heads.length; j < length; j++) heads.push(commit.heads[j]);
+			for (let j = 0, length = commit.remotes.length; j < length; j++) remotes.push(commit.remotes[j]);
+			for (let j = 0, length = commit.tags.length; j < length; j++) tags.push(commit.tags[j].name);
 			if (commit.stash !== null) stashes.push(commit.stash.selector.substring(5));
 			if (commit.hash === this.commitHead) childrenIncludesHead = true;
 		}

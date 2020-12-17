@@ -73,7 +73,7 @@ packageCssFiles.forEach((fileName) => {
 		cssFileContents += contents + '\r\n';
 	} else {
 		let lines = contents.split(/\r\n|\r|\n/g);
-		for (let j = 0; j < lines.length; j++) {
+		for (let j = 0, length = lines.length; j < length; j++) {
 			if (lines[j].startsWith('\t')) lines[j] = lines[j].substring(1);
 		}
 		let j = 0;

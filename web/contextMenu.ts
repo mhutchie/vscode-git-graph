@@ -49,9 +49,9 @@ class ContextMenu {
 		let html = '', handlers: (() => void)[] = [], handlerId = 0;
 		this.close();
 
-		for (let i = 0; i < actions.length; i++) {
+		for (let i = 0, length = actions.length; i < length; i++) {
 			let groupHtml = '';
-			for (let j = 0; j < actions[i].length; j++) {
+			for (let j = 0, length = actions[i].length; j < length; j++) {
 				if (actions[i][j].visible) {
 					groupHtml += '<li class="contextMenuItem" data-index="' + handlerId++ + '">' + (checked ? '<span class="contextMenuItemCheck">' + (actions[i][j].checked ? SVG_ICONS.check : '') + '</span>' : '') + actions[i][j].title + '</li>';
 					handlers.push(actions[i][j].onClick);
@@ -147,7 +147,7 @@ class ContextMenu {
 				} else {
 					// ContextMenu is dependent on the commit and ref 
 					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
-					for (let i = 0; i < elems.length; i++) {
+					for (let i = 0, length = elems.length; i < length; i++) {
 						if (elems[i].dataset.fullref! === this.target.ref) {
 							this.target.elem = this.target.type === TargetType.Ref ? elems[i] : commitElem;
 							alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);

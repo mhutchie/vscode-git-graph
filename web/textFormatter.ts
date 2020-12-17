@@ -388,7 +388,7 @@ class TextFormatter {
 			}
 			const emphasisStack: TF.EmphasisDelimiter[] = [];
 			let stackMatch: number;
-			for (let i = 0; i < emphasisTokens.length; i++) {
+			for (let i = 0, length = emphasisTokens.length; i < length; i++) {
 				const delimiter = emphasisTokens[i];
 				const run = emphasisRuns[delimiter.run];
 				if (run.close && (stackMatch = TextFormatter.findOpenEmphasis(delimiter, run, emphasisRuns, emphasisStack)) > -1) {
@@ -465,7 +465,7 @@ class TextFormatter {
 	 */
 	public static registerCustomEmojiMappings(mappings: ReadonlyArray<GG.CustomEmojiShortcodeMapping>) {
 		const validShortcodeRegExp = /^:[A-Za-z0-9-_]+:$/;
-		for (let i = 0; i < mappings.length; i++) {
+		for (let i = 0, length = mappings.length; i < length; i++) {
 			if (validShortcodeRegExp.test(mappings[i].shortcode)) {
 				TextFormatter.EMOJI_MAPPINGS[mappings[i].shortcode.substring(1, mappings[i].shortcode.length - 1)] = mappings[i].emoji;
 			}
@@ -512,7 +512,7 @@ class TextFormatter {
 	 */
 	private static insertIntoTree(tree: TF.Node, node: TF.Node) {
 		let firstChildIndexOfNode = -1, lastChildIndexOfNode = -1, curNode;
-		for (let i = 0; i < tree.contains.length; i++) {
+		for (let i = 0, length = tree.contains.length; i < length; i++) {
 			curNode = tree.contains[i];
 			if (node.start < curNode.start && firstChildIndexOfNode === -1) {
 				firstChildIndexOfNode = i;
@@ -540,7 +540,7 @@ class TextFormatter {
 	 */
 	private static insertIntoTreeIfNoOverlap(tree: TF.RootNode, node: TF.Node) {
 		let curNode: TF.Node, insertAtIndex = tree.contains.length;
-		for (let i = 0; i < tree.contains.length; i++) {
+		for (let i = 0, length = tree.contains.length; i < length; i++) {
 			curNode = tree.contains[i];
 			if ((curNode.start <= node.start && node.start <= curNode.end) || (curNode.start <= node.end && node.end <= curNode.end) || (node.start <= curNode.start && curNode.end <= node.end)) {
 				return;

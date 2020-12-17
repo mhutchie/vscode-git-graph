@@ -112,7 +112,7 @@ const ATTR_ERROR = 'data-error';
  */
 function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>, equalElements: (a: T, b: T) => boolean) {
 	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; i++) {
+	for (let i = 0, length = a.length; i < length; i++) {
 		if (!equalElements(a[i], b[i])) return false;
 	}
 	return true;
@@ -126,7 +126,7 @@ function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>, equalElements:
  */
 function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; i++) {
+	for (let i = 0, length = a.length; i < length; i++) {
 		if (a[i] !== b[i]) return false;
 	}
 	return true;
@@ -140,7 +140,7 @@ function arraysStrictlyEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
  */
 function arraysStrictlyEqualIgnoringOrder<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>) {
 	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; i++) {
+	for (let i = 0, length = a.length; i < length; i++) {
 		if (b.indexOf(a[i]) === -1) return false;
 	}
 	return true;
@@ -226,7 +226,7 @@ function unescapeHtml(str: string) {
  */
 function formatCommaSeparatedList(items: string[]) {
 	let str = '';
-	for (let i = 0; i < items.length; i++) {
+	for (let i = 0, length = items.length; i < length; i++) {
 		str += (i > 0 ? (i < items.length - 1 ? ', ' : ' & ') : '') + items[i];
 	}
 	return str;
@@ -318,7 +318,7 @@ function addListenerToClass(className: string, event: string, eventListener: Eve
  * @param eventListener The event listener to be called when the event occurs.
  */
 function addListenerToCollectionElems(elems: HTMLCollectionOf<Element>, event: string, eventListener: EventListener) {
-	for (let i = 0; i < elems.length; i++) {
+	for (let i = 0, length = elems.length; i < length; i++) {
 		elems[i].addEventListener(event, eventListener);
 	}
 }
@@ -340,7 +340,7 @@ function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
  */
 function insertBeforeFirstChildWithClass(newChild: HTMLElement, parent: HTMLElement, className: string) {
 	let referenceNode: Node | null = null;
-	for (let i = 0; i < parent.children.length; i++) {
+	for (let i = 0, length = parent.children.length; i < length; i++) {
 		if (parent.children[i].classList.contains(className)) {
 			referenceNode = parent.children[i];
 			break;
@@ -376,10 +376,10 @@ function alterClass(elem: HTMLElement, className: string, state: boolean) {
  */
 function alterClassOfCollection(elems: HTMLCollectionOf<HTMLElement>, className: string, state: boolean) {
 	const lockedElems = [];
-	for (let i = 0; i < elems.length; i++) {
+	for (let i = 0, length = elems.length; i < length; i++) {
 		lockedElems.push(elems[i]);
 	}
-	for (let i = 0; i < lockedElems.length; i++) {
+	for (let i = 0, length = lockedElems.length; i < length; i++) {
 		alterClass(lockedElems[i], className, state);
 	}
 }
@@ -391,7 +391,7 @@ function alterClassOfCollection(elems: HTMLCollectionOf<HTMLElement>, className:
  */
 function getChildNodesWithTextContent(elem: Node) {
 	let textChildren: Node[] = [];
-	for (let i = 0; i < elem.childNodes.length; i++) {
+	for (let i = 0, length = elem.childNodes.length; i < length; i++) {
 		if (elem.childNodes[i].childNodes.length > 0) {
 			textChildren.push(...getChildNodesWithTextContent(elem.childNodes[i]));
 		} else if (elem.childNodes[i].textContent !== null && elem.childNodes[i].textContent !== '') {
@@ -409,7 +409,7 @@ function getChildNodesWithTextContent(elem: Node) {
  */
 function getChildrenWithClassName(elem: Element, className: string) {
 	let children: Element[] = [];
-	for (let i = 0; i < elem.children.length; i++) {
+	for (let i = 0, length = elem.children.length; i < length; i++) {
 		if (elem.children[i].children.length > 0) {
 			children.push(...getChildrenWithClassName(elem.children[i], className));
 		} else if (elem.children[i].className === className) {
@@ -425,7 +425,7 @@ function getChildrenWithClassName(elem: Element, className: string) {
  * @returns The HTML Element, or NULL if no child is a \<ul\>.
  */
 function getChildUl(elem: HTMLElement) {
-	for (let i = 0; i < elem.children.length; i++) {
+	for (let i = 0, length = elem.children.length; i < length; i++) {
 		if (elem.children[i].tagName === 'UL') {
 			return <HTMLUListElement>elem.children[i];
 		}

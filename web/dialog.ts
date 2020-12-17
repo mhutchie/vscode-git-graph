@@ -227,7 +227,7 @@ class Dialog {
 			if (input.type === DialogInputType.Radio) {
 				// Iterate through all of the radio options to get the checked value
 				const elems = <NodeListOf<HTMLInputElement>>document.getElementsByName('dialogInput' + index);
-				for (let i = 0; i < elems.length; i++) {
+				for (let i = 0, length = elems.length; i < length; i++) {
 					if (elems[i].checked) {
 						return input.options[parseInt(elems[i].value)].value;
 					}
@@ -413,7 +413,7 @@ class Dialog {
 				} else {
 					// Dialog is dependent on the commit and ref 
 					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
-					for (let i = 0; i < elems.length; i++) {
+					for (let i = 0, length = elems.length; i < length; i++) {
 						if (elems[i].dataset.fullref! === this.target.ref) {
 							this.target.elem = this.target.type === TargetType.Ref ? elems[i] : commitElem;
 							alterClass(this.target.elem, CLASS_DIALOG_ACTIVE, true);
@@ -699,7 +699,7 @@ class CustomSelect {
 	private renderOptionsStates() {
 		if (this.optionsElem !== null) {
 			let optionElems = this.optionsElem.children, elemIndex: number;
-			for (let i = 0; i < optionElems.length; i++) {
+			for (let i = 0, length = optionElems.length; i < length; i++) {
 				elemIndex = parseInt((<HTMLElement>optionElems[i]).dataset.index!);
 				alterClass(<HTMLElement>optionElems[i], CLASS_SELECTED, this.selected[elemIndex]);
 				alterClass(<HTMLElement>optionElems[i], CLASS_FOCUSSED, this.focussed === elemIndex);
@@ -715,7 +715,7 @@ class CustomSelect {
 	private getOptionElem(index: number) {
 		if (this.optionsElem !== null && index > -1) {
 			const optionElems = this.optionsElem.children, indexStr = index.toString();
-			for (let i = 0; i < optionElems.length; i++) {
+			for (let i = 0, length = optionElems.length; i < length; i++) {
 				if ((<HTMLElement>optionElems[i]).dataset.index === indexStr) {
 					return <HTMLElement>optionElems[i];
 				}

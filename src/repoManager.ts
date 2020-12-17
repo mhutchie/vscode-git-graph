@@ -70,14 +70,14 @@ export class RepoManager extends Disposable {
 			vscode.workspace.onDidChangeWorkspaceFolders(async (e) => {
 				let changes = false, path;
 				if (e.added.length > 0) {
-					for (let i = 0; i < e.added.length; i++) {
+					for (let i = 0, length = e.added.length; i < length; i++) {
 						path = getPathFromUri(e.added[i].uri);
 						if (await this.searchDirectoryForRepos(path, this.maxDepthOfRepoSearch)) changes = true;
 						this.startWatchingFolder(path);
 					}
 				}
 				if (e.removed.length > 0) {
-					for (let i = 0; i < e.removed.length; i++) {
+					for (let i = 0, length = e.removed.length; i < length; i++) {
 						path = getPathFromUri(e.removed[i].uri);
 						if (this.removeReposWithinFolder(path)) changes = true;
 						this.stopWatchingFolder(path);
@@ -111,7 +111,7 @@ export class RepoManager extends Disposable {
 			// Stop watching folders when disposed
 			toDisposable(() => {
 				const folders = Object.keys(this.folderWatchers);
-				for (let i = 0; i < folders.length; i++) {
+				for (let i = 0, length = folders.length; i < length; i++) {
 					this.stopWatchingFolder(folders[i]);
 				}
 			})
@@ -156,13 +156,13 @@ export class RepoManager extends Disposable {
 	private removeReposNotInWorkspace() {
 		let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders, repoPaths = Object.keys(this.repos), path;
 		if (typeof workspaceFolders !== 'undefined') {
-			for (let i = 0; i < workspaceFolders.length; i++) {
+			for (let i = 0, length = workspaceFolders.length; i < length; i++) {
 				path = getPathFromUri(workspaceFolders[i].uri);
 				rootsExact.push(path);
 				rootsFolder.push(pathWithTrailingSlash(path));
 			}
 		}
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			let repoPathFolder = pathWithTrailingSlash(repoPaths[i]);
 			if (rootsExact.indexOf(repoPaths[i]) === -1 && !rootsFolder.find(root => repoPaths[i].startsWith(root)) && !rootsExact.find(root => root.startsWith(repoPathFolder))) {
 				this.removeRepo(repoPaths[i]);
@@ -220,7 +220,7 @@ export class RepoManager extends Disposable {
 	 */
 	public getRepos() {
 		let repoPaths = Object.keys(this.repos).sort((a, b) => a.localeCompare(b)), repos: GitRepoSet = {};
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			repos[repoPaths[i]] = this.repos[repoPaths[i]];
 		}
 		return repos;
@@ -241,7 +241,7 @@ export class RepoManager extends Disposable {
 	 */
 	public getRepoContainingFile(path: string) {
 		let repoPaths = Object.keys(this.repos), repo = null;
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			if (path.startsWith(pathWithTrailingSlash(repoPaths[i])) && (repo === null || repo.length < repoPaths[i].length)) repo = repoPaths[i];
 		}
 		return repo;
@@ -254,7 +254,7 @@ export class RepoManager extends Disposable {
 	 */
 	private getReposInFolder(path: string) {
 		let pathFolder = pathWithTrailingSlash(path), repoPaths = Object.keys(this.repos), reposInFolder: string[] = [];
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			if (repoPaths[i] === path || repoPaths[i].startsWith(pathFolder)) reposInFolder.push(repoPaths[i]);
 		}
 		return reposInFolder;
@@ -274,7 +274,7 @@ export class RepoManager extends Disposable {
 		// Check to see if a known repository contains a symlink that resolves the repo
 		let canonicalRepo = await realpath(repo);
 		let repoPaths = Object.keys(this.repos);
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			if (canonicalRepo === (await realpath(repoPaths[i]))) {
 				return repoPaths[i];
 			}
@@ -328,7 +328,7 @@ export class RepoManager extends Disposable {
 	 */
 	private removeReposWithinFolder(path: string) {
 		let reposInFolder = this.getReposInFolder(path);
-		for (let i = 0; i < reposInFolder.length; i++) {
+		for (let i = 0, length = reposInFolder.length; i < length; i++) {
 			this.removeRepo(reposInFolder[i]);
 		}
 		return reposInFolder.length > 0;
@@ -341,7 +341,7 @@ export class RepoManager extends Disposable {
 	 */
 	private isDirectoryWithinRepos(path: string) {
 		let repoPaths = Object.keys(this.repos);
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			if (path === repoPaths[i] || path.startsWith(pathWithTrailingSlash(repoPaths[i]))) return true;
 		}
 		return false;
@@ -367,7 +367,7 @@ export class RepoManager extends Disposable {
 		return new Promise<boolean>(resolve => {
 			let repoPaths = Object.keys(this.repos), changes = false;
 			evalPromises(repoPaths, 3, path => this.dataSource.repoRoot(path)).then(results => {
-				for (let i = 0; i < repoPaths.length; i++) {
+				for (let i = 0, length = repoPaths.length; i < length; i++) {
 					if (results[i] === null) {
 						this.removeRepo(repoPaths[i]);
 						changes = true;
@@ -417,7 +417,7 @@ export class RepoManager extends Disposable {
 		this.logger.log('Searching workspace for new repos ...');
 		let rootFolders = vscode.workspace.workspaceFolders, changes = false;
 		if (typeof rootFolders !== 'undefined') {
-			for (let i = 0; i < rootFolders.length; i++) {
+			for (let i = 0, length = rootFolders.length; i < length; i++) {
 				if (await this.searchDirectoryForRepos(getPathFromUri(rootFolders[i].uri), this.maxDepthOfRepoSearch)) changes = true;
 			}
 		}
@@ -448,7 +448,7 @@ export class RepoManager extends Disposable {
 							resolve(false);
 						} else {
 							let dirs = [];
-							for (let i = 0; i < dirContents.length; i++) {
+							for (let i = 0, length = dirContents.length; i < length; i++) {
 								if (dirContents[i] !== '.git' && await isDirectory(directory + '/' + dirContents[i])) {
 									dirs.push(directory + '/' + dirContents[i]);
 								}
@@ -468,7 +468,7 @@ export class RepoManager extends Disposable {
 	 */
 	private async checkReposForNewSubmodules() {
 		let repoPaths = Object.keys(this.repos), changes = false;
-		for (let i = 0; i < repoPaths.length; i++) {
+		for (let i = 0, length = repoPaths.length; i < length; i++) {
 			if (await this.searchRepoForSubmodules(repoPaths[i])) changes = true;
 		}
 		if (changes) this.sendRepos();
@@ -481,7 +481,7 @@ export class RepoManager extends Disposable {
 	 */
 	private async searchRepoForSubmodules(repo: string) {
 		let submodules = await this.dataSource.getSubmodules(repo), changes = false;
-		for (let i = 0; i < submodules.length; i++) {
+		for (let i = 0, length = submodules.length; i < length; i++) {
 			if (!this.isKnownRepo(submodules[i])) {
 				if (await this.addRepo(submodules[i])) changes = true;
 			}
@@ -498,7 +498,7 @@ export class RepoManager extends Disposable {
 	private startWatchingFolders() {
 		let rootFolders = vscode.workspace.workspaceFolders;
 		if (typeof rootFolders !== 'undefined') {
-			for (let i = 0; i < rootFolders.length; i++) {
+			for (let i = 0, length = rootFolders.length; i < length; i++) {
 				this.startWatchingFolder(getPathFromUri(rootFolders[i].uri));
 			}
 		}

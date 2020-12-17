@@ -51,7 +51,7 @@ export function pathWithTrailingSlash(path: string) {
 export function isPathInWorkspace(path: string) {
 	let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders;
 	if (typeof workspaceFolders !== 'undefined') {
-		for (let i = 0; i < workspaceFolders.length; i++) {
+		for (let i = 0, length = workspaceFolders.length; i < length; i++) {
 			let tmpPath = getPathFromUri(workspaceFolders[i].uri);
 			rootsExact.push(tmpPath);
 			rootsFolder.push(pathWithTrailingSlash(tmpPath));
@@ -80,7 +80,7 @@ export function realpath(path: string, native: boolean = false) {
 export async function resolveToSymbolicPath(path: string) {
 	let workspaceFolders = vscode.workspace.workspaceFolders;
 	if (typeof workspaceFolders !== 'undefined') {
-		for (let i = 0; i < workspaceFolders.length; i++) {
+		for (let i = 0, length = workspaceFolders.length; i < length; i++) {
 			let rootSymPath = getPathFromUri(workspaceFolders[i].uri);
 			let rootCanonicalPath = await realpath(rootSymPath);
 			if (path === rootCanonicalPath) {
@@ -476,7 +476,7 @@ export function evalPromises<X, Y>(data: X[], maxParallel: number, createPromise
 					rejected = true;
 				});
 			}
-			for (let i = 0; i < maxParallel && i < data.length; i++) startNext();
+			for (let i = 0, length = data.length; i < maxParallel && i < length; i++) startNext();
 		}
 	});
 }
@@ -608,7 +608,7 @@ async function findGitWin32InPath() {
 	let dirs = (process.env['PATH'] || '').split(';');
 	dirs.unshift(process.cwd());
 
-	for (let i = 0; i < dirs.length; i++) {
+	for (let i = 0, length = dirs.length; i < length; i++) {
 		let file = path.join(dirs[i], 'git.exe');
 		if (await isExecutable(file)) {
 			try {
@@ -655,7 +655,7 @@ export function getGitExecutable(path: string) {
  * @returns The GitExecutable data.
  */
 export async function getGitExecutableFromPaths(paths: string[]): Promise<GitExecutable> {
-	for (let i = 0; i < paths.length; i++) {
+	for (let i = 0, length = paths.length; i < length; i++) {
 		try {
 			return await getGitExecutable(paths[i]);
 		} catch (_) { }

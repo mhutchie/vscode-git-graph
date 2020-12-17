@@ -97,7 +97,7 @@ class Config {
 	get customBranchGlobPatterns(): CustomBranchGlobPattern[] {
 		let inPatterns = this.config.get('customBranchGlobPatterns', <any[]>[]);
 		let outPatterns: CustomBranchGlobPattern[] = [];
-		for (let i = 0; i < inPatterns.length; i++) {
+		for (let i = 0, length = inPatterns.length; i < length; i++) {
 			if (typeof inPatterns[i].name === 'string' && typeof inPatterns[i].glob === 'string') {
 				outPatterns.push({ name: inPatterns[i].name, glob: '--glob=' + inPatterns[i].glob });
 			}
@@ -111,7 +111,7 @@ class Config {
 	get customEmojiShortcodeMappings(): CustomEmojiShortcodeMapping[] {
 		let inMappings = this.config.get('customEmojiShortcodeMappings', <any[]>[]);
 		let outMappings: CustomEmojiShortcodeMapping[] = [];
-		for (let i = 0; i < inMappings.length; i++) {
+		for (let i = 0, length = inMappings.length; i < length; i++) {
 			if (typeof inMappings[i].shortcode === 'string' && typeof inMappings[i].emoji === 'string') {
 				outMappings.push({ shortcode: inMappings[i].shortcode, emoji: inMappings[i].emoji });
 			}
@@ -609,7 +609,7 @@ function mergeConfigObjects(base: { [key: string]: any }, user: { [key: string]:
 	if (typeof base !== typeof user) return;
 
 	let keys = Object.keys(base);
-	for (let i = 0; i < keys.length; i++) {
+	for (let i = 0, length = keys.length; i < length; i++) {
 		if (typeof base[keys[i]] === 'object') {
 			if (typeof user[keys[i]] === 'object') {
 				mergeConfigObjects(base[keys[i]], user[keys[i]]);

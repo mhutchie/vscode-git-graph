@@ -99,7 +99,7 @@ class Dropdown {
 		this.optionsSelected = [];
 		this.numSelected = 0;
 		let selectedOption = -1, isSelected;
-		for (let i = 0; i < options.length; i++) {
+		for (let i = 0, length = options.length; i < length; i++) {
 			isSelected = optionsSelected.includes(options[i].value);
 			this.optionsSelected[i] = isSelected;
 			if (isSelected) {
@@ -153,7 +153,7 @@ class Dropdown {
 		this.currentValueElem.innerHTML = escapeHtml(curValueText);
 
 		let html = '';
-		for (let i = 0; i < this.options.length; i++) {
+		for (let i = 0, length = this.options.length; i < length; i++) {
 			const escapedName = escapeHtml(this.options[i].name);
 			html += '<div class="dropdownOption' + (this.optionsSelected[i] ? ' ' + CLASS_SELECTED : '') + '" data-id="' + i + '" title="' + escapedName + '">' +
 				(this.multipleAllowed && this.optionsSelected[i] ? '<div class="dropdownOptionMultiSelected">' + SVG_ICONS.check + '</div>' : '') +
@@ -179,7 +179,7 @@ class Dropdown {
 	 */
 	private filter() {
 		let val = this.filterInput.value.toLowerCase(), match, matches = false;
-		for (let i = 0; i < this.options.length; i++) {
+		for (let i = 0, length = this.options.length; i < length; i++) {
 			match = this.options[i].name.toLowerCase().indexOf(val) > -1;
 			(<HTMLElement>this.optionsElem.children[i]).style.display = match ? 'block' : 'none';
 			if (match) matches = true;
@@ -199,7 +199,7 @@ class Dropdown {
 			// Note: Show All is always the first option (0 index) when multiple selected items are allowed
 			return [names ? this.options[0].name : this.options[0].value];
 		}
-		for (let i = 0; i < this.options.length; i++) {
+		for (let i = 0, length = this.options.length; i < length; i++) {
 			if (this.optionsSelected[i]) selected.push(names ? this.options[i].name : this.options[i].value);
 		}
 		return selected;
@@ -219,7 +219,7 @@ class Dropdown {
 			// Double click
 			if (this.multipleAllowed && option === 0) {
 				this.numSelected = 1;
-				for (let i = 1; i < this.optionsSelected.length; i++) {
+				for (let i = 1, length = this.optionsSelected.length; i < length; i++) {
 					this.optionsSelected[i] = !this.optionsSelected[i];
 					if (this.optionsSelected[i]) this.numSelected++;
 				}
@@ -233,7 +233,7 @@ class Dropdown {
 					// Show All was selected
 					if (!this.optionsSelected[0]) {
 						this.optionsSelected[0] = true;
-						for (let i = 1; i < this.optionsSelected.length; i++) {
+						for (let i = 1, length = this.optionsSelected.length; i < length; i++) {
 							this.optionsSelected[i] = false;
 						}
 						this.numSelected = 1;

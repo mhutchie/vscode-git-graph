@@ -504,7 +504,7 @@ export class DataSource extends Disposable {
 					let lines = data.split(EOL_REGEX), inSubmoduleSection = false, match;
 					const section = /^\s*\[.*\]\s*$/, submodule = /^\s*\[submodule "([^"]+)"\]\s*$/, pathProp = /^\s*path\s+=\s+(.*)$/;
 
-					for (let i = 0; i < lines.length; i++) {
+					for (let i = 0, length = lines.length; i < length; i++) {
 						if (lines[i].match(section) !== null) {
 							inSubmoduleSection = lines[i].match(submodule) !== null;
 							continue;
@@ -762,7 +762,7 @@ export class DataSource extends Disposable {
 		}
 
 		const results: ErrorInfo[] = [];
-		for (let i = 0; i < remotes.length; i++) {
+		for (let i = 0, length = remotes.length; i < length; i++) {
 			const result = await this.pushBranch(repo, branchName, remotes[i], setUpstream, mode);
 			results.push(result);
 			if (result !== null) break;
@@ -783,7 +783,7 @@ export class DataSource extends Disposable {
 		}
 
 		const results: ErrorInfo[] = [];
-		for (let i = 0; i < remotes.length; i++) {
+		for (let i = 0, length = remotes.length; i < length; i++) {
 			const result = await this.pushTag(repo, tagName, remotes[i]);
 			results.push(result);
 			if (result !== null) break;
@@ -1266,7 +1266,7 @@ export class DataSource extends Disposable {
 		return this.spawnGit(args, repo, (stdout) => {
 			let branchData: GitBranchData = { branches: [], head: null, error: null };
 			let lines = stdout.split(EOL_REGEX);
-			for (let i = 0; i < lines.length - 1; i++) {
+			for (let i = 0, length = lines.length - 1; i < length; i++) {
 				let name = lines[i].substring(2).split(' -> ')[0];
 				if (INVALID_BRANCH_REGEXP.test(name) || hideRemotePatterns.some((pattern) => name.startsWith(pattern)) || (!showRemoteHeads && REMOTE_HEAD_BRANCH_REGEXP.test(name))) {
 					continue;
@@ -1425,7 +1425,7 @@ export class DataSource extends Disposable {
 		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (onlyFollowFirstParent) args.push('--first-parent');
 		if (branches !== null) {
-			for (let i = 0; i < branches.length; i++) {
+			for (let i = 0, length = branches.length; i < length; i++) {
 				args.push(branches[i]);
 			}
 		} else {
@@ -1454,7 +1454,7 @@ export class DataSource extends Disposable {
 		return this.spawnGit(args, repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);
 			let commits: GitCommitRecord[] = [];
-			for (let i = 0; i < lines.length - 1; i++) {
+			for (let i = 0, length = lines.length - 1; i < length; i++) {
 				let line = lines[i].split(GIT_LOG_SEPARATOR);
 				if (line.length !== 6) break;
 				commits.push({ hash: line[0], parents: line[1] !== '' ? line[1].split(' ') : [], author: line[2], email: line[3], date: parseInt(line[4]), message: line[5] });
@@ -1481,7 +1481,7 @@ export class DataSource extends Disposable {
 		return this.spawnGit(args, repo, (stdout) => {
 			let refData: GitRefData = { head: null, heads: [], tags: [], remotes: [] };
 			let lines = stdout.split(EOL_REGEX);
-			for (let i = 0; i < lines.length - 1; i++) {
+			for (let i = 0, length = lines.length - 1; i < length; i++) {
 				let line = lines[i].split(' ');
 				if (line.length < 2) continue;
 
@@ -1514,7 +1514,7 @@ export class DataSource extends Disposable {
 		return this.spawnGit(['reflog', '--format=' + this.gitFormatStash, 'refs/stash', '--'], repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);
 			let stashes: GitStash[] = [];
-			for (let i = 0; i < lines.length - 1; i++) {
+			for (let i = 0, length = lines.length - 1; i < length; i++) {
 				let line = lines[i].split(GIT_LOG_SEPARATOR);
 				if (line.length !== 7 || line[1] === '') continue;
 				let parentHashes = line[1].split(' ');

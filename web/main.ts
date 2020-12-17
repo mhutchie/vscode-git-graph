@@ -500,7 +500,7 @@ class GitGraphView {
 		this.avatars[email] = image;
 		this.saveState();
 		let avatarsElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('avatar'), escapedEmail = escapeHtml(email);
-		for (let i = 0; i < avatarsElems.length; i++) {
+		for (let i = 0, length = avatarsElems.length; i < length; i++) {
 			if (avatarsElems[i].dataset.email === escapedEmail) {
 				avatarsElems[i].innerHTML = '<img class="avatarImg" src="' + image + '">';
 			}
@@ -519,10 +519,10 @@ class GitGraphView {
 		if (includeShowAll) {
 			options.push({ name: 'Show All', value: SHOW_ALL_BRANCHES });
 		}
-		for (let i = 0; i < this.config.customBranchGlobPatterns.length; i++) {
+		for (let i = 0, length = this.config.customBranchGlobPatterns.length; i < length; i++) {
 			options.push({ name: 'Glob: ' + this.config.customBranchGlobPatterns[i].name, value: this.config.customBranchGlobPatterns[i].glob });
 		}
-		for (let i = 0; i < this.gitBranches.length; i++) {
+		for (let i = 0, length = this.gitBranches.length; i < length; i++) {
 			options.push({ name: this.gitBranches[i].indexOf('remotes/') === 0 ? this.gitBranches[i].substring(8) : this.gitBranches[i], value: this.gitBranches[i] });
 		}
 		return options;
@@ -676,7 +676,7 @@ class GitGraphView {
 
 	private requestAvatars(avatars: { [email: string]: string[] }) {
 		let emails = Object.keys(avatars), remote = this.gitRemotes.length > 0 ? this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0] : null;
-		for (let i = 0; i < emails.length; i++) {
+		for (let i = 0, length = emails.length; i < length; i++) {
 			sendMessage({ command: 'fetchAvatar', repo: this.currentRepo, remote: remote, email: emails[i], commits: avatars[emails[i]] });
 		}
 	}
@@ -814,7 +814,7 @@ class GitGraphView {
 			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
 			'</tr>';
 
-		for (let i = 0; i < this.commits.length; i++) {
+		for (let i = 0, length = this.commits.length; i < length; i++) {
 			let commit = this.commits[i];
 			let message = '<span class="text">' + textFormatter.format(commit.message) + '</span>';
 			let date = formatShortDate(commit.date);
@@ -1081,7 +1081,7 @@ class GitGraphView {
 					const dialogConfig = this.config.dialogDefaults.addTag;
 
 					let mostRecentTagsIndex = -1;
-					for (let i = 0; i < this.commits.length; i++) {
+					for (let i = 0, length = this.commits.length; i < length; i++) {
 						if (this.commits[i].tags.length > 0 && (mostRecentTagsIndex === -1 || this.commits[i].date > this.commits[mostRecentTagsIndex].date)) {
 							mostRecentTagsIndex = i;
 						}
@@ -1586,7 +1586,7 @@ class GitGraphView {
 		const makeTableFixedLayout = () => {
 			cols[0].style.width = columnWidths[0] + 'px';
 			cols[0].style.padding = '';
-			for (let i = 2; i < cols.length; i++) {
+			for (let i = 2, length = cols.length; i < length; i++) {
 				cols[i].style.width = columnWidths[parseInt(cols[i].dataset.col!)] + 'px';
 			}
 			this.tableElem.className = 'fixedLayout';
@@ -1594,7 +1594,7 @@ class GitGraphView {
 			this.graph.limitMaxWidth(columnWidths[0] + COLUMN_LEFT_RIGHT_PADDING);
 		};
 
-		for (let i = 0; i < cols.length; i++) {
+		for (let i = 0, length = cols.length; i < length; i++) {
 			let col = parseInt(cols[i].dataset.col!);
 			cols[i].innerHTML += (i > 0 ? '<span class="resizeCol left" data-col="' + (col - 1) + '"></span>' : '') + (i < cols.length - 1 ? '<span class="resizeCol right" data-col="' + col + '"></span>' : '');
 		}
@@ -1677,7 +1677,7 @@ class GitGraphView {
 			mouseX = (<MouseEvent>e).clientX;
 
 			let isAuto = columnWidths[0] === COLUMN_AUTO;
-			for (let i = 0; i < cols.length; i++) {
+			for (let i = 0, length = cols.length; i < length; i++) {
 				let curCol = parseInt(cols[i].dataset.col!);
 				if (isAuto && curCol !== 1) columnWidths[curCol] = cols[i].clientWidth - COLUMN_LEFT_RIGHT_PADDING;
 				if (curCol === col) colIndex = i;
@@ -3155,7 +3155,7 @@ window.addEventListener('load', () => {
 
 	function reduceErrorInfos(errors: GG.ErrorInfo[]) {
 		let error: GG.ErrorInfo = null, partialOrCompleteSuccess = false;
-		for (let i = 0; i < errors.length; i++) {
+		for (let i = 0, length = errors.length; i < length; i++) {
 			if (errors[i] !== null) {
 				error = error !== null ? error + '\n\n' + errors[i] : errors[i];
 			} else {
@@ -3208,7 +3208,7 @@ function generateFileListHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG
 	const sortLeaves = (folder: FileTreeFolder, folderPath: string) => {
 		let keys = sortFolderKeys(folder);
 		let items: { relPath: string, leaf: FileTreeLeaf }[] = [];
-		for (let i = 0; i < keys.length; i++) {
+		for (let i = 0, length = keys.length; i < length; i++) {
 			let cur = folder.contents[keys[i]];
 			let relPath = (folderPath !== '' ? folderPath + '/' : '') + cur.name;
 			if (cur.type === 'folder') {
@@ -3221,7 +3221,7 @@ function generateFileListHtml(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG
 	};
 	let sortedLeaves = sortLeaves(folder, '');
 	let html = '';
-	for (let i = 0; i < sortedLeaves.length; i++) {
+	for (let i = 0, length = sortedLeaves.length; i < length; i++) {
 		html += generateFileTreeLeafHtml(sortedLeaves[i].relPath, sortedLeaves[i].leaf, gitFiles, lastViewedFile, fileContextMenuOpen, isUncommitted);
 	}
 	return '<ul class="fileTreeFolderContents">' + html + '</ul>';
@@ -3277,7 +3277,7 @@ function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
 	}
 	for (i = folders.length - 1; i >= 0; i--) {
 		let keys = Object.keys(folders[i].contents), reviewed = true;
-		for (let j = 0; j < keys.length; j++) {
+		for (let j = 0, length = keys.length; j < length; j++) {
 			let cur = folders[i].contents[keys[j]];
 			if ((cur.type === 'folder' || cur.type === 'file') && !cur.reviewed) {
 				reviewed = false;
@@ -3291,7 +3291,7 @@ function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
 function setFileTreeReviewed(folder: FileTreeFolder, reviewed: boolean) {
 	folder.reviewed = reviewed;
 	let keys = Object.keys(folder.contents);
-	for (let i = 0; i < keys.length; i++) {
+	for (let i = 0, length = keys.length; i < length; i++) {
 		let cur = folder.contents[keys[i]];
 		if (cur.type === 'folder') {
 			setFileTreeReviewed(cur, reviewed);
@@ -3305,7 +3305,7 @@ function calcFileTreeFoldersReviewed(folder: FileTreeFolder) {
 	const calc = (folder: FileTreeFolder) => {
 		let reviewed = true;
 		let keys = Object.keys(folder.contents);
-		for (let i = 0; i < keys.length; i++) {
+		for (let i = 0, length = keys.length; i < length; i++) {
 			let cur = folder.contents[keys[i]];
 			if ((cur.type === 'folder' && !calc(cur)) || (cur.type === 'file' && !cur.reviewed)) reviewed = false;
 		}
@@ -3319,7 +3319,7 @@ function updateFileTreeHtml(elem: HTMLElement, folder: FileTreeFolder) {
 	let ul = getChildUl(elem);
 	if (ul === null) return;
 
-	for (let i = 0; i < ul.children.length; i++) {
+	for (let i = 0, length = ul.children.length; i < length; i++) {
 		let li = <HTMLLIElement>ul.children[i];
 		let pathSeg = decodeURIComponent(li.dataset.pathseg!);
 		let child = getChildByPathSegment(folder, pathSeg);
@@ -3338,7 +3338,7 @@ function updateFileTreeHtmlFileReviewed(elem: HTMLElement, folder: FileTreeFolde
 		let ul = getChildUl(elem);
 		if (ul === null) return;
 
-		for (let i = 0; i < ul.children.length; i++) {
+		for (let i = 0, length = ul.children.length; i < length; i++) {
 			let li = <HTMLLIElement>ul.children[i];
 			let pathSeg = decodeURIComponent(li.dataset.pathseg!);
 			if (path === pathSeg || path.startsWith(pathSeg + '/')) {
@@ -3361,7 +3361,7 @@ function getFilesInTree(folder: FileTreeFolder, gitFiles: ReadonlyArray<GG.GitFi
 	let files: string[] = [];
 	const scanFolder = (folder: FileTreeFolder) => {
 		let keys = Object.keys(folder.contents);
-		for (let i = 0; i < keys.length; i++) {
+		for (let i = 0, length = keys.length; i < length; i++) {
 			let cur = folder.contents[keys[i]];
 			if (cur.type === 'folder') {
 				scanFolder(cur);
@@ -3382,7 +3382,7 @@ function sortFolderKeys(folder: FileTreeFolder) {
 
 function getChildByPathSegment(folder: FileTreeFolder, pathSeg: string) {
 	let cur: FileTreeNode = folder, comps = pathSeg.split('/');
-	for (let i = 0; i < comps.length; i++) {
+	for (let i = 0, length = comps.length; i < length; i++) {
 		cur = (<FileTreeFolder>cur).contents[comps[i]];
 	}
 	return cur;
@@ -3469,7 +3469,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
 		let firstOccurrence: { [name: string]: number } = {}, ambiguous: { [name: string]: number[] } = {};
-		for (let i = 0; i < indexes.length; i++) {
+		for (let i = 0, length = indexes.length; i < length; i++) {
 			let name = distinctNames[indexes[i]];
 			if (typeof firstOccurrence[name] === 'number') {
 				// name is ambiguous
@@ -3484,10 +3484,10 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 		}
 
 		let ambiguousNames = Object.keys(ambiguous);
-		for (let i = 0; i < ambiguousNames.length; i++) {
+		for (let i = 0, length = ambiguousNames.length; i < length; i++) {
 			// For each ambiguous name, resolve the ambiguous indexes
 			let ambiguousIndexes = ambiguous[ambiguousNames[i]], retestIndexes = [];
-			for (let j = 0; j < ambiguousIndexes.length; j++) {
+			for (let j = 0, length = ambiguousIndexes.length; j < length; j++) {
 				let ambiguousIndex = ambiguousIndexes[j];
 				let nextSep = paths[ambiguousIndex].lastIndexOf('/', paths[ambiguousIndex].length - distinctNames[ambiguousIndex].length - 2);
 				if (firstSep[ambiguousIndex] < nextSep) {
@@ -3507,7 +3507,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 
 	// Initialise recursion
 	let indexes = [];
-	for (let i = 0; i < repoPaths.length; i++) {
+	for (let i = 0, length = repoPaths.length; i < length; i++) {
 		firstSep.push(repoPaths[i].indexOf('/'));
 		const repo = repos[repoPaths[i]];
 		if (repo.name !== null) {
@@ -3531,7 +3531,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 	resolveAmbiguous(indexes);
 
 	let options: DropdownOption[] = [];
-	for (let i = 0; i < repoPaths.length; i++) {
+	for (let i = 0, length = repoPaths.length; i < length; i++) {
 		let hint;
 		if (names[i] === distinctNames[i]) {
 			// Name is distinct, no hint needed
@@ -3563,13 +3563,13 @@ function runAction(msg: GG.RequestMessage, action: string) {
 
 function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG.GitCommitRemote>) {
 	let headLabels: { name: string; remotes: string[] }[] = [], headLookup: { [name: string]: number } = {}, remoteLabels: ReadonlyArray<GG.GitCommitRemote>;
-	for (let i = 0; i < heads.length; i++) {
+	for (let i = 0, length = heads.length; i < length; i++) {
 		headLabels.push({ name: heads[i], remotes: [] });
 		headLookup[heads[i]] = i;
 	}
 	if (initialState.config.referenceLabels.combineLocalAndRemoteBranchLabels) {
 		let remainingRemoteLabels = [];
-		for (let i = 0; i < remotes.length; i++) {
+		for (let i = 0, length = remotes.length; i < length; i++) {
 			if (remotes[i].remote !== null) { // If the remote of the remote branch ref is known
 				let branchName = remotes[i].name.substring(remotes[i].remote!.length + 1);
 				if (typeof headLookup[branchName] === 'number') {
@@ -3589,7 +3589,7 @@ function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG
 function findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number | null) {
 	if (id === null) return null;
 	let findIdStr = id.toString();
-	for (let i = 0; i < elems.length; i++) {
+	for (let i = 0, length = elems.length; i < length; i++) {
 		if (findIdStr === elems[i].dataset.id) return elems[i];
 	}
 	return null;

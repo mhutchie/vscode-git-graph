@@ -130,7 +130,7 @@ export function saveLifeCycleStateInDirectory(directory: string, state: LifeCycl
  * @returns TRUE => Queue was successfully sent & the API is still available, FALSE => The API is no longer available.
  */
 export async function sendQueue(queue: LifeCycleEvent[]) {
-	for (let i = 0; i < queue.length; i++) {
+	for (let i = 0, length = queue.length; i < length; i++) {
 		if (!await sendEvent(queue[i])) return false;
 	}
 	return true;

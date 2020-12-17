@@ -231,7 +231,7 @@ class FindWidget {
 
 				// Search the commit data itself to detect commits that match, so that dom tree traversal is performed on matching commit rows (for performance)
 				const commits = this.view.getCommits();
-				for (let i = 0; i < commits.length; i++) {
+				for (let i = 0, length = commits.length; i < length; i++) {
 					commit = commits[i];
 					let branchLabels = getBranchLabels(commit.heads, commit.remotes);
 					if (commit.hash !== UNCOMMITTED && ((colVisibility.author && findPattern.test(commit.author))
@@ -251,7 +251,7 @@ class FindWidget {
 
 						// Highlight matches
 						let textElems = getChildNodesWithTextContent(commitElems[j]), textElem;
-						for (let k = 0; k < textElems.length; k++) {
+						for (let k = 0, length = textElems.length; k < length; k++) {
 							textElem = textElems[k];
 							let matchStart = 0, matchEnd = 0, text = textElem.textContent!, match: RegExpExecArray | null;
 							findGlobalPattern.lastIndex = 0;
@@ -324,10 +324,10 @@ class FindWidget {
 	 * Clear all of the highlighted find matches in the view.
 	 */
 	private clearMatches() {
-		for (let i = 0; i < this.matches.length; i++) {
+		for (let i = 0, length = this.matches.length; i < length; i++) {
 			if (i === this.position) this.matches[i].elem.classList.remove(CLASS_FIND_CURRENT_COMMIT);
 			let matchElems = getChildrenWithClassName(this.matches[i].elem, CLASS_FIND_MATCH), matchElem;
-			for (let j = 0; j < matchElems.length; j++) {
+			for (let j = 0, length = matchElems.length; j < length; j++) {
 				matchElem = matchElems[j];
 				let text = matchElem.childNodes[0].textContent!;
 

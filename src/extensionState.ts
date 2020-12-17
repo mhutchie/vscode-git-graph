@@ -301,7 +301,7 @@ export class ExtensionState extends Disposable {
 		this.updateGlobalState(AVATAR_CACHE, {});
 		fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {
 			if (err) return;
-			for (let i = 0; i < files.length; i++) {
+			for (let i = 0, length = files.length; i < length; i++) {
 				fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => { });
 			}
 		});

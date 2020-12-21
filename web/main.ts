@@ -114,7 +114,7 @@ class GitGraphView {
 		this.observeWebviewStyleChanges();
 		this.observeViewScroll();
 		this.observeKeyboardEvents();
-		this.observeInternalUrls();
+		this.observeUrls();
 		this.observeTableEvents();
 
 		if (prevState && !prevState.currentRepoLoading && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
@@ -690,7 +690,10 @@ class GitGraphView {
 			expandedCommit = Object.assign({}, this.expandedCommit);
 			expandedCommit.commitElem = null;
 			expandedCommit.compareWithElem = null;
-			expandedCommit.fileContextMenuOpen = -1;
+			expandedCommit.contextMenuOpen = {
+				summary: false,
+				fileView: -1
+			};
 		} else {
 			expandedCommit = null;
 		}
@@ -741,8 +744,14 @@ class GitGraphView {
 			codeReview: null,
 			lastViewedFile: null,
 			loading: true,
-			fileChangesScrollTop: 0,
-			fileContextMenuOpen: -1
+			scrollTop: {
+				summary: 0,
+				fileView: 0
+			},
+			contextMenuOpen: {
+				summary: false,
+				fileView: -1
+			}
 		};
 		this.saveState();
 	}
@@ -943,7 +952,7 @@ class GitGraphView {
 		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
 		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
-		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
+		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
 		html += textFormatter.format(message) + '</span>';
 		dialog.showMessage(html);
@@ -1905,18 +1914,18 @@ class GitGraphView {
 
 	private observeKeyboardEvents() {
 		document.addEventListener('keydown', (e) => {
-			if (dialog.isOpen()) {
+			if (contextMenu.isOpen()) {
+				if (e.key === 'Escape') {
+					contextMenu.close();
+					handledEvent(e);
+				}
+			} else if (dialog.isOpen()) {
 				if (e.key === 'Escape') {
 					dialog.close();
 					handledEvent(e);
 				} else if (e.keyCode ? e.keyCode === 13 : e.key === 'Enter') {
 					// Use keyCode === 13 to detect 'Enter' events if available (for compatibility with IME Keyboards used by Chinese / Japanese / Korean users)
 					dialog.submit();
-					handledEvent(e);
-				}
-			} else if (contextMenu.isOpen()) {
-				if (e.key === 'Escape') {
-					contextMenu.close();
 					handledEvent(e);
 				}
 			} else if (this.expandedCommit !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -1992,9 +2001,9 @@ class GitGraphView {
 		});
 	}
 
-	private observeInternalUrls() {
-		document.body.addEventListener('click', (e: MouseEvent) => {
-			if (e.target !== null && (<Element>e.target).className === 'internalUrl') {
+	private observeUrls() {
+		const followInternalLink = (e: MouseEvent) => {
+			if (e.target !== null && isInternalUrlElem(<Element>e.target)) {
 				const value = unescapeHtml((<HTMLElement>e.target).dataset.value!);
 				switch ((<HTMLElement>e.target).dataset.type!) {
 					case 'commit':
@@ -2005,6 +2014,76 @@ class GitGraphView {
 						break;
 				}
 			}
+		};
+
+		document.body.addEventListener('click', followInternalLink);
+
+		document.body.addEventListener('contextmenu', (e: MouseEvent) => {
+			if (e.target === null) return;
+			const eventTarget = <Element>e.target;
+
+			const isExternalUrl = isExternalUrlElem(eventTarget), isInternalUrl = isInternalUrlElem(eventTarget);
+			if (isExternalUrl || isInternalUrl) {
+				const viewElem: HTMLElement | null = eventTarget.closest('#view');
+				let eventElem;
+
+				let target: (ContextMenuTarget & CommitTarget) | RepoTarget, isInDialog = false;
+				if (this.expandedCommit !== null && eventTarget.closest('#cdv') !== null) {
+					// URL is in the Commit Details View
+					target = {
+						type: TargetType.CommitDetailsView,
+						hash: this.expandedCommit.commitHash,
+						index: this.commitLookup[this.expandedCommit.commitHash],
+						elem: <HTMLElement>eventTarget
+					};
+					this.expandedCommit.contextMenuOpen.summary = true;
+				} else if ((eventElem = <HTMLElement | null>eventTarget.closest('.commit')) !== null) {
+					// URL is in the Commits
+					const commit = this.getCommitOfElem(eventElem);
+					if (commit === null) return;
+					target = {
+						type: TargetType.Commit,
+						hash: commit.hash,
+						index: parseInt(eventElem.dataset.id!),
+						elem: <HTMLElement>eventTarget
+					};
+				} else {
+					// URL is in a dialog
+					target = {
+						type: TargetType.Repo
+					};
+					isInDialog = true;
+				}
+
+				handledEvent(e);
+				contextMenu.show([
+					[
+						{
+							title: 'Open URL',
+							visible: isExternalUrl,
+							onClick: () => {
+								sendMessage({ command: 'openExternalUrl', url: (<HTMLAnchorElement>eventTarget).href });
+							}
+						},
+						{
+							title: 'Follow Internal Link',
+							visible: isInternalUrl,
+							onClick: () => followInternalLink(e)
+						},
+						{
+							title: 'Copy URL to Clipboard',
+							visible: isExternalUrl,
+							onClick: () => {
+								sendMessage({ command: 'copyToClipboard', type: 'External URL', data: (<HTMLAnchorElement>eventTarget).href });
+							}
+						}
+					]
+				], false, target, e, viewElem || document.body, () => {
+					if (target.type === TargetType.CommitDetailsView && this.expandedCommit !== null) {
+						this.expandedCommit.contextMenuOpen.summary = false;
+					}
+				}, isInDialog ? 'dialogContextMenu' : null);
+			}
 		});
 	}
 
@@ -2014,12 +2093,8 @@ class GitGraphView {
 		this.tableElem.addEventListener('click', (e: MouseEvent) => {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
+			if (isUrlElem(eventTarget)) return;
 			let eventElem;
-
-			if (eventTarget.className === 'externalUrl') {
-				// An external URL was clicked, skip processing this event
-				return;
-			}
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
 				// .gitRef was clicked
@@ -2055,6 +2130,7 @@ class GitGraphView {
 		this.tableElem.addEventListener('dblclick', (e: MouseEvent) => {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
+			if (isUrlElem(eventTarget)) return;
 			let eventElem;
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
@@ -2091,6 +2167,7 @@ class GitGraphView {
 		this.tableElem.addEventListener('contextmenu', (e: Event) => {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
+			if (isUrlElem(eventTarget)) return;
 			let eventElem;
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
@@ -2189,7 +2266,7 @@ class GitGraphView {
 		if (expandedCommit.compareWithElem !== null) {
 			expandedCommit.compareWithElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 		}
-		GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+		GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		this.expandedCommit = null;
 		if (saveAndRender) {
 			this.saveState();
@@ -2212,7 +2289,7 @@ class GitGraphView {
 		if (haveFilesChanged(expandedCommit.fileChanges, commitDetails.fileChanges)) {
 			expandedCommit.fileChanges = commitDetails.fileChanges;
 			expandedCommit.fileTree = fileTree;
-			GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		}
 		expandedCommit.avatar = avatar;
 		expandedCommit.codeReview = codeReview;
@@ -2287,7 +2364,7 @@ class GitGraphView {
 		if (expandedCommit.compareWithElem !== null) {
 			expandedCommit.compareWithElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 		}
-		GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+		GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		if (saveAndRequestCommitDetails) {
 			if (expandedCommit.commitElem !== null) {
 				this.saveExpandedCommitLoading(expandedCommit.index, expandedCommit.commitHash, expandedCommit.commitElem, null, null);
@@ -2306,7 +2383,7 @@ class GitGraphView {
 		if (haveFilesChanged(expandedCommit.fileChanges, fileChanges)) {
 			expandedCommit.fileChanges = fileChanges;
 			expandedCommit.fileTree = fileTree;
-			GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		}
 		expandedCommit.codeReview = codeReview;
 		if (!refresh) {
@@ -2364,16 +2441,16 @@ class GitGraphView {
 						? commitDetails.parents.map((parent) => {
 							const escapedParent = escapeHtml(parent);
 							return typeof this.commitLookup[parent] === 'number'
-								? '<span class="internalUrl" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedParent + '</span>'
+								? '<span class="' + CLASS_INTERNAL_URL + '" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedParent + '</span>'
 								: escapedParent;
 						}).join(', ')
 						: 'None';
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'
 						+ '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>'
 						+ '<b>Parents: </b>' + parents + '<br>'
-						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
+						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
 						+ (commitDetails.authorDate !== commitDetails.committerDate ? '<b>Author Date: </b>' + formatLongDate(commitDetails.authorDate) + '<br>' : '')
-						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
+						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
 						+ '<b>' + (commitDetails.authorDate !== commitDetails.committerDate ? 'Committer ' : '') + 'Date: </b>' + formatLongDate(commitDetails.committerDate)
 						+ '</span>'
 						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
@@ -2385,7 +2462,7 @@ class GitGraphView {
 				// Commit comparison should be shown
 				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.';
 			}
-			html += '</div><div id="cdvFiles"' + (expandedCommit.fileContextMenuOpen > -1 ? ' class="' + CLASS_BLOCK_USER_INTERACTION + '"' : '') + '>' + generateFileViewHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile, expandedCommit.fileContextMenuOpen, this.getFileViewType(), commitOrder.to === UNCOMMITTED) + '</div><div id="cdvDivider"></div>';
+			html += '</div><div id="cdvFiles">' + generateFileViewHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile, expandedCommit.contextMenuOpen.fileView, this.getFileViewType(), commitOrder.to === UNCOMMITTED) + '</div><div id="cdvDivider"></div>';
 		}
 		html += '</div><div id="cdvControls"><div id="cdvClose" class="cdvControlBtn" title="Close">' + SVG_ICONS.close + '</div>' +
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
@@ -2431,14 +2508,27 @@ class GitGraphView {
 		});
 
 		if (!expandedCommit.loading) {
-			const filesElem = document.getElementById('cdvFiles')!;
-			this.makeCdvFileViewInteractive(filesElem);
+			this.makeCdvFileViewInteractive();
 			this.renderCdvFileViewTypeBtns();
 			this.renderCdvExternalDiffBtn();
 			this.makeCdvDividerDraggable();
 
-			observeElemScroll('cdvFiles', expandedCommit.fileChangesScrollTop, (scrollTop) => {
-				expandedCommit.fileChangesScrollTop = scrollTop;
+			observeElemScroll('cdvSummary', expandedCommit.scrollTop.summary, (scrollTop) => {
+				if (this.expandedCommit === null) return;
+				this.expandedCommit.scrollTop.summary = scrollTop;
+				if (this.expandedCommit.contextMenuOpen.summary) {
+					this.expandedCommit.contextMenuOpen.summary = false;
+					contextMenu.close();
+				}
+			}, () => this.saveState());
+
+			observeElemScroll('cdvFiles', expandedCommit.scrollTop.fileView, (scrollTop) => {
+				if (this.expandedCommit === null) return;
+				this.expandedCommit.scrollTop.fileView = scrollTop;
+				if (this.expandedCommit.contextMenuOpen.fileView > -1) {
+					this.expandedCommit.contextMenuOpen.fileView = -1;
+					contextMenu.close();
+				}
 			}, () => this.saveState());
 
 			document.getElementById('cdvFileViewTypeTree')!.addEventListener('click', () => {
@@ -2639,15 +2729,15 @@ class GitGraphView {
 	private changeFileViewType(type: GG.FileViewType) {
 		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
 		if (expandedCommit === null || expandedCommit.fileTree === null || expandedCommit.fileChanges === null || filesElem === null) return;
-		GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+		GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		this.setFileViewType(type);
 		const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
-		filesElem.innerHTML = generateFileViewHtml(expandedCommit.fileTree, expandedCommit.fileChanges, expandedCommit.lastViewedFile, expandedCommit.fileContextMenuOpen, type, commitOrder.to === UNCOMMITTED);
-		this.makeCdvFileViewInteractive(filesElem);
+		filesElem.innerHTML = generateFileViewHtml(expandedCommit.fileTree, expandedCommit.fileChanges, expandedCommit.lastViewedFile, expandedCommit.contextMenuOpen.fileView, type, commitOrder.to === UNCOMMITTED);
+		this.makeCdvFileViewInteractive();
 		this.renderCdvFileViewTypeBtns();
 	}
 
-	private makeCdvFileViewInteractive(filesElem: HTMLElement) {
+	private makeCdvFileViewInteractive() {
 		const getFileElemOfEventTarget = (target: EventTarget) => <HTMLElement>(<Element>target).closest('.fileTreeFileRecord');
 		const getFileOfFileElem = (fileChanges: ReadonlyArray<GG.GitFileChange>, fileElem: HTMLElement) => fileChanges[parseInt(fileElem.dataset.index!)];
 
@@ -2778,7 +2868,7 @@ class GitGraphView {
 			const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
 			const isUncommitted = commitOrder.to === UNCOMMITTED;
 
-			expandedCommit.fileContextMenuOpen = parseInt(fileElem.dataset.index!);
+			expandedCommit.contextMenuOpen.fileView = parseInt(fileElem.dataset.index!);
 
 			const target: ContextMenuTarget & CommitTarget = {
 				type: TargetType.CommitDetailsView,
@@ -2813,8 +2903,8 @@ class GitGraphView {
 						onClick: () => triggerCopyFilePath(file)
 					}
 				]
-			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, filesElem, () => {
-				expandedCommit.fileContextMenuOpen = -1;
+			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, () => {
+				expandedCommit.contextMenuOpen.fileView = -1;
 			});
 		});
 	}
@@ -2843,9 +2933,10 @@ class GitGraphView {
 		externalDiffBtnElem.title = 'Open External Directory Diff' + (toolName !== null ? ' with "' + toolName + '"' : '');
 	}
 
-	private static closeCdvFileContextMenuIfOpen(expandedCommit: ExpandedCommit) {
-		if (expandedCommit.fileContextMenuOpen > -1) {
-			expandedCommit.fileContextMenuOpen = -1;
+	private static closeCdvContextMenuIfOpen(expandedCommit: ExpandedCommit) {
+		if (expandedCommit.contextMenuOpen.summary || expandedCommit.contextMenuOpen.fileView > -1) {
+			expandedCommit.contextMenuOpen.summary = false;
+			expandedCommit.contextMenuOpen.fileView = -1;
 			contextMenu.close();
 		}
 	}
@@ -3027,6 +3118,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'openExternalDirDiff':
 				finishOrDisplayError(msg.error, 'Unable to Open External Directory Diff', true);
+				break;
+			case 'openExternalUrl':
+				finishOrDisplayError(msg.error, 'Unable to Open External URL');
 				break;
 			case 'openFile':
 				finishOrDisplayError(msg.error, 'Unable to Open File');

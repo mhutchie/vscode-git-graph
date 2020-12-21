@@ -34,8 +34,14 @@ declare global {
 		codeReview: GG.CodeReview | null;
 		lastViewedFile: string | null;
 		loading: boolean;
-		fileChangesScrollTop: number;
-		fileContextMenuOpen: number;
+		scrollTop: {
+			summary: number,
+			fileView: number
+		};
+		contextMenuOpen: {
+			summary: boolean,
+			fileView: number
+		};
 	}
 
 	interface WebViewState {

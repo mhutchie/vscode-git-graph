@@ -1,3 +1,6 @@
+const CLASS_EXTERNAL_URL = 'externalUrl';
+const CLASS_INTERNAL_URL = 'internalUrl';
+
 namespace TF {
 	export const enum NodeType {
 		Asterisk,
@@ -441,10 +444,10 @@ class TextFormatter {
 					html.push('<code>', escapeHtml(node.value), '</code>');
 					break;
 				case TF.NodeType.CommitHash:
-					html.push('<span class="internalUrl" data-type="commit" data-value="', escapeHtml(node.commit), '" tabindex="-1">', escapeHtml(input.substring(node.start, node.end + 1)), '</span>');
+					html.push('<span class="', CLASS_INTERNAL_URL, '" data-type="commit" data-value="', escapeHtml(node.commit), '" tabindex="-1">', escapeHtml(input.substring(node.start, node.end + 1)), '</span>');
 					break;
 				case TF.NodeType.Url:
-					html.push('<a class="externalUrl" href="', escapeHtml(node.url), '" tabindex="-1">', escapeHtml(node.displayText), '</a>');
+					html.push('<a class="', CLASS_EXTERNAL_URL, '" href="', escapeHtml(node.url), '" tabindex="-1">', escapeHtml(node.displayText), '</a>');
 					break;
 				case TF.NodeType.Emoji:
 					html.push(node.emoji);
@@ -562,4 +565,31 @@ class TextFormatter {
 	private static isInTree(tree: TF.RootNode, start: number, end: number) {
 		return tree.contains.some((node) => (node.start <= start && start <= node.end) || (node.start <= end && end <= node.end) || (start <= node.start && node.end <= end));
 	}
+}
+
+/**
+ * Is an element an external or internal URL.
+ * @param elem The element to check.
+ * @returns TRUE => The element is an external or internal URL, FALSE => The element isn't an external or internal URL
+ */
+function isUrlElem(elem: Element) {
+	return elem.classList.contains(CLASS_EXTERNAL_URL) || elem.classList.contains(CLASS_INTERNAL_URL);
+}
+
+/**
+ * Is an element an external URL.
+ * @param elem The element to check.
+ * @returns TRUE => The element is an external URL, FALSE => The element isn't an external URL
+ */
+function isExternalUrlElem(elem: Element) {
+	return elem.classList.contains(CLASS_EXTERNAL_URL);
+}
+
+/**
+ * Is an element an internal URL.
+ * @param elem The element to check.
+ * @returns TRUE => The element is an internal URL, FALSE => The element isn't an internal URL
+ */
+function isInternalUrlElem(elem: Element) {
+	return elem.classList.contains(CLASS_INTERNAL_URL);
 }

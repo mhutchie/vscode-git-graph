@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openExternalUrl, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
 import { Disposable, toDisposable } from './utils/disposable';
 
 /**
@@ -456,6 +456,12 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'openExternalDirDiff',
 					error: await this.dataSource.openExternalDirDiff(msg.repo, msg.fromHash, msg.toHash, msg.isGui)
+				});
+				break;
+			case 'openExternalUrl':
+				this.sendMessage({
+					command: 'openExternalUrl',
+					error: await openExternalUrl(msg.url)
 				});
 				break;
 			case 'openFile':

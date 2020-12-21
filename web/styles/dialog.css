@@ -183,6 +183,10 @@ body.vscode-high-contrast .dialog{
 	animation:loadingIconAnimation 2s linear infinite;
 }
 
+.dialogContextMenu{
+	z-index:43;
+}
+
 
 /* Custom Select Input */
 

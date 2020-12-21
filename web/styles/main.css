@@ -75,11 +75,6 @@ body.selection-background-color-exists ::selection{
 	z-index:20;
 }
 
-.blockUserInteraction{
-	overflow:hidden !important;
-	pointer-events:none !important;
-}
-
 
 /* Commit Graph */
 

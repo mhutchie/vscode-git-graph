@@ -42,10 +42,10 @@ class ContextMenu {
 	 * @param target The target that the context menu was triggered on.
 	 * @param event The mouse event that triggered the context menu.
 	 * @param frameElem The HTML Element that the context menu should be rendered within (and be positioned relative to it's content).
-	 * @param blockUserInteractionElem An optional HTML Element that the user shouldn't be able to interact with while the context menu is open.
 	 * @param onClose An optional callback to be invoked when the context menu is closed.
+	 * @param className An optional class name to add to the context menu.
 	 */
-	public show(actions: ContextMenuActions, checked: boolean, target: ContextMenuTarget | null, event: MouseEvent, frameElem: HTMLElement, blockUserInteractionElem: HTMLElement | null = null, onClose: (() => void) | null = null) {
+	public show(actions: ContextMenuActions, checked: boolean, target: ContextMenuTarget | null, event: MouseEvent, frameElem: HTMLElement, onClose: (() => void) | null = null, className: string | null = null) {
 		let html = '', handlers: (() => void)[] = [], handlerId = 0;
 		this.close();
 
@@ -67,7 +67,7 @@ class ContextMenu {
 		if (handlers.length === 0) return; // No context menu actions are visible
 
 		const menu = document.createElement('ul');
-		menu.className = 'contextMenu' + (checked ? ' checked' : '');
+		menu.className = 'contextMenu' + (checked ? ' checked' : '') + (className !== null ? ' ' + className : '');
 		menu.style.opacity = '0';
 		menu.innerHTML = html;
 		frameElem.appendChild(menu);
@@ -98,10 +98,6 @@ class ContextMenu {
 		if (this.target !== null && this.target.type !== TargetType.Repo) {
 			alterClass(this.target.elem, CLASS_CONTEXT_MENU_ACTIVE, true);
 		}
-
-		if (blockUserInteractionElem !== null) {
-			alterClass(blockUserInteractionElem, CLASS_BLOCK_USER_INTERACTION, true);
-		}
 	}
 
 	/**
@@ -112,7 +108,6 @@ class ContextMenu {
 			this.elem.remove();
 			this.elem = null;
 		}
-		alterClassOfCollection(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName(CLASS_BLOCK_USER_INTERACTION), CLASS_BLOCK_USER_INTERACTION, false);
 		alterClassOfCollection(<HTMLCollectionOf<HTMLElement>>document.getElementsByClassName(CLASS_CONTEXT_MENU_ACTIVE), CLASS_CONTEXT_MENU_ACTIVE, false);
 		if (this.onClose !== null) {
 			this.onClose();

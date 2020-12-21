@@ -73,7 +73,6 @@ const COLUMN_MIN_WIDTH = 40;
 const COLUMN_LEFT_RIGHT_PADDING = 24;
 
 const CLASS_ACTIVE = 'active';
-const CLASS_BLOCK_USER_INTERACTION = 'blockUserInteraction';
 const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_DISABLED = 'disabled';

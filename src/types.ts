@@ -948,6 +948,14 @@ export interface ResponseOpenExternalDirDiff extends ResponseWithErrorInfo {
 	readonly command: 'openExternalDirDiff';
 }
 
+export interface RequestOpenExternalUrl extends BaseMessage {
+	readonly command: 'openExternalUrl';
+	readonly url: string;
+}
+export interface ResponseOpenExternalUrl extends ResponseWithErrorInfo {
+	readonly command: 'openExternalUrl';
+}
+
 export interface RequestOpenFile extends RepoRequest {
 	readonly command: 'openFile';
 	readonly filePath: string;
@@ -1198,6 +1206,7 @@ export type RequestMessage =
 	| RequestMerge
 	| RequestOpenExtensionSettings
 	| RequestOpenExternalDirDiff
+	| RequestOpenExternalUrl
 	| RequestOpenFile
 	| RequestOpenTerminal
 	| RequestPopStash
@@ -1257,6 +1266,7 @@ export type ResponseMessage =
 	| ResponseMerge
 	| ResponseOpenExtensionSettings
 	| ResponseOpenExternalDirDiff
+	| ResponseOpenExternalUrl
 	| ResponseOpenFile
 	| ResponseOpenTerminal
 	| ResponsePopStash

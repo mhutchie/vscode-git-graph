@@ -4724,10 +4724,11 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false);
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, false);
 
 			// Assert
-			expect(result).toBe(null);
+			expect(result).toStrictEqual([null]);
+			expect(spyOnSpawn).toBeCalledTimes(1);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -4736,11 +4737,40 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, false);
 
 			// Assert
-			expect(result).toBe(null);
+			expect(result).toStrictEqual([null]);
+			expect(spyOnSpawn).toBeCalledTimes(1);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['checkout', '-b', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should force create a branch at a commit', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, true);
+
+			// Assert
+			expect(result).toStrictEqual([null]);
+			expect(spyOnSpawn).toBeCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-f', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should force create a branch at a commit, and check it out', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, true);
+
+			// Assert
+			expect(result).toStrictEqual([null, null]);
+			expect(spyOnSpawn).toBeCalledTimes(2);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-f', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['checkout', 'develop'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -4748,10 +4778,38 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false);
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, false);
 
 			// Assert
-			expect(result).toBe('error message');
+			expect(result).toStrictEqual(['error message']);
+		});
+
+		it('Should return an error message thrown by git when creating a branch, and not proceed to check out the force-created branch', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, true);
+
+			// Assert
+			expect(result).toStrictEqual(['error message']);
+			expect(spyOnSpawn).toBeCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-f', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git when checking out a force-created branch', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.createBranch('/path/to/repo', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, true);
+
+			// Assert
+			expect(result).toStrictEqual([null, 'error message']);
+			expect(spyOnSpawn).toBeCalledTimes(2);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['branch', '-f', 'develop', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['checkout', 'develop'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 	});
 

@@ -815,15 +815,26 @@ export class DataSource extends Disposable {
 	 * @param branchName The name of the branch.
 	 * @param commitHash The hash of the commit the branch should be created at.
 	 * @param checkout Check out the branch after it is created.
-	 * @returns The ErrorInfo from the executed command.
+	 * @param force Force create the branch, replacing an existing branch with the same name (if it exists).
+	 * @returns The ErrorInfo's from the executed command(s).
 	 */
-	public createBranch(repo: string, branchName: string, commitHash: string, checkout: boolean) {
-		let args = [];
-		if (checkout) args.push('checkout', '-b');
-		else args.push('branch');
+	public async createBranch(repo: string, branchName: string, commitHash: string, checkout: boolean, force: boolean) {
+		const args = [];
+		if (checkout && !force) {
+			args.push('checkout', '-b');
+		} else {
+			args.push('branch');
+			if (force) {
+				args.push('-f');
+			}
+		}
 		args.push(branchName, commitHash);
 
-		return this.runGitCommand(args, repo);
+		const statuses = [await this.runGitCommand(args, repo)];
+		if (statuses[0] === null && checkout && force) {
+			statuses.push(await this.checkoutBranch(repo, branchName, null));
+		}
+		return statuses;
 	}
 
 	/**

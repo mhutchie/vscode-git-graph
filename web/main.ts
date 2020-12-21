@@ -1132,14 +1132,7 @@ class GitGraphView {
 			}, {
 				title: 'Create Branch' + ELLIPSIS,
 				visible: visibility.createBranch,
-				onClick: () => {
-					dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-						{ type: DialogInputType.TextRef, name: 'Name', default: '' },
-						{ type: DialogInputType.Checkbox, name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
-					], 'Create Branch', (values) => {
-						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: <string>values[0], commitHash: hash, checkout: <boolean>values[1] }, 'Creating Branch');
-					}, target);
-				}
+				onClick: () => this.createBranchAction(hash, '', this.config.dialogDefaults.createBranch.checkout, target)
 			}
 		], [
 			{
@@ -1555,6 +1548,24 @@ class GitGraphView {
 		} else {
 			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null, pullAfterwards: null }, 'Checking out Branch');
 		}
+	}
+
+	private createBranchAction(hash: string, initialName: string, initialCheckOut: boolean, target: DialogTarget & CommitTarget) {
+		dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+			{ type: DialogInputType.TextRef, name: 'Name', default: initialName },
+			{ type: DialogInputType.Checkbox, name: 'Check out', value: initialCheckOut }
+		], 'Create Branch', (values) => {
+			const branchName = <string>values[0], checkOut = <boolean>values[1];
+			if (this.gitBranches.includes(branchName)) {
+				dialog.showTwoButtons('A branch with name <b><i>' + escapeHtml(branchName) + '</i></b> already exists, do you want to replace it with this new branch?', 'Yes, replace the existing branch', () => {
+					runAction({ command: 'createBranch', repo: this.currentRepo, branchName: branchName, commitHash: hash, checkout: checkOut, force: true }, 'Creating Branch');
+				}, 'No, choose another branch name', () => {
+					this.createBranchAction(hash, branchName, checkOut, target);
+				}, target);
+			} else {
+				runAction({ command: 'createBranch', repo: this.currentRepo, branchName: branchName, commitHash: hash, checkout: checkOut, force: false }, 'Creating Branch');
+			}
+		}, target);
 	}
 
 	private deleteTagAction(refName: string, deleteOnRemote: string | null) {
@@ -3048,7 +3059,7 @@ window.addEventListener('load', () => {
 				finishOrDisplayError(msg.error, 'Unable to Create Archive', true);
 				break;
 			case 'createBranch':
-				refreshOrDisplayError(msg.error, 'Unable to Create Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Create Branch');
 				break;
 			case 'createPullRequest':
 				finishOrDisplayErrors(msg.errors, 'Unable to Create Pull Request', () => {

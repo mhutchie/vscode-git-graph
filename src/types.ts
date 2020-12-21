@@ -699,8 +699,9 @@ export interface RequestCreateBranch extends RepoRequest {
 	readonly commitHash: string;
 	readonly branchName: string;
 	readonly checkout: boolean;
+	readonly force: boolean;
 }
-export interface ResponseCreateBranch extends ResponseWithErrorInfo {
+export interface ResponseCreateBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'createBranch';
 }
 

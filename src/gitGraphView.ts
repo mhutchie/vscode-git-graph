@@ -278,7 +278,7 @@ export class GitGraphView extends Disposable {
 			case 'createBranch':
 				this.sendMessage({
 					command: 'createBranch',
-					error: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash, msg.checkout)
+					errors: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash, msg.checkout, msg.force)
 				});
 				break;
 			case 'createPullRequest':

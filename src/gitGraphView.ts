@@ -179,7 +179,7 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'addTag':
-				errorInfos = [await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)];
+				errorInfos = [await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.type, msg.message, msg.force)];
 				if (errorInfos[0] === null && msg.pushToRemote !== null) {
 					errorInfos.push(await this.dataSource.pushTag(msg.repo, msg.tagName, msg.pushToRemote));
 				}

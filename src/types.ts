@@ -428,7 +428,7 @@ export interface DefaultColumnVisibility {
 export interface DialogDefaults {
 	readonly addTag: {
 		readonly pushToRemote: boolean,
-		readonly type: 'annotated' | 'lightweight'
+		readonly type: TagType
 	};
 	readonly applyStash: {
 		readonly reinstateIndex: boolean
@@ -518,6 +518,11 @@ export const enum TabIconColourTheme {
 	Grey
 }
 
+export const enum TagType {
+	Annotated,
+	Lightweight
+}
+
 
 /* Base Interfaces for Request / Response Messages */
 
@@ -557,9 +562,10 @@ export interface RequestAddTag extends RepoRequest {
 	readonly command: 'addTag';
 	readonly commitHash: string;
 	readonly tagName: string;
-	readonly lightweight: boolean;
+	readonly type: TagType;
 	readonly message: string;
 	readonly pushToRemote: string | null; // string => name of the remote to push the tag to, null => don't push to a remote
+	readonly force: boolean;
 }
 export interface ResponseAddTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'addTag';
@@ -872,6 +878,7 @@ export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly refreshId: number;
 	readonly commits: GitCommit[];
 	readonly head: string | null;
+	readonly tags: string[];
 	readonly moreCommitsAvailable: boolean;
 	readonly onlyFollowFirstParent: boolean;
 }

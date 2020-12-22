@@ -53,6 +53,7 @@ declare global {
 		readonly gitConfig: GG.GitRepoConfig | null;
 		readonly gitRemotes: ReadonlyArray<string>;
 		readonly gitStashes: ReadonlyArray<GG.GitStash>;
+		readonly gitTags: ReadonlyArray<string>;
 		readonly commits: GG.GitCommit[];
 		readonly commitHead: string | null;
 		readonly avatars: AvatarImageCollection;

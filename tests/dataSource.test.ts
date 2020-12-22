@@ -14,7 +14,7 @@ import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
 import { Logger } from '../src/logger';
-import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn } from '../src/types';
+import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn, TagType } from '../src/types';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -483,7 +483,8 @@ describe('DataSource', () => {
 				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/remotes/origin/feature\n' +
 				'1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b refs/remotes/other-remote/master\n' +
 				'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 refs/tags/tag1\n' +
-				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n'
+				'2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c refs/tags/tag1^{}\n' +
+				'4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e refs/tags/tag2\n'
 			);
 			mockGitSuccessOnce(
 				'M modified.txt\n' +
@@ -555,6 +556,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1', 'tag2'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -646,6 +648,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -719,6 +722,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: [],
 				moreCommitsAvailable: true,
 				error: null
 			});
@@ -792,6 +796,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -865,6 +870,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -954,6 +960,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1044,6 +1051,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1134,6 +1142,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1223,6 +1232,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1314,6 +1324,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1405,6 +1416,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1502,6 +1514,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1594,6 +1607,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1699,6 +1713,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1840,6 +1855,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: [],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -1981,6 +1997,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: [],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -2080,6 +2097,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: [],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -2155,6 +2173,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -2177,6 +2196,7 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				commits: [],
 				head: null,
+				tags: [],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -2269,6 +2289,7 @@ describe('DataSource', () => {
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+				tags: ['tag1'],
 				moreCommitsAvailable: false,
 				error: null
 			});
@@ -2299,6 +2320,7 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				commits: [],
 				head: null,
+				tags: [],
 				moreCommitsAvailable: false,
 				error: 'error message'
 			});
@@ -2322,6 +2344,7 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				commits: [],
 				head: null,
+				tags: [],
 				moreCommitsAvailable: false,
 				error: 'error message'
 			});
@@ -4293,7 +4316,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, '');
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', TagType.Lightweight, '', false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -4306,7 +4329,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
 
 			// Run
-			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, 'message');
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', TagType.Annotated, 'message', false);
 
 			// Assert
 			expect(result).toBe(null);
@@ -4319,11 +4342,24 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.sign.tags', true);
 
 			// Run
-			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', false, 'message');
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', TagType.Annotated, 'message', false);
 
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['tag', '-s', 'tag-name', '-m', 'message', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should force add a tag to a commit', async () => {
+			// Setup
+			mockGitSuccessOnce();
+			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
+
+			// Run
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', TagType.Annotated, 'message', true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['tag', '-f', '-a', 'tag-name', '-m', 'message', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -4332,7 +4368,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.sign.tags', false);
 
 			// Run
-			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, '');
+			const result = await dataSource.addTag('/path/to/repo', 'tag-name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', TagType.Lightweight, '', false);
 
 			// Assert
 			expect(result).toBe('error message');

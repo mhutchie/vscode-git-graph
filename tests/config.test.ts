@@ -4,7 +4,7 @@ import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
-import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme } from '../src/types';
+import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme, TagType } from '../src/types';
 
 const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -838,7 +838,7 @@ describe('Config', () => {
 			expect(value).toStrictEqual({
 				addTag: {
 					pushToRemote: true,
-					type: 'annotated'
+					type: TagType.Annotated
 				},
 				applyStash: {
 					reinstateIndex: true
@@ -934,7 +934,7 @@ describe('Config', () => {
 			expect(value).toStrictEqual({
 				addTag: {
 					pushToRemote: false,
-					type: 'annotated'
+					type: TagType.Annotated
 				},
 				applyStash: {
 					reinstateIndex: false
@@ -1030,7 +1030,7 @@ describe('Config', () => {
 			expect(value).toStrictEqual({
 				addTag: {
 					pushToRemote: true,
-					type: 'annotated'
+					type: TagType.Annotated
 				},
 				applyStash: {
 					reinstateIndex: true
@@ -1126,7 +1126,7 @@ describe('Config', () => {
 			expect(value).toStrictEqual({
 				addTag: {
 					pushToRemote: false,
-					type: 'annotated'
+					type: TagType.Annotated
 				},
 				applyStash: {
 					reinstateIndex: false
@@ -1208,7 +1208,7 @@ describe('Config', () => {
 			expect(value).toStrictEqual({
 				addTag: {
 					pushToRemote: false,
-					type: 'annotated'
+					type: TagType.Annotated
 				},
 				applyStash: {
 					reinstateIndex: false
@@ -1283,7 +1283,7 @@ describe('Config', () => {
 			expect(value).toStrictEqual({
 				addTag: {
 					pushToRemote: false,
-					type: 'annotated'
+					type: TagType.Annotated
 				},
 				applyStash: {
 					reinstateIndex: false
@@ -1339,7 +1339,7 @@ describe('Config', () => {
 				const value = config.dialogDefaults;
 
 				// Assert
-				expect(value.addTag.type).toBe('annotated');
+				expect(value.addTag.type).toBe(TagType.Annotated);
 			});
 
 			it('Should return "lightweight" the configuration value is "Annotated"', () => {
@@ -1350,7 +1350,7 @@ describe('Config', () => {
 				const value = config.dialogDefaults;
 
 				// Assert
-				expect(value.addTag.type).toBe('lightweight');
+				expect(value.addTag.type).toBe(TagType.Lightweight);
 			});
 		});
 

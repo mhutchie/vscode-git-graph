@@ -5,6 +5,7 @@ class GitGraphView {
 	private gitConfig: GG.GitRepoConfig | null = null;
 	private gitRemotes: ReadonlyArray<string> = [];
 	private gitStashes: ReadonlyArray<GG.GitStash> = [];
+	private gitTags: ReadonlyArray<string> = [];
 	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
@@ -125,7 +126,7 @@ class GitGraphView {
 			this.avatars = prevState.avatars;
 			this.gitConfig = prevState.gitConfig;
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
-			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
+			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitTags, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
 			this.settingsWidget.restoreState(prevState.settingsWidget);
 			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
@@ -209,6 +210,7 @@ class GitGraphView {
 		this.gitConfig = null;
 		this.gitRemotes = [];
 		this.gitStashes = [];
+		this.gitTags = [];
 		this.currentBranches = null;
 		this.renderFetchButton();
 		this.closeCommitDetails(false);
@@ -296,7 +298,11 @@ class GitGraphView {
 		}
 	}
 
-	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean, onlyFollowFirstParent: boolean) {
+	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, tags: ReadonlyArray<string>, moreAvailable: boolean, onlyFollowFirstParent: boolean) {
+		// This list of tags is just used to provide additional information in the dialogs. Tag information included in commits is used for all other purposes (e.g. rendering, context menus)
+		const tagsChanged = !arraysStrictlyEqual(this.gitTags, tags);
+		this.gitTags = tags;
+
 		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.onlyFollowFirstParent === onlyFollowFirstParent && this.commitHead === commitHead && commits.length > 0 && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
@@ -323,6 +329,8 @@ class GitGraphView {
 						}
 					}
 				}
+			} else if (tagsChanged) {
+				this.saveState();
 			}
 			this.finaliseLoadCommits();
 			return;
@@ -465,7 +473,7 @@ class GitGraphView {
 		if (msg.error === null) {
 			const refreshState = this.currentRepoRefreshState;
 			if (refreshState.inProgress && refreshState.loadCommitsRefreshId === msg.refreshId) {
-				this.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.onlyFollowFirstParent);
+				this.loadCommits(msg.commits, msg.head, msg.tags, msg.moreCommitsAvailable, msg.onlyFollowFirstParent);
 			}
 		} else {
 			const error = this.gitBranches.length === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
@@ -707,6 +715,7 @@ class GitGraphView {
 			gitConfig: this.gitConfig,
 			gitRemotes: this.gitRemotes,
 			gitStashes: this.gitStashes,
+			gitTags: this.gitTags,
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,
@@ -1086,49 +1095,7 @@ class GitGraphView {
 			{
 				title: 'Add Tag' + ELLIPSIS,
 				visible: visibility.addTag,
-				onClick: () => {
-					const dialogConfig = this.config.dialogDefaults.addTag;
-
-					let mostRecentTagsIndex = -1;
-					for (let i = 0; i < this.commits.length; i++) {
-						if (this.commits[i].tags.length > 0 && (mostRecentTagsIndex === -1 || this.commits[i].date > this.commits[mostRecentTagsIndex].date)) {
-							mostRecentTagsIndex = i;
-						}
-					}
-					let mostRecentTags = mostRecentTagsIndex > -1 ? this.commits[mostRecentTagsIndex].tags.map((tag) => '"' + tag.name + '"') : [];
-
-					let inputs: DialogInput[] = [
-						{ type: DialogInputType.TextRef, name: 'Name', default: '', info: mostRecentTags.length > 0 ? 'The most recent tag' + (mostRecentTags.length > 1 ? 's' : '') + ' in the loaded commits ' + (mostRecentTags.length > 1 ? 'are' : 'is') + ' ' + formatCommaSeparatedList(mostRecentTags) + '.' : undefined },
-						{ type: DialogInputType.Select, name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
-						{ type: DialogInputType.Text, name: 'Message', default: '', placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
-					];
-					if (this.gitRemotes.length > 1) {
-						let options = [{ name: 'Don\'t push', value: '-1' }];
-						this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
-						let defaultOption = dialogConfig.pushToRemote
-							? this.gitRemotes.indexOf(this.getPushRemote())
-							: -1;
-						inputs.push({ type: DialogInputType.Select, name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
-					} else if (this.gitRemotes.length === 1) {
-						inputs.push({ type: DialogInputType.Checkbox, name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
-					}
-					dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
-						let pushToRemote = this.gitRemotes.length > 1 && <string>values[3] !== '-1'
-							? this.gitRemotes[parseInt(<string>values[3])]
-							: this.gitRemotes.length === 1 && <boolean>values[3]
-								? this.gitRemotes[0]
-								: null;
-						runAction({
-							command: 'addTag',
-							repo: this.currentRepo,
-							tagName: <string>values[0],
-							commitHash: hash,
-							lightweight: <string>values[1] === 'lightweight',
-							message: <string>values[2],
-							pushToRemote: pushToRemote
-						}, 'Adding Tag');
-					}, target);
-				}
+				onClick: () => this.addTagAction(hash, '', this.config.dialogDefaults.addTag.type, '', null, target)
 			}, {
 				title: 'Create Branch' + ELLIPSIS,
 				visible: visibility.createBranch,
@@ -1518,6 +1485,56 @@ class GitGraphView {
 
 	/* Actions */
 
+	private addTagAction(hash: string, initialName: string, initialType: GG.TagType, initialMessage: string, initialPushToRemote: string | null, target: DialogTarget & CommitTarget, isInitialLoad: boolean = true) {
+		let mostRecentTagsIndex = -1;
+		for (let i = 0; i < this.commits.length; i++) {
+			if (this.commits[i].tags.length > 0 && (mostRecentTagsIndex === -1 || this.commits[i].date > this.commits[mostRecentTagsIndex].date)) {
+				mostRecentTagsIndex = i;
+			}
+		}
+		const mostRecentTags = mostRecentTagsIndex > -1 ? this.commits[mostRecentTagsIndex].tags.map((tag) => '"' + tag.name + '"') : [];
+
+		const inputs: DialogInput[] = [
+			{ type: DialogInputType.TextRef, name: 'Name', default: initialName, info: mostRecentTags.length > 0 ? 'The most recent tag' + (mostRecentTags.length > 1 ? 's' : '') + ' in the loaded commits ' + (mostRecentTags.length > 1 ? 'are' : 'is') + ' ' + formatCommaSeparatedList(mostRecentTags) + '.' : undefined },
+			{ type: DialogInputType.Select, name: 'Type', default: initialType === GG.TagType.Annotated ? 'annotated' : 'lightweight', options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+			{ type: DialogInputType.Text, name: 'Message', default: initialMessage, placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
+		];
+		if (this.gitRemotes.length > 1) {
+			const options = [{ name: 'Don\'t push', value: '-1' }];
+			this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
+			const defaultOption = initialPushToRemote !== null
+				? this.gitRemotes.indexOf(initialPushToRemote)
+				: isInitialLoad && this.config.dialogDefaults.addTag.pushToRemote
+					? this.gitRemotes.indexOf(this.getPushRemote())
+					: -1;
+			inputs.push({ type: DialogInputType.Select, name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
+		} else if (this.gitRemotes.length === 1) {
+			const defaultValue = initialPushToRemote !== null || (isInitialLoad && this.config.dialogDefaults.addTag.pushToRemote);
+			inputs.push({ type: DialogInputType.Checkbox, name: 'Push to remote', value: defaultValue, info: 'Once this tag has been added, push it to the repositories remote.' });
+		}
+
+		dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
+			const tagName = <string>values[0];
+			const type = <string>values[1] === 'annotated' ? GG.TagType.Annotated : GG.TagType.Lightweight;
+			const message = <string>values[2];
+			const pushToRemote = this.gitRemotes.length > 1 && <string>values[3] !== '-1'
+				? this.gitRemotes[parseInt(<string>values[3])]
+				: this.gitRemotes.length === 1 && <boolean>values[3]
+					? this.gitRemotes[0]
+					: null;
+
+			if (this.gitTags.includes(tagName)) {
+				dialog.showTwoButtons('A tag named <b><i>' + escapeHtml(tagName) + '</i></b> already exists, do you want to replace it with this new tag?', 'Yes, replace the existing tag', () => {
+					runAction({ command: 'addTag', repo: this.currentRepo, tagName: tagName, commitHash: hash, type: type, message: message, pushToRemote: pushToRemote, force: true }, 'Adding Tag');
+				}, 'No, choose another tag name', () => {
+					this.addTagAction(hash, tagName, type, message, pushToRemote, target, false);
+				}, target);
+			} else {
+				runAction({ command: 'addTag', repo: this.currentRepo, tagName: tagName, commitHash: hash, type: type, message: message, pushToRemote: pushToRemote, force: false }, 'Adding Tag');
+			}
+		}, target);
+	}
+
 	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null, target: DialogTarget & (CommitTarget | RefTarget)) {
 		if (remote !== null) {
 			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substring(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
@@ -1557,7 +1574,7 @@ class GitGraphView {
 		], 'Create Branch', (values) => {
 			const branchName = <string>values[0], checkOut = <boolean>values[1];
 			if (this.gitBranches.includes(branchName)) {
-				dialog.showTwoButtons('A branch with name <b><i>' + escapeHtml(branchName) + '</i></b> already exists, do you want to replace it with this new branch?', 'Yes, replace the existing branch', () => {
+				dialog.showTwoButtons('A branch named <b><i>' + escapeHtml(branchName) + '</i></b> already exists, do you want to replace it with this new branch?', 'Yes, replace the existing branch', () => {
 					runAction({ command: 'createBranch', repo: this.currentRepo, branchName: branchName, commitHash: hash, checkout: checkOut, force: true }, 'Creating Branch');
 				}, 'No, choose another branch name', () => {
 					this.createBranchAction(hash, branchName, checkOut, target);

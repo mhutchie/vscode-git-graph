@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -257,9 +257,15 @@ export class DataSource extends Disposable {
 				}
 			}
 
-			return { commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable, error: null };
+			return {
+				commits: commitNodes,
+				head: refData.head,
+				tags: unique(refData.tags.map((tag) => tag.name)),
+				moreCommitsAvailable: moreCommitsAvailable,
+				error: null
+			};
 		}).catch((errorMessage) => {
-			return { commits: [], head: null, moreCommitsAvailable: false, error: errorMessage };
+			return { commits: [], head: null, tags: [], moreCommitsAvailable: false, error: errorMessage };
 		});
 	}
 
@@ -659,13 +665,17 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @param tagName The name of the tag.
 	 * @param commitHash The hash of the commit the tag should be added to.
-	 * @param lightweight Is the tag lightweight.
+	 * @param type Is the tag annotated or lightweight.
 	 * @param message The message of the tag (if it is an annotated tag).
+	 * @param force Force add the tag, replacing an existing tag with the same name (if it exists).
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
+	public addTag(repo: string, tagName: string, commitHash: string, type: TagType, message: string, force: boolean) {
 		const args = ['tag'];
-		if (lightweight) {
+		if (force) {
+			args.push('-f');
+		}
+		if (type === TagType.Lightweight) {
 			args.push(tagName);
 		} else {
 			args.push(getConfig().signTags ? '-s' : '-a', tagName, '-m', message);
@@ -1783,6 +1793,12 @@ function removeTrailingBlankLines(lines: string[]) {
 	return lines;
 }
 
+function unique(items: ReadonlyArray<string>) {
+	const uniqueItems: { [item: string]: true } = {};
+	items.forEach((item) => uniqueItems[item] = true);
+	return Object.keys(uniqueItems);
+}
+
 
 /* Types */
 
@@ -1816,6 +1832,7 @@ interface GitCommitRecord {
 interface GitCommitData {
 	commits: GitCommit[];
 	head: string | null;
+	tags: string[];
 	moreCommitsAvailable: boolean;
 	error: ErrorInfo;
 }

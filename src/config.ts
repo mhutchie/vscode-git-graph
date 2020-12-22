@@ -24,7 +24,8 @@ import {
 	ReferenceLabelsConfig,
 	RepoDropdownOrder,
 	SquashMessageFormat,
-	TabIconColourTheme
+	TabIconColourTheme,
+	TagType
 } from './types';
 
 const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
@@ -176,7 +177,7 @@ class Config {
 		return {
 			addTag: {
 				pushToRemote: !!this.config.get('dialog.addTag.pushToRemote', false),
-				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? 'lightweight' : 'annotated'
+				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? TagType.Lightweight : TagType.Annotated
 			},
 			applyStash: {
 				reinstateIndex: !!this.config.get('dialog.applyStash.reinstateIndex', false)

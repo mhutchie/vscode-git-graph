@@ -108,13 +108,13 @@ export class DataSource extends Disposable {
 		].join(GIT_LOG_SEPARATOR);
 
 		this.gitFormatLog = [
-			'%H', '%P',// Hash & Parent Information
+			'%H', '%P', // Hash & Parent Information
 			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
 			'%s' // Subject
 		].join(GIT_LOG_SEPARATOR);
 
 		this.gitFormatStash = [
-			'%H', '%P', '%gD',// Hash, Parent & Selector Information
+			'%H', '%P', '%gD', // Hash, Parent & Selector Information
 			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
 			'%s' // Subject
 		].join(GIT_LOG_SEPARATOR);

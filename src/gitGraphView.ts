@@ -251,7 +251,7 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'compareCommits',
 					commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
-					... await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
+					...await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
 					codeReview: msg.toHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.fromHash + '-' + msg.toHash) : null,
 					refresh: msg.refresh
 				});
@@ -404,7 +404,7 @@ export class GitGraphView extends Disposable {
 					command: 'loadCommits',
 					refreshId: msg.refreshId,
 					onlyFollowFirstParent: msg.onlyFollowFirstParent,
-					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
+					...await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
 				});
 				break;
 			case 'loadConfig':
@@ -565,7 +565,7 @@ export class GitGraphView extends Disposable {
 					command: 'startCodeReview',
 					commitHash: msg.commitHash,
 					compareWithHash: msg.compareWithHash,
-					... await this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile)
+					...await this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile)
 				});
 				break;
 			case 'tagDetails':
@@ -573,7 +573,7 @@ export class GitGraphView extends Disposable {
 					command: 'tagDetails',
 					tagName: msg.tagName,
 					commitHash: msg.commitHash,
-					... await this.dataSource.getTagDetails(msg.repo, msg.tagName)
+					...await this.dataSource.getTagDetails(msg.repo, msg.tagName)
 				});
 				break;
 			case 'viewDiff':

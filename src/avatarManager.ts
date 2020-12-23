@@ -56,7 +56,7 @@ export class AvatarManager extends Disposable {
 			}),
 
 			// Dispose the avatar event emitter
-			this.avatarEventEmitter,
+			this.avatarEventEmitter
 		);
 	}
 
@@ -298,7 +298,7 @@ export class AvatarManager extends Disposable {
 		https.get({
 			hostname: 'gitlab.com', path: '/api/v4/users?search=' + avatarRequest.email,
 			headers: { 'User-Agent': 'vscode-git-graph', 'Private-Token': 'w87U_3gAxWWaPtFgCcus' }, // Token only has read access
-			agent: false, timeout: 15000,
+			agent: false, timeout: 15000
 		}, (res) => {
 			let respBody = '';
 			res.on('data', (chunk: Buffer) => { respBody += chunk; });

@@ -9,10 +9,10 @@ export function mockSpyOnSpawn(spyOnSpawn: jest.SpyInstance, callback: (onCallba
 		return {
 			on: (event: string, callback: (...args: any[]) => void) => onCallbacks[event] = callback,
 			stderr: {
-				on: (event: string, callback: (...args: any[]) => void) => stderrOnCallbacks[event] = callback,
+				on: (event: string, callback: (...args: any[]) => void) => stderrOnCallbacks[event] = callback
 			},
 			stdout: {
-				on: (event: string, callback: (...args: any[]) => void) => stdoutOnCallbacks[event] = callback,
+				on: (event: string, callback: (...args: any[]) => void) => stdoutOnCallbacks[event] = callback
 			}
 		};
 	});

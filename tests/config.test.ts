@@ -272,6 +272,8 @@ describe('Config', () => {
 					push: true,
 					createPullRequest: true,
 					createArchive: true,
+					selectInBranchesDropdown: true,
+					unselectInBranchesDropdown: true,
 					copyName: true
 				},
 				commit: {
@@ -295,6 +297,8 @@ describe('Config', () => {
 					pull: true,
 					createPullRequest: true,
 					createArchive: true,
+					selectInBranchesDropdown: true,
+					unselectInBranchesDropdown: true,
 					copyName: true
 				},
 				stash: {
@@ -337,6 +341,8 @@ describe('Config', () => {
 					push: true,
 					createPullRequest: true,
 					createArchive: true,
+					selectInBranchesDropdown: true,
+					unselectInBranchesDropdown: true,
 					copyName: true
 				},
 				commit: {
@@ -360,6 +366,8 @@ describe('Config', () => {
 					pull: true,
 					createPullRequest: true,
 					createArchive: true,
+					selectInBranchesDropdown: true,
+					unselectInBranchesDropdown: true,
 					copyName: true
 				},
 				stash: {
@@ -417,6 +425,8 @@ describe('Config', () => {
 					push: true,
 					createPullRequest: true,
 					createArchive: true,
+					selectInBranchesDropdown: true,
+					unselectInBranchesDropdown: true,
 					copyName: true
 				},
 				commit: {
@@ -440,6 +450,8 @@ describe('Config', () => {
 					pull: true,
 					createPullRequest: true,
 					createArchive: true,
+					selectInBranchesDropdown: true,
+					unselectInBranchesDropdown: true,
 					copyName: true
 				},
 				stash: {

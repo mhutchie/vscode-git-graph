@@ -340,6 +340,8 @@ export interface ContextMenuActionsVisibility {
 		readonly push: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
+		readonly selectInBranchesDropdown: boolean;
+		readonly unselectInBranchesDropdown: boolean;
 		readonly copyName: boolean;
 	};
 	readonly commit: {
@@ -363,6 +365,8 @@ export interface ContextMenuActionsVisibility {
 		readonly pull: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
+		readonly selectInBranchesDropdown: boolean;
+		readonly unselectInBranchesDropdown: boolean;
 		readonly copyName: boolean;
 	};
 	readonly stash: {

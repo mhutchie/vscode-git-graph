@@ -170,6 +170,14 @@
 									"type": "boolean",
 									"title": "Create Archive"
 								},
+								"selectInBranchesDropdown": {
+									"type": "boolean",
+									"title": "Select in Branches Dropdown"
+								},
+								"unselectInBranchesDropdown": {
+									"type": "boolean",
+									"title": "Unselect in Branches Dropdown"
+								},
 								"copyName": {
 									"type": "boolean",
 									"title": "Copy Branch Name to Clipboard"
@@ -255,6 +263,14 @@
 								"createArchive": {
 									"type": "boolean",
 									"title": "Create Archive"
+								},
+								"selectInBranchesDropdown": {
+									"type": "boolean",
+									"title": "Select in Branches Dropdown"
+								},
+								"unselectInBranchesDropdown": {
+									"type": "boolean",
+									"title": "Unselect in Branches Dropdown"
 								},
 								"copyName": {
 									"type": "boolean",

@@ -976,6 +976,7 @@ class GitGraphView {
 
 	private getBranchContextMenuActions(target: DialogTarget & RefTarget): ContextMenuActions {
 		const refName = target.ref, visibility = this.config.contextMenuActionsVisibility.branch;
+		const isSelectedInBranchesDropdown = this.branchDropdown.isSelected(refName);
 		return [[
 			{
 				title: 'Checkout Branch',
@@ -1078,6 +1079,17 @@ class GitGraphView {
 					runAction({ command: 'createArchive', repo: this.currentRepo, ref: refName }, 'Creating Archive');
 				}
 			},
+			{
+				title: 'Select in Branches Dropdown',
+				visible: visibility.selectInBranchesDropdown && !isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.selectOption(refName)
+			},
+			{
+				title: 'Unselect in Branches Dropdown',
+				visible: visibility.unselectInBranchesDropdown && isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.unselectOption(refName)
+			}
+		], [
 			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,
@@ -1231,6 +1243,8 @@ class GitGraphView {
 	private getRemoteBranchContextMenuActions(remote: string, target: DialogTarget & RefTarget): ContextMenuActions {
 		const refName = target.ref, visibility = this.config.contextMenuActionsVisibility.remoteBranch;
 		const branchName = remote !== '' ? refName.substring(remote.length + 1) : '';
+		const prefixedRefName = 'remotes/' + refName;
+		const isSelectedInBranchesDropdown = this.branchDropdown.isSelected(prefixedRefName);
 		return [[
 			{
 				title: 'Checkout Branch' + ELLIPSIS,
@@ -1297,6 +1311,17 @@ class GitGraphView {
 					runAction({ command: 'createArchive', repo: this.currentRepo, ref: refName }, 'Creating Archive');
 				}
 			},
+			{
+				title: 'Select in Branches Dropdown',
+				visible: visibility.selectInBranchesDropdown && !isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.selectOption(prefixedRefName)
+			},
+			{
+				title: 'Unselect in Branches Dropdown',
+				visible: visibility.unselectInBranchesDropdown && isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.unselectOption(prefixedRefName)
+			}
+		], [
 			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,

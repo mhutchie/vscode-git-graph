@@ -22,7 +22,7 @@ const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 let logger: Logger;
-let spyOnSpawn: jest.SpyInstance, spyOnLog: jest.SpyInstance;
+let spyOnSpawn: jest.SpyInstance, spyOnLog: jest.SpyInstance, spyOnLogError: jest.SpyInstance;
 
 beforeAll(() => {
 	onDidChangeConfiguration = new EventEmitter<ConfigurationChangeEvent>();
@@ -31,6 +31,7 @@ beforeAll(() => {
 	jest.spyOn(path, 'normalize').mockImplementation((p) => p);
 	spyOnSpawn = jest.spyOn(cp, 'spawn');
 	spyOnLog = jest.spyOn(logger, 'log');
+	spyOnLogError = jest.spyOn(logger, 'logError');
 });
 
 afterAll(() => {
@@ -6138,8 +6139,8 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b is being opened');
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b has been closed'));
+			expect(spyOnLog).toHaveBeenCalledWith('External diff tool is being opened (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b)');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External diff tool has exited (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^..1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b)'));
 		});
 
 		it('Should launch a gui directory diff (between two commits)', async () => {
@@ -6152,8 +6153,8 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c is being opened');
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c has been closed'));
+			expect(spyOnLog).toHaveBeenCalledWith('External diff tool is being opened (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c)');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External diff tool has exited (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b..2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c)'));
 		});
 
 		it('Should launch a gui directory diff (for uncommitted changes)', async () => {
@@ -6166,8 +6167,8 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnLog).toHaveBeenCalledWith('External difftool for HEAD is being opened');
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for HEAD has been closed'));
+			expect(spyOnLog).toHaveBeenCalledWith('External diff tool is being opened (HEAD)');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External diff tool has exited (HEAD)'));
 		});
 
 		it('Should launch a gui directory diff (between a commit and the uncommitted changes)', async () => {
@@ -6180,8 +6181,8 @@ describe('DataSource', () => {
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
-			expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b is being opened');
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External difftool for 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b has been closed'));
+			expect(spyOnLog).toHaveBeenCalledWith('External diff tool is being opened (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b)');
+			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('External diff tool has exited (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b)'));
 		});
 
 		it('Should launch a directory diff in a terminal (between two commits)', async () => {
@@ -6207,6 +6208,25 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
+		});
+
+		it('Should display the error message when the diff tool doesn\'t exit successfully', async () => {
+			// Setup
+			mockGitThrowingErrorOnce('line1\nline2\nline3');
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['difftool', '--dir-diff', '-g', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnLog).toHaveBeenCalledWith('External diff tool is being opened (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b)');
+			await waitForExpect(() => {
+				expect(spyOnLog).toHaveBeenCalledWith('External diff tool has exited (1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b)');
+				expect(spyOnLogError).toBeCalledWith('line1 line2 line3');
+				expect(vscode.window.showErrorMessage).toBeCalledWith('line1 line2 line3');
+			});
 		});
 	});
 

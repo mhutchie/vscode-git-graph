@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -1236,9 +1236,14 @@ export class DataSource extends Disposable {
 					}
 				}
 				if (isGui) {
-					this.logger.log('External difftool for ' + args[args.length - 1] + ' is being opened');
-					this.runGitCommand(args, repo).then(() => {
-						this.logger.log('External difftool for ' + args[args.length - 1] + ' has been closed');
+					this.logger.log('External diff tool is being opened (' + args[args.length - 1] + ')');
+					this.runGitCommand(args, repo).then((errorInfo) => {
+						this.logger.log('External diff tool has exited (' + args[args.length - 1] + ')');
+						if (errorInfo !== null) {
+							const errorMessage = errorInfo.replace(EOL_REGEX, ' ');
+							this.logger.logError(errorMessage);
+							showErrorMessage(errorMessage);
+						}
 					});
 				} else {
 					openGitTerminal(repo, this.gitExecutable.path, args.join(' '), 'Open External Directory Diff');

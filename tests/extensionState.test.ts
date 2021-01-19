@@ -427,6 +427,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getGlobalViewState();
 
 			// Assert
+			expect(extensionContext.globalState.get).toHaveBeenCalledWith('globalViewState', expect.anything());
 			expect(result).toStrictEqual(globalViewState);
 		});
 
@@ -440,6 +441,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getGlobalViewState();
 
 			// Assert
+			expect(extensionContext.globalState.get).toHaveBeenCalledWith('globalViewState', expect.anything());
 			expect(result).toStrictEqual({
 				alwaysAcceptCheckoutCommit: false,
 				issueLinkingConfig: null
@@ -454,6 +456,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getGlobalViewState();
 
 			// Assert
+			expect(extensionContext.globalState.get).toHaveBeenCalledWith('globalViewState', expect.anything());
 			expect(result).toStrictEqual({
 				alwaysAcceptCheckoutCommit: false,
 				issueLinkingConfig: null
@@ -509,6 +512,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getWorkspaceViewState();
 
 			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('workspaceViewState', expect.anything());
 			expect(result).toStrictEqual(workspaceViewState);
 		});
 
@@ -523,6 +527,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getWorkspaceViewState();
 
 			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('workspaceViewState', expect.anything());
 			expect(result).toStrictEqual({
 				findIsCaseSensitive: true,
 				findIsRegex: false,
@@ -538,6 +543,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getWorkspaceViewState();
 
 			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('workspaceViewState', expect.anything());
 			expect(result).toStrictEqual({
 				findIsCaseSensitive: false,
 				findIsRegex: false,

@@ -772,16 +772,6 @@ class GitGraphView {
 		}
 	}
 
-	public updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(key: K, value: GG.GitGraphViewGlobalState[K]) {
-		globalState[key] = value;
-		sendMessage({ command: 'setGlobalViewState', state: globalState });
-	}
-
-	public updateWorkspaceViewState<K extends keyof GG.GitGraphViewWorkspaceState>(key: K, value: GG.GitGraphViewWorkspaceState[K]) {
-		workspaceState[key] = value;
-		sendMessage({ command: 'setWorkspaceViewState', state: workspaceState });
-	}
-
 
 	/* Renderers */
 
@@ -1124,7 +1114,7 @@ class GitGraphView {
 					} else {
 						dialog.showCheckbox('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', 'Always Accept', false, 'Yes, checkout', (alwaysAccept) => {
 							if (alwaysAccept) {
-								this.updateGlobalViewState('alwaysAcceptCheckoutCommit', true);
+								updateGlobalViewState('alwaysAcceptCheckoutCommit', true);
 							}
 							checkoutCommit();
 						}, target);

@@ -64,7 +64,7 @@ class FindWidget {
 		this.caseSensitiveElem = document.getElementById('findCaseSensitive')!;
 		alterClass(this.caseSensitiveElem, CLASS_ACTIVE, workspaceState.findIsCaseSensitive);
 		this.caseSensitiveElem.addEventListener('click', () => {
-			this.view.updateWorkspaceViewState('findIsCaseSensitive', !workspaceState.findIsCaseSensitive);
+			updateWorkspaceViewState('findIsCaseSensitive', !workspaceState.findIsCaseSensitive);
 			alterClass(this.caseSensitiveElem, CLASS_ACTIVE, workspaceState.findIsCaseSensitive);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
@@ -74,7 +74,7 @@ class FindWidget {
 		this.regexElem = document.getElementById('findRegex')!;
 		alterClass(this.regexElem, CLASS_ACTIVE, workspaceState.findIsRegex);
 		this.regexElem.addEventListener('click', () => {
-			this.view.updateWorkspaceViewState('findIsRegex', !workspaceState.findIsRegex);
+			updateWorkspaceViewState('findIsRegex', !workspaceState.findIsRegex);
 			alterClass(this.regexElem, CLASS_ACTIVE, workspaceState.findIsRegex);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
@@ -97,7 +97,7 @@ class FindWidget {
 		openCdvElem.innerHTML = SVG_ICONS.cdv;
 		alterClass(openCdvElem, CLASS_ACTIVE, workspaceState.findOpenCommitDetailsView);
 		openCdvElem.addEventListener('click', () => {
-			this.view.updateWorkspaceViewState('findOpenCommitDetailsView', !workspaceState.findOpenCommitDetailsView);
+			updateWorkspaceViewState('findOpenCommitDetailsView', !workspaceState.findOpenCommitDetailsView);
 			alterClass(openCdvElem, CLASS_ACTIVE, workspaceState.findOpenCommitDetailsView);
 			this.openCommitDetailsViewForCurrentMatchIfEnabled();
 		});

@@ -477,6 +477,29 @@ function handledEvent(event: Event) {
 }
 
 
+/* State Helpers */
+
+/**
+ * Update a key-value pair in the Global View State.
+ * @param key The key identifying the value to update.
+ * @param value The new value.
+ */
+function updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(key: K, value: GG.GitGraphViewGlobalState[K]) {
+	(<GG.DeepWriteable<GG.GitGraphViewGlobalState>>globalState)[key] = value;
+	sendMessage({ command: 'setGlobalViewState', state: globalState });
+}
+
+/**
+ * Update a key-value pair in the Workspace View State.
+ * @param key The key identifying the value to update.
+ * @param value The new value.
+ */
+function updateWorkspaceViewState<K extends keyof GG.GitGraphViewWorkspaceState>(key: K, value: GG.GitGraphViewWorkspaceState[K]) {
+	(<GG.DeepWriteable<GG.GitGraphViewWorkspaceState>>workspaceState)[key] = value;
+	sendMessage({ command: 'setWorkspaceViewState', state: workspaceState });
+}
+
+
 /* VSCode Helpers */
 
 /**

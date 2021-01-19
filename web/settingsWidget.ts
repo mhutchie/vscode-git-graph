@@ -551,7 +551,7 @@ class SettingsWidget {
 			if (this.repo.issueLinkingConfig !== null) {
 				this.view.saveRepoStateValue(this.currentRepo, 'issueLinkingConfig', null);
 			}
-			this.view.updateGlobalViewState('issueLinkingConfig', config);
+			updateGlobalViewState('issueLinkingConfig', config);
 		} else {
 			this.view.saveRepoStateValue(this.currentRepo, 'issueLinkingConfig', config);
 		}

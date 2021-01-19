@@ -561,7 +561,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -653,7 +653,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--author-date-order', 'master', 'develop', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--author-date-order', 'master', 'develop', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -727,7 +727,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: true,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=3', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--topo-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=3', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--topo-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -802,7 +802,7 @@ describe('DataSource', () => {
 				error: null
 			});
 			expect(spyOnSpawn).toHaveBeenCalledTimes(2);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -876,7 +876,7 @@ describe('DataSource', () => {
 				error: null
 			});
 			expect(spyOnSpawn).toHaveBeenCalledTimes(2);
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
@@ -965,7 +965,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=no', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1056,7 +1056,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1147,7 +1147,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1237,7 +1237,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '--heads', '--tags', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1329,7 +1329,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--reflog', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--reflog', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1421,7 +1421,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--first-parent', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--first-parent', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1519,7 +1519,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1612,7 +1612,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--glob=refs/remotes/origin', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--glob=refs/remotes/origin', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1718,7 +1718,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -1860,7 +1860,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2002,7 +2002,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2102,7 +2102,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2178,7 +2178,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2294,7 +2294,7 @@ describe('DataSource', () => {
 				moreCommitsAvailable: false,
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--max-count=301', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%s', '--date-order', '--branches', '--tags', '--remotes', 'HEAD', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show-ref', '-d', '--head'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['status', '--untracked-files=all', '--porcelain'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2670,7 +2670,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2723,7 +2723,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--name-status', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--numstat', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2786,7 +2786,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%G?XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GSXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GKXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%G?XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GSXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GKXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2849,7 +2849,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%G?XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GSXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GKXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%G?XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GSXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%GKXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2909,7 +2909,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -2968,7 +2968,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cNXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cEXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -3007,7 +3007,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -3060,7 +3060,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -3167,7 +3167,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
@@ -3233,7 +3233,7 @@ describe('DataSource', () => {
 				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff-tree', '--name-status', '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'], expect.objectContaining({ cwd: '/path/to/repo' }));
@@ -3755,7 +3755,7 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toBe('A commit message.');
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['log', '--format=%s', '-n', '1', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'log', '--format=%s', '-n', '1', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return NULL when git threw an error', async () => {

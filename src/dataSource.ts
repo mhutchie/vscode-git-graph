@@ -456,7 +456,7 @@ export class DataSource extends Disposable {
 	 * @returns The subject string, or NULL if an error occurred.
 	 */
 	public getCommitSubject(repo: string, commitHash: string): Promise<string | null> {
-		return this.spawnGit(['log', '--format=%s', '-n', '1', commitHash, '--'], repo, (stdout) => {
+		return this.spawnGit(['-c', 'log.showSignature=false', 'log', '--format=%s', '-n', '1', commitHash, '--'], repo, (stdout) => {
 			return stdout.trim().replace(/\s+/g, ' ');
 		}).then((subject) => subject, () => null);
 	}
@@ -1316,7 +1316,7 @@ export class DataSource extends Disposable {
 	 * @returns The base commit details.
 	 */
 	private getCommitDetailsBase(repo: string, commitHash: string) {
-		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): DeepWriteable<GitCommitDetails> => {
+		return this.spawnGit(['-c', 'log.showSignature=false', 'show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): DeepWriteable<GitCommitDetails> => {
 			const commitInfo = stdout.split(GIT_LOG_SEPARATOR);
 			return {
 				hash: commitInfo[0],
@@ -1448,8 +1448,10 @@ export class DataSource extends Disposable {
 	 * @returns An array of commits.
 	 */
 	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
-		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
-		if (onlyFollowFirstParent) args.push('--first-parent');
+		const args = ['-c', 'log.showSignature=false', 'log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
+		if (onlyFollowFirstParent) {
+			args.push('--first-parent');
+		}
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
 				args.push(branches[i]);

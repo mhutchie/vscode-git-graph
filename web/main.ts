@@ -2079,6 +2079,7 @@ class GitGraphView {
 						index: this.commitLookup[this.expandedCommit.commitHash],
 						elem: <HTMLElement>eventTarget
 					};
+					GitGraphView.closeCdvContextMenuIfOpen(this.expandedCommit);
 					this.expandedCommit.contextMenuOpen.summary = true;
 				} else if ((eventElem = <HTMLElement | null>eventTarget.closest('.commit')) !== null) {
 					// URL is in the Commits
@@ -2911,6 +2912,7 @@ class GitGraphView {
 			const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
 			const isUncommitted = commitOrder.to === UNCOMMITTED;
 
+			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 			expandedCommit.contextMenuOpen.fileView = parseInt(fileElem.dataset.index!);
 
 			const target: ContextMenuTarget & CommitTarget = {

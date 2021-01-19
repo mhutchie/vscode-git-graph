@@ -141,11 +141,11 @@ class Dropdown {
 	 */
 	public selectOption(value: string) {
 		const optionIndex = this.options.findIndex((option) => value === option.value);
-		if (this.multipleAllowed && optionIndex > -1 && !this.optionsSelected[optionIndex]) {
+		if (this.multipleAllowed && optionIndex > -1 && !this.optionsSelected[0] && !this.optionsSelected[optionIndex]) {
 			// Select the option with the specified value
 			this.optionsSelected[optionIndex] = true;
 
-			if (!this.optionsSelected[0] && this.optionsSelected.slice(1).every((selected) => selected)) {
+			if (this.optionsSelected.slice(1).every((selected) => selected)) {
 				// All options are selected, so simplify selected items to just be "Show All"
 				this.optionsSelected[0] = true;
 				for (let i = 1; i < this.optionsSelected.length; i++) {

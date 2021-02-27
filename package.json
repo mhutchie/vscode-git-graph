@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.28.0",
+	"version": "1.29.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",

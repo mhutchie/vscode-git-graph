@@ -145,14 +145,6 @@ class Dropdown {
 			// Select the option with the specified value
 			this.optionsSelected[optionIndex] = true;
 
-			if (this.optionsSelected.slice(1).every((selected) => selected)) {
-				// All options are selected, so simplify selected items to just be "Show All"
-				this.optionsSelected[0] = true;
-				for (let i = 1; i < this.optionsSelected.length; i++) {
-					this.optionsSelected[i] = false;
-				}
-			}
-
 			// A change has occurred, re-render the dropdown options
 			const menuScroll = this.menuElem.scrollTop;
 			this.render();

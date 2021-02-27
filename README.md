@@ -125,6 +125,7 @@ A summary of the Git Graph extension settings are:
     * **Show Commits Only Referenced By Tags**: Show Commits that are only referenced by tags in Git Graph.
     * **Show Remote Branches**: Show Remote Branches in Git Graph by default.
     * **Show Remote Heads**: Show Remote HEAD Symbolic References in Git Graph.
+    * **Show Stashes**: Show Stashes in Git Graph by default.
     * **Show Tags**: Show Tags in Git Graph by default.
     * **Show Uncommitted Changes**: Show uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View.
     * **Show Untracked Files**: Show untracked files when viewing the uncommitted changes. If you work on large repositories, disabling this setting can reduce the load time of the Git Graph View.

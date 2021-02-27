@@ -2358,7 +2358,8 @@ describe('DataSource', () => {
 			mockGitSuccessOnce(
 				'user.name\nLocal Name\0' +
 				'diff.tool\nabc\0' +
-				'diff.guitool\ndef\0'
+				'diff.guitool\ndef\0' +
+				'remote.pushdefault\norigin\0'
 			);
 			mockGitSuccessOnce(
 				'user.name\nLocal Name\0' +
@@ -2406,7 +2407,7 @@ describe('DataSource', () => {
 					},
 					diffTool: 'abc',
 					guiDiffTool: 'def',
-					pushDefault: null,
+					pushDefault: 'origin',
 					remotes: [
 						{
 							name: 'origin',

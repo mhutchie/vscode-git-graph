@@ -307,7 +307,7 @@ export class DataSource extends Disposable {
 					branches: branches,
 					diffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL),
 					guiDiffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL),
-					pushDefault: getConfigValue(localConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
+					pushDefault: getConfigValue(consolidatedConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
 					remotes: remotes.map((remote) => ({
 						name: remote,
 						url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
@@ -1344,7 +1344,7 @@ export class DataSource extends Disposable {
 	 * Get the configuration list of a repository.
 	 * @param repo The path of the repository.
 	 * @param location The location of the configuration to be listed.
-	 * @returns A set key-value pairs of Git configuration records.
+	 * @returns A set of key-value pairs of Git configuration records.
 	 */
 	private getConfigList(repo: string, location?: GitConfigLocation): Promise<GitConfigSet> {
 		const args = ['--no-pager', 'config', '--list', '-z', '--includes'];
@@ -1800,6 +1800,11 @@ function removeTrailingBlankLines(lines: string[]) {
 	return lines;
 }
 
+/**
+ * Get all the unique strings from an array of strings.
+ * @param items The array of strings with duplicates.
+ * @returns An array of unique strings.
+ */
 function unique(items: ReadonlyArray<string>) {
 	const uniqueItems: { [item: string]: true } = {};
 	items.forEach((item) => uniqueItems[item] = true);

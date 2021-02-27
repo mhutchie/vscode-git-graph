@@ -1702,81 +1702,81 @@ describe('RepoManager', () => {
 			});
 
 			describe('fileViewType', () => {
-				it('Should export FileViewType.Tree correctly', testApplyField('fileViewType', FileViewType.Tree, 'fileViewType', ExternalRepoConfig.FileViewType.Tree));
-				it('Should export FileViewType.List correctly', testApplyField('fileViewType', FileViewType.List, 'fileViewType', ExternalRepoConfig.FileViewType.List));
+				it('Should import FileViewType.Tree correctly', testApplyField('fileViewType', FileViewType.Tree, 'fileViewType', ExternalRepoConfig.FileViewType.Tree));
+				it('Should import FileViewType.List correctly', testApplyField('fileViewType', FileViewType.List, 'fileViewType', ExternalRepoConfig.FileViewType.List));
 			});
 
 			describe('hideRemotes', () => {
-				it('Should export hideRemotes correctly', testApplyField('hideRemotes', ['origin'], 'hideRemotes', ['origin']));
+				it('Should import hideRemotes correctly', testApplyField('hideRemotes', ['origin'], 'hideRemotes', ['origin']));
 			});
 
 			describe('includeCommitsMentionedByReflogs', () => {
-				it('Should export BooleanOverride.Enabled correctly', testApplyField('includeCommitsMentionedByReflogs', BooleanOverride.Enabled, 'includeCommitsMentionedByReflogs', true));
-				it('Should export BooleanOverride.Disabled correctly', testApplyField('includeCommitsMentionedByReflogs', BooleanOverride.Disabled, 'includeCommitsMentionedByReflogs', false));
+				it('Should import BooleanOverride.Enabled correctly', testApplyField('includeCommitsMentionedByReflogs', BooleanOverride.Enabled, 'includeCommitsMentionedByReflogs', true));
+				it('Should import BooleanOverride.Disabled correctly', testApplyField('includeCommitsMentionedByReflogs', BooleanOverride.Disabled, 'includeCommitsMentionedByReflogs', false));
 			});
 
 			describe('issueLinkingConfig', () => {
-				it('Should export issueLinkingConfig correctly', testApplyField('issueLinkingConfig', { issue: 'x', url: 'y' }, 'issueLinkingConfig', { issue: 'x', url: 'y' }));
+				it('Should import issueLinkingConfig correctly', testApplyField('issueLinkingConfig', { issue: 'x', url: 'y' }, 'issueLinkingConfig', { issue: 'x', url: 'y' }));
 			});
 
 			describe('name', () => {
-				it('Should export name correctly', testApplyField('name', 'Name', 'name', 'Name'));
+				it('Should import name correctly', testApplyField('name', 'Name', 'name', 'Name'));
 			});
 
 			describe('onlyFollowFirstParent', () => {
-				it('Should export BooleanOverride.Enabled correctly', testApplyField('onlyFollowFirstParent', BooleanOverride.Enabled, 'onlyFollowFirstParent', true));
-				it('Should export BooleanOverride.Disabled correctly', testApplyField('onlyFollowFirstParent', BooleanOverride.Disabled, 'onlyFollowFirstParent', false));
+				it('Should import BooleanOverride.Enabled correctly', testApplyField('onlyFollowFirstParent', BooleanOverride.Enabled, 'onlyFollowFirstParent', true));
+				it('Should import BooleanOverride.Disabled correctly', testApplyField('onlyFollowFirstParent', BooleanOverride.Disabled, 'onlyFollowFirstParent', false));
 			});
 
 			describe('onRepoLoadShowCheckedOutBranch', () => {
-				it('Should export BooleanOverride.Enabled correctly', testApplyField('onRepoLoadShowCheckedOutBranch', BooleanOverride.Enabled, 'onRepoLoadShowCheckedOutBranch', true));
-				it('Should export BooleanOverride.Disabled correctly', testApplyField('onRepoLoadShowCheckedOutBranch', BooleanOverride.Disabled, 'onRepoLoadShowCheckedOutBranch', false));
+				it('Should import BooleanOverride.Enabled correctly', testApplyField('onRepoLoadShowCheckedOutBranch', BooleanOverride.Enabled, 'onRepoLoadShowCheckedOutBranch', true));
+				it('Should import BooleanOverride.Disabled correctly', testApplyField('onRepoLoadShowCheckedOutBranch', BooleanOverride.Disabled, 'onRepoLoadShowCheckedOutBranch', false));
 			});
 
 			describe('onRepoLoadShowSpecificBranches', () => {
-				it('Should export onRepoLoadShowSpecificBranches correctly', testApplyField('onRepoLoadShowSpecificBranches', ['master'], 'onRepoLoadShowSpecificBranches', ['master']));
+				it('Should import onRepoLoadShowSpecificBranches correctly', testApplyField('onRepoLoadShowSpecificBranches', ['master'], 'onRepoLoadShowSpecificBranches', ['master']));
 			});
 
 			describe('pullRequestConfig', () => {
-				it('Should export a Bitbucket config correctly', testApplyField(
+				it('Should import a Bitbucket config correctly', testApplyField(
 					'pullRequestConfig', { provider: PullRequestProvider.Bitbucket, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
 					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.Bitbucket, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
 				));
 
-				it('Should export a Custom config correctly', testApplyField(
+				it('Should import a Custom config correctly', testApplyField(
 					'pullRequestConfig', { provider: PullRequestProvider.Custom, custom: { name: 'Name', templateUrl: '$1/$2/$3/$4/$5/$6/$8' }, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
 					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.Custom, custom: { name: 'Name', templateUrl: '$1/$2/$3/$4/$5/$6/$8' }, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
 				));
 
-				it('Should export a GitHub config correctly', testApplyField(
+				it('Should import a GitHub config correctly', testApplyField(
 					'pullRequestConfig', { provider: PullRequestProvider.GitHub, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
 					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.GitHub, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
 				));
 
-				it('Should export a GitLab config correctly', testApplyField(
+				it('Should import a GitLab config correctly', testApplyField(
 					'pullRequestConfig', { provider: PullRequestProvider.GitLab, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
 					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.GitLab, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: 'e', destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
 				));
 
-				it('Should export a GitHub config with no destination remote correctly', testApplyField(
+				it('Should import a GitHub config with no destination remote correctly', testApplyField(
 					'pullRequestConfig', { provider: PullRequestProvider.GitHub, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: null, destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' },
 					'pullRequestConfig', { provider: ExternalRepoConfig.PullRequestProvider.GitHub, custom: null, hostRootUrl: 'a', sourceRemote: 'b', sourceOwner: 'c', sourceRepo: 'd', destRemote: null, destOwner: 'f', destRepo: 'g', destProjectId: 'h', destBranch: 'i' }
 				));
 			});
 
 			describe('showRemoteBranches', () => {
-				it('Should export BooleanOverride.Enabled correctly', testApplyField('showRemoteBranchesV2', BooleanOverride.Enabled, 'showRemoteBranches', true));
-				it('Should export BooleanOverride.Disabled correctly', testApplyField('showRemoteBranchesV2', BooleanOverride.Disabled, 'showRemoteBranches', false));
+				it('Should import BooleanOverride.Enabled correctly', testApplyField('showRemoteBranchesV2', BooleanOverride.Enabled, 'showRemoteBranches', true));
+				it('Should import BooleanOverride.Disabled correctly', testApplyField('showRemoteBranchesV2', BooleanOverride.Disabled, 'showRemoteBranches', false));
 			});
 
 			describe('showStashes', () => {
-				it('Should export BooleanOverride.Enabled correctly', testApplyField('showStashes', BooleanOverride.Enabled, 'showStashes', true));
-				it('Should export BooleanOverride.Disabled correctly', testApplyField('showStashes', BooleanOverride.Disabled, 'showStashes', false));
+				it('Should import BooleanOverride.Enabled correctly', testApplyField('showStashes', BooleanOverride.Enabled, 'showStashes', true));
+				it('Should import BooleanOverride.Disabled correctly', testApplyField('showStashes', BooleanOverride.Disabled, 'showStashes', false));
 			});
 
 			describe('showTags', () => {
-				it('Should export BooleanOverride.Enabled correctly', testApplyField('showTags', BooleanOverride.Enabled, 'showTags', true));
-				it('Should export BooleanOverride.Disabled correctly', testApplyField('showTags', BooleanOverride.Disabled, 'showTags', false));
+				it('Should import BooleanOverride.Enabled correctly', testApplyField('showTags', BooleanOverride.Enabled, 'showTags', true));
+				it('Should import BooleanOverride.Disabled correctly', testApplyField('showTags', BooleanOverride.Disabled, 'showTags', false));
 			});
 		});
 

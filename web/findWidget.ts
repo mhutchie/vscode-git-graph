@@ -394,9 +394,7 @@ class FindWidget {
 		if (workspaceState.findOpenCommitDetailsView) {
 			const commitHash = this.getCurrentHash();
 			if (commitHash !== null && !this.view.isCdvOpen(commitHash, null)) {
-				const commitId = this.view.getCommitId(commitHash);
-				const commitElems = getCommitElems();
-				const commitElem = findCommitElemWithId(commitElems, commitId);
+				const commitElem = findCommitElemWithId(getCommitElems(), this.view.getCommitId(commitHash));
 				if (commitElem !== null) {
 					this.view.loadCommitDetails(commitElem);
 				}

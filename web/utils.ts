@@ -76,6 +76,7 @@ const CLASS_ACTIVE = 'active';
 const CLASS_BRANCH_LABELS_ALIGNED_TO_GRAPH = 'branchLabelsAlignedToGraph';
 const CLASS_COMMIT_DETAILS_OPEN = 'commitDetailsOpen';
 const CLASS_DISABLED = 'disabled';
+const CLASS_ENABLED = 'enabled';
 const CLASS_FETCH_SUPPORTED = 'fetchSupported';
 const CLASS_FOCUSSED = 'focussed';
 const CLASS_LOADING = 'loading';

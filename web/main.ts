@@ -2611,14 +2611,14 @@ class GitGraphView {
 			if (externalDiffPossible) {
 				document.getElementById('cdvExternalDiff')!.addEventListener('click', () => {
 					const expandedCommit = this.expandedCommit;
-					if (expandedCommit === null) return;
+					if (expandedCommit === null || this.gitConfig === null || (this.gitConfig.diffTool === null && this.gitConfig.guiDiffTool === null)) return;
 					const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
 					runAction({
 						command: 'openExternalDirDiff',
 						repo: this.currentRepo,
 						fromHash: commitOrder.from,
 						toHash: commitOrder.to,
-						isGui: this.gitConfig !== null && this.gitConfig.guiDiffTool !== null
+						isGui: this.gitConfig.guiDiffTool !== null
 					}, 'Opening External Directory Diff');
 				});
 			}
@@ -2969,7 +2969,7 @@ class GitGraphView {
 		const externalDiffBtnElem = document.getElementById('cdvExternalDiff');
 		if (externalDiffBtnElem === null) return;
 
-		alterClass(externalDiffBtnElem, CLASS_DISABLED, this.gitConfig === null || (this.gitConfig.diffTool === null && this.gitConfig.guiDiffTool === null));
+		alterClass(externalDiffBtnElem, CLASS_ENABLED, this.gitConfig !== null && (this.gitConfig.diffTool !== null || this.gitConfig.guiDiffTool !== null));
 		const toolName = this.gitConfig !== null
 			? this.gitConfig.guiDiffTool !== null
 				? this.gitConfig.guiDiffTool

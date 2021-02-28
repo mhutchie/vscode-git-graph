@@ -681,6 +681,7 @@ export interface ResponseCompareCommits extends ResponseWithErrorInfo {
 export interface RequestCopyFilePath extends RepoRequest {
 	readonly command: 'copyFilePath';
 	readonly filePath: string;
+	readonly absolute: boolean;
 }
 export interface ResponseCopyFilePath extends ResponseWithErrorInfo {
 	readonly command: 'copyFilePath';

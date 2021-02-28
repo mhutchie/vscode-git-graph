@@ -245,10 +245,11 @@ export function archive(repo: string, ref: string, dataSource: DataSource): Then
  * Copy the path of a file in a repository to the clipboard.
  * @param repo The repository the file is contained in.
  * @param filePath The relative path of the file within the repository.
+ * @param absolute TRUE => Absolute path, FALSE => Relative path.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
-export function copyFilePathToClipboard(repo: string, filePath: string) {
-	return copyToClipboard(path.join(repo, filePath));
+export function copyFilePathToClipboard(repo: string, filePath: string, absolute: boolean) {
+	return copyToClipboard(absolute ? path.join(repo, filePath) : filePath);
 }
 
 /**

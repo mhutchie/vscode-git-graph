@@ -259,7 +259,7 @@ export class GitGraphView extends Disposable {
 			case 'copyFilePath':
 				this.sendMessage({
 					command: 'copyFilePath',
-					error: await copyFilePathToClipboard(msg.repo, msg.filePath)
+					error: await copyFilePathToClipboard(msg.repo, msg.filePath, msg.absolute)
 				});
 				break;
 			case 'copyToClipboard':

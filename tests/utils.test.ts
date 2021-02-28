@@ -642,12 +642,12 @@ describe('archive', () => {
 });
 
 describe('copyFilePathToClipboard', () => {
-	it('Appends the file path to the repository path, and copies the result to the clipboard', async () => {
+	it('Appends the relative file path to the repository path, and copies the result to the clipboard', async () => {
 		// Setup
 		vscode.env.clipboard.writeText.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt');
+		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt', true);
 
 		// Assert
 		const receivedArgs: any[] = vscode.env.clipboard.writeText.mock.calls[0];
@@ -655,12 +655,25 @@ describe('copyFilePathToClipboard', () => {
 		expect(getPathFromStr(receivedArgs[0])).toBe('/a/b/c/d.txt');
 	});
 
+	it('Copies the relative file path to the clipboard', async () => {
+		// Setup
+		vscode.env.clipboard.writeText.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt', false);
+
+		// Assert
+		const receivedArgs: any[] = vscode.env.clipboard.writeText.mock.calls[0];
+		expect(result).toBe(null);
+		expect(getPathFromStr(receivedArgs[0])).toBe('c/d.txt');
+	});
+
 	it('Returns an error message when writeText fails', async () => {
 		// Setup
 		vscode.env.clipboard.writeText.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt');
+		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt', true);
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to write to the Clipboard.');

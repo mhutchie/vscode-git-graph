@@ -2823,8 +2823,8 @@ class GitGraphView {
 			});
 		};
 
-		const triggerCopyFilePath = (file: GG.GitFileChange) => {
-			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: file.newFilePath });
+		const triggerCopyFilePath = (file: GG.GitFileChange, absolute: boolean) => {
+			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: file.newFilePath, absolute: absolute });
 		};
 
 		const triggerViewFileAtRevision = (file: GG.GitFileChange, fileElem: HTMLElement) => {
@@ -2884,7 +2884,7 @@ class GitGraphView {
 			if (expandedCommit === null || expandedCommit.fileChanges === null || e.target === null) return;
 
 			const fileElem = getFileElemOfEventTarget(e.target);
-			triggerCopyFilePath(getFileOfFileElem(expandedCommit.fileChanges, fileElem));
+			triggerCopyFilePath(getFileOfFileElem(expandedCommit.fileChanges, fileElem), true);
 		});
 
 		addListenerToClass('viewGitFileAtRevision', 'click', (e) => {
@@ -2943,9 +2943,14 @@ class GitGraphView {
 				],
 				[
 					{
-						title: 'Copy File Path to the Clipboard',
+						title: 'Copy Absolute File Path to Clipboard',
 						visible: true,
-						onClick: () => triggerCopyFilePath(file)
+						onClick: () => triggerCopyFilePath(file, true)
+					},
+					{
+						title: 'Copy Relative File Path to Clipboard',
+						visible: true,
+						onClick: () => triggerCopyFilePath(file, false)
 					}
 				]
 			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, () => {
@@ -3084,7 +3089,7 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'copyFilePath':
-				finishOrDisplayError(msg.error, 'Unable to Copy File Path to the Clipboard');
+				finishOrDisplayError(msg.error, 'Unable to Copy File Path to Clipboard');
 				break;
 			case 'copyToClipboard':
 				finishOrDisplayError(msg.error, 'Unable to Copy ' + msg.type + ' to Clipboard');
@@ -3377,7 +3382,7 @@ function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: Re
 			(initialState.config.enhancedAccessibility ? '<span class="fileTreeFileType" title="' + changeTypeMessage + '">' + fileTreeFile.type + '</span>' : '') +
 			(fileTreeFile.type !== GG.GitFileStatus.Added && fileTreeFile.type !== GG.GitFileStatus.Untracked && fileTreeFile.type !== GG.GitFileStatus.Deleted && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
 			(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
-			'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard">' + SVG_ICONS.copy + '</span>' +
+			'<span class="copyGitFile fileTreeFileAction" title="Copy Absolute File Path to Clipboard">' + SVG_ICONS.copy + '</span>' +
 			(fileTreeFile.type !== GG.GitFileStatus.Deleted
 				? (diffPossible && !isUncommitted ? '<span class="viewGitFileAtRevision fileTreeFileAction" title="View File at this Revision">' + SVG_ICONS.commit + '</span>' : '') +
 				'<span class="openGitFile fileTreeFileAction" title="Open File">' + SVG_ICONS.openFile + '</span>'

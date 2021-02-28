@@ -24,7 +24,8 @@ import {
 	ReferenceLabelsConfig,
 	RepoDropdownOrder,
 	SquashMessageFormat,
-	TabIconColourTheme
+	TabIconColourTheme,
+	TagType
 } from './types';
 
 const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
@@ -78,11 +79,11 @@ class Config {
 	 * Get the value of the `git-graph.contextMenuActionsVisibility` Extension Setting.
 	 */
 	get contextMenuActionsVisibility(): ContextMenuActionsVisibility {
-		let userConfig = this.config.get('contextMenuActionsVisibility', {});
-		let config = {
-			branch: { checkout: true, rename: true, delete: true, merge: true, rebase: true, push: true, createPullRequest: true, createArchive: true, copyName: true },
+		const userConfig = this.config.get('contextMenuActionsVisibility', {});
+		const config: ContextMenuActionsVisibility = {
+			branch: { checkout: true, rename: true, delete: true, merge: true, rebase: true, push: true, createPullRequest: true, createArchive: true, selectInBranchesDropdown: true, unselectInBranchesDropdown: true, copyName: true },
 			commit: { addTag: true, createBranch: true, checkout: true, cherrypick: true, revert: true, drop: true, merge: true, rebase: true, reset: true, copyHash: true, copySubject: true },
-			remoteBranch: { checkout: true, delete: true, fetch: true, merge: true, pull: true, createPullRequest: true, createArchive: true, copyName: true },
+			remoteBranch: { checkout: true, delete: true, fetch: true, merge: true, pull: true, createPullRequest: true, createArchive: true, selectInBranchesDropdown: true, unselectInBranchesDropdown: true, copyName: true },
 			stash: { apply: true, createBranch: true, pop: true, drop: true, copyName: true, copyHash: true },
 			tag: { viewDetails: true, delete: true, push: true, createArchive: true, copyName: true },
 			uncommittedChanges: { stash: true, reset: true, clean: true, openSourceControlView: true }
@@ -176,7 +177,7 @@ class Config {
 		return {
 			addTag: {
 				pushToRemote: !!this.config.get('dialog.addTag.pushToRemote', false),
-				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? 'lightweight' : 'annotated'
+				type: this.config.get<string>('dialog.addTag.type', 'Annotated') === 'Lightweight' ? TagType.Lightweight : TagType.Annotated
 			},
 			applyStash: {
 				reinstateIndex: !!this.config.get('dialog.applyStash.reinstateIndex', false)
@@ -460,6 +461,13 @@ class Config {
 	 */
 	get showRemoteHeads() {
 		return !!this.config.get('repository.showRemoteHeads', true);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.showStashes` Extension Setting.
+	 */
+	get showStashes() {
+		return !!this.config.get('repository.showStashes', true);
 	}
 
 	/**

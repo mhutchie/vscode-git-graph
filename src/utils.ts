@@ -216,7 +216,7 @@ export function getRepoName(path: string) {
  * @param repo The path of the repository.
  * @param ref The reference of the revision to archive.
  * @param dataSource The DataSource instance that can be used to create the archive.
- * @returns The ErrorInfo from the executed command.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function archive(repo: string, ref: string, dataSource: DataSource): Thenable<ErrorInfo> {
 	return vscode.window.showSaveDialog({
@@ -245,6 +245,7 @@ export function archive(repo: string, ref: string, dataSource: DataSource): Then
  * Copy the path of a file in a repository to the clipboard.
  * @param repo The repository the file is contained in.
  * @param filePath The relative path of the file within the repository.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function copyFilePathToClipboard(repo: string, filePath: string) {
 	return copyToClipboard(path.join(repo, filePath));
@@ -253,6 +254,7 @@ export function copyFilePathToClipboard(repo: string, filePath: string) {
 /**
  * Copy a string to the clipboard.
  * @param text The string.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function copyToClipboard(text: string): Thenable<ErrorInfo> {
 	return vscode.env.clipboard.writeText(text).then(
@@ -267,6 +269,7 @@ export function copyToClipboard(text: string): Thenable<ErrorInfo> {
  * @param sourceOwner The owner of the repository that is the source of the Pull Request.
  * @param sourceRepo The name of the repository that is the source of the Pull Request.
  * @param sourceBranch The source branch the Pull Request should be created from.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function createPullRequest(config: PullRequestConfig, sourceOwner: string, sourceRepo: string, sourceBranch: string) {
 	let templateUrl;
@@ -294,14 +297,12 @@ export function createPullRequest(config: PullRequestConfig, sourceOwner: string
 
 	const url = templateUrl.replace(/\$([1-8])/g, (_, index) => urlFieldValues[parseInt(index) - 1]);
 
-	return vscode.env.openExternal(vscode.Uri.parse(url)).then(
-		() => null,
-		() => 'Visual Studio Code was unable to open the Pull Request URL: ' + url
-	);
+	return openExternalUrl(url, 'Pull Request URL');
 }
 
 /**
  * Open the Visual Studio Code Settings Editor to the Git Graph Extension Settings.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function openExtensionSettings(): Thenable<ErrorInfo> {
 	return vscode.commands.executeCommand('workbench.action.openSettings', '@ext:mhutchie.git-graph').then(
@@ -311,9 +312,28 @@ export function openExtensionSettings(): Thenable<ErrorInfo> {
 }
 
 /**
+ * Open an External URL using the default application.
+ * @param url The URL for Visual Studio Code to open.
+ * @param type The type of URL being opened (defaults to "External URL").
+ * @returns A promise resolving to the ErrorInfo of the executed command.
+ */
+export function openExternalUrl(url: string, type: string = 'External URL'): Thenable<ErrorInfo> {
+	const getErrorMessage = () => 'Visual Studio Code was unable to open the ' + type + ': ' + url;
+	try {
+		return vscode.env.openExternal(vscode.Uri.parse(url)).then(
+			(success) => success ? null : getErrorMessage(),
+			getErrorMessage
+		);
+	} catch (_) {
+		return Promise.resolve(getErrorMessage());
+	}
+}
+
+/**
  * Open a file within a repository in Visual Studio Code.
  * @param repo The repository the file is contained in.
  * @param filePath The relative path of the file within the repository.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function openFile(repo: string, filePath: string) {
 	return new Promise<ErrorInfo>(resolve => {
@@ -342,6 +362,7 @@ export function openFile(repo: string, filePath: string) {
  * @param oldFilePath The relative path of the left-side file within the repository.
  * @param newFilePath The relative path of the right-side file within the repository.
  * @param type The Git file status of the change.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileStatus) {
 	if (type !== GitFileStatus.Untracked) {
@@ -366,6 +387,13 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 	}
 }
 
+/**
+ * Open a Visual Studio Code Editor (readonly) for a file a specific Git revision.
+ * @param repo The repository the file is contained in.
+ * @param hash The revision of the file.
+ * @param filePath The relative path of the file within the repository.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
+ */
 export async function viewFileAtRevision(repo: string, hash: string, filePath: string) {
 	const pathComponents = filePath.split('/');
 	const title = abbrevCommit(hash) + ': ' + pathComponents[pathComponents.length - 1];
@@ -381,6 +409,7 @@ export async function viewFileAtRevision(repo: string, hash: string, filePath: s
 
 /**
  * Open the Visual Studio Code Source Control View.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
  */
 export function viewScm(): Thenable<ErrorInfo> {
 	return vscode.commands.executeCommand('workbench.view.scm').then(

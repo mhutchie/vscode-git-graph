@@ -2,8 +2,10 @@ class GitGraphView {
 	private gitRepos: GG.GitRepoSet;
 	private gitBranches: ReadonlyArray<string> = [];
 	private gitBranchHead: string | null = null;
+	private gitConfig: GG.GitRepoConfig | null = null;
 	private gitRemotes: ReadonlyArray<string> = [];
 	private gitStashes: ReadonlyArray<GG.GitStash> = [];
+	private gitTags: ReadonlyArray<string> = [];
 	private commits: GG.GitCommit[] = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
@@ -19,7 +21,9 @@ class GitGraphView {
 		loadRepoInfoRefreshId: number;
 		loadCommitsRefreshId: number;
 		repoInfoChanges: boolean;
+		configChanges: boolean;
 		requestingRepoInfo: boolean;
+		requestingConfig: boolean;
 	};
 	private loadViewTo: GG.LoadGitGraphViewTo = null;
 
@@ -61,7 +65,9 @@ class GitGraphView {
 			loadRepoInfoRefreshId: initialState.loadRepoInfoRefreshId,
 			loadCommitsRefreshId: initialState.loadCommitsRefreshId,
 			repoInfoChanges: false,
-			requestingRepoInfo: false
+			configChanges: false,
+			requestingRepoInfo: false,
+			requestingConfig: false
 		};
 
 		this.controlsElem = document.getElementById('controls')!;
@@ -94,7 +100,7 @@ class GitGraphView {
 		this.refreshBtnElem = document.getElementById('refreshBtn')!;
 		this.refreshBtnElem.addEventListener('click', () => {
 			if (!this.refreshBtnElem.classList.contains(CLASS_REFRESHING)) {
-				this.refresh(true);
+				this.refresh(true, true);
 			}
 		});
 		this.renderRefreshButton();
@@ -109,7 +115,7 @@ class GitGraphView {
 		this.observeWebviewStyleChanges();
 		this.observeViewScroll();
 		this.observeKeyboardEvents();
-		this.observeInternalUrls();
+		this.observeUrls();
 		this.observeTableEvents();
 
 		if (prevState && !prevState.currentRepoLoading && typeof this.gitRepos[prevState.currentRepo] !== 'undefined') {
@@ -118,12 +124,11 @@ class GitGraphView {
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
+			this.gitConfig = prevState.gitConfig;
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
-			this.loadCommits(prevState.commits, prevState.commitHead, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
+			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitTags, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
-			if (this.currentRepo === prevState.settingsWidget.currentRepo) {
-				this.settingsWidget.restoreState(this.gitRepos[this.currentRepo], prevState.settingsWidget);
-			}
+			this.settingsWidget.restoreState(prevState.settingsWidget);
 			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
 
@@ -147,9 +152,7 @@ class GitGraphView {
 		findBtn.innerHTML = SVG_ICONS.search;
 		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
-		settingsBtn.addEventListener('click', () => {
-			this.settingsWidget.show(this.currentRepo, this.gitRepos[this.currentRepo], true);
-		});
+		settingsBtn.addEventListener('click', () => this.settingsWidget.show(this.currentRepo));
 		terminalBtn.innerHTML = SVG_ICONS.terminal;
 		terminalBtn.addEventListener('click', () => {
 			runAction({
@@ -194,7 +197,7 @@ class GitGraphView {
 			this.loadRepo(newRepo);
 			return true;
 		} else {
-			this.finaliseLoadViewTo();
+			this.finaliseRepoLoad(false);
 			return false;
 		}
 	}
@@ -204,12 +207,14 @@ class GitGraphView {
 		this.currentRepoLoading = true;
 		this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[this.currentRepo].showRemoteBranchesV2);
 		this.maxCommits = this.config.initialLoadCommits;
+		this.gitConfig = null;
 		this.gitRemotes = [];
 		this.gitStashes = [];
+		this.gitTags = [];
+		this.currentBranches = null;
 		this.renderFetchButton();
 		this.closeCommitDetails(false);
 		this.settingsWidget.close();
-		this.currentBranches = null;
 		this.saveState();
 		this.refresh(true);
 	}
@@ -275,6 +280,7 @@ class GitGraphView {
 
 		this.finaliseLoadRepoInfo(true, isRepo);
 	}
+
 	private finaliseLoadRepoInfo(repoInfoChanges: boolean, isRepo: boolean) {
 		const refreshState = this.currentRepoRefreshState;
 		if (refreshState.inProgress) {
@@ -292,7 +298,11 @@ class GitGraphView {
 		}
 	}
 
-	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, moreAvailable: boolean, onlyFollowFirstParent: boolean) {
+	private loadCommits(commits: GG.GitCommit[], commitHead: string | null, tags: ReadonlyArray<string>, moreAvailable: boolean, onlyFollowFirstParent: boolean) {
+		// This list of tags is just used to provide additional information in the dialogs. Tag information included in commits is used for all other purposes (e.g. rendering, context menus)
+		const tagsChanged = !arraysStrictlyEqual(this.gitTags, tags);
+		this.gitTags = tags;
+
 		if (!this.currentRepoLoading && !this.currentRepoRefreshState.hard && this.moreCommitsAvailable === moreAvailable && this.onlyFollowFirstParent === onlyFollowFirstParent && this.commitHead === commitHead && commits.length > 0 && arraysEqual(this.commits, commits, (a, b) =>
 			a.hash === b.hash &&
 			arraysStrictlyEqual(a.heads, b.heads) &&
@@ -319,6 +329,8 @@ class GitGraphView {
 						}
 					}
 				}
+			} else if (tagsChanged) {
+				this.saveState();
 			}
 			this.finaliseLoadCommits();
 			return;
@@ -368,6 +380,7 @@ class GitGraphView {
 		this.finaliseLoadCommits();
 		this.requestAvatars(avatarsNeeded);
 	}
+
 	private finaliseLoadCommits() {
 		const refreshState = this.currentRepoRefreshState;
 		if (refreshState.inProgress) {
@@ -393,12 +406,10 @@ class GitGraphView {
 			this.renderRefreshButton();
 		}
 
-		if (this.loadViewTo !== null) {
-			this.finaliseLoadViewTo();
-		}
+		this.finaliseRepoLoad(true);
 	}
 
-	private finaliseLoadViewTo() {
+	private finaliseRepoLoad(didLoadRepoData: boolean) {
 		if (this.loadViewTo !== null && this.currentRepo === this.loadViewTo.repo) {
 			if (this.loadViewTo.commitDetails && (this.expandedCommit === null || this.expandedCommit.commitHash !== this.loadViewTo.commitDetails.commitHash || this.expandedCommit.compareWithHash !== this.loadViewTo.commitDetails.compareWithHash)) {
 				const commitIndex = this.getCommitId(this.loadViewTo.commitDetails.commitHash);
@@ -425,6 +436,10 @@ class GitGraphView {
 			}
 		}
 		this.loadViewTo = null;
+
+		if (this.gitConfig === null || (didLoadRepoData && this.currentRepoRefreshState.configChanges)) {
+			this.requestLoadConfig();
+		}
 	}
 
 	private clearCommits() {
@@ -453,11 +468,12 @@ class GitGraphView {
 			this.displayLoadDataError('Unable to load Repository Info', msg.error);
 		}
 	}
+
 	public processLoadCommitsResponse(msg: GG.ResponseLoadCommits) {
 		if (msg.error === null) {
 			const refreshState = this.currentRepoRefreshState;
 			if (refreshState.inProgress && refreshState.loadCommitsRefreshId === msg.refreshId) {
-				this.loadCommits(msg.commits, msg.head, msg.moreCommitsAvailable, msg.onlyFollowFirstParent);
+				this.loadCommits(msg.commits, msg.head, msg.tags, msg.moreCommitsAvailable, msg.onlyFollowFirstParent);
 			}
 		} else {
 			const error = this.gitBranches.length === 0 && msg.error.indexOf('bad revision \'HEAD\'') > -1
@@ -466,6 +482,18 @@ class GitGraphView {
 			this.displayLoadDataError('Unable to load Commits', error);
 		}
 	}
+
+	public processLoadConfig(msg: GG.ResponseLoadConfig) {
+		this.currentRepoRefreshState.requestingConfig = false;
+		if (msg.config !== null && this.currentRepo === msg.repo) {
+			this.gitConfig = msg.config;
+			this.saveState();
+
+			this.renderCdvExternalDiffBtn();
+		}
+		this.settingsWidget.refresh();
+	}
+
 	private displayLoadDataError(message: string, reason: string) {
 		this.clearCommits();
 		this.currentRepoRefreshState.inProgress = false;
@@ -488,7 +516,7 @@ class GitGraphView {
 	}
 
 
-	/* Public Get Methods checking the GitGraphView state */
+	/* Getters */
 
 	public getBranches(): ReadonlyArray<string> {
 		return this.gitBranches;
@@ -508,22 +536,53 @@ class GitGraphView {
 		return options;
 	}
 
+	public getCommitId(hash: string) {
+		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
+	}
+
+	private getCommitOfElem(elem: HTMLElement) {
+		let id = parseInt(elem.dataset.id!);
+		return id < this.commits.length ? this.commits[id] : null;
+	}
+
 	public getCommits(): ReadonlyArray<GG.GitCommit> {
 		return this.commits;
 	}
 
-	public getSettingsWidget() {
-		return this.settingsWidget;
+	private getPushRemote(branch: string | null = null) {
+		const possibleRemotes = [];
+		if (this.gitConfig !== null) {
+			if (branch !== null && typeof this.gitConfig.branches[branch] !== 'undefined') {
+				possibleRemotes.push(this.gitConfig.branches[branch].pushRemote, this.gitConfig.branches[branch].remote);
+			}
+			possibleRemotes.push(this.gitConfig.pushDefault);
+		}
+		possibleRemotes.push('origin');
+		return possibleRemotes.find((remote) => remote !== null && this.gitRemotes.includes(remote)) || this.gitRemotes[0];
+	}
+
+	public getRepoConfig(): Readonly<GG.GitRepoConfig> | null {
+		return this.gitConfig;
+	}
+
+	public getRepoState(repo: string): Readonly<GG.GitRepoState> | null {
+		return typeof this.gitRepos[repo] !== 'undefined'
+			? this.gitRepos[repo]
+			: null;
+	}
+
+	public isConfigLoading(): boolean {
+		return this.currentRepoRefreshState.requestingConfig;
 	}
 
 
 	/* Refresh */
 
-	public refresh(hard: boolean) {
+	public refresh(hard: boolean, configChanges: boolean = false) {
 		if (hard) {
 			this.clearCommits();
 		}
-		this.requestLoadRepoInfoAndCommits(hard, false);
+		this.requestLoadRepoInfoAndCommits(hard, false, configChanges);
 	}
 
 
@@ -536,6 +595,7 @@ class GitGraphView {
 			repo: this.currentRepo,
 			refreshId: ++this.currentRepoRefreshState.loadRepoInfoRefreshId,
 			showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
+			showStashes: getShowStashes(repoState.showStashes),
 			hideRemotes: repoState.hideRemotes
 		});
 	}
@@ -559,10 +619,11 @@ class GitGraphView {
 		});
 	}
 
-	private requestLoadRepoInfoAndCommits(hard: boolean, skipRepoInfo: boolean) {
+	private requestLoadRepoInfoAndCommits(hard: boolean, skipRepoInfo: boolean, configChanges: boolean = false) {
 		const refreshState = this.currentRepoRefreshState;
 		if (refreshState.inProgress) {
 			refreshState.hard = refreshState.hard || hard;
+			refreshState.configChanges = refreshState.configChanges || configChanges;
 			if (!skipRepoInfo) {
 				// This request will trigger a loadCommit request after the loadRepoInfo request has completed. 
 				// Invalidate any previous commit requests in progress.
@@ -572,6 +633,7 @@ class GitGraphView {
 			refreshState.hard = hard;
 			refreshState.inProgress = true;
 			refreshState.repoInfoChanges = false;
+			refreshState.configChanges = configChanges;
 			refreshState.requestingRepoInfo = false;
 		}
 
@@ -588,6 +650,12 @@ class GitGraphView {
 			refreshState.requestingRepoInfo = true;
 			this.requestLoadRepoInfo();
 		}
+	}
+
+	public requestLoadConfig() {
+		this.currentRepoRefreshState.requestingConfig = true;
+		sendMessage({ command: 'loadConfig', repo: this.currentRepo, remotes: this.gitRemotes });
+		this.settingsWidget.refresh();
 	}
 
 	public requestCommitDetails(hash: string, refresh: boolean) {
@@ -630,7 +698,10 @@ class GitGraphView {
 			expandedCommit = Object.assign({}, this.expandedCommit);
 			expandedCommit.commitElem = null;
 			expandedCommit.compareWithElem = null;
-			expandedCommit.fileContextMenuOpen = -1;
+			expandedCommit.contextMenuOpen = {
+				summary: false,
+				fileView: -1
+			};
 		} else {
 			expandedCommit = null;
 		}
@@ -641,8 +712,10 @@ class GitGraphView {
 			gitRepos: this.gitRepos,
 			gitBranches: this.gitBranches,
 			gitBranchHead: this.gitBranchHead,
+			gitConfig: this.gitConfig,
 			gitRemotes: this.gitRemotes,
 			gitStashes: this.gitStashes,
+			gitTags: this.gitTags,
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,
@@ -680,8 +753,14 @@ class GitGraphView {
 			codeReview: null,
 			lastViewedFile: null,
 			loading: true,
-			fileChangesScrollTop: 0,
-			fileContextMenuOpen: -1
+			scrollTop: {
+				summary: 0,
+				fileView: 0
+			},
+			contextMenuOpen: {
+				summary: false,
+				fileView: -1
+			}
 		};
 		this.saveState();
 	}
@@ -691,11 +770,6 @@ class GitGraphView {
 			this.gitRepos[this.currentRepo][key] = value;
 			this.saveRepoState();
 		}
-	}
-
-	public updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(key: K, value: GG.GitGraphViewGlobalState[K]) {
-		globalState[key] = value;
-		sendMessage({ command: 'setGlobalViewState', state: globalState });
 	}
 
 
@@ -877,7 +951,7 @@ class GitGraphView {
 		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
 		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
 		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
-		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
+		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
 		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
 		html += textFormatter.format(message) + '</span>';
 		dialog.showMessage(html);
@@ -892,6 +966,7 @@ class GitGraphView {
 
 	private getBranchContextMenuActions(target: DialogTarget & RefTarget): ContextMenuActions {
 		const refName = target.ref, visibility = this.config.contextMenuActionsVisibility.branch;
+		const isSelectedInBranchesDropdown = this.branchDropdown.isSelected(refName);
 		return [[
 			{
 				title: 'Checkout Branch',
@@ -918,7 +993,7 @@ class GitGraphView {
 							value: false
 						});
 					}
-					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Delete Branch', (values) => {
+					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Yes, delete', (values) => {
 						runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: <boolean>values[0], deleteOnRemotes: remotesWithBranch.length > 0 && <boolean>values[1] ? remotesWithBranch : [] }, 'Deleting Branch');
 					}, target);
 				}
@@ -953,7 +1028,7 @@ class GitGraphView {
 						inputs.unshift({
 							type: DialogInputType.Select,
 							name: 'Push to Remote(s)',
-							defaults: [this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0]],
+							defaults: [this.getPushRemote(refName)],
 							options: this.gitRemotes.map((remote) => ({ name: remote, value: remote })),
 							multiple: true
 						});
@@ -961,7 +1036,16 @@ class GitGraphView {
 
 					dialog.showForm('Are you sure you want to push the branch <b><i>' + escapeHtml(refName) + '</i></b>' + (multipleRemotes ? '' : ' to the remote <b><i>' + escapeHtml(this.gitRemotes[0]) + '</i></b>') + '?', inputs, 'Yes, push', (values) => {
 						const remotes = multipleRemotes ? <string[]>values.shift() : [this.gitRemotes[0]];
-						runAction({ command: 'pushBranch', repo: this.currentRepo, branchName: refName, remotes: remotes, setUpstream: <boolean>values[0], mode: <GG.GitPushBranchMode>values[1] }, 'Pushing Branch');
+						const setUpstream = <boolean>values[0];
+						runAction({
+							command: 'pushBranch',
+							repo: this.currentRepo,
+							branchName: refName,
+							remotes: remotes,
+							setUpstream: setUpstream,
+							mode: <GG.GitPushBranchMode>values[1],
+							willUpdateBranchConfig: setUpstream && remotes.length > 0 && (this.gitConfig === null || typeof this.gitConfig.branches[refName] === 'undefined' || this.gitConfig.branches[refName].remote !== remotes[remotes.length - 1])
+						}, 'Pushing Branch');
 					}, target);
 				}
 			}
@@ -986,6 +1070,17 @@ class GitGraphView {
 				}
 			},
 			{
+				title: 'Select in Branches Dropdown',
+				visible: visibility.selectInBranchesDropdown && !isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.selectOption(refName)
+			},
+			{
+				title: 'Unselect in Branches Dropdown',
+				visible: visibility.unselectInBranchesDropdown && isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.unselectOption(refName)
+			}
+		], [
+			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,
 				onClick: () => {
@@ -1002,62 +1097,11 @@ class GitGraphView {
 			{
 				title: 'Add Tag' + ELLIPSIS,
 				visible: visibility.addTag,
-				onClick: () => {
-					const dialogConfig = this.config.dialogDefaults.addTag;
-
-					let mostRecentTagsIndex = -1;
-					for (let i = 0; i < this.commits.length; i++) {
-						if (this.commits[i].tags.length > 0 && (mostRecentTagsIndex === -1 || this.commits[i].date > this.commits[mostRecentTagsIndex].date)) {
-							mostRecentTagsIndex = i;
-						}
-					}
-					let mostRecentTags = mostRecentTagsIndex > -1 ? this.commits[mostRecentTagsIndex].tags.map((tag) => '"' + tag.name + '"') : [];
-
-					let inputs: DialogInput[] = [
-						{ type: DialogInputType.TextRef, name: 'Name', default: '', info: mostRecentTags.length > 0 ? 'The most recent tag' + (mostRecentTags.length > 1 ? 's' : '') + ' in the loaded commits ' + (mostRecentTags.length > 1 ? 'are' : 'is') + ' ' + formatCommaSeparatedList(mostRecentTags) + '.' : undefined },
-						{ type: DialogInputType.Select, name: 'Type', default: dialogConfig.type, options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
-						{ type: DialogInputType.Text, name: 'Message', default: '', placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
-					];
-					if (this.gitRemotes.length > 1) {
-						let options = [{ name: 'Don\'t push', value: '-1' }];
-						this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
-						let defaultOption = dialogConfig.pushToRemote
-							? this.gitRemotes.includes('origin')
-								? this.gitRemotes.indexOf('origin')
-								: 0
-							: -1;
-						inputs.push({ type: DialogInputType.Select, name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
-					} else if (this.gitRemotes.length === 1) {
-						inputs.push({ type: DialogInputType.Checkbox, name: 'Push to remote', value: dialogConfig.pushToRemote, info: 'Once this tag has been added, push it to the repositories remote.' });
-					}
-					dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
-						let pushToRemote = this.gitRemotes.length > 1 && <string>values[3] !== '-1'
-							? this.gitRemotes[parseInt(<string>values[3])]
-							: this.gitRemotes.length === 1 && <boolean>values[3]
-								? this.gitRemotes[0]
-								: null;
-						runAction({
-							command: 'addTag',
-							repo: this.currentRepo,
-							tagName: <string>values[0],
-							commitHash: hash,
-							lightweight: <string>values[1] === 'lightweight',
-							message: <string>values[2],
-							pushToRemote: pushToRemote
-						}, 'Adding Tag');
-					}, target);
-				}
+				onClick: () => this.addTagAction(hash, '', this.config.dialogDefaults.addTag.type, '', null, target)
 			}, {
 				title: 'Create Branch' + ELLIPSIS,
 				visible: visibility.createBranch,
-				onClick: () => {
-					dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
-						{ type: DialogInputType.TextRef, name: 'Name', default: '' },
-						{ type: DialogInputType.Checkbox, name: 'Check out', value: this.config.dialogDefaults.createBranch.checkout }
-					], 'Create Branch', (values) => {
-						runAction({ command: 'createBranch', repo: this.currentRepo, branchName: <string>values[0], commitHash: hash, checkout: <boolean>values[1] }, 'Creating Branch');
-					}, target);
-				}
+				onClick: () => this.createBranchAction(hash, '', this.config.dialogDefaults.createBranch.checkout, target)
 			}
 		], [
 			{
@@ -1070,7 +1114,7 @@ class GitGraphView {
 					} else {
 						dialog.showCheckbox('Are you sure you want to checkout commit <b><i>' + abbrevCommit(hash) + '</i></b>? This will result in a \'detached HEAD\' state.', 'Always Accept', false, 'Yes, checkout', (alwaysAccept) => {
 							if (alwaysAccept) {
-								this.updateGlobalViewState('alwaysAcceptCheckoutCommit', true);
+								updateGlobalViewState('alwaysAcceptCheckoutCommit', true);
 							}
 							checkoutCommit();
 						}, target);
@@ -1189,6 +1233,8 @@ class GitGraphView {
 	private getRemoteBranchContextMenuActions(remote: string, target: DialogTarget & RefTarget): ContextMenuActions {
 		const refName = target.ref, visibility = this.config.contextMenuActionsVisibility.remoteBranch;
 		const branchName = remote !== '' ? refName.substring(remote.length + 1) : '';
+		const prefixedRefName = 'remotes/' + refName;
+		const isSelectedInBranchesDropdown = this.branchDropdown.isSelected(prefixedRefName);
 		return [[
 			{
 				title: 'Checkout Branch' + ELLIPSIS,
@@ -1255,6 +1301,17 @@ class GitGraphView {
 					runAction({ command: 'createArchive', repo: this.currentRepo, ref: refName }, 'Creating Archive');
 				}
 			},
+			{
+				title: 'Select in Branches Dropdown',
+				visible: visibility.selectInBranchesDropdown && !isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.selectOption(prefixedRefName)
+			},
+			{
+				title: 'Unselect in Branches Dropdown',
+				visible: visibility.unselectInBranchesDropdown && isSelectedInBranchesDropdown,
+				onClick: () => this.branchDropdown.unselectOption(prefixedRefName)
+			}
+		], [
 			{
 				title: 'Copy Branch Name to Clipboard',
 				visible: visibility.copyName,
@@ -1367,7 +1424,7 @@ class GitGraphView {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remotes: [this.gitRemotes[0]] }, 'Pushing Tag');
 						}, target);
 					} else if (this.gitRemotes.length > 1) {
-						const defaults = [this.gitRemotes.includes('origin') ? 'origin' : this.gitRemotes[0]];
+						const defaults = [this.getPushRemote()];
 						const options = this.gitRemotes.map((remote) => ({ name: remote, value: remote }));
 						dialog.showMultiSelect('Are you sure you want to push the tag <b><i>' + escapeHtml(tagName) + '</i></b>? Select the remote(s) to push the tag to:', defaults, options, 'Yes, push', (remotes) => {
 							runAction({ command: 'pushTag', repo: this.currentRepo, tagName: tagName, remotes: remotes }, 'Pushing Tag');
@@ -1440,17 +1497,58 @@ class GitGraphView {
 		]];
 	}
 
-	private getCommitOfElem(elem: HTMLElement) {
-		let id = parseInt(elem.dataset.id!);
-		return id < this.commits.length ? this.commits[id] : null;
-	}
-
-	private getCommitId(hash: string) {
-		return typeof this.commitLookup[hash] === 'number' ? this.commitLookup[hash] : null;
-	}
-
 
 	/* Actions */
+
+	private addTagAction(hash: string, initialName: string, initialType: GG.TagType, initialMessage: string, initialPushToRemote: string | null, target: DialogTarget & CommitTarget, isInitialLoad: boolean = true) {
+		let mostRecentTagsIndex = -1;
+		for (let i = 0; i < this.commits.length; i++) {
+			if (this.commits[i].tags.length > 0 && (mostRecentTagsIndex === -1 || this.commits[i].date > this.commits[mostRecentTagsIndex].date)) {
+				mostRecentTagsIndex = i;
+			}
+		}
+		const mostRecentTags = mostRecentTagsIndex > -1 ? this.commits[mostRecentTagsIndex].tags.map((tag) => '"' + tag.name + '"') : [];
+
+		const inputs: DialogInput[] = [
+			{ type: DialogInputType.TextRef, name: 'Name', default: initialName, info: mostRecentTags.length > 0 ? 'The most recent tag' + (mostRecentTags.length > 1 ? 's' : '') + ' in the loaded commits ' + (mostRecentTags.length > 1 ? 'are' : 'is') + ' ' + formatCommaSeparatedList(mostRecentTags) + '.' : undefined },
+			{ type: DialogInputType.Select, name: 'Type', default: initialType === GG.TagType.Annotated ? 'annotated' : 'lightweight', options: [{ name: 'Annotated', value: 'annotated' }, { name: 'Lightweight', value: 'lightweight' }] },
+			{ type: DialogInputType.Text, name: 'Message', default: initialMessage, placeholder: 'Optional', info: 'A message can only be added to an annotated tag.' }
+		];
+		if (this.gitRemotes.length > 1) {
+			const options = [{ name: 'Don\'t push', value: '-1' }];
+			this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
+			const defaultOption = initialPushToRemote !== null
+				? this.gitRemotes.indexOf(initialPushToRemote)
+				: isInitialLoad && this.config.dialogDefaults.addTag.pushToRemote
+					? this.gitRemotes.indexOf(this.getPushRemote())
+					: -1;
+			inputs.push({ type: DialogInputType.Select, name: 'Push to remote', options: options, default: defaultOption.toString(), info: 'Once this tag has been added, push it to this remote.' });
+		} else if (this.gitRemotes.length === 1) {
+			const defaultValue = initialPushToRemote !== null || (isInitialLoad && this.config.dialogDefaults.addTag.pushToRemote);
+			inputs.push({ type: DialogInputType.Checkbox, name: 'Push to remote', value: defaultValue, info: 'Once this tag has been added, push it to the repositories remote.' });
+		}
+
+		dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
+			const tagName = <string>values[0];
+			const type = <string>values[1] === 'annotated' ? GG.TagType.Annotated : GG.TagType.Lightweight;
+			const message = <string>values[2];
+			const pushToRemote = this.gitRemotes.length > 1 && <string>values[3] !== '-1'
+				? this.gitRemotes[parseInt(<string>values[3])]
+				: this.gitRemotes.length === 1 && <boolean>values[3]
+					? this.gitRemotes[0]
+					: null;
+
+			if (this.gitTags.includes(tagName)) {
+				dialog.showTwoButtons('A tag named <b><i>' + escapeHtml(tagName) + '</i></b> already exists, do you want to replace it with this new tag?', 'Yes, replace the existing tag', () => {
+					runAction({ command: 'addTag', repo: this.currentRepo, tagName: tagName, commitHash: hash, type: type, message: message, pushToRemote: pushToRemote, force: true }, 'Adding Tag');
+				}, 'No, choose another tag name', () => {
+					this.addTagAction(hash, tagName, type, message, pushToRemote, target, false);
+				}, target);
+			} else {
+				runAction({ command: 'addTag', repo: this.currentRepo, tagName: tagName, commitHash: hash, type: type, message: message, pushToRemote: pushToRemote, force: false }, 'Adding Tag');
+			}
+		}, target);
+	}
 
 	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null, target: DialogTarget & (CommitTarget | RefTarget)) {
 		if (remote !== null) {
@@ -1482,6 +1580,24 @@ class GitGraphView {
 		} else {
 			runAction({ command: 'checkoutBranch', repo: this.currentRepo, branchName: refName, remoteBranch: null, pullAfterwards: null }, 'Checking out Branch');
 		}
+	}
+
+	private createBranchAction(hash: string, initialName: string, initialCheckOut: boolean, target: DialogTarget & CommitTarget) {
+		dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+			{ type: DialogInputType.TextRef, name: 'Name', default: initialName },
+			{ type: DialogInputType.Checkbox, name: 'Check out', value: initialCheckOut }
+		], 'Create Branch', (values) => {
+			const branchName = <string>values[0], checkOut = <boolean>values[1];
+			if (this.gitBranches.includes(branchName)) {
+				dialog.showTwoButtons('A branch named <b><i>' + escapeHtml(branchName) + '</i></b> already exists, do you want to replace it with this new branch?', 'Yes, replace the existing branch', () => {
+					runAction({ command: 'createBranch', repo: this.currentRepo, branchName: branchName, commitHash: hash, checkout: checkOut, force: true }, 'Creating Branch');
+				}, 'No, choose another branch name', () => {
+					this.createBranchAction(hash, branchName, checkOut, target);
+				}, target);
+			} else {
+				runAction({ command: 'createBranch', repo: this.currentRepo, branchName: branchName, commitHash: hash, checkout: checkOut, force: false }, 'Creating Branch');
+			}
+		}, target);
 	}
 
 	private deleteTagAction(refName: string, deleteOnRemote: string | null) {
@@ -1841,18 +1957,18 @@ class GitGraphView {
 
 	private observeKeyboardEvents() {
 		document.addEventListener('keydown', (e) => {
-			if (dialog.isOpen()) {
+			if (contextMenu.isOpen()) {
+				if (e.key === 'Escape') {
+					contextMenu.close();
+					handledEvent(e);
+				}
+			} else if (dialog.isOpen()) {
 				if (e.key === 'Escape') {
 					dialog.close();
 					handledEvent(e);
 				} else if (e.keyCode ? e.keyCode === 13 : e.key === 'Enter') {
 					// Use keyCode === 13 to detect 'Enter' events if available (for compatibility with IME Keyboards used by Chinese / Japanese / Korean users)
 					dialog.submit();
-					handledEvent(e);
-				}
-			} else if (contextMenu.isOpen()) {
-				if (e.key === 'Escape') {
-					contextMenu.close();
 					handledEvent(e);
 				}
 			} else if (this.expandedCommit !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -1897,7 +2013,7 @@ class GitGraphView {
 					handledEvent(e);
 				} else if (!e.shiftKey) {
 					if (key === this.config.keybindings.refresh) {
-						this.refresh(true);
+						this.refresh(true, true);
 						handledEvent(e);
 					} else if (key === this.config.keybindings.find) {
 						this.findWidget.show(true);
@@ -1928,9 +2044,9 @@ class GitGraphView {
 		});
 	}
 
-	private observeInternalUrls() {
-		document.body.addEventListener('click', (e: MouseEvent) => {
-			if (e.target !== null && (<Element>e.target).className === 'internalUrl') {
+	private observeUrls() {
+		const followInternalLink = (e: MouseEvent) => {
+			if (e.target !== null && isInternalUrlElem(<Element>e.target)) {
 				const value = unescapeHtml((<HTMLElement>e.target).dataset.value!);
 				switch ((<HTMLElement>e.target).dataset.type!) {
 					case 'commit':
@@ -1941,6 +2057,77 @@ class GitGraphView {
 						break;
 				}
 			}
+		};
+
+		document.body.addEventListener('click', followInternalLink);
+
+		document.body.addEventListener('contextmenu', (e: MouseEvent) => {
+			if (e.target === null) return;
+			const eventTarget = <Element>e.target;
+
+			const isExternalUrl = isExternalUrlElem(eventTarget), isInternalUrl = isInternalUrlElem(eventTarget);
+			if (isExternalUrl || isInternalUrl) {
+				const viewElem: HTMLElement | null = eventTarget.closest('#view');
+				let eventElem;
+
+				let target: (ContextMenuTarget & CommitTarget) | RepoTarget, isInDialog = false;
+				if (this.expandedCommit !== null && eventTarget.closest('#cdv') !== null) {
+					// URL is in the Commit Details View
+					target = {
+						type: TargetType.CommitDetailsView,
+						hash: this.expandedCommit.commitHash,
+						index: this.commitLookup[this.expandedCommit.commitHash],
+						elem: <HTMLElement>eventTarget
+					};
+					GitGraphView.closeCdvContextMenuIfOpen(this.expandedCommit);
+					this.expandedCommit.contextMenuOpen.summary = true;
+				} else if ((eventElem = <HTMLElement | null>eventTarget.closest('.commit')) !== null) {
+					// URL is in the Commits
+					const commit = this.getCommitOfElem(eventElem);
+					if (commit === null) return;
+					target = {
+						type: TargetType.Commit,
+						hash: commit.hash,
+						index: parseInt(eventElem.dataset.id!),
+						elem: <HTMLElement>eventTarget
+					};
+				} else {
+					// URL is in a dialog
+					target = {
+						type: TargetType.Repo
+					};
+					isInDialog = true;
+				}
+
+				handledEvent(e);
+				contextMenu.show([
+					[
+						{
+							title: 'Open URL',
+							visible: isExternalUrl,
+							onClick: () => {
+								sendMessage({ command: 'openExternalUrl', url: (<HTMLAnchorElement>eventTarget).href });
+							}
+						},
+						{
+							title: 'Follow Internal Link',
+							visible: isInternalUrl,
+							onClick: () => followInternalLink(e)
+						},
+						{
+							title: 'Copy URL to Clipboard',
+							visible: isExternalUrl,
+							onClick: () => {
+								sendMessage({ command: 'copyToClipboard', type: 'External URL', data: (<HTMLAnchorElement>eventTarget).href });
+							}
+						}
+					]
+				], false, target, e, viewElem || document.body, () => {
+					if (target.type === TargetType.CommitDetailsView && this.expandedCommit !== null) {
+						this.expandedCommit.contextMenuOpen.summary = false;
+					}
+				}, isInDialog ? 'dialogContextMenu' : null);
+			}
 		});
 	}
 
@@ -1950,12 +2137,8 @@ class GitGraphView {
 		this.tableElem.addEventListener('click', (e: MouseEvent) => {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
+			if (isUrlElem(eventTarget)) return;
 			let eventElem;
-
-			if (eventTarget.className === 'externalUrl') {
-				// An external URL was clicked, skip processing this event
-				return;
-			}
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
 				// .gitRef was clicked
@@ -1991,6 +2174,7 @@ class GitGraphView {
 		this.tableElem.addEventListener('dblclick', (e: MouseEvent) => {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
+			if (isUrlElem(eventTarget)) return;
 			let eventElem;
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
@@ -2027,6 +2211,7 @@ class GitGraphView {
 		this.tableElem.addEventListener('contextmenu', (e: Event) => {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
+			if (isUrlElem(eventTarget)) return;
 			let eventElem;
 
 			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
@@ -2097,7 +2282,7 @@ class GitGraphView {
 
 	/* Commit Details View */
 
-	private loadCommitDetails(commitElem: HTMLElement) {
+	public loadCommitDetails(commitElem: HTMLElement) {
 		const commit = this.getCommitOfElem(commitElem);
 		if (commit === null) return;
 
@@ -2125,7 +2310,7 @@ class GitGraphView {
 		if (expandedCommit.compareWithElem !== null) {
 			expandedCommit.compareWithElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 		}
-		GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+		GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		this.expandedCommit = null;
 		if (saveAndRender) {
 			this.saveState();
@@ -2148,7 +2333,7 @@ class GitGraphView {
 		if (haveFilesChanged(expandedCommit.fileChanges, commitDetails.fileChanges)) {
 			expandedCommit.fileChanges = commitDetails.fileChanges;
 			expandedCommit.fileTree = fileTree;
-			GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		}
 		expandedCommit.avatar = avatar;
 		expandedCommit.codeReview = codeReview;
@@ -2223,7 +2408,7 @@ class GitGraphView {
 		if (expandedCommit.compareWithElem !== null) {
 			expandedCommit.compareWithElem.classList.remove(CLASS_COMMIT_DETAILS_OPEN);
 		}
-		GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+		GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		if (saveAndRequestCommitDetails) {
 			if (expandedCommit.commitElem !== null) {
 				this.saveExpandedCommitLoading(expandedCommit.index, expandedCommit.commitHash, expandedCommit.commitElem, null, null);
@@ -2242,7 +2427,7 @@ class GitGraphView {
 		if (haveFilesChanged(expandedCommit.fileChanges, fileChanges)) {
 			expandedCommit.fileChanges = fileChanges;
 			expandedCommit.fileTree = fileTree;
-			GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		}
 		expandedCommit.codeReview = codeReview;
 		if (!refresh) {
@@ -2264,8 +2449,9 @@ class GitGraphView {
 		if (expandedCommit === null || expandedCommit.commitElem === null) return;
 
 		let elem = document.getElementById('cdv'), html = '<div id="cdvContent">', isDocked = this.isCdvDocked();
-		let commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
-		let codeReviewPossible = !expandedCommit.loading && commitOrder.to !== UNCOMMITTED;
+		const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
+		const codeReviewPossible = !expandedCommit.loading && commitOrder.to !== UNCOMMITTED;
+		const externalDiffPossible = !expandedCommit.loading && (expandedCommit.compareWithHash !== null || this.commits[this.commitLookup[expandedCommit.commitHash]].parents.length > 0);
 
 		if (elem === null) {
 			elem = document.createElement(isDocked ? 'div' : 'tr');
@@ -2299,16 +2485,16 @@ class GitGraphView {
 						? commitDetails.parents.map((parent) => {
 							const escapedParent = escapeHtml(parent);
 							return typeof this.commitLookup[parent] === 'number'
-								? '<span class="internalUrl" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedParent + '</span>'
+								? '<span class="' + CLASS_INTERNAL_URL + '" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedParent + '</span>'
 								: escapedParent;
 						}).join(', ')
 						: 'None';
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'
 						+ '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>'
 						+ '<b>Parents: </b>' + parents + '<br>'
-						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
+						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
 						+ (commitDetails.authorDate !== commitDetails.committerDate ? '<b>Author Date: </b>' + formatLongDate(commitDetails.authorDate) + '<br>' : '')
-						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
+						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
 						+ '<b>' + (commitDetails.authorDate !== commitDetails.committerDate ? 'Committer ' : '') + 'Date: </b>' + formatLongDate(commitDetails.committerDate)
 						+ '</span>'
 						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
@@ -2320,11 +2506,12 @@ class GitGraphView {
 				// Commit comparison should be shown
 				html += 'Displaying all changes from <b>' + commitOrder.from + '</b> to <b>' + (commitOrder.to !== UNCOMMITTED ? commitOrder.to : 'Uncommitted Changes') + '</b>.';
 			}
-			html += '</div><div id="cdvFiles"' + (expandedCommit.fileContextMenuOpen > -1 ? ' class="' + CLASS_BLOCK_USER_INTERACTION + '"' : '') + '>' + generateFileViewHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile, expandedCommit.fileContextMenuOpen, this.getFileViewType(), commitOrder.to === UNCOMMITTED) + '</div><div id="cdvDivider"></div>';
+			html += '</div><div id="cdvFiles">' + generateFileViewHtml(expandedCommit.fileTree!, expandedCommit.fileChanges!, expandedCommit.lastViewedFile, expandedCommit.contextMenuOpen.fileView, this.getFileViewType(), commitOrder.to === UNCOMMITTED) + '</div><div id="cdvDivider"></div>';
 		}
 		html += '</div><div id="cdvControls"><div id="cdvClose" class="cdvControlBtn" title="Close">' + SVG_ICONS.close + '</div>' +
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
+			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
@@ -2365,23 +2552,28 @@ class GitGraphView {
 		});
 
 		if (!expandedCommit.loading) {
-			const filesElem = document.getElementById('cdvFiles')!;
-			this.makeCdvFileViewInteractive(filesElem);
+			this.makeCdvFileViewInteractive();
 			this.renderCdvFileViewTypeBtns();
+			this.renderCdvExternalDiffBtn();
 			this.makeCdvDividerDraggable();
 
-			let timeout: NodeJS.Timer | null = null;
-			filesElem.scroll(0, expandedCommit.fileChangesScrollTop);
-			filesElem.addEventListener('scroll', () => {
-				let filesElem = document.getElementById('cdvFiles')!;
-				if (filesElem === null) return;
-				expandedCommit.fileChangesScrollTop = filesElem.scrollTop;
-				if (timeout !== null) clearTimeout(timeout);
-				timeout = setTimeout(() => {
-					this.saveState();
-					timeout = null;
-				}, 250);
-			});
+			observeElemScroll('cdvSummary', expandedCommit.scrollTop.summary, (scrollTop) => {
+				if (this.expandedCommit === null) return;
+				this.expandedCommit.scrollTop.summary = scrollTop;
+				if (this.expandedCommit.contextMenuOpen.summary) {
+					this.expandedCommit.contextMenuOpen.summary = false;
+					contextMenu.close();
+				}
+			}, () => this.saveState());
+
+			observeElemScroll('cdvFiles', expandedCommit.scrollTop.fileView, (scrollTop) => {
+				if (this.expandedCommit === null) return;
+				this.expandedCommit.scrollTop.fileView = scrollTop;
+				if (this.expandedCommit.contextMenuOpen.fileView > -1) {
+					this.expandedCommit.contextMenuOpen.fileView = -1;
+					contextMenu.close();
+				}
+			}, () => this.saveState());
 
 			document.getElementById('cdvFileViewTypeTree')!.addEventListener('click', () => {
 				this.changeFileViewType(GG.FileViewType.Tree);
@@ -2394,15 +2586,15 @@ class GitGraphView {
 			if (codeReviewPossible) {
 				this.renderCodeReviewBtn();
 				document.getElementById('cdvCodeReview')!.addEventListener('click', (e) => {
-					let expandedCommit = this.expandedCommit;
+					const expandedCommit = this.expandedCommit;
 					if (expandedCommit === null || e.target === null) return;
 					let sourceElem = <HTMLElement>(<Element>e.target).closest('#cdvCodeReview')!;
 					if (sourceElem.classList.contains(CLASS_ACTIVE)) {
 						sendMessage({ command: 'endCodeReview', repo: this.currentRepo, id: expandedCommit.codeReview!.id });
 						this.endCodeReview();
 					} else {
-						let commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
-						let id = expandedCommit.compareWithHash !== null ? commitOrder.from + '-' + commitOrder.to : expandedCommit.commitHash;
+						const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
+						const id = expandedCommit.compareWithHash !== null ? commitOrder.from + '-' + commitOrder.to : expandedCommit.commitHash;
 						sendMessage({
 							command: 'startCodeReview',
 							repo: this.currentRepo,
@@ -2413,6 +2605,21 @@ class GitGraphView {
 							lastViewedFile: expandedCommit.lastViewedFile
 						});
 					}
+				});
+			}
+
+			if (externalDiffPossible) {
+				document.getElementById('cdvExternalDiff')!.addEventListener('click', () => {
+					const expandedCommit = this.expandedCommit;
+					if (expandedCommit === null || this.gitConfig === null || (this.gitConfig.diffTool === null && this.gitConfig.guiDiffTool === null)) return;
+					const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
+					runAction({
+						command: 'openExternalDirDiff',
+						repo: this.currentRepo,
+						fromHash: commitOrder.from,
+						toHash: commitOrder.to,
+						isGui: this.gitConfig.guiDiffTool !== null
+					}, 'Opening External Directory Diff');
 				});
 			}
 		}
@@ -2540,6 +2747,10 @@ class GitGraphView {
 		return this.config.commitDetailsView.location === GG.CommitDetailsViewLocation.DockedToBottom;
 	}
 
+	public isCdvOpen(commitHash: string, compareWithHash: string | null) {
+		return this.expandedCommit !== null && this.expandedCommit.commitHash === commitHash && this.expandedCommit.compareWithHash === compareWithHash;
+	}
+
 	private getCommitOrder(hash1: string, hash2: string) {
 		if (this.commitLookup[hash1] > this.commitLookup[hash2]) {
 			return { from: hash1, to: hash2 };
@@ -2562,15 +2773,15 @@ class GitGraphView {
 	private changeFileViewType(type: GG.FileViewType) {
 		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
 		if (expandedCommit === null || expandedCommit.fileTree === null || expandedCommit.fileChanges === null || filesElem === null) return;
-		GitGraphView.closeCdvFileContextMenuIfOpen(expandedCommit);
+		GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		this.setFileViewType(type);
 		const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
-		filesElem.innerHTML = generateFileViewHtml(expandedCommit.fileTree, expandedCommit.fileChanges, expandedCommit.lastViewedFile, expandedCommit.fileContextMenuOpen, type, commitOrder.to === UNCOMMITTED);
-		this.makeCdvFileViewInteractive(filesElem);
+		filesElem.innerHTML = generateFileViewHtml(expandedCommit.fileTree, expandedCommit.fileChanges, expandedCommit.lastViewedFile, expandedCommit.contextMenuOpen.fileView, type, commitOrder.to === UNCOMMITTED);
+		this.makeCdvFileViewInteractive();
 		this.renderCdvFileViewTypeBtns();
 	}
 
-	private makeCdvFileViewInteractive(filesElem: HTMLElement) {
+	private makeCdvFileViewInteractive() {
 		const getFileElemOfEventTarget = (target: EventTarget) => <HTMLElement>(<Element>target).closest('.fileTreeFileRecord');
 		const getFileOfFileElem = (fileChanges: ReadonlyArray<GG.GitFileChange>, fileElem: HTMLElement) => fileChanges[parseInt(fileElem.dataset.index!)];
 
@@ -2701,7 +2912,8 @@ class GitGraphView {
 			const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
 			const isUncommitted = commitOrder.to === UNCOMMITTED;
 
-			expandedCommit.fileContextMenuOpen = parseInt(fileElem.dataset.index!);
+			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
+			expandedCommit.contextMenuOpen.fileView = parseInt(fileElem.dataset.index!);
 
 			const target: ContextMenuTarget & CommitTarget = {
 				type: TargetType.CommitDetailsView,
@@ -2736,8 +2948,8 @@ class GitGraphView {
 						onClick: () => triggerCopyFilePath(file)
 					}
 				]
-			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, filesElem, () => {
-				expandedCommit.fileContextMenuOpen = -1;
+			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, () => {
+				expandedCommit.contextMenuOpen.fileView = -1;
 			});
 		});
 	}
@@ -2752,9 +2964,24 @@ class GitGraphView {
 		alterClass(listBtnElem, CLASS_ACTIVE, listView);
 	}
 
-	private static closeCdvFileContextMenuIfOpen(expandedCommit: ExpandedCommit) {
-		if (expandedCommit.fileContextMenuOpen > -1) {
-			expandedCommit.fileContextMenuOpen = -1;
+	private renderCdvExternalDiffBtn() {
+		if (this.expandedCommit === null) return;
+		const externalDiffBtnElem = document.getElementById('cdvExternalDiff');
+		if (externalDiffBtnElem === null) return;
+
+		alterClass(externalDiffBtnElem, CLASS_ENABLED, this.gitConfig !== null && (this.gitConfig.diffTool !== null || this.gitConfig.guiDiffTool !== null));
+		const toolName = this.gitConfig !== null
+			? this.gitConfig.guiDiffTool !== null
+				? this.gitConfig.guiDiffTool
+				: this.gitConfig.diffTool
+			: null;
+		externalDiffBtnElem.title = 'Open External Directory Diff' + (toolName !== null ? ' with "' + toolName + '"' : '');
+	}
+
+	private static closeCdvContextMenuIfOpen(expandedCommit: ExpandedCommit) {
+		if (expandedCommit.contextMenuOpen.summary || expandedCommit.contextMenuOpen.fileView > -1) {
+			expandedCommit.contextMenuOpen.summary = false;
+			expandedCommit.contextMenuOpen.fileView = -1;
 			contextMenu.close();
 		}
 	}
@@ -2810,7 +3037,6 @@ window.addEventListener('load', () => {
 	if (viewElem === null) return;
 
 	const gitGraph = new GitGraphView(viewElem, VSCODE_API.getState());
-	const settingsWidget = gitGraph.getSettingsWidget();
 	const imageResizer = new ImageResizer();
 
 	/* Command Processing */
@@ -2818,8 +3044,7 @@ window.addEventListener('load', () => {
 		const msg: GG.ResponseMessage = event.data;
 		switch (msg.command) {
 			case 'addRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Add Remote');
-				settingsWidget.refresh();
+				refreshOrDisplayError(msg.error, 'Unable to Add Remote', true);
 				break;
 			case 'addTag':
 				refreshAndDisplayErrors(msg.errors, 'Unable to Add Tag');
@@ -2868,7 +3093,7 @@ window.addEventListener('load', () => {
 				finishOrDisplayError(msg.error, 'Unable to Create Archive', true);
 				break;
 			case 'createBranch':
-				refreshOrDisplayError(msg.error, 'Unable to Create Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Create Branch');
 				break;
 			case 'createPullRequest':
 				finishOrDisplayErrors(msg.errors, 'Unable to Create Pull Request', () => {
@@ -2878,11 +3103,10 @@ window.addEventListener('load', () => {
 				}, true);
 				break;
 			case 'deleteBranch':
-				refreshAndDisplayErrors(msg.errors, 'Unable to Delete Branch');
+				handleResponseDeleteBranch(msg);
 				break;
 			case 'deleteRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Delete Remote');
-				settingsWidget.refresh();
+				refreshOrDisplayError(msg.error, 'Unable to Delete Remote', true);
 				break;
 			case 'deleteRemoteBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
@@ -2891,9 +3115,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
 				break;
 			case 'deleteUserDetails':
-				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => {
-					settingsWidget.refresh();
-				}, true);
+				finishOrDisplayErrors(msg.errors, 'Unable to Remove Git User Details', () => gitGraph.requestLoadConfig(), true);
 				break;
 			case 'dropCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Drop Commit');
@@ -2902,13 +3124,10 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Drop Stash');
 				break;
 			case 'editRemote':
-				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote');
-				settingsWidget.refresh();
+				refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote', true);
 				break;
 			case 'editUserDetails':
-				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => {
-					settingsWidget.refresh();
-				}, true);
+				finishOrDisplayErrors(msg.errors, 'Unable to Save Git User Details', () => gitGraph.requestLoadConfig(), true);
 				break;
 			case 'exportRepoConfig':
 				refreshOrDisplayError(msg.error, 'Unable to Export Repository Configuration');
@@ -2924,11 +3143,11 @@ window.addEventListener('load', () => {
 			case 'fetchIntoLocalBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');
 				break;
-			case 'getSettings':
-				settingsWidget.loadSettings(msg.settings, msg.error);
-				break;
 			case 'loadCommits':
 				gitGraph.processLoadCommitsResponse(msg);
+				break;
+			case 'loadConfig':
+				gitGraph.processLoadConfig(msg);
 				break;
 			case 'loadRepoInfo':
 				gitGraph.processLoadRepoInfoResponse(msg);
@@ -2941,6 +3160,12 @@ window.addEventListener('load', () => {
 				break;
 			case 'openExtensionSettings':
 				finishOrDisplayError(msg.error, 'Unable to Open Extension Settings');
+				break;
+			case 'openExternalDirDiff':
+				finishOrDisplayError(msg.error, 'Unable to Open External Directory Diff', true);
+				break;
+			case 'openExternalUrl':
+				finishOrDisplayError(msg.error, 'Unable to Open External URL');
 				break;
 			case 'openFile':
 				finishOrDisplayError(msg.error, 'Unable to Open File');
@@ -2958,7 +3183,7 @@ window.addEventListener('load', () => {
 				refreshOrDisplayError(msg.error, 'Unable to Pull Branch');
 				break;
 			case 'pushBranch':
-				refreshAndDisplayErrors(msg.errors, 'Unable to Push Branch');
+				refreshAndDisplayErrors(msg.errors, 'Unable to Push Branch', msg.willUpdateBranchConfig);
 				break;
 			case 'pushStash':
 				refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
@@ -2992,6 +3217,9 @@ window.addEventListener('load', () => {
 			case 'setGlobalViewState':
 				finishOrDisplayError(msg.error, 'Unable to save the Global View State');
 				break;
+			case 'setWorkspaceViewState':
+				finishOrDisplayError(msg.error, 'Unable to save the Workspace View State');
+				break;
 			case 'startCodeReview':
 				if (msg.error === null) {
 					gitGraph.startCodeReview(msg.commitHash, msg.compareWithHash, msg.codeReview);
@@ -3018,21 +3246,33 @@ window.addEventListener('load', () => {
 		}
 	});
 
-	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string) {
+	function handleResponseDeleteBranch(msg: GG.ResponseDeleteBranch) {
+		if (msg.errors.length > 0 && msg.errors[0] !== null && msg.errors[0].includes('git branch -D')) {
+			dialog.showConfirmation('The branch <b><i>' + escapeHtml(msg.branchName) + '</i></b> is not fully merged. Would you like to force delete it?', 'Yes, force delete branch', () => {
+				runAction({ command: 'deleteBranch', repo: msg.repo, branchName: msg.branchName, forceDelete: true, deleteOnRemotes: msg.deleteOnRemotes }, 'Deleting Branch');
+			}, { type: TargetType.Repo });
+		} else {
+			refreshAndDisplayErrors(msg.errors, 'Unable to Delete Branch');
+		}
+	}
+
+	function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string, configChanges: boolean = false) {
 		if (error === null) {
-			gitGraph.refresh(false);
+			gitGraph.refresh(false, configChanges);
 		} else {
 			dialog.showError(errorMessage, error, null, null);
 		}
 	}
 
-	function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string) {
+	function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string, configChanges: boolean = false) {
 		const reducedErrors = reduceErrorInfos(errors);
 		if (reducedErrors.error !== null) {
 			dialog.showError(errorMessage, reducedErrors.error, null, null);
 		}
 		if (reducedErrors.partialOrCompleteSuccess) {
-			gitGraph.refresh(false);
+			gitGraph.refresh(false, configChanges);
+		} else if (configChanges) {
+			gitGraph.requestLoadConfig();
 		}
 	}
 
@@ -3306,6 +3546,12 @@ function getCommitOrdering(repoValue: GG.RepoCommitOrdering): GG.CommitOrdering 
 function getShowRemoteBranches(repoValue: GG.BooleanOverride) {
 	return repoValue === GG.BooleanOverride.Default
 		? initialState.config.showRemoteBranches
+		: repoValue === GG.BooleanOverride.Enabled;
+}
+
+function getShowStashes(repoValue: GG.BooleanOverride) {
+	return repoValue === GG.BooleanOverride.Default
+		? initialState.config.showStashes
 		: repoValue === GG.BooleanOverride.Enabled;
 }
 

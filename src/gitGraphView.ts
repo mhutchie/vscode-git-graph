@@ -2,13 +2,13 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
-import { DataSource, GIT_CONFIG_USER_EMAIL, GIT_CONFIG_USER_NAME, GitCommitDetailsData } from './dataSource';
+import { DataSource, GIT_CONFIG, GitCommitDetailsData } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openExternalUrl, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
 import { Disposable, toDisposable } from './utils/disposable';
 
 /**
@@ -179,7 +179,7 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'addTag':
-				errorInfos = [await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.lightweight, msg.message)];
+				errorInfos = [await this.dataSource.addTag(msg.repo, msg.tagName, msg.commitHash, msg.type, msg.message, msg.force)];
 				if (errorInfos[0] === null && msg.pushToRemote !== null) {
 					errorInfos.push(await this.dataSource.pushTag(msg.repo, msg.tagName, msg.pushToRemote));
 				}
@@ -251,7 +251,7 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'compareCommits',
 					commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
-					... await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
+					...await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
 					codeReview: msg.toHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.fromHash + '-' + msg.toHash) : null,
 					refresh: msg.refresh
 				});
@@ -278,7 +278,7 @@ export class GitGraphView extends Disposable {
 			case 'createBranch':
 				this.sendMessage({
 					command: 'createBranch',
-					error: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash, msg.checkout)
+					errors: await this.dataSource.createBranch(msg.repo, msg.branchName, msg.commitHash, msg.checkout, msg.force)
 				});
 				break;
 			case 'createPullRequest':
@@ -294,10 +294,18 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'deleteBranch':
 				errorInfos = [await this.dataSource.deleteBranch(msg.repo, msg.branchName, msg.forceDelete)];
-				for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
-					errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
+				if (errorInfos[0] === null) {
+					for (let i = 0; i < msg.deleteOnRemotes.length; i++) {
+						errorInfos.push(await this.dataSource.deleteRemoteBranch(msg.repo, msg.branchName, msg.deleteOnRemotes[i]));
+					}
 				}
-				this.sendMessage({ command: 'deleteBranch', errors: errorInfos });
+				this.sendMessage({
+					command: 'deleteBranch',
+					repo: msg.repo,
+					branchName: msg.branchName,
+					deleteOnRemotes: msg.deleteOnRemotes,
+					errors: errorInfos
+				});
 				break;
 			case 'deleteRemote':
 				this.sendMessage({
@@ -320,10 +328,10 @@ export class GitGraphView extends Disposable {
 			case 'deleteUserDetails':
 				errorInfos = [];
 				if (msg.name) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_NAME, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.location));
 				}
 				if (msg.email) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.location));
 				}
 				this.sendMessage({
 					command: 'deleteUserDetails',
@@ -350,15 +358,15 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'editUserDetails':
 				errorInfos = [
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG_USER_NAME, msg.name, msg.location),
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, msg.email, msg.location)
+					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.name, msg.location),
+					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.email, msg.location)
 				];
 				if (errorInfos[0] === null && errorInfos[1] === null) {
 					if (msg.deleteLocalName) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_NAME, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, GitConfigLocation.Local));
 					}
 					if (msg.deleteLocalEmail) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG_USER_EMAIL, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, GitConfigLocation.Local));
 					}
 				}
 				this.sendMessage({
@@ -390,24 +398,25 @@ export class GitGraphView extends Disposable {
 					error: await this.repoManager.exportRepoConfig(msg.repo)
 				});
 				break;
-			case 'getSettings':
-				this.sendMessage({
-					command: 'getSettings',
-					... await this.dataSource.getRepoSettings(msg.repo)
-				});
-				break;
 			case 'loadCommits':
 				this.loadCommitsRefreshId = msg.refreshId;
 				this.sendMessage({
 					command: 'loadCommits',
 					refreshId: msg.refreshId,
 					onlyFollowFirstParent: msg.onlyFollowFirstParent,
-					... await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
+					...await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
+				});
+				break;
+			case 'loadConfig':
+				this.sendMessage({
+					command: 'loadConfig',
+					repo: msg.repo,
+					...await this.dataSource.getConfig(msg.repo, msg.remotes)
 				});
 				break;
 			case 'loadRepoInfo':
 				this.loadRepoInfoRefreshId = msg.refreshId;
-				let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.hideRemotes), isRepo = true;
+				let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.showStashes, msg.hideRemotes), isRepo = true;
 				if (repoInfo.error) {
 					// If an error occurred, check to make sure the repo still exists
 					isRepo = (await this.dataSource.repoRoot(msg.repo)) !== null;
@@ -443,6 +452,18 @@ export class GitGraphView extends Disposable {
 					error: await openExtensionSettings()
 				});
 				break;
+			case 'openExternalDirDiff':
+				this.sendMessage({
+					command: 'openExternalDirDiff',
+					error: await this.dataSource.openExternalDirDiff(msg.repo, msg.fromHash, msg.toHash, msg.isGui)
+				});
+				break;
+			case 'openExternalUrl':
+				this.sendMessage({
+					command: 'openExternalUrl',
+					error: await openExternalUrl(msg.url)
+				});
+				break;
 			case 'openFile':
 				this.sendMessage({
 					command: 'openFile',
@@ -476,6 +497,7 @@ export class GitGraphView extends Disposable {
 			case 'pushBranch':
 				this.sendMessage({
 					command: 'pushBranch',
+					willUpdateBranchConfig: msg.willUpdateBranchConfig,
 					errors: await this.dataSource.pushBranchToMultipleRemotes(msg.repo, msg.branchName, msg.remotes, msg.setUpstream, msg.mode)
 				});
 				break;
@@ -529,6 +551,12 @@ export class GitGraphView extends Disposable {
 			case 'setRepoState':
 				this.repoManager.setRepoState(msg.repo, msg.state);
 				break;
+			case 'setWorkspaceViewState':
+				this.sendMessage({
+					command: 'setWorkspaceViewState',
+					error: await this.extensionState.setWorkspaceViewState(msg.state)
+				});
+				break;
 			case 'showErrorMessage':
 				showErrorMessage(msg.message);
 				break;
@@ -537,7 +565,7 @@ export class GitGraphView extends Disposable {
 					command: 'startCodeReview',
 					commitHash: msg.commitHash,
 					compareWithHash: msg.compareWithHash,
-					... await this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile)
+					...await this.extensionState.startCodeReview(msg.repo, msg.id, msg.files, msg.lastViewedFile)
 				});
 				break;
 			case 'tagDetails':
@@ -545,7 +573,7 @@ export class GitGraphView extends Disposable {
 					command: 'tagDetails',
 					tagName: msg.tagName,
 					commitHash: msg.commitHash,
-					... await this.dataSource.getTagDetails(msg.repo, msg.tagName)
+					...await this.dataSource.getTagDetails(msg.repo, msg.tagName)
 				});
 				break;
 			case 'viewDiff':
@@ -620,6 +648,7 @@ export class GitGraphView extends Disposable {
 				referenceLabels: config.referenceLabels,
 				repoDropdownOrder: config.repoDropdownOrder,
 				showRemoteBranches: config.showRemoteBranches,
+				showStashes: config.showStashes,
 				showTags: config.showTags
 			},
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
@@ -629,6 +658,7 @@ export class GitGraphView extends Disposable {
 			loadCommitsRefreshId: this.loadCommitsRefreshId
 		};
 		const globalState = this.extensionState.getGlobalViewState();
+		const workspaceState = this.extensionState.getWorkspaceViewState();
 
 		let body, numRepos = Object.keys(initialState.repos).length, colorVars = '', colorParams = '';
 		for (let i = 0; i < initialState.config.graph.colours.length; i++) {
@@ -661,7 +691,7 @@ export class GitGraphView extends Disposable {
 				<div id="footer"></div>
 			</div>
 			<div id="scrollShadow"></div>
-			<script nonce="${nonce}">var globalState = ${JSON.stringify(globalState)}, initialState = ${JSON.stringify(initialState)};</script>
+			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)}, globalState = ${JSON.stringify(globalState)}, workspaceState = ${JSON.stringify(workspaceState)};</script>
 			<script nonce="${nonce}" src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
 		} else {

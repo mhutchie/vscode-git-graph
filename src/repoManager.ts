@@ -732,6 +732,7 @@ export namespace ExternalRepoConfig {
 		onRepoLoadShowSpecificBranches?: string[];
 		pullRequestConfig?: PullRequestConfig;
 		showRemoteBranches?: boolean;
+		showStashes?: boolean;
 		showTags?: boolean;
 		exportedAt?: number;
 	}
@@ -849,6 +850,9 @@ function generateExternalConfigFile(state: GitRepoState): Readonly<ExternalRepoC
 	if (state.showRemoteBranchesV2 !== BooleanOverride.Default) {
 		file.showRemoteBranches = state.showRemoteBranchesV2 === BooleanOverride.Enabled;
 	}
+	if (state.showStashes !== BooleanOverride.Default) {
+		file.showStashes = state.showStashes === BooleanOverride.Enabled;
+	}
 	if (state.showTags !== BooleanOverride.Default) {
 		file.showTags = state.showTags === BooleanOverride.Enabled;
 	}
@@ -912,6 +916,9 @@ function validateExternalConfigFile(file: Readonly<ExternalRepoConfig.File>) {
 	}
 	if (typeof file.showRemoteBranches !== 'undefined' && typeof file.showRemoteBranches !== 'boolean') {
 		return 'showRemoteBranches';
+	}
+	if (typeof file.showStashes !== 'undefined' && typeof file.showStashes !== 'boolean') {
+		return 'showStashes';
 	}
 	if (typeof file.showTags !== 'undefined' && typeof file.showTags !== 'boolean') {
 		return 'showTags';
@@ -999,6 +1006,9 @@ function applyExternalConfigFile(file: Readonly<ExternalRepoConfig.File>, state:
 	}
 	if (typeof file.showRemoteBranches !== 'undefined') {
 		state.showRemoteBranchesV2 = file.showRemoteBranches ? BooleanOverride.Enabled : BooleanOverride.Disabled;
+	}
+	if (typeof file.showStashes !== 'undefined') {
+		state.showStashes = file.showStashes ? BooleanOverride.Enabled : BooleanOverride.Disabled;
 	}
 	if (typeof file.showTags !== 'undefined') {
 		state.showTags = file.showTags ? BooleanOverride.Enabled : BooleanOverride.Disabled;

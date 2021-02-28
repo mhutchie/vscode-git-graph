@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.29.0 - 2021-02-28
+* #390 When creating a branch or adding a tag, the name is now checked against all existing branches and tags in the repository. If a branch / tag already exists with the same name, a new dialog is displayed that allows you to: replace the existing branch / tag, or to choose another name.
+* #402 New mode for the Find Widget, which will additionally open the Commit Details View as you navigate through each of the matched commits. This mode is enabled / disabled via a new button on the Find Widget.
+* #404 New context menu on all link elements (e.g. Issue Links, URL's in commit messages, author email addresses), enabling the URL to be copied to the clipboard.
+* #417 New context menu actions for branches, to select / unselect the branch in the Branches Dropdown.
+* #424 Consume Git configuration variables (`remote.pushDefault`, `branch.<name>.remote` & `branch.<name>.pushRemote`) to set the default remote to push branches and tags to (when multiple remotes are configured for a repository).
+* #426 If a diff tool is configured in Git (`diff.tool` or `diff.guitool`), you can now open a directory diff in the configured tool from the Commit Details View Control Bar. Note: `diff.tool` is opened via a Visual Studio Code Terminal, whereas `diff.guitool` is opened via a background process.
+* #427 When deleting a branch that is not fully merged, and "Force Delete" is not set on the "Delete Branch" dialog, a new dialog is subsequently shown to allow one-click force deletion, instead of displaying the error message returned by Git.
+* #429 Stashes can be hidden on the Git Graph View by disabling the new extension setting `git-graph.repository.showStashes`. It can be overridden per repository in the Git Graph View's Repository Settings Widget.
+* #452 Explicitly override the Git configuration variable `log.showSignature` to ensure consistent parsing of commits.
+* Significant code and UI improvements.
+
 ## 1.28.0 - 2020-12-01
 * #399 Sign Commits and Tags created by actions in the Git Graph View, by enabling the new extension settings `git-graph.repository.sign.commits` and `git-graph.repository.sign.tags` respectively. This is an alternative to the existing method using Git config (`commit.gpgSign` and `tag.gpgSign`).
 * #406 The keybindings for all Git Graph View keyboard shortcuts can now be configured using new extension settings `git-graph.keyboardShortcut.*`.

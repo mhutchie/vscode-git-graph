@@ -15,8 +15,9 @@ declare global {
 
 	type Config = GG.GitGraphViewConfig;
 
-	var globalState: GG.GitGraphViewGlobalState;
-	var initialState: GG.GitGraphViewInitialState;
+	const initialState: GG.GitGraphViewInitialState;
+	const globalState: GG.DeepReadonly<GG.GitGraphViewGlobalState>;
+	const workspaceState: GG.DeepReadonly<GG.GitGraphViewWorkspaceState>;
 
 	type AvatarImageCollection = { [email: string]: string };
 
@@ -33,8 +34,14 @@ declare global {
 		codeReview: GG.CodeReview | null;
 		lastViewedFile: string | null;
 		loading: boolean;
-		fileChangesScrollTop: number;
-		fileContextMenuOpen: number;
+		scrollTop: {
+			summary: number,
+			fileView: number
+		};
+		contextMenuOpen: {
+			summary: boolean,
+			fileView: number
+		};
 	}
 
 	interface WebViewState {
@@ -43,8 +50,10 @@ declare global {
 		readonly gitRepos: GG.GitRepoSet;
 		readonly gitBranches: ReadonlyArray<string>;
 		readonly gitBranchHead: string | null;
+		readonly gitConfig: GG.GitRepoConfig | null;
 		readonly gitRemotes: ReadonlyArray<string>;
 		readonly gitStashes: ReadonlyArray<GG.GitStash>;
+		readonly gitTags: ReadonlyArray<string>;
 		readonly commits: GG.GitCommit[];
 		readonly commitHead: string | null;
 		readonly avatars: AvatarImageCollection;

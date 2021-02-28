@@ -87,7 +87,12 @@ export const enum GitPushBranchMode {
 	ForceWithLease = 'force-with-lease'
 }
 
-export interface GitRepoSettings {
+export interface GitRepoConfig {
+	readonly branches: GitRepoConfigBranches;
+	readonly diffTool: string | null;
+	readonly guiDiffTool: string | null;
+	readonly pushDefault: string | null;
+	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 	readonly user: {
 		readonly name: {
 			readonly local: string | null,
@@ -98,7 +103,13 @@ export interface GitRepoSettings {
 			readonly global: string | null
 		}
 	};
-	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
+}
+
+export type GitRepoConfigBranches = { [branchName: string]: GitRepoConfigBranch };
+
+export interface GitRepoConfigBranch {
+	readonly pushRemote: string | null;
+	readonly remote: string | null;
 }
 
 export interface GitRepoSettingsRemote {
@@ -194,6 +205,7 @@ export interface GitRepoState {
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
+	showStashes: BooleanOverride;
 	showTags: BooleanOverride;
 }
 
@@ -236,12 +248,19 @@ export interface GitGraphViewConfig {
 	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
 	readonly showRemoteBranches: boolean;
+	readonly showStashes: boolean;
 	readonly showTags: boolean;
 }
 
 export interface GitGraphViewGlobalState {
 	alwaysAcceptCheckoutCommit: boolean;
 	issueLinkingConfig: IssueLinkingConfig | null;
+}
+
+export interface GitGraphViewWorkspaceState {
+	findIsCaseSensitive: boolean;
+	findIsRegex: boolean;
+	findOpenCommitDetailsView: boolean;
 }
 
 export interface CommitDetailsViewConfig {
@@ -321,6 +340,8 @@ export interface ContextMenuActionsVisibility {
 		readonly push: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
+		readonly selectInBranchesDropdown: boolean;
+		readonly unselectInBranchesDropdown: boolean;
 		readonly copyName: boolean;
 	};
 	readonly commit: {
@@ -344,6 +365,8 @@ export interface ContextMenuActionsVisibility {
 		readonly pull: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
+		readonly selectInBranchesDropdown: boolean;
+		readonly unselectInBranchesDropdown: boolean;
 		readonly copyName: boolean;
 	};
 	readonly stash: {
@@ -409,7 +432,7 @@ export interface DefaultColumnVisibility {
 export interface DialogDefaults {
 	readonly addTag: {
 		readonly pushToRemote: boolean,
-		readonly type: 'annotated' | 'lightweight'
+		readonly type: TagType
 	};
 	readonly applyStash: {
 		readonly reinstateIndex: boolean
@@ -499,6 +522,11 @@ export const enum TabIconColourTheme {
 	Grey
 }
 
+export const enum TagType {
+	Annotated,
+	Lightweight
+}
+
 
 /* Base Interfaces for Request / Response Messages */
 
@@ -538,9 +566,10 @@ export interface RequestAddTag extends RepoRequest {
 	readonly command: 'addTag';
 	readonly commitHash: string;
 	readonly tagName: string;
-	readonly lightweight: boolean;
+	readonly type: TagType;
 	readonly message: string;
 	readonly pushToRemote: string | null; // string => name of the remote to push the tag to, null => don't push to a remote
+	readonly force: boolean;
 }
 export interface ResponseAddTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'addTag';
@@ -680,8 +709,9 @@ export interface RequestCreateBranch extends RepoRequest {
 	readonly commitHash: string;
 	readonly branchName: string;
 	readonly checkout: boolean;
+	readonly force: boolean;
 }
-export interface ResponseCreateBranch extends ResponseWithErrorInfo {
+export interface ResponseCreateBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'createBranch';
 }
 
@@ -707,6 +737,9 @@ export interface RequestDeleteBranch extends RepoRequest {
 }
 export interface ResponseDeleteBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'deleteBranch';
+	readonly repo: string;
+	readonly branchName: string;
+	readonly deleteOnRemotes: ReadonlyArray<string>;
 }
 
 export interface RequestDeleteRemote extends RepoRequest {
@@ -830,30 +863,6 @@ export interface ResponseFetchIntoLocalBranch extends ResponseWithErrorInfo {
 	readonly command: 'fetchIntoLocalBranch';
 }
 
-export interface RequestGetSettings extends RepoRequest {
-	readonly command: 'getSettings';
-}
-export interface ResponseGetSettings extends ResponseWithErrorInfo {
-	readonly command: 'getSettings';
-	readonly settings: GitRepoSettings | null;
-}
-
-export interface RequestLoadRepoInfo extends RepoRequest {
-	readonly command: 'loadRepoInfo';
-	readonly refreshId: number;
-	readonly showRemoteBranches: boolean;
-	readonly hideRemotes: ReadonlyArray<string>;
-}
-export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
-	readonly command: 'loadRepoInfo';
-	readonly refreshId: number;
-	readonly branches: ReadonlyArray<string>;
-	readonly head: string | null;
-	readonly remotes: ReadonlyArray<string>;
-	readonly stashes: ReadonlyArray<GitStash>;
-	readonly isRepo: boolean;
-}
-
 export interface RequestLoadCommits extends RepoRequest {
 	readonly command: 'loadCommits';
 	readonly refreshId: number;
@@ -873,8 +882,36 @@ export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly refreshId: number;
 	readonly commits: GitCommit[];
 	readonly head: string | null;
+	readonly tags: string[];
 	readonly moreCommitsAvailable: boolean;
 	readonly onlyFollowFirstParent: boolean;
+}
+
+export interface RequestLoadConfig extends RepoRequest {
+	readonly command: 'loadConfig';
+	readonly remotes: ReadonlyArray<string>;
+}
+export interface ResponseLoadConfig extends ResponseWithErrorInfo {
+	readonly command: 'loadConfig';
+	readonly repo: string;
+	readonly config: GitRepoConfig | null;
+}
+
+export interface RequestLoadRepoInfo extends RepoRequest {
+	readonly command: 'loadRepoInfo';
+	readonly refreshId: number;
+	readonly showRemoteBranches: boolean;
+	readonly showStashes: boolean;
+	readonly hideRemotes: ReadonlyArray<string>;
+}
+export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
+	readonly command: 'loadRepoInfo';
+	readonly refreshId: number;
+	readonly branches: ReadonlyArray<string>;
+	readonly head: string | null;
+	readonly remotes: ReadonlyArray<string>;
+	readonly stashes: ReadonlyArray<GitStash>;
+	readonly isRepo: boolean;
 }
 
 export interface RequestLoadRepos extends BaseMessage {
@@ -911,6 +948,24 @@ export interface RequestOpenExtensionSettings extends BaseMessage {
 }
 export interface ResponseOpenExtensionSettings extends ResponseWithErrorInfo {
 	readonly command: 'openExtensionSettings';
+}
+
+export interface RequestOpenExternalDirDiff extends RepoRequest {
+	readonly command: 'openExternalDirDiff';
+	readonly fromHash: string;
+	readonly toHash: string;
+	readonly isGui: boolean;
+}
+export interface ResponseOpenExternalDirDiff extends ResponseWithErrorInfo {
+	readonly command: 'openExternalDirDiff';
+}
+
+export interface RequestOpenExternalUrl extends BaseMessage {
+	readonly command: 'openExternalUrl';
+	readonly url: string;
+}
+export interface ResponseOpenExternalUrl extends ResponseWithErrorInfo {
+	readonly command: 'openExternalUrl';
 }
 
 export interface RequestOpenFile extends RepoRequest {
@@ -963,9 +1018,11 @@ export interface RequestPushBranch extends RepoRequest {
 	readonly remotes: string[];
 	readonly setUpstream: boolean;
 	readonly mode: GitPushBranchMode;
+	readonly willUpdateBranchConfig: boolean;
 }
 export interface ResponsePushBranch extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushBranch';
+	readonly willUpdateBranchConfig: boolean;
 }
 
 export interface RequestPushStash extends RepoRequest {
@@ -1049,6 +1106,14 @@ export interface ResponseSetGlobalViewState extends ResponseWithErrorInfo {
 export interface RequestSetRepoState extends RepoRequest {
 	readonly command: 'setRepoState';
 	readonly state: GitRepoState;
+}
+
+export interface RequestSetWorkspaceViewState extends BaseMessage {
+	readonly command: 'setWorkspaceViewState';
+	readonly state: GitGraphViewWorkspaceState;
+}
+export interface ResponseSetWorkspaceViewState extends ResponseWithErrorInfo {
+	readonly command: 'setWorkspaceViewState';
 }
 
 export interface RequestShowErrorDialog extends BaseMessage {
@@ -1146,12 +1211,14 @@ export type RequestMessage =
 	| RequestFetch
 	| RequestFetchAvatar
 	| RequestFetchIntoLocalBranch
-	| RequestGetSettings
 	| RequestLoadCommits
+	| RequestLoadConfig
 	| RequestLoadRepoInfo
 	| RequestLoadRepos
 	| RequestMerge
 	| RequestOpenExtensionSettings
+	| RequestOpenExternalDirDiff
+	| RequestOpenExternalUrl
 	| RequestOpenFile
 	| RequestOpenTerminal
 	| RequestPopStash
@@ -1167,6 +1234,7 @@ export type RequestMessage =
 	| RequestRevertCommit
 	| RequestSetGlobalViewState
 	| RequestSetRepoState
+	| RequestSetWorkspaceViewState
 	| RequestShowErrorDialog
 	| RequestStartCodeReview
 	| RequestTagDetails
@@ -1203,12 +1271,14 @@ export type ResponseMessage =
 	| ResponseFetch
 	| ResponseFetchAvatar
 	| ResponseFetchIntoLocalBranch
-	| ResponseGetSettings
 	| ResponseLoadCommits
+	| ResponseLoadConfig
 	| ResponseLoadRepoInfo
 	| ResponseLoadRepos
 	| ResponseMerge
 	| ResponseOpenExtensionSettings
+	| ResponseOpenExternalDirDiff
+	| ResponseOpenExternalUrl
 	| ResponseOpenFile
 	| ResponseOpenTerminal
 	| ResponsePopStash
@@ -1223,6 +1293,7 @@ export type ResponseMessage =
 	| ResponseResetToCommit
 	| ResponseRevertCommit
 	| ResponseSetGlobalViewState
+	| ResponseSetWorkspaceViewState
 	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseViewDiff

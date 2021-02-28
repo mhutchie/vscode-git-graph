@@ -5,7 +5,7 @@ jest.mock('fs');
 
 import * as fs from 'fs';
 import { ExtensionState } from '../src/extensionState';
-import { BooleanOverride, FileViewType, GitGraphViewGlobalState, RepoCommitOrdering } from '../src/types';
+import { BooleanOverride, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, RepoCommitOrdering } from '../src/types';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -73,6 +73,7 @@ describe('ExtensionState', () => {
 				pullRequestConfig: null,
 				showRemoteBranches: true,
 				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
 				showTags: BooleanOverride.Enabled
 			};
 			extensionContext.workspaceState.get.mockReturnValueOnce({
@@ -119,6 +120,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -155,6 +157,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -191,6 +194,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Disabled,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -227,6 +231,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -263,6 +268,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Enabled,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -302,6 +308,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				},
 				'/path/to/repo-2': {
@@ -321,6 +328,7 @@ describe('ExtensionState', () => {
 					pullRequestConfig: null,
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Disabled,
+					showStashes: BooleanOverride.Default,
 					showTags: BooleanOverride.Default
 				}
 			});
@@ -409,7 +417,7 @@ describe('ExtensionState', () => {
 	describe('getGlobalViewState', () => {
 		it('Should return the stored global view state', () => {
 			// Setup
-			const globalViewState = {
+			const globalViewState: GitGraphViewGlobalState = {
 				alwaysAcceptCheckoutCommit: true,
 				issueLinkingConfig: null
 			};
@@ -419,6 +427,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getGlobalViewState();
 
 			// Assert
+			expect(extensionContext.globalState.get).toHaveBeenCalledWith('globalViewState', expect.anything());
 			expect(result).toStrictEqual(globalViewState);
 		});
 
@@ -432,6 +441,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getGlobalViewState();
 
 			// Assert
+			expect(extensionContext.globalState.get).toHaveBeenCalledWith('globalViewState', expect.anything());
 			expect(result).toStrictEqual({
 				alwaysAcceptCheckoutCommit: false,
 				issueLinkingConfig: null
@@ -446,6 +456,7 @@ describe('ExtensionState', () => {
 			const result = extensionState.getGlobalViewState();
 
 			// Assert
+			expect(extensionContext.globalState.get).toHaveBeenCalledWith('globalViewState', expect.anything());
 			expect(result).toStrictEqual({
 				alwaysAcceptCheckoutCommit: false,
 				issueLinkingConfig: null
@@ -456,7 +467,10 @@ describe('ExtensionState', () => {
 	describe('setGlobalViewState', () => {
 		it('Should successfully store the global view state', async () => {
 			// Setup
-			const globalViewState = {} as GitGraphViewGlobalState;
+			const globalViewState: GitGraphViewGlobalState = {
+				alwaysAcceptCheckoutCommit: true,
+				issueLinkingConfig: null
+			};
 			extensionContext.globalState.update.mockResolvedValueOnce(null);
 
 			// Run
@@ -469,7 +483,10 @@ describe('ExtensionState', () => {
 
 		it('Should return an error message when vscode is unable to store the global view state', async () => {
 			// Setup
-			const globalViewState = {} as GitGraphViewGlobalState;
+			const globalViewState: GitGraphViewGlobalState = {
+				alwaysAcceptCheckoutCommit: true,
+				issueLinkingConfig: null
+			};
 			extensionContext.globalState.update.mockRejectedValueOnce(null);
 
 			// Run
@@ -478,6 +495,96 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(extensionContext.globalState.update).toHaveBeenCalledWith('globalViewState', globalViewState);
 			expect(result).toBe('Visual Studio Code was unable to save the Git Graph Global State Memento.');
+		});
+	});
+
+	describe('getWorkspaceViewState', () => {
+		it('Should return the stored workspace view state', () => {
+			// Setup
+			const workspaceViewState: GitGraphViewWorkspaceState = {
+				findIsCaseSensitive: true,
+				findIsRegex: false,
+				findOpenCommitDetailsView: true
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce(workspaceViewState);
+
+			// Run
+			const result = extensionState.getWorkspaceViewState();
+
+			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('workspaceViewState', expect.anything());
+			expect(result).toStrictEqual(workspaceViewState);
+		});
+
+		it('Should assign missing workspace view state variables to their default values', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				findIsCaseSensitive: true,
+				findIsRegex: false
+			});
+
+			// Run
+			const result = extensionState.getWorkspaceViewState();
+
+			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('workspaceViewState', expect.anything());
+			expect(result).toStrictEqual({
+				findIsCaseSensitive: true,
+				findIsRegex: false,
+				findOpenCommitDetailsView: false
+			});
+		});
+
+		it('Should return the default workspace view state if it is not defined', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const result = extensionState.getWorkspaceViewState();
+
+			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('workspaceViewState', expect.anything());
+			expect(result).toStrictEqual({
+				findIsCaseSensitive: false,
+				findIsRegex: false,
+				findOpenCommitDetailsView: false
+			});
+		});
+	});
+
+	describe('setWorkspaceViewState', () => {
+		it('Should successfully store the workspace view state', async () => {
+			// Setup
+			const workspaceViewState: GitGraphViewWorkspaceState = {
+				findIsCaseSensitive: true,
+				findIsRegex: false,
+				findOpenCommitDetailsView: true
+			};
+			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
+
+			// Run
+			const result = await extensionState.setWorkspaceViewState(workspaceViewState);
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('workspaceViewState', workspaceViewState);
+			expect(result).toBe(null);
+		});
+
+		it('Should return an error message when vscode is unable to store the workspace view state', async () => {
+			// Setup
+			const workspaceViewState: GitGraphViewWorkspaceState = {
+				findIsCaseSensitive: true,
+				findIsRegex: false,
+				findOpenCommitDetailsView: true
+			};
+			extensionContext.workspaceState.update.mockRejectedValueOnce(null);
+
+			// Run
+			const result = await extensionState.setWorkspaceViewState(workspaceViewState);
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('workspaceViewState', workspaceViewState);
+			expect(result).toBe('Visual Studio Code was unable to save the Git Graph Workspace State Memento.');
 		});
 	});
 

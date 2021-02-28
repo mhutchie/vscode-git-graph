@@ -6,8 +6,8 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoSettings, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput } from './utils';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -17,8 +17,19 @@ const INVALID_BRANCH_REGEXP = /^\(.* .*\)$/;
 const REMOTE_HEAD_BRANCH_REGEXP = /^remotes\/.*\/HEAD$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
-export const GIT_CONFIG_USER_NAME = 'user.name';
-export const GIT_CONFIG_USER_EMAIL = 'user.email';
+export const GIT_CONFIG = {
+	DIFF: {
+		GUI_TOOL: 'diff.guitool',
+		TOOL: 'diff.tool'
+	},
+	REMOTE: {
+		PUSH_DEFAULT: 'remote.pushdefault'
+	},
+	USER: {
+		EMAIL: 'user.email',
+		NAME: 'user.name'
+	}
+};
 
 /**
  * Interfaces Git Graph with the Git executable to provide all Git integrations.
@@ -97,13 +108,13 @@ export class DataSource extends Disposable {
 		].join(GIT_LOG_SEPARATOR);
 
 		this.gitFormatLog = [
-			'%H', '%P',// Hash & Parent Information
+			'%H', '%P', // Hash & Parent Information
 			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
 			'%s' // Subject
 		].join(GIT_LOG_SEPARATOR);
 
 		this.gitFormatStash = [
-			'%H', '%P', '%gD',// Hash, Parent & Selector Information
+			'%H', '%P', '%gD', // Hash, Parent & Selector Information
 			useMailmap ? '%aN' : '%an', useMailmap ? '%aE' : '%ae', dateType, // Author / Commit Information
 			'%s' // Subject
 		].join(GIT_LOG_SEPARATOR);
@@ -116,14 +127,15 @@ export class DataSource extends Disposable {
 	 * Get the high-level information of a repository.
 	 * @param repo The path of the repository.
 	 * @param showRemoteBranches Are remote branches shown.
+	 * @param showStashes Are stashes shown.
 	 * @param hideRemotes An array of hidden remotes.
 	 * @returns The repositories information.
 	 */
-	public getRepoInfo(repo: string, showRemoteBranches: boolean, hideRemotes: ReadonlyArray<string>): Promise<GitRepoInfo> {
+	public getRepoInfo(repo: string, showRemoteBranches: boolean, showStashes: boolean, hideRemotes: ReadonlyArray<string>): Promise<GitRepoInfo> {
 		return Promise.all([
 			this.getBranches(repo, showRemoteBranches, hideRemotes),
 			this.getRemotes(repo),
-			this.getStashes(repo)
+			showStashes ? this.getStashes(repo) : Promise.resolve([])
 		]).then((results) => {
 			return { branches: results[0].branches, head: results[0].head, remotes: results[1], stashes: results[2], error: null };
 		}).catch((errorMessage) => {
@@ -245,9 +257,77 @@ export class DataSource extends Disposable {
 				}
 			}
 
-			return { commits: commitNodes, head: refData.head, moreCommitsAvailable: moreCommitsAvailable, error: null };
+			return {
+				commits: commitNodes,
+				head: refData.head,
+				tags: unique(refData.tags.map((tag) => tag.name)),
+				moreCommitsAvailable: moreCommitsAvailable,
+				error: null
+			};
 		}).catch((errorMessage) => {
-			return { commits: [], head: null, moreCommitsAvailable: false, error: errorMessage };
+			return { commits: [], head: null, tags: [], moreCommitsAvailable: false, error: errorMessage };
+		});
+	}
+
+	/**
+	 * Get various Git config variables for a repository that are consumed by the Git Graph View.
+	 * @param repo The path of the repository.
+	 * @param remotes An array of known remotes.
+	 * @returns The config data.
+	 */
+	public getConfig(repo: string, remotes: ReadonlyArray<string>): Promise<GitRepoConfigData> {
+		return Promise.all([
+			this.getConfigList(repo),
+			this.getConfigList(repo, GitConfigLocation.Local),
+			this.getConfigList(repo, GitConfigLocation.Global)
+		]).then((results) => {
+			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2];
+
+			const branches: GitRepoConfigBranches = {};
+			Object.keys(localConfigs).forEach((key) => {
+				if (key.startsWith('branch.')) {
+					if (key.endsWith('.remote')) {
+						const branchName = key.substring(7, key.length - 7);
+						branches[branchName] = {
+							pushRemote: typeof branches[branchName] !== 'undefined' ? branches[branchName].pushRemote : null,
+							remote: localConfigs[key]
+						};
+					} else if (key.endsWith('.pushremote')) {
+						const branchName = key.substring(7, key.length - 11);
+						branches[branchName] = {
+							pushRemote: localConfigs[key],
+							remote: typeof branches[branchName] !== 'undefined' ? branches[branchName].remote : null
+						};
+					}
+				}
+			});
+
+			return {
+				config: {
+					branches: branches,
+					diffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL),
+					guiDiffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL),
+					pushDefault: getConfigValue(consolidatedConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
+					remotes: remotes.map((remote) => ({
+						name: remote,
+						url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
+						pushUrl: getConfigValue(localConfigs, 'remote.' + remote + '.pushurl')
+					})),
+					user: {
+						name: {
+							local: getConfigValue(localConfigs, GIT_CONFIG.USER.NAME),
+							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.NAME)
+						},
+						email: {
+							local: getConfigValue(localConfigs, GIT_CONFIG.USER.EMAIL),
+							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.EMAIL)
+						}
+					}
+				},
+				error: null
+			};
+		}).catch((errorMessage) => {
+			return { config: null, error: errorMessage };
 		});
 	}
 
@@ -376,7 +456,7 @@ export class DataSource extends Disposable {
 	 * @returns The subject string, or NULL if an error occurred.
 	 */
 	public getCommitSubject(repo: string, commitHash: string): Promise<string | null> {
-		return this.spawnGit(['log', '--format=%s', '-n', '1', commitHash, '--'], repo, (stdout) => {
+		return this.spawnGit(['-c', 'log.showSignature=false', 'log', '--format=%s', '-n', '1', commitHash, '--'], repo, (stdout) => {
 			return stdout.trim().replace(/\s+/g, ' ');
 		}).then((subject) => subject, () => null);
 	}
@@ -391,50 +471,6 @@ export class DataSource extends Disposable {
 		return this.spawnGit(['config', '--get', 'remote.' + remote + '.url'], repo, (stdout) => {
 			return stdout.split(EOL_REGEX)[0];
 		}).then((url) => url, () => null);
-	}
-
-	/**
-	 * Get the repositories settings used by the Settings Widget.
-	 * @param repo The path of the repository.
-	 * @returns The settings data.
-	 */
-	public getRepoSettings(repo: string): Promise<GitRepoSettingsData> {
-		return Promise.all([
-			this.getConfigList(repo, GitConfigLocation.Local),
-			this.getConfigList(repo, GitConfigLocation.Global),
-			this.getRemotes(repo)
-		]).then((results) => {
-			const fetchLocalConfigs = [GIT_CONFIG_USER_NAME, GIT_CONFIG_USER_EMAIL];
-			const fetchGlobalConfigs = [GIT_CONFIG_USER_NAME, GIT_CONFIG_USER_EMAIL];
-			results[2].forEach((remote) => {
-				fetchLocalConfigs.push('remote.' + remote + '.url', 'remote.' + remote + '.pushurl');
-			});
-
-			const localConfigs = getConfigs(results[0], fetchLocalConfigs);
-			const globalConfigs = getConfigs(results[1], fetchGlobalConfigs);
-			return {
-				settings: {
-					user: {
-						name: {
-							local: localConfigs[GIT_CONFIG_USER_NAME],
-							global: globalConfigs[GIT_CONFIG_USER_NAME]
-						},
-						email: {
-							local: localConfigs[GIT_CONFIG_USER_EMAIL],
-							global: globalConfigs[GIT_CONFIG_USER_EMAIL]
-						}
-					},
-					remotes: results[2].map((remote) => ({
-						name: remote,
-						url: localConfigs['remote.' + remote + '.url'],
-						pushUrl: localConfigs['remote.' + remote + '.pushurl']
-					}))
-				},
-				error: null
-			};
-		}).catch((errorMessage) => {
-			return { settings: null, error: errorMessage };
-		});
 	}
 
 	/**
@@ -629,13 +665,17 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @param tagName The name of the tag.
 	 * @param commitHash The hash of the commit the tag should be added to.
-	 * @param lightweight Is the tag lightweight.
+	 * @param type Is the tag annotated or lightweight.
 	 * @param message The message of the tag (if it is an annotated tag).
+	 * @param force Force add the tag, replacing an existing tag with the same name (if it exists).
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public addTag(repo: string, tagName: string, commitHash: string, lightweight: boolean, message: string) {
+	public addTag(repo: string, tagName: string, commitHash: string, type: TagType, message: string, force: boolean) {
 		const args = ['tag'];
-		if (lightweight) {
+		if (force) {
+			args.push('-f');
+		}
+		if (type === TagType.Lightweight) {
 			args.push(tagName);
 		} else {
 			args.push(getConfig().signTags ? '-s' : '-a', tagName, '-m', message);
@@ -785,15 +825,26 @@ export class DataSource extends Disposable {
 	 * @param branchName The name of the branch.
 	 * @param commitHash The hash of the commit the branch should be created at.
 	 * @param checkout Check out the branch after it is created.
-	 * @returns The ErrorInfo from the executed command.
+	 * @param force Force create the branch, replacing an existing branch with the same name (if it exists).
+	 * @returns The ErrorInfo's from the executed command(s).
 	 */
-	public createBranch(repo: string, branchName: string, commitHash: string, checkout: boolean) {
-		let args = [];
-		if (checkout) args.push('checkout', '-b');
-		else args.push('branch');
+	public async createBranch(repo: string, branchName: string, commitHash: string, checkout: boolean, force: boolean) {
+		const args = [];
+		if (checkout && !force) {
+			args.push('checkout', '-b');
+		} else {
+			args.push('branch');
+			if (force) {
+				args.push('-f');
+			}
+		}
 		args.push(branchName, commitHash);
 
-		return this.runGitCommand(args, repo);
+		const statuses = [await this.runGitCommand(args, repo)];
+		if (statuses[0] === null && checkout && force) {
+			statuses.push(await this.checkoutBranch(repo, branchName, null));
+		}
+		return statuses;
 	}
 
 	/**
@@ -1155,6 +1206,54 @@ export class DataSource extends Disposable {
 	/* Public Utils */
 
 	/**
+	 * Opens an external directory diff for the specified commits.
+	 * @param repo The path of the repository.
+	 * @param fromHash The commit hash the diff is from.
+	 * @param toHash The commit hash the diff is to.
+	 * @param isGui Is the external diff tool GUI based.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public openExternalDirDiff(repo: string, fromHash: string, toHash: string, isGui: boolean) {
+		return new Promise<ErrorInfo>((resolve) => {
+			if (this.gitExecutable === null) {
+				resolve(UNABLE_TO_FIND_GIT_MSG);
+			} else {
+				const args = ['difftool', '--dir-diff'];
+				if (isGui) {
+					args.push('-g');
+				}
+				if (fromHash === toHash) {
+					if (toHash === UNCOMMITTED) {
+						args.push('HEAD');
+					} else {
+						args.push(toHash + '^..' + toHash);
+					}
+				} else {
+					if (toHash === UNCOMMITTED) {
+						args.push(fromHash);
+					} else {
+						args.push(fromHash + '..' + toHash);
+					}
+				}
+				if (isGui) {
+					this.logger.log('External diff tool is being opened (' + args[args.length - 1] + ')');
+					this.runGitCommand(args, repo).then((errorInfo) => {
+						this.logger.log('External diff tool has exited (' + args[args.length - 1] + ')');
+						if (errorInfo !== null) {
+							const errorMessage = errorInfo.replace(EOL_REGEX, ' ');
+							this.logger.logError(errorMessage);
+							showErrorMessage(errorMessage);
+						}
+					});
+				} else {
+					openGitTerminal(repo, this.gitExecutable.path, args.join(' '), 'Open External Directory Diff');
+				}
+				setTimeout(() => resolve(null), 1500);
+			}
+		});
+	}
+
+	/**
 	 * Open a new terminal, set up the Git executable, and optionally run a command.
 	 * @param repo The path of the repository.
 	 * @param command The command to run.
@@ -1217,7 +1316,7 @@ export class DataSource extends Disposable {
 	 * @returns The base commit details.
 	 */
 	private getCommitDetailsBase(repo: string, commitHash: string) {
-		return this.spawnGit(['show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): DeepWriteable<GitCommitDetails> => {
+		return this.spawnGit(['-c', 'log.showSignature=false', 'show', '--quiet', commitHash, '--format=' + this.gitFormatCommitDetails], repo, (stdout): DeepWriteable<GitCommitDetails> => {
 			const commitInfo = stdout.split(GIT_LOG_SEPARATOR);
 			return {
 				hash: commitInfo[0],
@@ -1245,16 +1344,33 @@ export class DataSource extends Disposable {
 	 * Get the configuration list of a repository.
 	 * @param repo The path of the repository.
 	 * @param location The location of the configuration to be listed.
-	 * @returns An array of configuration records.
+	 * @returns A set of key-value pairs of Git configuration records.
 	 */
-	private getConfigList(repo: string, location: GitConfigLocation) {
-		return this.spawnGit(['--no-pager', 'config', '--list', '--' + location, '--includes'], repo, (stdout) => stdout.split(EOL_REGEX)).catch((errorMessage) => {
+	private getConfigList(repo: string, location?: GitConfigLocation): Promise<GitConfigSet> {
+		const args = ['--no-pager', 'config', '--list', '-z', '--includes'];
+		if (location) {
+			args.push('--' + location);
+		}
+
+		return this.spawnGit(args, repo, (stdout) => {
+			const configs: GitConfigSet = {}, keyValuePairs = stdout.split('\0');
+			const numPairs = keyValuePairs.length - 1;
+			let comps, key;
+			for (let i = 0; i < numPairs; i++) {
+				comps = keyValuePairs[i].split(EOL_REGEX);
+				key = comps.shift()!;
+				configs[key] = comps.join('\n');
+			}
+			return configs;
+		}).catch((errorMessage) => {
 			if (typeof errorMessage === 'string') {
 				const message = errorMessage.toLowerCase();
 				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
 					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
-					return <string[]>[];
+					return {};
 				}
+			} else {
+				errorMessage = 'An unexpected error occurred while spawning the Git child process.';
 			}
 			throw errorMessage;
 		});
@@ -1332,8 +1448,10 @@ export class DataSource extends Disposable {
 	 * @returns An array of commits.
 	 */
 	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
-		let args = ['log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
-		if (onlyFollowFirstParent) args.push('--first-parent');
+		const args = ['-c', 'log.showSignature=false', 'log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
+		if (onlyFollowFirstParent) {
+			args.push('--first-parent');
+		}
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
 				args.push(branches[i]);
@@ -1641,26 +1759,13 @@ function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatR
 }
 
 /**
- * Get the specified config values from the output of `git config --list`.
- * @param configList The records produced by `git config --list`.
- * @param configNames The names of the config values to retrieve.
- * @returns A set of <configName, configValue> pairs.
+ * Get the specified config value from a set of key-value config pairs.
+ * @param configs A set key-value pairs of Git configuration records.
+ * @param key The key of the desired config.
+ * @returns The value for `key` if it exists, otherwise NULL.
  */
-function getConfigs(configList: string[], configNames: string[]) {
-	let results: { [configName: string]: string | null } = {}, matchConfigs: string[] = [];
-	configNames.forEach(configName => {
-		results[configName] = null;
-		matchConfigs.push(configName + '=');
-	});
-	for (let i = 0; i < configList.length; i++) {
-		for (let j = 0; j < configNames.length; j++) {
-			if (configList[i].startsWith(matchConfigs[j])) {
-				results[configNames[j]] = configList[i].substring(configNames[j].length + 1);
-				break;
-			}
-		}
-	}
-	return results;
+function getConfigValue(configs: GitConfigSet, key: string) {
+	return typeof configs[key] !== 'undefined' ? configs[key] : null;
 }
 
 /**
@@ -1693,6 +1798,17 @@ function removeTrailingBlankLines(lines: string[]) {
 		lines.pop();
 	}
 	return lines;
+}
+
+/**
+ * Get all the unique strings from an array of strings.
+ * @param items The array of strings with duplicates.
+ * @returns An array of unique strings.
+ */
+function unique(items: ReadonlyArray<string>) {
+	const uniqueItems: { [item: string]: true } = {};
+	items.forEach((item) => uniqueItems[item] = true);
+	return Object.keys(uniqueItems);
 }
 
 
@@ -1728,6 +1844,7 @@ interface GitCommitRecord {
 interface GitCommitData {
 	commits: GitCommit[];
 	head: string | null;
+	tags: string[];
 	moreCommitsAvailable: boolean;
 	error: ErrorInfo;
 }
@@ -1741,6 +1858,8 @@ interface GitCommitComparisonData {
 	fileChanges: GitFileChange[];
 	error: ErrorInfo;
 }
+
+type GitConfigSet = { [key: string]: string };
 
 interface GitRef {
 	hash: string;
@@ -1763,8 +1882,8 @@ interface GitRepoInfo extends GitBranchData {
 	stashes: GitStash[];
 }
 
-interface GitRepoSettingsData {
-	settings: GitRepoSettings | null;
+interface GitRepoConfigData {
+	config: GitRepoConfig | null;
 	error: ErrorInfo;
 }
 

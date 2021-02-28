@@ -9,7 +9,23 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "brace-style": [
+            "error",
+            "1tbs",
+            {
+                "allowSingleLine": true
+            }
+        ],
+        "comma-dangle": "error",
+        "comma-spacing": "error",
+        "comma-style": "error",
+        "dot-location": [
+            "error",
+            "property"
+        ],
+        "eol-last": "error",
         "eqeqeq": "error",
+        "func-call-spacing": "error",
         "indent": [
             "error",
             "tab",
@@ -17,19 +33,27 @@
                 "SwitchCase": 1
             }
         ],
+        "key-spacing": "error",
         "linebreak-style": [
             "error",
             "windows"
         ],
+        "new-cap": "error",
+        "new-parens": "error",
         "no-console": "warn",
+        "no-eval": "error",
+        "no-labels": "error",
+        "no-multi-spaces": "error",
         "no-redeclare": "error",
         "no-shadow-restricted-names": "error",
         "no-throw-literal": "error",
         "no-unused-expressions": "error",
+        "no-whitespace-before-property": "error",
         "quotes": [
             "error",
             "single"
         ],
+        "rest-spread-spacing": "error",
         "semi": "error",
         "sort-imports": [
             "error",
@@ -38,6 +62,23 @@
                 "ignoreDeclarationSort": true
             }
         ],
+        "space-before-function-paren": [
+            "error",
+            {
+                "anonymous": "always",
+                "named": "never",
+                "asyncArrow": "always"
+            }
+        ],
+        "space-before-blocks": "error",
+        "space-infix-ops": "error",
+        "spaced-comment": "error",
+        "template-curly-spacing": "error",
+        "wrap-iife": [
+            "error",
+            "inside"
+        ],
+        "yoda": "error",
         "@typescript-eslint/explicit-member-accessibility": [
             "error",
             {
@@ -65,9 +106,10 @@
     },
     "overrides": [
         {
-            "files": "./src/askpass/askpassMain.ts",
+            "files": "./src/askpass/*.ts",
             "rules": {
-                "no-console": "off"
+                "no-console": "off",
+                "spaced-comment": "off"
             }
         }
     ]

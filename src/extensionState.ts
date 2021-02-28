@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { getConfig } from './config';
-import { BooleanOverride, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
+import { BooleanOverride, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -15,6 +15,7 @@ const IGNORED_REPOS = 'ignoredRepos';
 const LAST_ACTIVE_REPO = 'lastActiveRepo';
 const LAST_KNOWN_GIT_PATH = 'lastKnownGitPath';
 const REPO_STATES = 'repoStates';
+const WORKSPACE_VIEW_STATE = 'workspaceViewState';
 
 export const DEFAULT_REPO_STATE: GitRepoState = {
 	cdvDivider: 0.5,
@@ -33,12 +34,19 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	pullRequestConfig: null,
 	showRemoteBranches: true,
 	showRemoteBranchesV2: BooleanOverride.Default,
+	showStashes: BooleanOverride.Default,
 	showTags: BooleanOverride.Default
 };
 
-const DEFAULT_GLOBAL_VIEW_STATE: GitGraphViewGlobalState = {
+const DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE: GitGraphViewGlobalState = {
 	alwaysAcceptCheckoutCommit: false,
 	issueLinkingConfig: null
+};
+
+const DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE: GitGraphViewWorkspaceState = {
+	findIsCaseSensitive: false,
+	findIsRegex: false,
+	findOpenCommitDetailsView: false
 };
 
 export interface CodeReviewData {
@@ -149,8 +157,8 @@ export class ExtensionState extends Disposable {
 	 * @returns The global state.
 	 */
 	public getGlobalViewState() {
-		const globalViewState = this.globalState.get<GitGraphViewGlobalState>(GLOBAL_VIEW_STATE, DEFAULT_GLOBAL_VIEW_STATE);
-		return Object.assign({}, DEFAULT_GLOBAL_VIEW_STATE, globalViewState);
+		const globalViewState = this.globalState.get<GitGraphViewGlobalState>(GLOBAL_VIEW_STATE, DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE);
+		return Object.assign({}, DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE, globalViewState);
 	}
 
 	/**
@@ -159,6 +167,26 @@ export class ExtensionState extends Disposable {
 	 */
 	public setGlobalViewState(state: GitGraphViewGlobalState) {
 		return this.updateGlobalState(GLOBAL_VIEW_STATE, state);
+	}
+
+
+	/* Workspace View State */
+
+	/**
+	 * Get the workspace state of the Git Graph View.
+	 * @returns The workspace state.
+	 */
+	public getWorkspaceViewState() {
+		const workspaceViewState = this.workspaceState.get<GitGraphViewWorkspaceState>(WORKSPACE_VIEW_STATE, DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE);
+		return Object.assign({}, DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE, workspaceViewState);
+	}
+
+	/**
+	 * Set the workspace state of the Git Graph View.
+	 * @param state The workspace state.
+	 */
+	public setWorkspaceViewState(state: GitGraphViewWorkspaceState) {
+		return this.updateWorkspaceState(WORKSPACE_VIEW_STATE, state);
 	}
 
 

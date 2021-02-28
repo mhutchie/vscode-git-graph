@@ -81,6 +81,9 @@ type DialogTarget = {
 	ref?: string;
 } | RepoTarget;
 
+/**
+ * Implements the Git Graph View's dialogs.
+ */
 class Dialog {
 	private elem: HTMLElement | null = null;
 	private target: DialogTarget | null = null;
@@ -88,6 +91,13 @@ class Dialog {
 	private type: DialogType | null = null;
 	private customSelects: { [inputIndex: string]: CustomSelect } = {};
 
+	/**
+	 * Show a confirmation dialog to the user.
+	 * @param message A message outlining what the user is being asked to confirm.
+	 * @param actionName The name of the affirmative action (e.g. "Yes, \<verb\>").
+	 * @param actioned A callback to be invoked if the user takes the affirmative action.
+	 * @param target The target that the dialog was triggered on.
+	 */
 	public showConfirmation(message: string, actionName: string, actioned: () => void, target: DialogTarget | null) {
 		this.show(DialogType.Form, message, actionName, 'Cancel', () => {
 			this.close();
@@ -95,6 +105,15 @@ class Dialog {
 		}, null, target);
 	}
 
+	/**
+	 * Show a dialog presenting two options to the user.
+	 * @param message A message outlining the decision the user has.
+	 * @param buttonLabel1 The label for the primary (default) action.
+	 * @param buttonAction1 A callback to be invoked when the primary (default) action is selected by the user.
+	 * @param buttonLabel2 The label for the secondary action.
+	 * @param buttonAction2 A callback to be invoked when the secondary action is selected by the user.
+	 * @param target The target that the dialog was triggered on.
+	 */
 	public showTwoButtons(message: string, buttonLabel1: string, buttonAction1: () => void, buttonLabel2: string, buttonAction2: () => void, target: DialogTarget | null) {
 		this.show(DialogType.Form, message, buttonLabel1, buttonLabel2, () => {
 			this.close();
@@ -105,30 +124,76 @@ class Dialog {
 		}, target);
 	}
 
+	/**
+	 * Show a dialog asking the user to enter the name for a Git reference. The reference name will be validated before the dialog can be actioned.
+	 * @param message A message outlining the purpose of the reference.
+	 * @param defaultValue The default name of the reference.
+	 * @param actionName The name of the action that the user must choose to proceed.
+	 * @param actioned A callback to be invoked when the action is triggered (with the reference name as the first argument).
+	 * @param target The target that the dialog was triggered on.
+	 */
 	public showRefInput(message: string, defaultValue: string, actionName: string, actioned: (value: string) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.TextRef, name: '', default: defaultValue }
 		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
+	/**
+	 * Show a dialog to the user with a single checkbox input.
+	 * @param message A message outlining the purpose of the dialog.
+	 * @param checkboxLabel The label to be displayed alongside the checkbox.
+	 * @param checkboxValue The default value of the checkbox.
+	 * @param actionName The name of the action that the user must choose to proceed.
+	 * @param actioned A callback to be invoked when the action is triggered (with the checkbox value as the first argument).
+	 * @param target The target that the dialog was triggered on.
+	 */
 	public showCheckbox(message: string, checkboxLabel: string, checkboxValue: boolean, actionName: string, actioned: (value: boolean) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.Checkbox, name: checkboxLabel, value: checkboxValue }
 		], actionName, (values) => actioned(<boolean>values[0]), target);
 	}
 
+	/**
+	 * Show a dialog to the user with a single select input.
+	 * @param message A message outlining the purpose of the dialog.
+	 * @param defaultValue The default value for the select input.
+	 * @param options An array containing the options for the select input.
+	 * @param actionName The name of the action that the user must choose to proceed.
+	 * @param actioned A callback to be invoked when the action is triggered (with the selected value as the first argument).
+	 * @param target The target that the dialog was triggered on.
+	 */
 	public showSelect(message: string, defaultValue: string, options: ReadonlyArray<DialogSelectInputOption>, actionName: string, actioned: (value: string) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.Select, name: '', options: options, default: defaultValue }
 		], actionName, (values) => actioned(<string>values[0]), target);
 	}
 
+	/**
+	 * Show a dialog to the user with a single multi-select input.
+	 * @param message A message outlining the purpose of the dialog.
+	 * @param defaultValue The default value(s) for the select input.
+	 * @param options An array containing the options for the select input.
+	 * @param actionName The name of the action that the user must choose to proceed.
+	 * @param actioned A callback to be invoked when the action is triggered (with the selected value(s) as the first argument).
+	 * @param target The target that the dialog was triggered on.
+	 */
 	public showMultiSelect(message: string, defaultValues: ReadonlyArray<string>, options: ReadonlyArray<DialogSelectInputOption>, actionName: string, actioned: (value: string[]) => void, target: DialogTarget | null) {
 		this.showForm(message, [
 			{ type: DialogInputType.Select, name: '', options: options, defaults: defaultValues, multiple: true }
 		], actionName, (values) => actioned(<string[]>values[0]), target);
 	}
 
+	/**
+	 * Show a dialog to the user which can include any number of form inputs.
+	 * @param message A message outlining the purpose of the dialog.
+	 * @param inputs An array defining the form inputs to display in the dialog.
+	 * @param actionName The name of the action that the user must choose to proceed.
+	 * @param actioned A callback to be invoked when the action is triggered (with the form values as the first argument).
+	 * @param target The target that the dialog was triggered on.
+	 * @param secondaryActionName An optional name for the secondary action.
+	 * @param secondaryActioned An optional callback to be invoked when the secondary action is selected by the user.
+	 * @param includeLineBreak Should a line break be added between the message and form inputs. 
+	 */
 	public showForm(message: string, inputs: ReadonlyArray<DialogInput>, actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
 		const multiCheckbox = multiElement && inputs.every((input) => input.type === DialogInputType.Checkbox);
@@ -218,10 +283,21 @@ class Dialog {
 		}
 	}
 
+	/**
+	 * Show a message to the user in a dialog.
+	 * @param html The HTML to display in the dialog.
+	 */
 	public showMessage(html: string) {
 		this.show(DialogType.Message, html, null, 'Close', null, null, null);
 	}
 
+	/**
+	 * Show an error to the user in a dialog.
+	 * @param message The high-level category of the error.
+	 * @param reason The error details.
+	 * @param actionName An optional name for a primary action (if one is required).
+	 * @param actioned An optional callback to be invoked when the primary action is triggered.
+	 */
 	public showError(message: string, reason: GG.ErrorInfo, actionName: string | null, actioned: (() => void) | null) {
 		this.show(DialogType.Message, '<span class="dialogAlert">' + SVG_ICONS.alert + 'Error: ' + message + '</span>' + (reason !== null ? '<br><span class="messageContent errorContent">' + escapeHtml(reason).split('\n').join('<br>') + '</span>' : ''), actionName, 'Dismiss', () => {
 			this.close();
@@ -229,10 +305,24 @@ class Dialog {
 		}, null, null);
 	}
 
+	/**
+	 * Show a dialog to indicate that an action is currently running.
+	 * @param action A short name that identifies the action that is running.
+	 */
 	public showActionRunning(action: string) {
 		this.show(DialogType.ActionRunning, '<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>', null, 'Dismiss', null, null, null);
 	}
 
+	/**
+	 * Show a dialog in the Git Graph View.
+	 * @param type The type of dialog being shown.
+	 * @param html The HTML content for the dialog.
+	 * @param actionName The name of the primary (default) action.
+	 * @param secondaryActionName The name of the secondary action.
+	 * @param actioned A callback to be invoked when the primary (default) action is selected by the user.
+	 * @param secondaryActioned A callback to be invoked when the secondary action is selected by the user.
+	 * @param target The target that the dialog was triggered on.
+	 */
 	private show(type: DialogType, html: string, actionName: string | null, secondaryActionName: string, actioned: (() => void) | null, secondaryActioned: (() => void) | null, target: DialogTarget | null) {
 		closeDialogAndContextMenu();
 
@@ -265,6 +355,9 @@ class Dialog {
 		}
 	}
 
+	/**
+	 * Close the dialog (if one is currently open in the Git Graph View).
+	 */
 	public close() {
 		eventOverlay.remove();
 		if (this.elem !== null) {
@@ -279,14 +372,25 @@ class Dialog {
 		this.type = null;
 	}
 
+	/**
+	 * Close the action running dialog (if one is currently open in the Git Graph View).
+	 */
 	public closeActionRunning() {
 		if (this.type === DialogType.ActionRunning) this.close();
 	}
 
+	/**
+	 * Submit the primary action of the dialog.
+	 */
 	public submit() {
 		if (this.actioned !== null) this.actioned();
 	}
 
+	/**
+	 * Refresh the dialog (if one is currently open in the Git Graph View). If the dialog has a dynamic source, re-link
+	 * it to the newly rendered HTML Element, or close it if the target is no longer visible in the Git Graph View.
+	 * @param commits The new array of commits that is rendered in the Git Graph View.
+	 */
 	public refresh(commits: ReadonlyArray<GG.GitCommit>) {
 		if (!this.isOpen() || this.target === null || this.target.type === TargetType.Repo) {
 			// Don't need to refresh if: no dialog is open, it is not dynamic, or it is not reliant on commit changes
@@ -323,19 +427,34 @@ class Dialog {
 		this.close();
 	}
 
+	/**
+	 * Is a dialog currently open in the Git Graph View.
+	 * @returns TRUE => A dialog is open, FALSE => No dialog is open
+	 */
 	public isOpen() {
 		return this.elem !== null;
 	}
 
+	/**
+	 * Is the target of the dialog dynamic (i.e. is it tied to a Git object & HTML Element in the Git Graph View).
+	 * @returns TRUE => The dialog is dynamic, FALSE => The dialog is not dynamic
+	 */
 	public isTargetDynamicSource() {
 		return this.isOpen() && this.target !== null;
 	}
 
+	/**
+	 * Get the type of the dialog that is currently open.
+	 * @returns The type of the dialog.
+	 */
 	public getType() {
 		return this.type;
 	}
 }
 
+/**
+ * Implements the Custom Select inputs used in dialogs.
+ */
 class CustomSelect {
 	private readonly data: DialogSelectInput;
 	private readonly selected: boolean[];
@@ -349,6 +468,14 @@ class CustomSelect {
 	private optionsElem: HTMLElement | null = null;
 	private clickHandler: ((e: MouseEvent) => void) | null;
 
+	/**
+	 * Construct a new CustomSelect instance.
+	 * @param data The data configuring the CustomSelect input.
+	 * @param containerId The ID of the container to render the select input in.
+	 * @param tabIndex The tabIndex of the select input.
+	 * @param dialogElem The HTML Element of the dialog that the CustomSelect is being rendered in.
+	 * @returns The CustomSelect instance.
+	 */
 	constructor(data: DialogSelectInput, containerId: string, tabIndex: number, dialogElem: HTMLElement) {
 		this.data = data;
 		this.selected = data.options.map(() => false);
@@ -442,6 +569,9 @@ class CustomSelect {
 		this.renderCurrentValue();
 	}
 
+	/**
+	 * Remove a CustomSelect instance, cleaning up all resources that is linked to it.
+	 */
 	public remove() {
 		this.dialogElem = null;
 		if (this.elem !== null) {
@@ -462,11 +592,20 @@ class CustomSelect {
 		}
 	}
 
+	/**
+	 * Get the value(s) selected by the user.
+	 * @returns The selected value(s).
+	 */
 	public getValue() {
 		const values = this.data.options.map((option) => option.value).filter((_, index) => this.selected[index]);
 		return this.data.multiple ? values : values[0];
 	}
 
+	/**
+	 * Set whether an item is selected.
+	 * @param index The index of the item to alter.
+	 * @param state The new state for whether the item is selected or not (TRUE => Selected, FALSE => Not Selected).
+	 */
 	private setItemSelectedState(index: number, state: boolean) {
 		if (!this.data.multiple && this.lastSelected > -1) {
 			this.selected[this.lastSelected] = false;
@@ -477,6 +616,10 @@ class CustomSelect {
 		this.renderOptionsStates();
 	}
 
+	/**
+	 * Set the focused item of the select input.
+	 * @param index The index of the item that should be focussed.
+	 */
 	private setFocussed(index: number) {
 		if (this.focussed !== index) {
 			if (this.focussed > -1) {
@@ -493,6 +636,10 @@ class CustomSelect {
 		}
 	}
 
+	/**
+	 * Render the select input.
+	 * @param open Should the select be open (displaying the select options list).
+	 */
 	private render(open: boolean) {
 		if (this.elem === null || this.currentElem === null || this.dialogElem === null) return;
 
@@ -536,6 +683,9 @@ class CustomSelect {
 		}
 	}
 
+	/**
+	 * Render the current value of the select input.
+	 */
 	private renderCurrentValue() {
 		if (this.currentElem === null) return;
 		const value = formatCommaSeparatedList(this.data.options.filter((_, index) => this.selected[index]).map((option) => option.name)) || 'None';
@@ -543,6 +693,9 @@ class CustomSelect {
 		this.currentElem.innerHTML = escapeHtml(value);
 	}
 
+	/**
+	 * Render the selected & focussed states of each option with it's corresponding HTML Element.
+	 */
 	private renderOptionsStates() {
 		if (this.optionsElem !== null) {
 			let optionElems = this.optionsElem.children, elemIndex: number;
@@ -554,6 +707,11 @@ class CustomSelect {
 		}
 	}
 
+	/**
+	 * Get the HTML Element of the option at the specified index.
+	 * @param index The index of the item.
+	 * @returns The HTML Element.
+	 */
 	private getOptionElem(index: number) {
 		if (this.optionsElem !== null && index > -1) {
 			const optionElems = this.optionsElem.children, indexStr = index.toString();
@@ -566,6 +724,10 @@ class CustomSelect {
 		return null;
 	}
 
+	/**
+	 * Scroll the HTML Element of an option to be visible in the options list.
+	 * @param index The index of the option to scroll into view.
+	 */
 	private scrollOptionIntoView(index: number) {
 		const elem = this.getOptionElem(index);
 		if (this.optionsElem !== null && elem !== null) {

@@ -28,9 +28,9 @@
 	content:attr(data-error);
 	position:relative;
 	display:block;
-	top:-6px;
+	top:-5px;
 	left:0;
-	width:197px;
+	width:201px;
 	padding:5px;
 	font-size:12px;
 	line-height:16px;
@@ -45,10 +45,10 @@
 	margin-top:4px;
 	padding:5px 47px 5px 5px;
 	border:0;
-	width:155px;
+	height:16px;
+	width:159px;
 	background-color:var(--vscode-input-background);
 	color:var(--vscode-input-foreground);
-	line-height:15px;
 	font-size:13px;
 	outline-offset:-1px !important;
 }
@@ -62,10 +62,10 @@
 .findModifier{
 	display:block;
 	position:absolute;
-	top:8px;
-	height:17px;
-	width:18px;
-	line-height:17px;
+	top:7px;
+	height:20px;
+	width:20px;
+	line-height:20px;
 	font-size:11px;
 	cursor:pointer;
 	-webkit-user-select:none;
@@ -74,53 +74,52 @@
 	color:var(--vscode-input-foreground);
 	opacity:0.7;
 }
-.findModifier.active{
+.findModifier.active, #findOpenCdv.active{
 	outline:1px solid var(--vscode-inputOption-activeBorder);
+	outline-offset:-1px;
 	background-color:var(--vscode-inputOption-activeBackground);
 }
 .findModifier:hover, .findModifier.active{
 	opacity:1;
 }
 #findCaseSensitive{
-	left:173px;
+	left:176px;
 }
 #findRegex{
-	left:195px;
+	left:198px;
 	font-size:12px;
 }
 
-#findPosition, #findPrev, #findNext, #findClose{
+#findPosition, #findPrev, #findNext, #findOpenCdv, #findClose{
 	display:inline-block;
 	-webkit-user-select:none;
 	user-select:none;
 }
 #findPosition{
-	min-width:80px;
+	min-width:75px;
 	margin-left:10px;
 }
-#findPrev, #findNext, #findClose{
+#findPrev, #findNext, #findOpenCdv, #findClose{
 	position:relative;
-	width:24px;
-	height:24px;
+	width:20px;
+	height:20px;
 	vertical-align:top;
-	margin:5px 0 0 10px;
+	margin:7px 0 0 6px;
 	cursor:pointer;
 }
-#findPrev svg, #findNext svg{
+#findPrev svg, #findNext svg, #findOpenCdv svg{
 	position:absolute;
-	left:5px;
-	top:5px;
-	width:14px !important;
-	height:14px !important;
+	left:3px;
+	top:3px;
 }
 #findClose svg{
 	position:absolute;
-	left:4px;
-	top:4px;
+	left:2px;
+	top:2px;
 	width:16px !important;
 	height:16px !important;
 }
-#findPrev:hover, #findNext:hover, #findClose:hover{
+#findPrev:hover, #findNext:hover, #findOpenCdv:hover, #findOpenCdv.active, #findClose:hover{
 	fill-opacity:1;
 }
 #findPrev.disabled, #findNext.disabled{

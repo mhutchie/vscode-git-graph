@@ -3,17 +3,16 @@ const CLASS_FIND_MATCH = 'findMatch';
 
 interface FindWidgetState {
 	readonly text: string;
-	readonly isCaseSensitive: boolean;
-	readonly isRegex: boolean;
 	readonly currentHash: string | null;
 	readonly visible: boolean;
 }
 
+/**
+ * Implements the Git Graph View's Find Widget.
+ */
 class FindWidget {
 	private readonly view: GitGraphView;
 	private text: string = '';
-	private isCaseSensitive: boolean = false;
-	private isRegex: boolean = false;
 	private matches: { hash: string, elem: HTMLElement }[] = [];
 	private position: number = -1;
 	private visible: boolean = false;
@@ -26,11 +25,16 @@ class FindWidget {
 	private readonly prevElem: HTMLElement;
 	private readonly nextElem: HTMLElement;
 
+	/**
+	 * Construct a new FindWidget instance.
+	 * @param view The Git Graph View that the FindWidget is for.
+	 * @returns The FindWidget instance.
+	 */
 	constructor(view: GitGraphView) {
 		this.view = view;
 		this.widgetElem = document.createElement('div');
 		this.widgetElem.className = 'findWidget';
-		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifier" title="Match Case">Aa</span><span id="findRegex" class="findModifier" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev" title="Previous match (Shift+Enter)"></span><span id="findNext" title="Next match (Enter)"></span><span id="findClose" title="Close (Escape)"></span>';
+		this.widgetElem.innerHTML = '<input id="findInput" type="text" placeholder="Find" disabled/><span id="findCaseSensitive" class="findModifier" title="Match Case">Aa</span><span id="findRegex" class="findModifier" title="Use Regular Expression">.*</span><span id="findPosition"></span><span id="findPrev" title="Previous match (Shift+Enter)"></span><span id="findNext" title="Next match (Enter)"></span><span id="findOpenCdv" title="Open the Commit Details View for the current match"></span><span id="findClose" title="Close (Escape)"></span>';
 		document.body.appendChild(this.widgetElem);
 
 		this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
@@ -51,25 +55,30 @@ class FindWidget {
 						this.text = this.inputElem.value;
 						this.clearMatches();
 						this.findMatches(this.getCurrentHash(), true);
+						this.openCommitDetailsViewForCurrentMatchIfEnabled();
 					}
 				}, 200);
 			}
 		});
 
 		this.caseSensitiveElem = document.getElementById('findCaseSensitive')!;
+		alterClass(this.caseSensitiveElem, CLASS_ACTIVE, workspaceState.findIsCaseSensitive);
 		this.caseSensitiveElem.addEventListener('click', () => {
-			this.isCaseSensitive = !this.isCaseSensitive;
-			alterClass(this.caseSensitiveElem, CLASS_ACTIVE, this.isCaseSensitive);
+			updateWorkspaceViewState('findIsCaseSensitive', !workspaceState.findIsCaseSensitive);
+			alterClass(this.caseSensitiveElem, CLASS_ACTIVE, workspaceState.findIsCaseSensitive);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
+			this.openCommitDetailsViewForCurrentMatchIfEnabled();
 		});
 
 		this.regexElem = document.getElementById('findRegex')!;
+		alterClass(this.regexElem, CLASS_ACTIVE, workspaceState.findIsRegex);
 		this.regexElem.addEventListener('click', () => {
-			this.isRegex = !this.isRegex;
-			alterClass(this.regexElem, CLASS_ACTIVE, this.isRegex);
+			updateWorkspaceViewState('findIsRegex', !workspaceState.findIsRegex);
+			alterClass(this.regexElem, CLASS_ACTIVE, workspaceState.findIsRegex);
 			this.clearMatches();
 			this.findMatches(this.getCurrentHash(), true);
+			this.openCommitDetailsViewForCurrentMatchIfEnabled();
 		});
 
 		this.positionElem = document.getElementById('findPosition')!;
@@ -84,11 +93,24 @@ class FindWidget {
 		this.nextElem.innerHTML = SVG_ICONS.arrowDown;
 		this.nextElem.addEventListener('click', () => this.next());
 
-		const findClose = document.getElementById('findClose')!;
-		findClose.innerHTML = SVG_ICONS.close;
-		findClose.addEventListener('click', () => this.close());
+		const openCdvElem = document.getElementById('findOpenCdv')!;
+		openCdvElem.innerHTML = SVG_ICONS.cdv;
+		alterClass(openCdvElem, CLASS_ACTIVE, workspaceState.findOpenCommitDetailsView);
+		openCdvElem.addEventListener('click', () => {
+			updateWorkspaceViewState('findOpenCommitDetailsView', !workspaceState.findOpenCommitDetailsView);
+			alterClass(openCdvElem, CLASS_ACTIVE, workspaceState.findOpenCommitDetailsView);
+			this.openCommitDetailsViewForCurrentMatchIfEnabled();
+		});
+
+		const findCloseElem = document.getElementById('findClose')!;
+		findCloseElem.innerHTML = SVG_ICONS.close;
+		findCloseElem.addEventListener('click', () => this.close());
 	}
 
+	/**
+	 * Show the Find Widget.
+	 * @param transition Should the Find Widget animate when becoming visible (sliding down).
+	 */
 	public show(transition: boolean) {
 		if (!this.visible) {
 			this.visible = true;
@@ -101,6 +123,9 @@ class FindWidget {
 		this.inputElem.focus();
 	}
 
+	/**
+	 * Close the Find Widget, sliding it up out of view.
+	 */
 	public close() {
 		if (!this.visible) return;
 		this.visible = false;
@@ -118,50 +143,80 @@ class FindWidget {
 		this.view.saveState();
 	}
 
+	/**
+	 * Refresh the Find Widget's state / matches after the commits have changed.
+	 */
 	public refresh() {
 		if (this.visible) {
 			this.findMatches(this.getCurrentHash(), false);
 		}
 	}
 
+	/**
+	 * Set the colours used to indicate the find matches.
+	 * @param colour The base colour for the find matches.
+	 */
 	public setColour(colour: string) {
 		document.body.style.setProperty('--git-graph-findMatch', colour);
 		document.body.style.setProperty('--git-graph-findMatchCommit', modifyColourOpacity(colour, 0.5));
 	}
 
+
 	/* State */
+
+	/**
+	 * Get the current state of the Find Widget.
+	 */
 	public getState(): FindWidgetState {
 		return {
 			text: this.text,
-			isCaseSensitive: this.isCaseSensitive,
-			isRegex: this.isRegex,
 			currentHash: this.getCurrentHash(),
 			visible: this.visible
 		};
 	}
+
+	/**
+	 * Get the commit hash of the current find match.
+	 * @returns The commit hash, or NULL if no commit is currently matched.
+	 */
 	public getCurrentHash() {
 		return this.position > -1 ? this.matches[this.position].hash : null;
 	}
+
+	/**
+	 * Restore the Find Widget to an existing state.
+	 * @param state The previous Find Widget state.
+	 */
 	public restoreState(state: FindWidgetState) {
 		if (!state.visible) return;
 		this.text = state.text;
-		this.isCaseSensitive = state.isCaseSensitive;
-		this.isRegex = state.isRegex;
-		alterClass(this.caseSensitiveElem, CLASS_ACTIVE, this.isCaseSensitive);
-		alterClass(this.regexElem, CLASS_ACTIVE, this.isRegex);
 		this.show(false);
 		if (this.text !== '') this.findMatches(state.currentHash, false);
 	}
+
+	/**
+	 * Is the Find Widget currently visible.
+	 * @returns TRUE => The Find Widget is visible, FALSE => The Find Widget is not visible
+	 */
 	public isVisible() {
 		return this.visible;
 	}
 
+
+	/* Matching */
+
+	/**
+	 * Find all matches based on the user's criteria.
+	 * @param goToCommitHash If this commit hash matches the criteria, directly go to this commit instead of starting at the first match.
+	 * @param scrollToCommit Should the resultant find match be scrolled to (so it's visible in the view).
+	 */
 	private findMatches(goToCommitHash: string | null, scrollToCommit: boolean) {
 		this.matches = [];
 		this.position = -1;
 
 		if (this.text !== '') {
-			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null, regexText = this.isRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = 'u' + (this.isCaseSensitive ? '' : 'i');
+			let colVisibility = this.view.getColumnVisibility(), findPattern: RegExp | null, findGlobalPattern: RegExp | null;
+			const regexText = workspaceState.findIsRegex ? this.text : this.text.replace(/[\\\[\](){}|.*+?^$]/g, '\\$&'), flags = 'u' + (workspaceState.findIsCaseSensitive ? '' : 'i');
 			try {
 				findPattern = new RegExp(regexText, flags);
 				findGlobalPattern = new RegExp(regexText, 'g' + flags);
@@ -265,6 +320,9 @@ class FindWidget {
 		this.updatePosition(newPos, scrollToCommit);
 	}
 
+	/**
+	 * Clear all of the highlighted find matches in the view.
+	 */
 	private clearMatches() {
 		for (let i = 0; i < this.matches.length; i++) {
 			if (i === this.position) this.matches[i].elem.classList.remove(CLASS_FIND_CURRENT_COMMIT);
@@ -295,6 +353,11 @@ class FindWidget {
 		}
 	}
 
+	/**
+	 * Update the user's position in the set of find matches.
+	 * @param position The new position index within the find matches.
+	 * @param scrollToCommit After updating the user's position in the set of find matches, should the current match be scrolled to (so it's visible in the view).
+	 */
 	private updatePosition(position: number, scrollToCommit: boolean) {
 		if (this.position > -1) this.matches[this.position].elem.classList.remove(CLASS_FIND_CURRENT_COMMIT);
 		this.position = position;
@@ -306,16 +369,44 @@ class FindWidget {
 		this.view.saveState();
 	}
 
+	/**
+	 * Move the user's position to the previous match in the set of find matches.
+	 */
 	private prev() {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position > 0 ? this.position - 1 : this.matches.length - 1, true);
+		this.openCommitDetailsViewForCurrentMatchIfEnabled();
 	}
 
+	/**
+	 * Move the user's position to the next match in the set of find matches.
+	 */
 	private next() {
 		if (this.matches.length === 0) return;
 		this.updatePosition(this.position < this.matches.length - 1 ? this.position + 1 : 0, true);
+		this.openCommitDetailsViewForCurrentMatchIfEnabled();
 	}
 
+	/**
+	 * If the Find Widget is configured to open the Commit Details View for the current find match, load the Commit Details View accordingly. 
+	 */
+	private openCommitDetailsViewForCurrentMatchIfEnabled() {
+		if (workspaceState.findOpenCommitDetailsView) {
+			const commitHash = this.getCurrentHash();
+			if (commitHash !== null && !this.view.isCdvOpen(commitHash, null)) {
+				const commitElem = findCommitElemWithId(getCommitElems(), this.view.getCommitId(commitHash));
+				if (commitElem !== null) {
+					this.view.loadCommitDetails(commitElem);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Create a find match element containing the specified text.
+	 * @param text The text content of the find match.
+	 * @returns The HTML element for the find match.
+	 */
 	private static createMatchElem(text: string) {
 		const span = document.createElement('span');
 		span.className = CLASS_FIND_MATCH;

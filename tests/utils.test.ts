@@ -24,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 const extensionContext = vscode.mocks.extensionContext;
@@ -694,7 +694,7 @@ describe('copyToClipboard', () => {
 describe('createPullRequest', () => {
 	it('Should construct and open a BitBucket Pull Request Creation Url', async () => {
 		// Setup
-		vscode.env.openExternal.mockResolvedValueOnce(null);
+		vscode.env.openExternal.mockResolvedValueOnce(true);
 
 		// Run
 		const result = await createPullRequest({
@@ -718,7 +718,7 @@ describe('createPullRequest', () => {
 
 	it('Should construct and open a Custom Providers Pull Request Creation Url', async () => {
 		// Setup
-		vscode.env.openExternal.mockResolvedValueOnce(null);
+		vscode.env.openExternal.mockResolvedValueOnce(true);
 
 		// Run
 		const result = await createPullRequest({
@@ -745,7 +745,7 @@ describe('createPullRequest', () => {
 
 	it('Should construct and open a GitHub Pull Request Creation Url', async () => {
 		// Setup
-		vscode.env.openExternal.mockResolvedValueOnce(null);
+		vscode.env.openExternal.mockResolvedValueOnce(true);
 
 		// Run
 		const result = await createPullRequest({
@@ -769,7 +769,7 @@ describe('createPullRequest', () => {
 
 	it('Should construct and open a GitLab Pull Request Creation Url', async () => {
 		// Setup
-		vscode.env.openExternal.mockResolvedValueOnce(null);
+		vscode.env.openExternal.mockResolvedValueOnce(true);
 
 		// Run
 		const result = await createPullRequest({
@@ -793,7 +793,7 @@ describe('createPullRequest', () => {
 
 	it('Should construct and open a GitLab Pull Request Creation Url (without destProjectId)', async () => {
 		// Setup
-		vscode.env.openExternal.mockResolvedValueOnce(null);
+		vscode.env.openExternal.mockResolvedValueOnce(true);
 
 		// Run
 		const result = await createPullRequest({
@@ -861,6 +861,68 @@ describe('openExtensionSettings', () => {
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to open the Git Graph Extension Settings.');
+	});
+});
+
+describe('openExternalUrl', () => {
+	it('Should open the URL via Visual Studio Code', async () => {
+		// Setup
+		vscode.env.openExternal.mockResolvedValueOnce(true);
+
+		// Run
+		const result = await openExternalUrl('https://github.com/mhutchie/vscode-git-graph');
+
+		// Assert
+		expect(result).toBe(null);
+		expect(vscode.env.openExternal.mock.calls[0][0].toString()).toBe('https://github.com/mhutchie/vscode-git-graph');
+	});
+
+	it('Should return an error message if vscode was unable to open the url (vscode.env.openExternal resolves FALSE)', async () => {
+		// Setup
+		vscode.env.openExternal.mockResolvedValueOnce(false);
+
+		// Run
+		const result = await openExternalUrl('https://github.com/mhutchie/vscode-git-graph');
+
+		// Assert
+		expect(result).toBe('Visual Studio Code was unable to open the External URL: https://github.com/mhutchie/vscode-git-graph');
+	});
+
+	it('Should return an error message if vscode was unable to open the url (vscode.env.openExternal rejects)', async () => {
+		// Setup
+		vscode.env.openExternal.mockRejectedValueOnce(null);
+
+		// Run
+		const result = await openExternalUrl('https://github.com/mhutchie/vscode-git-graph');
+
+		// Assert
+		expect(result).toBe('Visual Studio Code was unable to open the External URL: https://github.com/mhutchie/vscode-git-graph');
+	});
+
+	it('Should return an error message if vscode was unable to parse the url', async () => {
+		// Setup
+		const spyOnParse = jest.spyOn(vscode.Uri, 'parse');
+		spyOnParse.mockImplementationOnce(() => {
+			throw new Error();
+		});
+
+		// Run
+		const result = await openExternalUrl('https://github.com/mhutchie/vscode-git-graph');
+
+		// Assert
+		expect(result).toBe('Visual Studio Code was unable to open the External URL: https://github.com/mhutchie/vscode-git-graph');
+		expect(vscode.env.openExternal).not.toHaveBeenCalled();
+	});
+
+	it('Should return an error message with a custom type', async () => {
+		// Setup
+		vscode.env.openExternal.mockRejectedValueOnce(null);
+
+		// Run
+		const result = await openExternalUrl('https://github.com/mhutchie/vscode-git-graph', 'Custom URL');
+
+		// Assert
+		expect(result).toBe('Visual Studio Code was unable to open the Custom URL: https://github.com/mhutchie/vscode-git-graph');
 	});
 });
 

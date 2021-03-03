@@ -447,6 +447,9 @@ export interface DialogDefaults {
 	readonly deleteBranch: {
 		readonly forceDelete: boolean
 	};
+	readonly fetchIntoLocalBranch: {
+		readonly forceFetch: boolean
+	};
 	readonly fetchRemote: {
 		readonly prune: boolean,
 		readonly pruneTags: boolean
@@ -859,6 +862,7 @@ export interface RequestFetchIntoLocalBranch extends RepoRequest {
 	readonly remote: string;
 	readonly remoteBranch: string;
 	readonly localBranch: string;
+	readonly force: boolean;
 }
 export interface ResponseFetchIntoLocalBranch extends ResponseWithErrorInfo {
 	readonly command: 'fetchIntoLocalBranch';

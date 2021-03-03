@@ -192,6 +192,9 @@ class Config {
 			deleteBranch: {
 				forceDelete: !!this.config.get('dialog.deleteBranch.forceDelete', false)
 			},
+			fetchIntoLocalBranch: {
+				forceFetch: !!this.config.get('dialog.fetchIntoLocalBranch.forceFetch', false)
+			},
 			fetchRemote: {
 				prune: !!this.config.get('dialog.fetchRemote.prune', false),
 				pruneTags: !!this.config.get('dialog.fetchRemote.pruneTags', false)

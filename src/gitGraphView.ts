@@ -386,7 +386,7 @@ export class GitGraphView extends Disposable {
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({
 					command: 'fetchIntoLocalBranch',
-					error: await this.dataSource.fetchIntoLocalBranch(msg.repo, msg.remote, msg.remoteBranch, msg.localBranch)
+					error: await this.dataSource.fetchIntoLocalBranch(msg.repo, msg.remote, msg.remoteBranch, msg.localBranch, msg.force)
 				});
 				break;
 			case 'endCodeReview':

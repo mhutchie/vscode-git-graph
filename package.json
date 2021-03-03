@@ -525,6 +525,11 @@
 					"default": false,
 					"description": "Default state of the \"Force Delete\" checkbox."
 				},
+				"git-graph.dialog.fetchIntoLocalBranch.forceFetch": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Force Fetch\" checkbox."
+				},
 				"git-graph.dialog.fetchRemote.prune": {
 					"type": "boolean",
 					"default": false,

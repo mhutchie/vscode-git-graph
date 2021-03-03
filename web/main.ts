@@ -1252,8 +1252,8 @@ class GitGraphView {
 				title: 'Fetch into local branch' + ELLIPSIS,
 				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Yes, fetch', () => {
-						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
+					dialog.showCheckbox('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Force Fetch<span class="dialogInfo" title="Force the local branch to be reset to this remote branch.">' + SVG_ICONS.info + '</span>', this.config.dialogDefaults.fetchIntoLocalBranch.forceFetch, 'Yes, fetch', (force) => {
+						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName, force: force }, 'Fetching Branch');
 					}, target);
 				}
 			}, {

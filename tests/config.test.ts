@@ -810,6 +810,7 @@ describe('Config', () => {
 				'dialog.cherryPick.recordOrigin',
 				'dialog.createBranch.checkOut',
 				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchIntoLocalBranch.forceFetch',
 				'dialog.fetchRemote.prune',
 				'dialog.fetchRemote.pruneTags',
 				'dialog.merge.noCommit',
@@ -834,6 +835,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
@@ -864,6 +866,9 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: true
+				},
+				fetchIntoLocalBranch: {
+					forceFetch: true
 				},
 				fetchRemote: {
 					prune: true,
@@ -906,6 +911,7 @@ describe('Config', () => {
 				'dialog.cherryPick.recordOrigin',
 				'dialog.createBranch.checkOut',
 				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchIntoLocalBranch.forceFetch',
 				'dialog.fetchRemote.prune',
 				'dialog.fetchRemote.pruneTags',
 				'dialog.merge.noCommit',
@@ -930,6 +936,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
@@ -960,6 +967,9 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchIntoLocalBranch: {
+					forceFetch: false
 				},
 				fetchRemote: {
 					prune: false,
@@ -1002,6 +1012,7 @@ describe('Config', () => {
 				'dialog.cherryPick.recordOrigin',
 				'dialog.createBranch.checkOut',
 				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchIntoLocalBranch.forceFetch',
 				'dialog.fetchRemote.prune',
 				'dialog.fetchRemote.pruneTags',
 				'dialog.merge.noCommit',
@@ -1026,6 +1037,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
@@ -1056,6 +1068,9 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: true
+				},
+				fetchIntoLocalBranch: {
+					forceFetch: true
 				},
 				fetchRemote: {
 					prune: true,
@@ -1098,6 +1113,7 @@ describe('Config', () => {
 				'dialog.cherryPick.recordOrigin',
 				'dialog.createBranch.checkOut',
 				'dialog.deleteBranch.forceDelete',
+				'dialog.fetchIntoLocalBranch.forceFetch',
 				'dialog.fetchRemote.prune',
 				'dialog.fetchRemote.pruneTags',
 				'dialog.merge.noCommit',
@@ -1122,6 +1138,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
@@ -1152,6 +1169,9 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchIntoLocalBranch: {
+					forceFetch: false
 				},
 				fetchRemote: {
 					prune: false,
@@ -1204,6 +1224,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
@@ -1234,6 +1255,9 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchIntoLocalBranch: {
+					forceFetch: false
 				},
 				fetchRemote: {
 					prune: false,
@@ -1279,6 +1303,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.cherryPick.recordOrigin', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.createBranch.checkOut', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.deleteBranch.forceDelete', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
@@ -1309,6 +1334,9 @@ describe('Config', () => {
 				},
 				deleteBranch: {
 					forceDelete: false
+				},
+				fetchIntoLocalBranch: {
+					forceFetch: false
 				},
 				fetchRemote: {
 					prune: false,

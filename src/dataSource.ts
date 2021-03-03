@@ -884,10 +884,16 @@ export class DataSource extends Disposable {
 	 * @param remote The name of the remote containing the remote branch.
 	 * @param remoteBranch The name of the remote branch.
 	 * @param localBranch The name of the local branch.
+	 * @param force Force fetch the remote branch.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public fetchIntoLocalBranch(repo: string, remote: string, remoteBranch: string, localBranch: string) {
-		return this.runGitCommand(['fetch', remote, remoteBranch + ':' + localBranch], repo);
+	public fetchIntoLocalBranch(repo: string, remote: string, remoteBranch: string, localBranch: string, force: boolean) {
+		const args = ['fetch'];
+		if (force) {
+			args.push('-f');
+		}
+		args.push(remote, remoteBranch + ':' + localBranch);
+		return this.runGitCommand(args, repo);
 	}
 
 	/**

@@ -173,6 +173,7 @@ class Config {
 	get dialogDefaults(): DialogDefaults {
 		let resetCommitMode = this.config.get<string>('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
 		let resetUncommittedMode = this.config.get<string>('dialog.resetUncommittedChanges.mode', 'Mixed');
+		let refInputSpaceSubstitution = this.config.get<string>('dialog.general.referenceInputSpaceSubstitution', 'None');
 
 		return {
 			addTag: {
@@ -198,6 +199,9 @@ class Config {
 			fetchRemote: {
 				prune: !!this.config.get('dialog.fetchRemote.prune', false),
 				pruneTags: !!this.config.get('dialog.fetchRemote.pruneTags', false)
+			},
+			general: {
+				referenceInputSpaceSubstitution: refInputSpaceSubstitution === 'Hyphen' ? '-' : refInputSpaceSubstitution === 'Underscore' ? '_' : null
 			},
 			merge: {
 				noCommit: !!this.config.get('dialog.merge.noCommit', false),

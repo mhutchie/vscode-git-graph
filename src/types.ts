@@ -454,6 +454,9 @@ export interface DialogDefaults {
 		readonly prune: boolean,
 		readonly pruneTags: boolean
 	};
+	readonly general: {
+		readonly referenceInputSpaceSubstitution: string | null
+	};
 	readonly merge: {
 		readonly noCommit: boolean,
 		readonly noFastForward: boolean,

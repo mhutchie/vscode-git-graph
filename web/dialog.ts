@@ -91,6 +91,8 @@ class Dialog {
 	private type: DialogType | null = null;
 	private customSelects: { [inputIndex: string]: CustomSelect } = {};
 
+	private static readonly WHITESPACE_REGEXP = /\s/gu;
+
 	/**
 	 * Show a confirmation dialog to the user.
 	 * @param message A message outlining what the user is being asked to confirm.
@@ -269,7 +271,13 @@ class Dialog {
 			if (dialogInput.value === '') this.elem!.classList.add(CLASS_DIALOG_NO_INPUT);
 			dialogInput.addEventListener('keyup', () => {
 				if (this.elem === null) return;
-				let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
+				if (initialState.config.dialogDefaults.general.referenceInputSpaceSubstitution !== null) {
+					const selectionStart = dialogInput.selectionStart, selectionEnd = dialogInput.selectionEnd;
+					dialogInput.value = dialogInput.value.replace(Dialog.WHITESPACE_REGEXP, initialState.config.dialogDefaults.general.referenceInputSpaceSubstitution);
+					dialogInput.selectionStart = selectionStart;
+					dialogInput.selectionEnd = selectionEnd;
+				}
+				const noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
 				alterClass(this.elem, CLASS_DIALOG_NO_INPUT, noInput);
 				if (alterClass(this.elem, CLASS_DIALOG_INPUT_INVALID, !noInput && invalidInput)) {
 					dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';

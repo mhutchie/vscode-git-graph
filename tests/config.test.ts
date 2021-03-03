@@ -838,6 +838,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.general.referenceInputSpaceSubstitution', 'None');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -873,6 +874,9 @@ describe('Config', () => {
 				fetchRemote: {
 					prune: true,
 					pruneTags: true
+				},
+				general: {
+					referenceInputSpaceSubstitution: null
 				},
 				merge: {
 					noCommit: true,
@@ -939,6 +943,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.general.referenceInputSpaceSubstitution', 'None');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -974,6 +979,9 @@ describe('Config', () => {
 				fetchRemote: {
 					prune: false,
 					pruneTags: false
+				},
+				general: {
+					referenceInputSpaceSubstitution: null
 				},
 				merge: {
 					noCommit: false,
@@ -1040,6 +1048,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.general.referenceInputSpaceSubstitution', 'None');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1075,6 +1084,9 @@ describe('Config', () => {
 				fetchRemote: {
 					prune: true,
 					pruneTags: true
+				},
+				general: {
+					referenceInputSpaceSubstitution: null
 				},
 				merge: {
 					noCommit: true,
@@ -1141,6 +1153,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.general.referenceInputSpaceSubstitution', 'None');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1176,6 +1189,9 @@ describe('Config', () => {
 				fetchRemote: {
 					prune: false,
 					pruneTags: false
+				},
+				general: {
+					referenceInputSpaceSubstitution: null
 				},
 				merge: {
 					noCommit: false,
@@ -1227,6 +1243,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.general.referenceInputSpaceSubstitution', 'None');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1262,6 +1279,9 @@ describe('Config', () => {
 				fetchRemote: {
 					prune: false,
 					pruneTags: false
+				},
+				general: {
+					referenceInputSpaceSubstitution: null
 				},
 				merge: {
 					noCommit: false,
@@ -1306,6 +1326,7 @@ describe('Config', () => {
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchIntoLocalBranch.forceFetch', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.prune', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.fetchRemote.pruneTags', false);
+			expect(workspaceConfiguration.get).toBeCalledWith('dialog.general.referenceInputSpaceSubstitution', 'None');
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noCommit', false);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.noFastForward', true);
 			expect(workspaceConfiguration.get).toBeCalledWith('dialog.merge.squashCommits', false);
@@ -1342,6 +1363,9 @@ describe('Config', () => {
 					prune: false,
 					pruneTags: false
 				},
+				general: {
+					referenceInputSpaceSubstitution: null
+				},
 				merge: {
 					noCommit: false,
 					noFastForward: true,
@@ -1371,7 +1395,7 @@ describe('Config', () => {
 		});
 
 		describe('dialogDefaults.addTag.type', () => {
-			it('Should return "annotated" the configuration value is "Annotated"', () => {
+			it('Should return TagType.Annotated when the configuration value is "Annotated"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.addTag.type', 'Annotated');
 
@@ -1382,7 +1406,7 @@ describe('Config', () => {
 				expect(value.addTag.type).toBe(TagType.Annotated);
 			});
 
-			it('Should return "lightweight" the configuration value is "Annotated"', () => {
+			it('Should return TagType.Lightweight when the configuration value is "Lightweight"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.addTag.type', 'Lightweight');
 
@@ -1394,8 +1418,54 @@ describe('Config', () => {
 			});
 		});
 
+		describe('dialogDefaults.general.referenceInputSpaceSubstitution', () => {
+			it('Should return NULL when the configuration value is "None"', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('dialog.general.referenceInputSpaceSubstitution', 'None');
+
+				// Run
+				const value = config.dialogDefaults;
+
+				// Assert
+				expect(value.general.referenceInputSpaceSubstitution).toBe(null);
+			});
+
+			it('Should return "-" when the configuration value is "Hyphen"', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('dialog.general.referenceInputSpaceSubstitution', 'Hyphen');
+
+				// Run
+				const value = config.dialogDefaults;
+
+				// Assert
+				expect(value.general.referenceInputSpaceSubstitution).toBe('-');
+			});
+
+			it('Should return "_" when the configuration value is "Underscore"', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('dialog.general.referenceInputSpaceSubstitution', 'Underscore');
+
+				// Run
+				const value = config.dialogDefaults;
+
+				// Assert
+				expect(value.general.referenceInputSpaceSubstitution).toBe('_');
+			});
+
+			it('Should return the default value (NULL) when the configuration value is invalid', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('dialog.general.referenceInputSpaceSubstitution', 'invalid');
+
+				// Run
+				const value = config.dialogDefaults;
+
+				// Assert
+				expect(value.general.referenceInputSpaceSubstitution).toBe(null);
+			});
+		});
+
 		describe('dialogDefaults.resetCommit.mode', () => {
-			it('Should return GitResetMode.Hard the configuration value is "Hard"', () => {
+			it('Should return GitResetMode.Hard when the configuration value is "Hard"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.resetCurrentBranchToCommit.mode', 'Hard');
 
@@ -1406,7 +1476,7 @@ describe('Config', () => {
 				expect(value.resetCommit.mode).toBe(GitResetMode.Hard);
 			});
 
-			it('Should return GitResetMode.Mixed the configuration value is "Mixed"', () => {
+			it('Should return GitResetMode.Mixed when the configuration value is "Mixed"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
 
@@ -1417,7 +1487,7 @@ describe('Config', () => {
 				expect(value.resetCommit.mode).toBe(GitResetMode.Mixed);
 			});
 
-			it('Should return GitResetMode.Soft the configuration value is "Soft"', () => {
+			it('Should return GitResetMode.Soft when the configuration value is "Soft"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.resetCurrentBranchToCommit.mode', 'Soft');
 
@@ -1430,7 +1500,7 @@ describe('Config', () => {
 		});
 
 		describe('dialogDefaults.resetUncommitted.mode', () => {
-			it('Should return GitResetMode.Hard the configuration value is "Hard"', () => {
+			it('Should return GitResetMode.Hard when the configuration value is "Hard"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.resetUncommittedChanges.mode', 'Hard');
 
@@ -1441,7 +1511,7 @@ describe('Config', () => {
 				expect(value.resetUncommitted.mode).toBe(GitResetMode.Hard);
 			});
 
-			it('Should return GitResetMode.Mixed the configuration value is "Mixed"', () => {
+			it('Should return GitResetMode.Mixed when the configuration value is "Mixed"', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('dialog.resetUncommittedChanges.mode', 'Mixed');
 

@@ -625,7 +625,7 @@ class GitGraphView {
 			refreshState.hard = refreshState.hard || hard;
 			refreshState.configChanges = refreshState.configChanges || configChanges;
 			if (!skipRepoInfo) {
-				// This request will trigger a loadCommit request after the loadRepoInfo request has completed. 
+				// This request will trigger a loadCommit request after the loadRepoInfo request has completed.
 				// Invalidate any previous commit requests in progress.
 				refreshState.loadCommitsRefreshId++;
 			}
@@ -1661,7 +1661,7 @@ class GitGraphView {
 		}
 
 		if (columnWidths[0] !== COLUMN_AUTO) {
-			// Table should have fixed layout 
+			// Table should have fixed layout
 			makeTableFixedLayout();
 		} else {
 			// Table should have automatic layout
@@ -2714,9 +2714,9 @@ class GitGraphView {
 		});
 	}
 
-	private cdvFileViewed(filePath: string, fileElem: HTMLElement) {
-		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
-		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
+	private setLastViewedFile(filePath: string, fileElem: HTMLElement) {
+		const expandedCommit = this.expandedCommit;
+		if (expandedCommit === null || expandedCommit.fileTree === null) return;
 
 		expandedCommit.lastViewedFile = filePath;
 		let lastViewedElem = document.getElementById('cdvLastFileViewed');
@@ -2726,6 +2726,11 @@ class GitGraphView {
 		lastViewedElem.title = 'Last File Viewed';
 		lastViewedElem.innerHTML = SVG_ICONS.eyeOpen;
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
+	}
+
+	private cdvFileViewed(filePath: string) {
+		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
+		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
 
 		if (expandedCommit.codeReview !== null) {
 			let i = expandedCommit.codeReview.remainingFiles.indexOf(filePath);
@@ -2811,7 +2816,8 @@ class GitGraphView {
 				toHash = expandedCommit.commitHash;
 			}
 
-			this.cdvFileViewed(file.newFilePath, fileElem);
+			this.setLastViewedFile(file.newFilePath, fileElem);
+			this.cdvFileViewed(file.newFilePath);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2840,13 +2846,16 @@ class GitGraphView {
 				hash = expandedCommit.commitHash;
 			}
 
-			this.cdvFileViewed(file.newFilePath, fileElem);
+			this.setLastViewedFile(file.newFilePath, fileElem);
+			this.cdvFileViewed(file.newFilePath);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: hash, filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
-			this.cdvFileViewed(file.newFilePath, fileElem);
-			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: file.newFilePath });
+			const filePath = file.newFilePath;
+			this.setLastViewedFile(filePath, fileElem);
+			this.cdvFileViewed(filePath);
+			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath });
 		};
 
 		addListenerToClass('fileTreeFolder', 'click', (e) => {
@@ -2939,6 +2948,11 @@ class GitGraphView {
 						title: 'Open File',
 						visible: file.type !== GG.GitFileStatus.Deleted,
 						onClick: () => triggerOpenFile(file, fileElem)
+					},
+					{
+						title: 'Mark as Reviewd',
+						visible: expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
+						onClick: () => this.cdvFileViewed(file.newFilePath)
 					}
 				],
 				[

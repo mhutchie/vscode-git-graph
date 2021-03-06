@@ -6,6 +6,7 @@ import {
 	ContextMenuActionsVisibility,
 	CustomBranchGlobPattern,
 	CustomEmojiShortcodeMapping,
+	CustomPipelineProvider,
 	CustomPullRequestProvider,
 	DateFormat,
 	DateFormatType,
@@ -133,6 +134,18 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.customPipelineProviders` Extension Setting.
+	 */
+	get customPipelineProviders(): CustomPipelineProvider[] {
+		let providers = this.config.get('customPipelineProviders', <any[]>[]);
+		return Array.isArray(providers)
+			? providers
+				.filter((provider) => typeof provider.name === 'string' && typeof provider.templateUrl === 'string')
+				.map((provider) => ({ name: provider.name, templateUrl: provider.templateUrl }))
+			: [];
+	}
+
+	/**
 	 * Get the value of the `git-graph.date.format` Extension Setting.
 	 */
 	get dateFormat(): DateFormat {
@@ -160,10 +173,10 @@ class Config {
 	 */
 	get defaultColumnVisibility(): DefaultColumnVisibility {
 		let obj: any = this.config.get('defaultColumnVisibility', {});
-		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean') {
-			return { author: obj['Author'], commit: obj['Commit'], date: obj['Date'] };
+		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean' && typeof obj['Pipeline'] === 'boolean') {
+			return { author: obj['Author'], commit: obj['Commit'], date: obj['Date'], pipeline: obj['Pileline']};
 		} else {
-			return { author: true, commit: true, date: true };
+			return { author: true, commit: true, date: true, pipeline: true };
 		}
 	}
 

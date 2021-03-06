@@ -239,6 +239,27 @@ class SettingsWidget {
 				html += '</div>';
 			}
 
+			if (this.config !== null) {
+				html += '<div class="settingsSection"><h3>Pipeline Status Configuration</h3><table><tr><th>Provider</th><th>URL</th><th>Action</th></tr>';
+				const pipelineConfigs = this.repo.pipelineConfigs;
+				if (pipelineConfigs !== null && pipelineConfigs.length !== 0) {
+					pipelineConfigs.forEach((pipelineConfig, i) => {
+						let providerOptions:any = {};
+						providerOptions[(GG.PipelineProvider.GitLabV4).toString()] = 'GitLabV4';
+						providerOptions[(GG.PipelineProvider.GitHubV3).toString()] = 'GitHubV3';
+						const gitUrl = escapeHtml(pipelineConfig.gitUrl || 'Not Set');
+						html += '<tr class="lineAbove">' +
+							'<td class="left">' + escapeHtml(providerOptions[pipelineConfig.provider]) + '</td>' +
+							'<td class="leftWithEllipsis" title="URL: ' + gitUrl + '">' + gitUrl + '</td>' +
+							'<td class="btns pipelineBtns" data-index="' + i + '"><div class="editPipeline" title="Edit Pipeline' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deletePipeline" title="Delete Pipeline' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+							'</tr>';
+					});
+				} else {
+					html += '<tr class="lineAbove"><td colspan="4">There are no pipelines configured for this repository.</td></tr>';
+				}
+				html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddPipeline" class="addBtn">' + SVG_ICONS.plus + 'Add Pipeline</div></div></div>';
+			}
+
 			html += '<div class="settingsSection"><h3>Git Graph Configuration</h3><div class="settingsSectionButtons">' +
 				'<div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div><br/>' +
 				'<div id="exportRepositoryConfig">' + SVG_ICONS.package + 'Export Repository Configuration</div>' +
@@ -450,6 +471,85 @@ class SettingsWidget {
 					this.view.saveRepoStateValue(this.currentRepo, 'hideRemotes', this.repo.hideRemotes);
 					this.view.refresh(true);
 				});
+				
+				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
+					let config: GG.PipelineConfig = {
+						provider: <GG.PipelineProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],
+						glToken: <string>values[2],
+						custom: null
+					};
+					return config;
+				};
+				const copyConfigs = () => {
+					if (this.repo === null) return [];
+					let configs: GG.PipelineConfig[];
+					if (this.repo.pipelineConfigs === null) {
+						configs = [];
+					} else {
+						configs = Object.assign([], this.repo.pipelineConfigs);
+					}
+					return configs;
+				};
+
+				document.getElementById('settingsAddPipeline')!.addEventListener('click', () => {
+					let defaultProvider = GG.PipelineProvider.GitHubV3.toString();
+					let providerOptions = [
+						// { name: 'Bitbucket', value: (GG.PipelineProvider.Bitbucket).toString() },
+						{ name: 'GitHubV3', value: (GG.PipelineProvider.GitHubV3).toString() },
+						{ name: 'GitLabV4', value: (GG.PipelineProvider.GitLabV4).toString() }
+					];
+					dialog.showForm('Add a new pipeline to this repository:', [
+						{
+							type: DialogInputType.Select, name: 'Provider',
+							options: providerOptions, default: defaultProvider,
+							info: 'In addition to the built-in publicly hosted Pipeline providers, custom providers can be configured using the Extension Setting "git-graph.customPipelineProviders" (e.g. for use with privately hosted Pipeline providers).'
+						},
+						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The Pipeline provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
+						{ type: DialogInputType.PasswordRef, name: 'Access Token', default: '', info: 'The GitLab personal access token or project access token.' }
+					], 'Add Pipeline', (values) => {
+						let configs: GG.PipelineConfig[] = copyConfigs();
+						let config: GG.PipelineConfig = updateConfigWithFormValues(values);
+						configs.push(config);
+						this.setPipelineConfig(configs);
+					}, { type: TargetType.Repo });
+				});
+
+				addListenerToClass('editPipeline', 'click', (e) => {
+					const pipelineConfig = this.getPipelineForBtnEvent(e);
+					if (pipelineConfig === null) return;
+					let providerOptions = [
+						// { name: 'Bitbucket', value: (GG.PipelineProvider.Bitbucket).toString() },
+						{ name: 'GitHubV3', value: (GG.PipelineProvider.GitHubV3).toString() },
+						{ name: 'GitLabV4', value: (GG.PipelineProvider.GitLabV4).toString() }
+					];
+					dialog.showForm('Edit the Pipeline <b><i>' + escapeHtml(pipelineConfig.gitUrl || 'Not Set') + '</i></b>:', [
+						{
+							type: DialogInputType.Select, name: 'Provider',
+							options: providerOptions, default: pipelineConfig.provider.toString(),
+							info: 'In addition to the built-in publicly hosted Pipeline providers, custom providers can be configured using the Extension Setting "git-graph.customPipelineProviders" (e.g. for use with privately hosted Pipeline providers).'
+						},
+						{ type: DialogInputType.Text, name: 'Git URL', default: pipelineConfig.gitUrl || '', placeholder: null, info: 'The Pipeline provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
+						{ type: DialogInputType.PasswordRef, name: 'Personal Access Token', default: pipelineConfig.glToken, info: 'The GitLab personal access token.' }
+					], 'Save Changes', (values) => {
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.pipelineBtns')!).dataset.index!);
+						let configs: GG.PipelineConfig[] = copyConfigs();
+						let config: GG.PipelineConfig = updateConfigWithFormValues(values);
+						configs[index] = config;
+						this.setPipelineConfig(configs);
+					}, { type: TargetType.Repo });
+				});
+
+				addListenerToClass('deletePipeline', 'click', (e) => {
+					const pipelineConfig = this.getPipelineForBtnEvent(e);
+					if (pipelineConfig === null) return;
+					dialog.showConfirmation('Are you sure you want to delete the Pipeline <b><i>' + escapeHtml(pipelineConfig.gitUrl) + '</i></b>?', 'Yes, delete', () => {
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.pipelineBtns')!).dataset.index!);
+						let configs: GG.PipelineConfig[] = copyConfigs();
+						configs.splice(index, 1);
+						this.setPipelineConfig(configs);
+					}, { type: TargetType.Repo });
+				});
+
 			}
 
 			document.getElementById('editIssueLinking')!.addEventListener('click', () => {
@@ -567,6 +667,16 @@ class SettingsWidget {
 	private setPullRequestConfig(config: GG.PullRequestConfig | null) {
 		if (this.currentRepo === null) return;
 		this.view.saveRepoStateValue(this.currentRepo, 'pullRequestConfig', config);
+		this.render();
+	}
+
+	/**
+	 * Save the pull request configuration for this repository.
+	 * @param config The pull request configuration to save.
+	 */
+	private setPipelineConfig(config: GG.PipelineConfig[] | null) {
+		if (this.currentRepo === null) return;
+		this.view.saveRepoStateValue(this.currentRepo, 'pipelineConfigs', config);
 		this.render();
 	}
 
@@ -798,6 +908,17 @@ class SettingsWidget {
 			updateConfigWithFormValues(values);
 			this.showCreatePullRequestIntegrationDialog1(config);
 		});
+	}
+
+	/**
+	 * Get the pipeline details corresponding to a mouse event.
+	 * @param e The mouse event.
+	 * @returns The details of the pipeline.
+	 */
+	private getPipelineForBtnEvent(e: Event) {
+		return this.repo !== null && this.repo.pipelineConfigs !== null
+			? this.repo.pipelineConfigs[parseInt((<HTMLElement>(<Element>e.target).closest('.pipelineBtns')!).dataset.index!)]
+			: null;
 	}
 
 	/**

@@ -1,6 +1,7 @@
 /* Git Interfaces / Types */
 
 export interface GitCommit {
+	readonly pipeline: GitPipelinesData | null;
 	readonly hash: string;
 	readonly parents: ReadonlyArray<string>;
 	readonly author: string;
@@ -11,6 +12,16 @@ export interface GitCommit {
 	readonly tags: ReadonlyArray<GitCommitTag>;
 	readonly remotes: ReadonlyArray<GitCommitRemote>;
 	readonly stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
+}
+
+export interface GitPipelinesData {
+	id: string;
+	status: string;
+	ref: string;
+	sha: string;
+	web_url: string;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface GitCommitTag {
@@ -188,6 +199,36 @@ interface PullRequestConfigCustom extends PullRequestConfigBase {
 
 export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCustom;
 
+
+
+export interface PipelineConfigBase {
+	readonly gitUrl: string;
+	readonly glToken: string;
+}
+
+export const enum PipelineProvider {
+	Bitbucket,
+	Custom,
+	GitHubV3,
+	GitLabV4,
+	Jenkins
+}
+
+interface PipelineConfigBuiltIn extends PipelineConfigBase {
+	readonly provider: PipelineProvider;
+	readonly custom: null;
+}
+
+interface PipelineConfigCustom extends PipelineConfigBase {
+	readonly provider: PipelineProvider.Custom;
+	readonly custom: {
+		readonly name: string,
+		readonly templateUrl: string
+	};
+}
+
+export type PipelineConfig = PipelineConfigBuiltIn | PipelineConfigCustom;
+
 export interface GitRepoState {
 	cdvDivider: number;
 	cdvHeight: number;
@@ -203,6 +244,7 @@ export interface GitRepoState {
 	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
+	pipelineConfigs: PipelineConfig[] | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
@@ -228,6 +270,7 @@ export interface GitGraphViewConfig {
 	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
 	readonly customEmojiShortcodeMappings: ReadonlyArray<CustomEmojiShortcodeMapping>;
 	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
+	readonly customPipelineProviders: ReadonlyArray<CustomPipelineProvider>;
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly dialogDefaults: DialogDefaults;
@@ -407,6 +450,11 @@ export interface CustomPullRequestProvider {
 	readonly templateUrl: string;
 }
 
+export interface CustomPipelineProvider {
+	readonly name: string;
+	readonly templateUrl: string;
+}
+
 export interface DateFormat {
 	readonly type: DateFormatType;
 	readonly iso: boolean;
@@ -427,6 +475,7 @@ export interface DefaultColumnVisibility {
 	readonly date: boolean;
 	readonly author: boolean;
 	readonly commit: boolean;
+	readonly pipeline: boolean;
 }
 
 export interface DialogDefaults {
@@ -884,6 +933,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly remotes: ReadonlyArray<string>;
 	readonly hideRemotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
+	readonly pipelineConfigs: PipelineConfig[] | null;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';

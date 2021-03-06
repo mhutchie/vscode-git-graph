@@ -431,6 +431,31 @@
 					"default": [],
 					"markdownDescription": "An array of custom Pull Request providers that can be used in the \"Pull Request Creation\" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)."
 				},
+				"git-graph.customPipelineProviders": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"title": "Pipeline Request Provider",
+						"required": [
+							"name",
+							"templateUrl"
+						],
+						"properties": {
+							"name": {
+								"type": "string",
+								"title": "Name of the Provider",
+								"description": "A unique, identifying, display name for the provider."
+							},
+							"templateUrl": {
+								"type": "string",
+								"title": "Template URL",
+								"markdownDescription": "A template URL that can be used to create a Pipeline, after the $1 - $8 variables have been substituted to construct the final URL. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)."
+							}
+						}
+					},
+					"default": [],
+					"markdownDescription": "An array of custom Pipeline providers that can be used in the \"Pipeline Status\" Integration. For information on how to configure this setting, see the documentation [here](https://github.com/mhutchie/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)."
+				},
 				"git-graph.date.format": {
 					"type": "string",
 					"enum": [
@@ -1451,7 +1476,8 @@
 		"test-and-report-coverage": "jest --verbose --coverage"
 	},
 	"dependencies": {
-		"iconv-lite": "0.5.0"
+		"iconv-lite": "0.5.0",
+		"request-promise": "^4.2.5"
 	},
 	"devDependencies": {
 		"@types/jest": "26.0.19",
@@ -1463,6 +1489,7 @@
 		"jest": "26.6.3",
 		"ts-jest": "26.4.4",
 		"typescript": "4.0.2",
+		"@types/request-promise": "^4.1.46",
 		"uglify-js": "3.10.0"
 	}
 }

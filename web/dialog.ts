@@ -11,6 +11,7 @@ const enum DialogType {
 const enum DialogInputType {
 	Text,
 	TextRef,
+	PasswordRef,
 	Select,
 	Radio,
 	Checkbox
@@ -26,6 +27,13 @@ interface DialogTextInput {
 
 interface DialogTextRefInput {
 	readonly type: DialogInputType.TextRef;
+	readonly name: string;
+	readonly default: string;
+	readonly info?: string;
+}
+
+interface DialogPasswordRefInput {
+	readonly type: DialogInputType.PasswordRef;
 	readonly name: string;
 	readonly default: string;
 	readonly info?: string;
@@ -71,7 +79,7 @@ interface DialogRadioInputOption {
 	readonly value: string;
 }
 
-type DialogInput = DialogTextInput | DialogTextRefInput | DialogSelectInput | DialogRadioInput | DialogCheckboxInput;
+type DialogInput = DialogTextInput | DialogTextRefInput | DialogPasswordRefInput | DialogSelectInput | DialogRadioInput | DialogCheckboxInput;
 type DialogInputValue = string | string[] | boolean;
 
 type DialogTarget = {
@@ -212,6 +220,8 @@ class Dialog {
 					inputHtml = '<td class="inputCol"><div id="dialogFormSelect' + id + '"></div></td>' + (infoColRequired ? '<td>' + infoHtml + '</td>' : '');
 				} else if (input.type === DialogInputType.Checkbox) {
 					inputHtml = '<td class="inputCol"' + (infoColRequired ? ' colspan="2"' : '') + '><span class="dialogFormCheckbox"><label><input id="dialogInput' + id + '" type="checkbox"' + (input.value ? ' checked' : '') + ' tabindex="' + (id + 1) + '"/><span class="customCheckbox"></span>' + (multiElement && !multiCheckbox ? '' : input.name) + infoHtml + '</label></span></td>';
+				} else if (input.type === DialogInputType.PasswordRef) {
+					inputHtml = '<td class="inputCol"><input id="dialogInput' + id + '" type="password" value="' + escapeHtml(input.default) + '"' + ' tabindex="' + (id + 1) + '"/></td>' + (infoColRequired ? '<td>' + infoHtml + '</td>' : '');
 				} else {
 					inputHtml = '<td class="inputCol"><input id="dialogInput' + id + '" type="text" value="' + escapeHtml(input.default) + '"' + (input.type === DialogInputType.Text && input.placeholder !== null ? ' placeholder="' + escapeHtml(input.placeholder) + '"' : '') + ' tabindex="' + (id + 1) + '"/></td>' + (infoColRequired ? '<td>' + infoHtml + '</td>' : '');
 				}
@@ -265,7 +275,7 @@ class Dialog {
 		});
 
 		// If the dialog contains a TextRef input, attach event listeners for validation
-		const textRefInput = inputs.findIndex((input) => input.type === DialogInputType.TextRef);
+		const textRefInput = inputs.findIndex((input) => input.type === DialogInputType.TextRef || input.type === DialogInputType.PasswordRef);
 		if (textRefInput > -1) {
 			let dialogInput = <HTMLInputElement>document.getElementById('dialogInput' + textRefInput), dialogAction = document.getElementById('dialogAction')!;
 			if (dialogInput.value === '') this.elem!.classList.add(CLASS_DIALOG_NO_INPUT);

@@ -720,38 +720,50 @@ describe('Config', () => {
 	describe('defaultColumnVisibility', () => {
 		it('Should successfully parse the configuration value (Date column disabled)', () => {
 			// Setup
-			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: false, Author: true, Commit: true });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: false, Author: true, Commit: true, CIDI: true });
 
 			// Run
 			const value = config.defaultColumnVisibility;
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: false, author: true, commit: true });
+			expect(value).toStrictEqual({ date: false, author: true, commit: true, cidi: true });
 		});
 
 		it('Should successfully parse the configuration value (Author column disabled)', () => {
 			// Setup
-			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: false, Commit: true });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: false, Commit: true, CIDI: true });
 
 			// Run
 			const value = config.defaultColumnVisibility;
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: true, author: false, commit: true });
+			expect(value).toStrictEqual({ date: true, author: false, commit: true, cidi: true });
 		});
 
 		it('Should successfully parse the configuration value (Commit  column disabled)', () => {
 			// Setup
-			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: false });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: false, CIDI: true });
 
 			// Run
 			const value = config.defaultColumnVisibility;
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: true, author: true, commit: false });
+			expect(value).toStrictEqual({ date: true, author: true, commit: false, cidi: true });
+		});
+
+		it('Should successfully parse the configuration value (CI/DI Status  column disabled)', () => {
+			// Setup
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: true, CIDI: false });
+
+			// Run
+			const value = config.defaultColumnVisibility;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
+			expect(value).toStrictEqual({ date: true, author: true, commit: true, cidi: false });
 		});
 
 		it('Should return the default value when the configuration value is invalid (not an object)', () => {
@@ -763,7 +775,7 @@ describe('Config', () => {
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: true, author: true, commit: true });
+			expect(value).toStrictEqual({ date: true, author: true, commit: true, cidi: true });
 		});
 
 		it('Should return the default value when the configuration value is invalid (NULL)', () => {
@@ -775,19 +787,19 @@ describe('Config', () => {
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: true, author: true, commit: true });
+			expect(value).toStrictEqual({ date: true, author: true, commit: true, cidi: true });
 		});
 
 		it('Should return the default value when the configuration value is invalid (column value is not a boolean)', () => {
 			// Setup
-			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: 5 });
+			vscode.mockExtensionSettingReturnValue('defaultColumnVisibility', { Date: true, Author: true, Commit: 5, CIDI: true });
 
 			// Run
 			const value = config.defaultColumnVisibility;
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: true, author: true, commit: true });
+			expect(value).toStrictEqual({ date: true, author: true, commit: true, cidi: true });
 		});
 
 		it('Should return the default value when the configuration value is not set', () => {
@@ -796,7 +808,7 @@ describe('Config', () => {
 
 			// Assert
 			expect(workspaceConfiguration.get).toBeCalledWith('defaultColumnVisibility', {});
-			expect(value).toStrictEqual({ date: true, author: true, commit: true });
+			expect(value).toStrictEqual({ date: true, author: true, commit: true, cidi: true });
 		});
 	});
 

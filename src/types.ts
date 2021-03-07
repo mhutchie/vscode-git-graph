@@ -270,7 +270,6 @@ export interface GitGraphViewConfig {
 	readonly customBranchGlobPatterns: ReadonlyArray<CustomBranchGlobPattern>;
 	readonly customEmojiShortcodeMappings: ReadonlyArray<CustomEmojiShortcodeMapping>;
 	readonly customPullRequestProviders: ReadonlyArray<CustomPullRequestProvider>;
-	readonly customPipelineProviders: ReadonlyArray<CustomPipelineProvider>;
 	readonly dateFormat: DateFormat;
 	readonly defaultColumnVisibility: DefaultColumnVisibility;
 	readonly dialogDefaults: DialogDefaults;
@@ -446,11 +445,6 @@ export interface CustomEmojiShortcodeMapping {
 }
 
 export interface CustomPullRequestProvider {
-	readonly name: string;
-	readonly templateUrl: string;
-}
-
-export interface CustomPipelineProvider {
 	readonly name: string;
 	readonly templateUrl: string;
 }

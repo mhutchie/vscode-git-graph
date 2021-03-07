@@ -628,7 +628,6 @@ export class GitGraphView extends Disposable {
 				customBranchGlobPatterns: config.customBranchGlobPatterns,
 				customEmojiShortcodeMappings: config.customEmojiShortcodeMappings,
 				customPullRequestProviders: config.customPullRequestProviders,
-				customPipelineProviders: config.customPipelineProviders,
 				dateFormat: config.dateFormat,
 				defaultColumnVisibility: config.defaultColumnVisibility,
 				dialogDefaults: config.dialogDefaults,

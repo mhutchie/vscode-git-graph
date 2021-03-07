@@ -502,7 +502,7 @@ class SettingsWidget {
 						{
 							type: DialogInputType.Select, name: 'Provider',
 							options: providerOptions, default: defaultProvider,
-							info: 'In addition to the built-in publicly hosted Pipeline providers, custom providers can be configured using the Extension Setting "git-graph.customPipelineProviders" (e.g. for use with privately hosted Pipeline providers).'
+							info: 'In addition to the built-in publicly hosted Pipeline providers.'
 						},
 						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The Pipeline provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
 						{ type: DialogInputType.PasswordRef, name: 'Access Token', default: '', info: 'The GitLab personal access token or project access token.' }
@@ -526,7 +526,7 @@ class SettingsWidget {
 						{
 							type: DialogInputType.Select, name: 'Provider',
 							options: providerOptions, default: pipelineConfig.provider.toString(),
-							info: 'In addition to the built-in publicly hosted Pipeline providers, custom providers can be configured using the Extension Setting "git-graph.customPipelineProviders" (e.g. for use with privately hosted Pipeline providers).'
+							info: 'In addition to the built-in publicly hosted Pipeline providers.'
 						},
 						{ type: DialogInputType.Text, name: 'Git URL', default: pipelineConfig.gitUrl || '', placeholder: null, info: 'The Pipeline provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
 						{ type: DialogInputType.PasswordRef, name: 'Personal Access Token', default: pipelineConfig.glToken, info: 'The GitLab personal access token.' }

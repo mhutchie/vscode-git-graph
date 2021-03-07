@@ -1,7 +1,6 @@
 /* Git Interfaces / Types */
 
 export interface GitCommit {
-	readonly pipeline: GitPipelinesData | null;
 	readonly hash: string;
 	readonly parents: ReadonlyArray<string>;
 	readonly author: string;
@@ -12,9 +11,10 @@ export interface GitCommit {
 	readonly tags: ReadonlyArray<GitCommitTag>;
 	readonly remotes: ReadonlyArray<GitCommitRemote>;
 	readonly stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
+	readonly cidi: GitCIDIData | null;
 }
 
-export interface GitPipelinesData {
+export interface GitCIDIData {
 	id: string;
 	status: string;
 	ref: string;
@@ -201,12 +201,12 @@ export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCust
 
 
 
-export interface PipelineConfigBase {
+export interface CIDIConfigBase {
 	readonly gitUrl: string;
 	readonly glToken: string;
 }
 
-export const enum PipelineProvider {
+export const enum CIDIProvider {
 	Bitbucket,
 	Custom,
 	GitHubV3,
@@ -214,20 +214,20 @@ export const enum PipelineProvider {
 	Jenkins
 }
 
-interface PipelineConfigBuiltIn extends PipelineConfigBase {
-	readonly provider: PipelineProvider;
+interface CIDIConfigBuiltIn extends CIDIConfigBase {
+	readonly provider: CIDIProvider;
 	readonly custom: null;
 }
 
-interface PipelineConfigCustom extends PipelineConfigBase {
-	readonly provider: PipelineProvider.Custom;
+interface CIDIConfigCustom extends CIDIConfigBase {
+	readonly provider: CIDIProvider.Custom;
 	readonly custom: {
 		readonly name: string,
 		readonly templateUrl: string
 	};
 }
 
-export type PipelineConfig = PipelineConfigBuiltIn | PipelineConfigCustom;
+export type CIDIConfig = CIDIConfigBuiltIn | CIDIConfigCustom;
 
 export interface GitRepoState {
 	cdvDivider: number;
@@ -244,7 +244,7 @@ export interface GitRepoState {
 	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
-	pipelineConfigs: PipelineConfig[] | null;
+	cidiConfigs: CIDIConfig[] | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
@@ -469,7 +469,7 @@ export interface DefaultColumnVisibility {
 	readonly date: boolean;
 	readonly author: boolean;
 	readonly commit: boolean;
-	readonly pipeline: boolean;
+	readonly cidi: boolean;
 }
 
 export interface DialogDefaults {
@@ -927,7 +927,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly remotes: ReadonlyArray<string>;
 	readonly hideRemotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
-	readonly pipelineConfigs: PipelineConfig[] | null;
+	readonly cidiConfigs: CIDIConfig[] | null;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';

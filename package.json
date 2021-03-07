@@ -477,12 +477,17 @@
 						"Commit": {
 							"type": "boolean",
 							"title": "Visibility of the Commit column"
+						},
+						"CIDI": {
+							"type": "boolean",
+							"title": "Visibility of the CI/DI Status column"
 						}
 					},
 					"default": {
 						"Date": true,
 						"Author": true,
-						"Commit": true
+						"Commit": true,
+						"CIDI": true
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},

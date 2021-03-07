@@ -240,24 +240,24 @@ class SettingsWidget {
 			}
 
 			if (this.config !== null) {
-				html += '<div class="settingsSection"><h3>Pipeline Status Configuration</h3><table><tr><th>Provider</th><th>URL</th><th>Action</th></tr>';
-				const pipelineConfigs = this.repo.pipelineConfigs;
-				if (pipelineConfigs !== null && pipelineConfigs.length !== 0) {
-					pipelineConfigs.forEach((pipelineConfig, i) => {
+				html += '<div class="settingsSection"><h3>CI/DI Status Configuration</h3><table><tr><th>Provider</th><th>URL</th><th>Action</th></tr>';
+				const cidiConfigs = this.repo.cidiConfigs;
+				if (cidiConfigs !== null && cidiConfigs.length !== 0) {
+					cidiConfigs.forEach((cidiConfig, i) => {
 						let providerOptions:any = {};
-						providerOptions[(GG.PipelineProvider.GitLabV4).toString()] = 'GitLabV4';
-						providerOptions[(GG.PipelineProvider.GitHubV3).toString()] = 'GitHubV3';
-						const gitUrl = escapeHtml(pipelineConfig.gitUrl || 'Not Set');
+						providerOptions[(GG.CIDIProvider.GitHubV3).toString()] = 'GitHub';
+						providerOptions[(GG.CIDIProvider.GitLabV4).toString()] = 'GitLab V4(8.11-)';
+						const gitUrl = escapeHtml(cidiConfig.gitUrl || 'Not Set');
 						html += '<tr class="lineAbove">' +
-							'<td class="left">' + escapeHtml(providerOptions[pipelineConfig.provider]) + '</td>' +
+							'<td class="left">' + escapeHtml(providerOptions[cidiConfig.provider]) + '</td>' +
 							'<td class="leftWithEllipsis" title="URL: ' + gitUrl + '">' + gitUrl + '</td>' +
-							'<td class="btns pipelineBtns" data-index="' + i + '"><div class="editPipeline" title="Edit Pipeline' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deletePipeline" title="Delete Pipeline' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+							'<td class="btns cidiBtns" data-index="' + i + '"><div class="editCIDI" title="Edit CI/DI' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteCIDI" title="Delete CI/DI' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
 							'</tr>';
 					});
 				} else {
-					html += '<tr class="lineAbove"><td colspan="4">There are no pipelines configured for this repository.</td></tr>';
+					html += '<tr class="lineAbove"><td colspan="4">There are no CI/DI configured for this repository.</td></tr>';
 				}
-				html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddPipeline" class="addBtn">' + SVG_ICONS.plus + 'Add Pipeline</div></div></div>';
+				html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddCIDI" class="addBtn">' + SVG_ICONS.plus + 'Add CI/DI</div></div></div>';
 			}
 
 			html += '<div class="settingsSection"><h3>Git Graph Configuration</h3><div class="settingsSectionButtons">' +
@@ -473,8 +473,8 @@ class SettingsWidget {
 				});
 				
 				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
-					let config: GG.PipelineConfig = {
-						provider: <GG.PipelineProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],
+					let config: GG.CIDIConfig = {
+						provider: <GG.CIDIProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],
 						glToken: <string>values[2],
 						custom: null
 					};
@@ -482,71 +482,71 @@ class SettingsWidget {
 				};
 				const copyConfigs = () => {
 					if (this.repo === null) return [];
-					let configs: GG.PipelineConfig[];
-					if (this.repo.pipelineConfigs === null) {
+					let configs: GG.CIDIConfig[];
+					if (this.repo.cidiConfigs === null) {
 						configs = [];
 					} else {
-						configs = Object.assign([], this.repo.pipelineConfigs);
+						configs = Object.assign([], this.repo.cidiConfigs);
 					}
 					return configs;
 				};
 
-				document.getElementById('settingsAddPipeline')!.addEventListener('click', () => {
-					let defaultProvider = GG.PipelineProvider.GitHubV3.toString();
+				document.getElementById('settingsAddCIDI')!.addEventListener('click', () => {
+					let defaultProvider = GG.CIDIProvider.GitHubV3.toString();
 					let providerOptions = [
-						// { name: 'Bitbucket', value: (GG.PipelineProvider.Bitbucket).toString() },
-						{ name: 'GitHubV3', value: (GG.PipelineProvider.GitHubV3).toString() },
-						{ name: 'GitLabV4', value: (GG.PipelineProvider.GitLabV4).toString() }
+						// { name: 'Bitbucket', value: (GG.CIDIProvider.Bitbucket).toString() },
+						{ name: 'GitHubV3', value: (GG.CIDIProvider.GitHubV3).toString() },
+						{ name: 'GitLabV4', value: (GG.CIDIProvider.GitLabV4).toString() }
 					];
-					dialog.showForm('Add a new pipeline to this repository:', [
+					dialog.showForm('Add a new cidi to this repository:', [
 						{
 							type: DialogInputType.Select, name: 'Provider',
 							options: providerOptions, default: defaultProvider,
-							info: 'In addition to the built-in publicly hosted Pipeline providers.'
+							info: 'In addition to the built-in publicly hosted CI/DI providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The Pipeline provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
+						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The CI/DI provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
 						{ type: DialogInputType.PasswordRef, name: 'Access Token', default: '', info: 'The GitLab personal access token or project access token.' }
-					], 'Add Pipeline', (values) => {
-						let configs: GG.PipelineConfig[] = copyConfigs();
-						let config: GG.PipelineConfig = updateConfigWithFormValues(values);
+					], 'Add CI/DI', (values) => {
+						let configs: GG.CIDIConfig[] = copyConfigs();
+						let config: GG.CIDIConfig = updateConfigWithFormValues(values);
 						configs.push(config);
-						this.setPipelineConfig(configs);
+						this.setCIDIConfig(configs);
 					}, { type: TargetType.Repo });
 				});
 
-				addListenerToClass('editPipeline', 'click', (e) => {
-					const pipelineConfig = this.getPipelineForBtnEvent(e);
-					if (pipelineConfig === null) return;
+				addListenerToClass('editCIDI', 'click', (e) => {
+					const cidiConfig = this.getCIDIForBtnEvent(e);
+					if (cidiConfig === null) return;
 					let providerOptions = [
-						// { name: 'Bitbucket', value: (GG.PipelineProvider.Bitbucket).toString() },
-						{ name: 'GitHubV3', value: (GG.PipelineProvider.GitHubV3).toString() },
-						{ name: 'GitLabV4', value: (GG.PipelineProvider.GitLabV4).toString() }
+						// { name: 'Bitbucket', value: (GG.CIDIProvider.Bitbucket).toString() },
+						{ name: 'GitHub', value: (GG.CIDIProvider.GitHubV3).toString() },
+						{ name: 'GitLab V4(8.11-)', value: (GG.CIDIProvider.GitLabV4).toString() }
 					];
-					dialog.showForm('Edit the Pipeline <b><i>' + escapeHtml(pipelineConfig.gitUrl || 'Not Set') + '</i></b>:', [
+					dialog.showForm('Edit the CI/DI <b><i>' + escapeHtml(cidiConfig.gitUrl || 'Not Set') + '</i></b>:', [
 						{
 							type: DialogInputType.Select, name: 'Provider',
-							options: providerOptions, default: pipelineConfig.provider.toString(),
-							info: 'In addition to the built-in publicly hosted Pipeline providers.'
+							options: providerOptions, default: cidiConfig.provider.toString(),
+							info: 'In addition to the built-in publicly hosted CI/DI providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git URL', default: pipelineConfig.gitUrl || '', placeholder: null, info: 'The Pipeline provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
-						{ type: DialogInputType.PasswordRef, name: 'Personal Access Token', default: pipelineConfig.glToken, info: 'The GitLab personal access token.' }
+						{ type: DialogInputType.Text, name: 'Git URL', default: cidiConfig.gitUrl || '', placeholder: null, info: 'The CI/DI provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
+						{ type: DialogInputType.PasswordRef, name: 'Personal Access Token', default: cidiConfig.glToken, info: 'The GitLab personal access token.' }
 					], 'Save Changes', (values) => {
-						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.pipelineBtns')!).dataset.index!);
-						let configs: GG.PipelineConfig[] = copyConfigs();
-						let config: GG.PipelineConfig = updateConfigWithFormValues(values);
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!);
+						let configs: GG.CIDIConfig[] = copyConfigs();
+						let config: GG.CIDIConfig = updateConfigWithFormValues(values);
 						configs[index] = config;
-						this.setPipelineConfig(configs);
+						this.setCIDIConfig(configs);
 					}, { type: TargetType.Repo });
 				});
 
-				addListenerToClass('deletePipeline', 'click', (e) => {
-					const pipelineConfig = this.getPipelineForBtnEvent(e);
-					if (pipelineConfig === null) return;
-					dialog.showConfirmation('Are you sure you want to delete the Pipeline <b><i>' + escapeHtml(pipelineConfig.gitUrl) + '</i></b>?', 'Yes, delete', () => {
-						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.pipelineBtns')!).dataset.index!);
-						let configs: GG.PipelineConfig[] = copyConfigs();
+				addListenerToClass('deleteCIDI', 'click', (e) => {
+					const cidiConfig = this.getCIDIForBtnEvent(e);
+					if (cidiConfig === null) return;
+					dialog.showConfirmation('Are you sure you want to delete the CI/DI <b><i>' + escapeHtml(cidiConfig.gitUrl) + '</i></b>?', 'Yes, delete', () => {
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!);
+						let configs: GG.CIDIConfig[] = copyConfigs();
 						configs.splice(index, 1);
-						this.setPipelineConfig(configs);
+						this.setCIDIConfig(configs);
 					}, { type: TargetType.Repo });
 				});
 
@@ -674,9 +674,9 @@ class SettingsWidget {
 	 * Save the pull request configuration for this repository.
 	 * @param config The pull request configuration to save.
 	 */
-	private setPipelineConfig(config: GG.PipelineConfig[] | null) {
+	private setCIDIConfig(config: GG.CIDIConfig[] | null) {
 		if (this.currentRepo === null) return;
-		this.view.saveRepoStateValue(this.currentRepo, 'pipelineConfigs', config);
+		this.view.saveRepoStateValue(this.currentRepo, 'cidiConfigs', config);
 		this.render();
 	}
 
@@ -911,13 +911,13 @@ class SettingsWidget {
 	}
 
 	/**
-	 * Get the pipeline details corresponding to a mouse event.
+	 * Get the cidi details corresponding to a mouse event.
 	 * @param e The mouse event.
-	 * @returns The details of the pipeline.
+	 * @returns The details of the cidi.
 	 */
-	private getPipelineForBtnEvent(e: Event) {
-		return this.repo !== null && this.repo.pipelineConfigs !== null
-			? this.repo.pipelineConfigs[parseInt((<HTMLElement>(<Element>e.target).closest('.pipelineBtns')!).dataset.index!)]
+	private getCIDIForBtnEvent(e: Event) {
+		return this.repo !== null && this.repo.cidiConfigs !== null
+			? this.repo.cidiConfigs[parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!)]
 			: null;
 	}
 

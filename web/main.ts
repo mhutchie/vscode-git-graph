@@ -616,7 +616,7 @@ class GitGraphView {
 			remotes: this.gitRemotes,
 			hideRemotes: repoState.hideRemotes,
 			stashes: this.gitStashes,
-			pipelineConfigs: repoState.pipelineConfigs
+			cidiConfigs: repoState.cidiConfigs
 		});
 	}
 
@@ -821,7 +821,7 @@ class GitGraphView {
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
 			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
-			(colVisibility.pipeline ? '<th class="tableColHeader" data-col="5">Pipeline</th>' : '') +
+			(colVisibility.cidi ? '<th class="tableColHeader" data-col="5">CI/DI Status</th>' : '') +
 			'</tr>';
 
 		for (let i = 0; i < this.commits.length; i++) {
@@ -870,7 +870,7 @@ class GitGraphView {
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
-				(colVisibility.pipeline ? (commit.pipeline ? '<td class="text" title="' + escapeHtml(commit.pipeline.status) + '">' + '<a href="' + commit.pipeline.web_url + '">' + commit.pipeline.status + '</a></td>' : '<td class="text">*</td>') : '') +
+				(colVisibility.cidi ? (commit.cidi ? '<td class="text" title="' + escapeHtml(commit.cidi.status) + '">' + '<a href="' + commit.cidi.web_url + '">' + commit.cidi.status + '</a></td>' : '<td class="text">*</td>') : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -929,7 +929,7 @@ class GitGraphView {
 			(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 			(colVisibility.author ? '<td class="authorCol text" title="* <>">*</td>' : '') +
 			(colVisibility.commit ? '<td class="text" title="*">*</td>' : '') +
-			(colVisibility.pipeline ? '<td class="text" title="*">*</td>' : '');
+			(colVisibility.cidi ? '<td class="text" title="*">*</td>' : '');
 	}
 
 	private renderFetchButton() {
@@ -1658,7 +1658,7 @@ class GitGraphView {
 		let cWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (cWidths === null) { // Initialise auto column layout if it is the first time viewing the repo.
 			let defaults = this.config.defaultColumnVisibility;
-			columnWidths = [COLUMN_AUTO, COLUMN_AUTO, defaults.date ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.author ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.commit ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.pipeline ? COLUMN_AUTO : COLUMN_HIDDEN];
+			columnWidths = [COLUMN_AUTO, COLUMN_AUTO, defaults.date ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.author ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.commit ? COLUMN_AUTO : COLUMN_HIDDEN, defaults.cidi ? COLUMN_AUTO : COLUMN_HIDDEN];
 			this.saveColumnWidths(columnWidths);
 		} else {
 			columnWidths = [cWidths[0], COLUMN_AUTO, cWidths[1], cWidths[2], cWidths[3], cWidths[4]];
@@ -1778,7 +1778,7 @@ class GitGraphView {
 						onClick: () => toggleColumnState(4, 80)
 					},
 					{
-						title: 'Pepeline',
+						title: 'CI/DI Status',
 						visible: true,
 						checked: columnWidths[5] !== COLUMN_HIDDEN,
 						onClick: () => toggleColumnState(5, 80)
@@ -1811,16 +1811,16 @@ class GitGraphView {
 	public getColumnVisibility() {
 		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (colWidths !== null) {
-			return { date: colWidths[1] !== COLUMN_HIDDEN, author: colWidths[2] !== COLUMN_HIDDEN, commit: colWidths[3] !== COLUMN_HIDDEN, pipeline: colWidths[4] !== COLUMN_HIDDEN };
+			return { date: colWidths[1] !== COLUMN_HIDDEN, author: colWidths[2] !== COLUMN_HIDDEN, commit: colWidths[3] !== COLUMN_HIDDEN, cidi: colWidths[4] !== COLUMN_HIDDEN };
 		} else {
 			let defaults = this.config.defaultColumnVisibility;
-			return { date: defaults.date, author: defaults.author, commit: defaults.commit, pipeline: defaults.pipeline };
+			return { date: defaults.date, author: defaults.author, commit: defaults.commit, cidi: defaults.cidi };
 		}
 	}
 
 	private getNumColumns() {
 		let colVisibility = this.getColumnVisibility();
-		return 2 + (colVisibility.date ? 1 : 0) + (colVisibility.author ? 1 : 0) + (colVisibility.commit ? 1 : 0) + (colVisibility.pipeline ? 1 : 0);
+		return 2 + (colVisibility.date ? 1 : 0) + (colVisibility.author ? 1 : 0) + (colVisibility.commit ? 1 : 0) + (colVisibility.cidi ? 1 : 0);
 	}
 
 	/**

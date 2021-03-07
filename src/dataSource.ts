@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPipelinesData, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, PipelineConfig, PipelineProvider, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { CIDIConfig, CIDIProvider, CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCIDIData, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -159,15 +159,15 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns The commits in the repository.
 	 */
-	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>, pipelineConfigs: PipelineConfig[] | null): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>, cidiConfigs: CIDIConfig[] | null): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
 			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
 			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
-			this.getPipelines(pipelineConfigs).then((refData: GitPipelinesData[] | string | undefined) => refData, (errorMessage: string) => errorMessage)
+			this.getCIDIs(cidiConfigs).then((refData: GitCIDIData[] | string | undefined) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
 			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
-			let pipelines: GitPipelinesData[] | string | undefined = results[2];
+			let cidis: GitCIDIData[] | string | undefined = results[2];
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
 			if (moreCommitsAvailable) commits.pop();
 
@@ -200,7 +200,7 @@ export class DataSource extends Disposable {
 
 			for (i = 0; i < commits.length; i++) {
 				commitLookup[commits[i].hash] = i;
-				commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null, pipeline: null });
+				commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null, cidi: null });
 			}
 
 			/* Insert Stashes */
@@ -220,7 +220,7 @@ export class DataSource extends Disposable {
 			for (i = toAdd.length - 1; i >= 0; i--) {
 				let stash = toAdd[i].data;
 				commitNodes.splice(toAdd[i].index, 0, {
-					pipeline: null,
+					cidi: null,
 					hash: stash.hash,
 					parents: [stash.baseHash],
 					author: stash.author,
@@ -261,13 +261,13 @@ export class DataSource extends Disposable {
 				}
 			}
 
-			if (typeof pipelines === 'string' || typeof pipelines === 'undefined') {
-				pipelines = [];
+			if (typeof cidis === 'string' || typeof cidis === 'undefined') {
+				cidis = [];
 			}
-			/* Annotate Pipelines */
-			for (i = 0; i < pipelines.length; i++) {
-				if (typeof commitLookup[pipelines[i].sha] === 'number') {
-					commitNodes[commitLookup[pipelines[i].sha]].pipeline = pipelines[i];
+			/* Annotate CI/DIs */
+			for (i = 0; i < cidis.length; i++) {
+				if (typeof commitLookup[cidis[i].sha] === 'number') {
+					commitNodes[commitLookup[cidis[i].sha]].cidi = cidis[i];
 				}
 			}
 
@@ -1512,33 +1512,33 @@ export class DataSource extends Disposable {
 	}
 
 	/**
-	 * Get the result in a Pipelines.
-	 * @param pipelineConfigs pipeline configuration.
+	 * Get the result in a CI/DIs.
+	 * @param cidiConfigs CI/DI configuration.
 	 * @returns The references data.
 	 */
-	private async getPipelines(pipelineConfigs: PipelineConfig[] | null) {
-		if (pipelineConfigs === null) {
+	private async getCIDIs(cidiConfigs: CIDIConfig[] | null) {
+		if (cidiConfigs === null) {
 			return '';
 		}
 
 		return await Promise.all(
-			pipelineConfigs.map(async pipelineConfig => {
-				if (pipelineConfig.provider === PipelineProvider.GitHubV3) {
+			cidiConfigs.map(async cidiConfig => {
+				if (cidiConfig.provider === CIDIProvider.GitHubV3) {
 
-					const match1 = pipelineConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
+					const match1 = cidiConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
 					let hostRootUrl = match1 !== null ? 'https://api.' + match1[3] : '';
 
-					const match2 = pipelineConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
+					const match2 = cidiConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
 					let sourceOwner = match2 !== null ? match2[2] : '';
 					let sourceRepo = match2 !== null ? match2[3] : '';
 
 					const apiRoot = `${hostRootUrl}`;
-					const pipelinesRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
+					const cidiRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
 
 					const config: request.RequestPromiseOptions = {
 						method: 'GET',
 						headers: {
-							'Authorization': `token ${pipelineConfig.glToken}`,
+							'Authorization': `token ${cidiConfig.glToken}`,
 							'Accept': 'application/vnd.github.v3+json',
 							'User-Agent': 'vscode-git-graph'
 						}
@@ -1585,7 +1585,7 @@ export class DataSource extends Disposable {
 								});
 							}
 							if (typeof res['workflow_runs'] !== 'undefined' && res['workflow_runs'].length >= 1) { // url found
-								let ret: GitPipelinesData[] = res['workflow_runs'].map( (elm: { [x: string]: any; }) => {
+								let ret: GitCIDIData[] = res['workflow_runs'].map( (elm: { [x: string]: any; }) => {
 									return {
 										id: elm['id'],
 										status: elm['conclusion'],
@@ -1606,37 +1606,37 @@ export class DataSource extends Disposable {
 							return { x_total_pages: 0, ret: e };
 						}
 					};
-					return request(`${apiRoot}${pipelinesRootPath}`, config).then(async (result1st) => {
+					return request(`${apiRoot}${cidiRootPath}`, config).then(async (result1st) => {
 						let promises = [];
 						promises.push(result1st.ret);
 						for (let i = 1; i < result1st.x_total_pages; i++) {
-							promises.push(request(`${apiRoot}${pipelinesRootPath}&page=${i + 1}`, config));
+							promises.push(request(`${apiRoot}${cidiRootPath}&page=${i + 1}`, config));
 						}
 						return await Promise.all(promises);
 					}).then((resultAll) => {
-						let retAll: GitPipelinesData[] = [];
+						let retAll: GitCIDIData[] = [];
 						for (let i = 0; i < resultAll.length; i++) {
 							retAll = retAll.concat(resultAll[i]);
 						}
 						return retAll;
 					});
 				}
-				if (pipelineConfig.provider === PipelineProvider.GitLabV4) {
+				if (cidiConfig.provider === CIDIProvider.GitLabV4) {
 
-					const match1 = pipelineConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
+					const match1 = cidiConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
 					let hostRootUrl = match1 !== null ? 'https://' + match1[3] : '';
 
-					const match2 = pipelineConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
+					const match2 = cidiConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
 					let sourceOwner = match2 !== null ? match2[2] : '';
 					let sourceRepo = match2 !== null ? match2[3] : '';
 
 					const apiRoot = `${hostRootUrl}/api/v4`;
-					const pipelinesRootPath = `/projects/${sourceOwner}%2F${sourceRepo.replace(/\//g, '%2F')}/pipelines?per_page=100`;
+					const cidiRootPath = `/projects/${sourceOwner}%2F${sourceRepo.replace(/\//g, '%2F')}/pipelines?per_page=100`;
 
 					const config: request.RequestPromiseOptions = {
 						method: 'GET',
 						headers: {
-							'PRIVATE-TOKEN': pipelineConfig.glToken,
+							'PRIVATE-TOKEN': cidiConfig.glToken,
 							'User-Agent': 'vscode-git-graph'
 						}
 					};
@@ -1646,7 +1646,7 @@ export class DataSource extends Disposable {
 							if (typeof response.headers['x-page'] === 'string' && typeof response.headers['x-total-pages'] === 'string' && typeof response.headers['x-total'] === 'string') {
 								let res: any = JSON.parse(body);
 								if (parseInt(response.headers['x-total']) !== 0 && res.length && res[0].id) { // url found
-									let ret: GitPipelinesData[] = res;
+									let ret: GitCIDIData[] = res;
 									if (parseInt(response.headers['x-page']) === 1) {
 										return { x_total_pages: parseInt(response.headers['x-total-pages']), ret: ret };
 									}
@@ -1658,15 +1658,15 @@ export class DataSource extends Disposable {
 							return { x_total_pages: 0, ret: e };
 						}
 					};
-					return request(`${apiRoot}${pipelinesRootPath}`, config).then(async (result1st) => {
+					return request(`${apiRoot}${cidiRootPath}`, config).then(async (result1st) => {
 						let promises = [];
 						promises.push(result1st.ret);
 						for (let i = 1; i < result1st.x_total_pages; i++) {
-							promises.push(request(`${apiRoot}${pipelinesRootPath}&page=${i + 1}`, config));
+							promises.push(request(`${apiRoot}${cidiRootPath}&page=${i + 1}`, config));
 						}
 						return await Promise.all(promises);
 					}).then((resultAll) => {
-						let retAll: GitPipelinesData[] = [];
+						let retAll: GitCIDIData[] = [];
 						for (let i = 0; i < resultAll.length; i++) {
 							retAll = retAll.concat(resultAll[i]);
 						}
@@ -1675,7 +1675,7 @@ export class DataSource extends Disposable {
 				}
 			})
 		).then((resultAll2) => {
-			let retAll: GitPipelinesData[] = [];
+			let retAll: GitCIDIData[] = [];
 			resultAll2.forEach(resultList => {
 				resultList?.forEach(result => {
 					retAll = retAll.concat(result);

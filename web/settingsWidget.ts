@@ -246,7 +246,7 @@ class SettingsWidget {
 					cidiConfigs.forEach((cidiConfig, i) => {
 						let providerOptions:any = {};
 						providerOptions[(GG.CIDIProvider.GitHubV3).toString()] = 'GitHub';
-						providerOptions[(GG.CIDIProvider.GitLabV4).toString()] = 'GitLab V4(8.11-)';
+						providerOptions[(GG.CIDIProvider.GitLabV4).toString()] = 'GitLab APIv4(ver8.11-)';
 						const gitUrl = escapeHtml(cidiConfig.gitUrl || 'Not Set');
 						html += '<tr class="lineAbove">' +
 							'<td class="left">' + escapeHtml(providerOptions[cidiConfig.provider]) + '</td>' +
@@ -495,8 +495,8 @@ class SettingsWidget {
 					let defaultProvider = GG.CIDIProvider.GitHubV3.toString();
 					let providerOptions = [
 						// { name: 'Bitbucket', value: (GG.CIDIProvider.Bitbucket).toString() },
-						{ name: 'GitHubV3', value: (GG.CIDIProvider.GitHubV3).toString() },
-						{ name: 'GitLabV4', value: (GG.CIDIProvider.GitLabV4).toString() }
+						{ name: 'GitHub', value: (GG.CIDIProvider.GitHubV3).toString() },
+						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CIDIProvider.GitLabV4).toString() }
 					];
 					dialog.showForm('Add a new cidi to this repository:', [
 						{
@@ -505,7 +505,7 @@ class SettingsWidget {
 							info: 'In addition to the built-in publicly hosted CI/DI providers.'
 						},
 						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The CI/DI provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
-						{ type: DialogInputType.PasswordRef, name: 'Access Token', default: '', info: 'The GitLab personal access token or project access token.' }
+						{ type: DialogInputType.Password, name: 'Access Token', default: '', info: 'The GitHub/GitLab personal access token or project access token.' }
 					], 'Add CI/DI', (values) => {
 						let configs: GG.CIDIConfig[] = copyConfigs();
 						let config: GG.CIDIConfig = updateConfigWithFormValues(values);
@@ -520,7 +520,7 @@ class SettingsWidget {
 					let providerOptions = [
 						// { name: 'Bitbucket', value: (GG.CIDIProvider.Bitbucket).toString() },
 						{ name: 'GitHub', value: (GG.CIDIProvider.GitHubV3).toString() },
-						{ name: 'GitLab V4(8.11-)', value: (GG.CIDIProvider.GitLabV4).toString() }
+						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CIDIProvider.GitLabV4).toString() }
 					];
 					dialog.showForm('Edit the CI/DI <b><i>' + escapeHtml(cidiConfig.gitUrl || 'Not Set') + '</i></b>:', [
 						{
@@ -529,7 +529,7 @@ class SettingsWidget {
 							info: 'In addition to the built-in publicly hosted CI/DI providers.'
 						},
 						{ type: DialogInputType.Text, name: 'Git URL', default: cidiConfig.gitUrl || '', placeholder: null, info: 'The CI/DI provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
-						{ type: DialogInputType.PasswordRef, name: 'Personal Access Token', default: cidiConfig.glToken, info: 'The GitLab personal access token.' }
+						{ type: DialogInputType.Password, name: 'Access Token', default: cidiConfig.glToken, info: 'The GitHub/GitLab personal access token or project access token.' }
 					], 'Save Changes', (values) => {
 						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!);
 						let configs: GG.CIDIConfig[] = copyConfigs();

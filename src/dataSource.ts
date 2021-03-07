@@ -1535,7 +1535,7 @@ export class DataSource extends Disposable {
 					const apiRoot = `${hostRootUrl}`;
 					const cidiRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
 
-					const config: request.RequestPromiseOptions = {
+					let config: request.RequestPromiseOptions = {
 						method: 'GET',
 						headers: {
 							'Authorization': `token ${cidiConfig.glToken}`,
@@ -1543,6 +1543,9 @@ export class DataSource extends Disposable {
 							'User-Agent': 'vscode-git-graph'
 						}
 					};
+					if (cidiConfig.glToken === '' && config.headers) {
+						delete config.headers['Authorization'];
+					}
 
 					config.transform = (body, response) => {
 						try {

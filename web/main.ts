@@ -2714,7 +2714,7 @@ class GitGraphView {
 		});
 	}
 
-	private cdvFileViewed(filePath: string, fileElem: HTMLElement) {
+	private cdvFileViewed(filePath: string, fileElem: HTMLElement, markAsCodeReviewed: boolean) {
 		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
 		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
 
@@ -2727,7 +2727,7 @@ class GitGraphView {
 		lastViewedElem.innerHTML = SVG_ICONS.eyeOpen;
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 
-		if (expandedCommit.codeReview !== null) {
+		if (expandedCommit.codeReview !== null && markAsCodeReviewed) {
 			let i = expandedCommit.codeReview.remainingFiles.indexOf(filePath);
 			if (i > -1) {
 				sendMessage({ command: 'codeReviewFileReviewed', repo: this.currentRepo, id: expandedCommit.codeReview.id, filePath: filePath });
@@ -2785,6 +2785,17 @@ class GitGraphView {
 		const getFileElemOfEventTarget = (target: EventTarget) => <HTMLElement>(<Element>target).closest('.fileTreeFileRecord');
 		const getFileOfFileElem = (fileChanges: ReadonlyArray<GG.GitFileChange>, fileElem: HTMLElement) => fileChanges[parseInt(fileElem.dataset.index!)];
 
+		const getCommitHashForFile = (file: GG.GitFileChange, expandedCommit: ExpandedCommit) => {
+			const commit = this.commits[this.commitLookup[expandedCommit.commitHash]];
+			if (expandedCommit.compareWithHash !== null) {
+				return this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash).to;
+			} else if (commit.stash !== null && file.type === GG.GitFileStatus.Untracked) {
+				return commit.stash.untrackedFilesHash!;
+			} else {
+				return expandedCommit.commitHash;
+			}
+		};
+
 		const triggerViewFileDiff = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
@@ -2811,7 +2822,7 @@ class GitGraphView {
 				toHash = expandedCommit.commitHash;
 			}
 
-			this.cdvFileViewed(file.newFilePath, fileElem);
+			this.cdvFileViewed(file.newFilePath, fileElem, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2831,21 +2842,20 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			let commit = this.commits[this.commitLookup[expandedCommit.commitHash]], hash: string;
-			if (expandedCommit.compareWithHash !== null) {
-				hash = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash).to;
-			} else if (commit.stash !== null && file.type === GG.GitFileStatus.Untracked) {
-				hash = commit.stash.untrackedFilesHash!;
-			} else {
-				hash = expandedCommit.commitHash;
-			}
+			this.cdvFileViewed(file.newFilePath, fileElem, true);
+			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
+		};
 
-			this.cdvFileViewed(file.newFilePath, fileElem);
-			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: hash, filePath: file.newFilePath });
+		const triggerViewFileDiffWithWorkingFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
+			const expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
+			this.cdvFileViewed(file.newFilePath, fileElem, false);
+			sendMessage({ command: 'viewDiffWithWorkingFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
-			this.cdvFileViewed(file.newFilePath, fileElem);
+			this.cdvFileViewed(file.newFilePath, fileElem, true);
 			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: file.newFilePath });
 		};
 
@@ -2922,6 +2932,7 @@ class GitGraphView {
 				elem: fileElem
 			};
 			const diffPossible = file.type === GG.GitFileStatus.Untracked || (file.additions !== null && file.deletions !== null);
+			const fileExistsAtThisRevisionAndDiffPossible = file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted;
 
 			contextMenu.show([
 				[
@@ -2932,8 +2943,13 @@ class GitGraphView {
 					},
 					{
 						title: 'View File at this Revision',
-						visible: file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted,
+						visible: fileExistsAtThisRevisionAndDiffPossible,
 						onClick: () => triggerViewFileAtRevision(file, fileElem)
+					},
+					{
+						title: 'View Diff with Working File',
+						visible: fileExistsAtThisRevisionAndDiffPossible,
+						onClick: () => triggerViewFileDiffWithWorkingFile(file, fileElem)
 					},
 					{
 						title: 'Open File',
@@ -3240,7 +3256,10 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'viewDiff':
-				finishOrDisplayError(msg.error, 'Unable to View Diff of File');
+				finishOrDisplayError(msg.error, 'Unable to View Diff');
+				break;
+			case 'viewDiffWithWorkingFile':
+				finishOrDisplayError(msg.error, 'Unable to View Diff with Working File');
 				break;
 			case 'viewFileAtRevision':
 				finishOrDisplayError(msg.error, 'Unable to View File at Revision');

@@ -24,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 const extensionContext = vscode.mocks.extensionContext;
@@ -1232,7 +1232,7 @@ describe('viewDiff', () => {
 		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
-		expect(result).toBe('Visual Studio Code was unable load the diff editor for subfolder/modified.txt.');
+		expect(result).toBe('Visual Studio Code was unable to load the diff editor for subfolder/modified.txt.');
 	});
 
 	it('Should open an untracked file in vscode', async () => {
@@ -1252,6 +1252,62 @@ describe('viewDiff', () => {
 			viewColumn: vscode.ViewColumn.Active
 		});
 		expect(result).toBe(null);
+	});
+});
+
+describe('viewDiffWithWorkingFile', () => {
+	it('Should load the vscode diff view (modified file)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt');
+
+		// Assert
+		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.diff');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/modified.txt');
+		expect(title).toBe('modified.txt (1a2b3c4d ↔ Present)');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+	});
+
+	it('Should load the vscode diff view (deleted file)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/deleted.txt');
+
+		// Assert
+		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.diff');
+		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
+		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(title).toBe('deleted.txt (Deleted between 1a2b3c4d & Present)');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+	});
+
+	it('Should return an error message when vscode was unable to load the diff view', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockRejectedValueOnce(null);
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt');
+
+		// Assert
+		expect(result).toBe('Visual Studio Code was unable to load the diff editor for subfolder/modified.txt.');
 	});
 });
 

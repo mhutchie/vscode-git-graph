@@ -381,11 +381,27 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 			viewColumn: getConfig().openNewTabEditorGroup
 		}).then(
 			() => null,
-			() => 'Visual Studio Code was unable load the diff editor for ' + newFilePath + '.'
+			() => 'Visual Studio Code was unable to load the diff editor for ' + newFilePath + '.'
 		);
 	} else {
 		return openFile(repo, newFilePath);
 	}
+}
+
+/**
+ * Open the Visual Studio Code Diff View to display the changes of a file between a commit hash and the working tree.
+ * @param repo The repository the file is contained in.
+ * @param hash The revision of the left-side of the Diff View.
+ * @param filePath The relative path of the file within the repository.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
+ */
+export function viewDiffWithWorkingFile(repo: string, hash: string, filePath: string) {
+	return new Promise<ErrorInfo>((resolve) => {
+		const p = path.join(repo, filePath);
+		fs.access(p, fs.constants.R_OK, (err) => {
+			resolve(viewDiff(repo, hash, UNCOMMITTED, filePath, filePath, err === null ? GitFileStatus.Modified : GitFileStatus.Deleted));
+		});
+	});
 }
 
 /**

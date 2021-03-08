@@ -514,7 +514,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -531,7 +531,7 @@ describe('DataSource', () => {
 							{ name: 'other-remote/master', remote: null }
 						],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -544,7 +544,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -557,7 +557,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -614,7 +614,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -627,7 +627,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -640,7 +640,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -653,7 +653,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -704,7 +704,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -717,7 +717,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -730,7 +730,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -781,7 +781,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -794,7 +794,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -807,7 +807,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e',
@@ -858,7 +858,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -871,7 +871,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -884,7 +884,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -939,7 +939,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -952,7 +952,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -965,7 +965,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -978,7 +978,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1034,7 +1034,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1047,7 +1047,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1060,7 +1060,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1073,7 +1073,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1129,7 +1129,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1142,7 +1142,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1155,7 +1155,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1168,7 +1168,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1223,7 +1223,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1236,7 +1236,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1249,7 +1249,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1262,7 +1262,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1319,7 +1319,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1332,7 +1332,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1345,7 +1345,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1358,7 +1358,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1415,7 +1415,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1428,7 +1428,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1441,7 +1441,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1454,7 +1454,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1514,7 +1514,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1530,7 +1530,7 @@ describe('DataSource', () => {
 							{ name: 'other-remote/master', remote: null }
 						],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1543,7 +1543,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1556,7 +1556,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1614,7 +1614,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1627,7 +1627,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1640,7 +1640,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1653,7 +1653,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1720,7 +1720,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1737,7 +1737,7 @@ describe('DataSource', () => {
 							selector: 'refs/stash@{0}',
 							untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f'
 						},
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1750,7 +1750,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1763,7 +1763,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1838,7 +1838,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
@@ -1855,7 +1855,7 @@ describe('DataSource', () => {
 							selector: 'refs/stash@{0}',
 							untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f'
 						},
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1868,7 +1868,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
@@ -1885,7 +1885,7 @@ describe('DataSource', () => {
 							selector: 'refs/stash@{1}',
 							untrackedFilesHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a'
 						},
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -1898,7 +1898,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -1911,7 +1911,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -1986,7 +1986,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
@@ -2003,7 +2003,7 @@ describe('DataSource', () => {
 							selector: 'refs/stash@{0}',
 							untrackedFilesHash: '5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f'
 						},
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
@@ -2020,7 +2020,7 @@ describe('DataSource', () => {
 							selector: 'refs/stash@{1}',
 							untrackedFilesHash: '6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a'
 						},
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2033,7 +2033,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -2046,7 +2046,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -2059,7 +2059,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2124,7 +2124,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2137,7 +2137,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -2150,7 +2150,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -2163,7 +2163,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2216,7 +2216,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -2229,7 +2229,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -2242,7 +2242,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2323,7 +2323,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2336,7 +2336,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [{ name: 'origin/master', remote: 'origin' }, { name: 'other-remote/master', remote: null }],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -2349,7 +2349,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -2362,7 +2362,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2474,7 +2474,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
@@ -2491,7 +2491,7 @@ describe('DataSource', () => {
 							{ name: 'other-remote/master', remote: null }
 						],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c',
@@ -2504,7 +2504,7 @@ describe('DataSource', () => {
 						tags: [{ name: 'tag1', annotated: true }],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					},
 					{
 						hash: '3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
@@ -2517,7 +2517,7 @@ describe('DataSource', () => {
 						tags: [],
 						remotes: [],
 						stash: null,
-						cidi: null
+						cicd: null
 					}
 				],
 				head: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',

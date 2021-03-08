@@ -160,10 +160,10 @@ class Config {
 	 */
 	get defaultColumnVisibility(): DefaultColumnVisibility {
 		let obj: any = this.config.get('defaultColumnVisibility', {});
-		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean' && typeof obj['CIDI'] === 'boolean') {
-			return { author: obj['Author'], commit: obj['Commit'], date: obj['Date'], cidi: obj['CIDI']};
+		if (typeof obj === 'object' && obj !== null && typeof obj['Date'] === 'boolean' && typeof obj['Author'] === 'boolean' && typeof obj['Commit'] === 'boolean' && typeof obj['CICD'] === 'boolean') {
+			return { author: obj['Author'], commit: obj['Commit'], date: obj['Date'], cicd: obj['CICD']};
 		} else {
-			return { author: true, commit: true, date: true, cidi: true };
+			return { author: true, commit: true, date: true, cicd: true };
 		}
 	}
 

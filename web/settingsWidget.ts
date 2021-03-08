@@ -240,24 +240,24 @@ class SettingsWidget {
 			}
 
 			if (this.config !== null) {
-				html += '<div class="settingsSection"><h3>CI/DI Status Configuration</h3><table><tr><th>Provider</th><th>URL</th><th>Action</th></tr>';
-				const cidiConfigs = this.repo.cidiConfigs;
-				if (cidiConfigs !== null && cidiConfigs.length !== 0) {
-					cidiConfigs.forEach((cidiConfig, i) => {
+				html += '<div class="settingsSection"><h3>CI/CD Status Configuration</h3><table><tr><th>Provider</th><th>URL</th><th>Action</th></tr>';
+				const cicdConfigs = this.repo.cicdConfigs;
+				if (cicdConfigs !== null && cicdConfigs.length !== 0) {
+					cicdConfigs.forEach((cicdConfig, i) => {
 						let providerOptions:any = {};
-						providerOptions[(GG.CIDIProvider.GitHubV3).toString()] = 'GitHub';
-						providerOptions[(GG.CIDIProvider.GitLabV4).toString()] = 'GitLab APIv4(ver8.11-)';
-						const gitUrl = escapeHtml(cidiConfig.gitUrl || 'Not Set');
+						providerOptions[(GG.CICDProvider.GitHubV3).toString()] = 'GitHub';
+						providerOptions[(GG.CICDProvider.GitLabV4).toString()] = 'GitLab APIv4(ver8.11-)';
+						const gitUrl = escapeHtml(cicdConfig.gitUrl || 'Not Set');
 						html += '<tr class="lineAbove">' +
-							'<td class="left">' + escapeHtml(providerOptions[cidiConfig.provider]) + '</td>' +
+							'<td class="left">' + escapeHtml(providerOptions[cicdConfig.provider]) + '</td>' +
 							'<td class="leftWithEllipsis" title="URL: ' + gitUrl + '">' + gitUrl + '</td>' +
-							'<td class="btns cidiBtns" data-index="' + i + '"><div class="editCIDI" title="Edit CI/DI' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteCIDI" title="Delete CI/DI' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+							'<td class="btns cicdBtns" data-index="' + i + '"><div class="editCICD" title="Edit CI/CD' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteCICD" title="Delete CI/CD' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
 							'</tr>';
 					});
 				} else {
-					html += '<tr class="lineAbove"><td colspan="4">There are no CI/DI configured for this repository.</td></tr>';
+					html += '<tr class="lineAbove"><td colspan="4">There are no CI/CD configured for this repository.</td></tr>';
 				}
-				html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddCIDI" class="addBtn">' + SVG_ICONS.plus + 'Add CI/DI</div></div></div>';
+				html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddCICD" class="addBtn">' + SVG_ICONS.plus + 'Add CI/CD</div></div></div>';
 			}
 
 			html += '<div class="settingsSection"><h3>Git Graph Configuration</h3><div class="settingsSectionButtons">' +
@@ -473,8 +473,8 @@ class SettingsWidget {
 				});
 				
 				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
-					let config: GG.CIDIConfig = {
-						provider: <GG.CIDIProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],
+					let config: GG.CICDConfig = {
+						provider: <GG.CICDProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],
 						glToken: <string>values[2],
 						custom: null
 					};
@@ -482,71 +482,71 @@ class SettingsWidget {
 				};
 				const copyConfigs = () => {
 					if (this.repo === null) return [];
-					let configs: GG.CIDIConfig[];
-					if (this.repo.cidiConfigs === null) {
+					let configs: GG.CICDConfig[];
+					if (this.repo.cicdConfigs === null) {
 						configs = [];
 					} else {
-						configs = Object.assign([], this.repo.cidiConfigs);
+						configs = Object.assign([], this.repo.cicdConfigs);
 					}
 					return configs;
 				};
 
-				document.getElementById('settingsAddCIDI')!.addEventListener('click', () => {
-					let defaultProvider = GG.CIDIProvider.GitHubV3.toString();
+				document.getElementById('settingsAddCICD')!.addEventListener('click', () => {
+					let defaultProvider = GG.CICDProvider.GitHubV3.toString();
 					let providerOptions = [
-						// { name: 'Bitbucket', value: (GG.CIDIProvider.Bitbucket).toString() },
-						{ name: 'GitHub', value: (GG.CIDIProvider.GitHubV3).toString() },
-						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CIDIProvider.GitLabV4).toString() }
+						// { name: 'Bitbucket', value: (GG.CICDProvider.Bitbucket).toString() },
+						{ name: 'GitHub', value: (GG.CICDProvider.GitHubV3).toString() },
+						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() }
 					];
-					dialog.showForm('Add a new cidi to this repository:', [
+					dialog.showForm('Add a new cicd to this repository:', [
 						{
 							type: DialogInputType.Select, name: 'Provider',
 							options: providerOptions, default: defaultProvider,
-							info: 'In addition to the built-in publicly hosted CI/DI providers.'
+							info: 'In addition to the built-in publicly hosted CI/CD providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The CI/DI provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
+						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
 						{ type: DialogInputType.Password, name: 'Access Token', default: '', info: 'The GitHub/GitLab personal access token or project access token.' }
-					], 'Add CI/DI', (values) => {
-						let configs: GG.CIDIConfig[] = copyConfigs();
-						let config: GG.CIDIConfig = updateConfigWithFormValues(values);
+					], 'Add CI/CD', (values) => {
+						let configs: GG.CICDConfig[] = copyConfigs();
+						let config: GG.CICDConfig = updateConfigWithFormValues(values);
 						configs.push(config);
-						this.setCIDIConfig(configs);
+						this.setCICDConfig(configs);
 					}, { type: TargetType.Repo });
 				});
 
-				addListenerToClass('editCIDI', 'click', (e) => {
-					const cidiConfig = this.getCIDIForBtnEvent(e);
-					if (cidiConfig === null) return;
+				addListenerToClass('editCICD', 'click', (e) => {
+					const cicdConfig = this.getCICDForBtnEvent(e);
+					if (cicdConfig === null) return;
 					let providerOptions = [
-						// { name: 'Bitbucket', value: (GG.CIDIProvider.Bitbucket).toString() },
-						{ name: 'GitHub', value: (GG.CIDIProvider.GitHubV3).toString() },
-						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CIDIProvider.GitLabV4).toString() }
+						// { name: 'Bitbucket', value: (GG.CICDProvider.Bitbucket).toString() },
+						{ name: 'GitHub', value: (GG.CICDProvider.GitHubV3).toString() },
+						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() }
 					];
-					dialog.showForm('Edit the CI/DI <b><i>' + escapeHtml(cidiConfig.gitUrl || 'Not Set') + '</i></b>:', [
+					dialog.showForm('Edit the CI/CD <b><i>' + escapeHtml(cicdConfig.gitUrl || 'Not Set') + '</i></b>:', [
 						{
 							type: DialogInputType.Select, name: 'Provider',
-							options: providerOptions, default: cidiConfig.provider.toString(),
-							info: 'In addition to the built-in publicly hosted CI/DI providers.'
+							options: providerOptions, default: cicdConfig.provider.toString(),
+							info: 'In addition to the built-in publicly hosted CI/CD providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git URL', default: cidiConfig.gitUrl || '', placeholder: null, info: 'The CI/DI provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
-						{ type: DialogInputType.Password, name: 'Access Token', default: cidiConfig.glToken, info: 'The GitHub/GitLab personal access token or project access token.' }
+						{ type: DialogInputType.Text, name: 'Git URL', default: cicdConfig.gitUrl || '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
+						{ type: DialogInputType.Password, name: 'Access Token', default: cicdConfig.glToken, info: 'The GitHub/GitLab personal access token or project access token.' }
 					], 'Save Changes', (values) => {
-						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!);
-						let configs: GG.CIDIConfig[] = copyConfigs();
-						let config: GG.CIDIConfig = updateConfigWithFormValues(values);
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
+						let configs: GG.CICDConfig[] = copyConfigs();
+						let config: GG.CICDConfig = updateConfigWithFormValues(values);
 						configs[index] = config;
-						this.setCIDIConfig(configs);
+						this.setCICDConfig(configs);
 					}, { type: TargetType.Repo });
 				});
 
-				addListenerToClass('deleteCIDI', 'click', (e) => {
-					const cidiConfig = this.getCIDIForBtnEvent(e);
-					if (cidiConfig === null) return;
-					dialog.showConfirmation('Are you sure you want to delete the CI/DI <b><i>' + escapeHtml(cidiConfig.gitUrl) + '</i></b>?', 'Yes, delete', () => {
-						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!);
-						let configs: GG.CIDIConfig[] = copyConfigs();
+				addListenerToClass('deleteCICD', 'click', (e) => {
+					const cicdConfig = this.getCICDForBtnEvent(e);
+					if (cicdConfig === null) return;
+					dialog.showConfirmation('Are you sure you want to delete the CI/CD <b><i>' + escapeHtml(cicdConfig.gitUrl) + '</i></b>?', 'Yes, delete', () => {
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
+						let configs: GG.CICDConfig[] = copyConfigs();
 						configs.splice(index, 1);
-						this.setCIDIConfig(configs);
+						this.setCICDConfig(configs);
 					}, { type: TargetType.Repo });
 				});
 
@@ -674,9 +674,9 @@ class SettingsWidget {
 	 * Save the pull request configuration for this repository.
 	 * @param config The pull request configuration to save.
 	 */
-	private setCIDIConfig(config: GG.CIDIConfig[] | null) {
+	private setCICDConfig(config: GG.CICDConfig[] | null) {
 		if (this.currentRepo === null) return;
-		this.view.saveRepoStateValue(this.currentRepo, 'cidiConfigs', config);
+		this.view.saveRepoStateValue(this.currentRepo, 'cicdConfigs', config);
 		this.render();
 	}
 
@@ -911,13 +911,13 @@ class SettingsWidget {
 	}
 
 	/**
-	 * Get the cidi details corresponding to a mouse event.
+	 * Get the cicd details corresponding to a mouse event.
 	 * @param e The mouse event.
-	 * @returns The details of the cidi.
+	 * @returns The details of the cicd.
 	 */
-	private getCIDIForBtnEvent(e: Event) {
-		return this.repo !== null && this.repo.cidiConfigs !== null
-			? this.repo.cidiConfigs[parseInt((<HTMLElement>(<Element>e.target).closest('.cidiBtns')!).dataset.index!)]
+	private getCICDForBtnEvent(e: Event) {
+		return this.repo !== null && this.repo.cicdConfigs !== null
+			? this.repo.cicdConfigs[parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!)]
 			: null;
 	}
 

@@ -32,7 +32,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
 	onRepoLoadShowSpecificBranches: null,
 	pullRequestConfig: null,
-	cidiConfigs: null,
+	cicdConfigs: null,
 	showRemoteBranches: true,
 	showRemoteBranchesV2: BooleanOverride.Default,
 	showStashes: BooleanOverride.Default,

@@ -11,10 +11,10 @@ export interface GitCommit {
 	readonly tags: ReadonlyArray<GitCommitTag>;
 	readonly remotes: ReadonlyArray<GitCommitRemote>;
 	readonly stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
-	readonly cidi: GitCIDIData | null;
+	readonly cicd: GitCICDData | null;
 }
 
-export interface GitCIDIData {
+export interface GitCICDData {
 	id: string;
 	status: string;
 	ref: string;
@@ -201,12 +201,12 @@ export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCust
 
 
 
-export interface CIDIConfigBase {
+export interface CICDConfigBase {
 	readonly gitUrl: string;
 	readonly glToken: string;
 }
 
-export const enum CIDIProvider {
+export const enum CICDProvider {
 	Bitbucket,
 	Custom,
 	GitHubV3,
@@ -214,20 +214,20 @@ export const enum CIDIProvider {
 	Jenkins
 }
 
-interface CIDIConfigBuiltIn extends CIDIConfigBase {
-	readonly provider: CIDIProvider;
+interface CICDConfigBuiltIn extends CICDConfigBase {
+	readonly provider: CICDProvider;
 	readonly custom: null;
 }
 
-interface CIDIConfigCustom extends CIDIConfigBase {
-	readonly provider: CIDIProvider.Custom;
+interface CICDConfigCustom extends CICDConfigBase {
+	readonly provider: CICDProvider.Custom;
 	readonly custom: {
 		readonly name: string,
 		readonly templateUrl: string
 	};
 }
 
-export type CIDIConfig = CIDIConfigBuiltIn | CIDIConfigCustom;
+export type CICDConfig = CICDConfigBuiltIn | CICDConfigCustom;
 
 export interface GitRepoState {
 	cdvDivider: number;
@@ -244,7 +244,7 @@ export interface GitRepoState {
 	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
-	cidiConfigs: CIDIConfig[] | null;
+	cicdConfigs: CICDConfig[] | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
@@ -469,7 +469,7 @@ export interface DefaultColumnVisibility {
 	readonly date: boolean;
 	readonly author: boolean;
 	readonly commit: boolean;
-	readonly cidi: boolean;
+	readonly cicd: boolean;
 }
 
 export interface DialogDefaults {
@@ -927,7 +927,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly remotes: ReadonlyArray<string>;
 	readonly hideRemotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
-	readonly cidiConfigs: CIDIConfig[] | null;
+	readonly cicdConfigs: CICDConfig[] | null;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';

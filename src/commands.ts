@@ -3,11 +3,12 @@ import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
+import { DiffDocProvider, decodeDiffDocUri } from './diffDocProvider';
 import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, copyToClipboard, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -44,6 +45,7 @@ export class CommandManager extends Disposable {
 		this.repoManager = repoManager;
 		this.gitExecutable = gitExecutable;
 
+		// Register Extension Commands
 		this.registerCommand('git-graph.view', (arg) => this.view(arg));
 		this.registerCommand('git-graph.addGitRepository', () => this.addGitRepository());
 		this.registerCommand('git-graph.removeGitRepository', () => this.removeGitRepository());
@@ -53,12 +55,20 @@ export class CommandManager extends Disposable {
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
 		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
 		this.registerCommand('git-graph.version', () => this.version());
+		this.registerCommand('git-graph.openFile', (arg) => this.openFile(arg));
 
 		this.registerDisposable(
 			onDidChangeGitExecutable((gitExecutable) => {
 				this.gitExecutable = gitExecutable;
 			})
 		);
+
+		// Register Extension Contexts
+		try {
+			this.registerContext('git-graph:codiconsSupported', doesVersionMeetRequirement(vscode.version, '1.42.0'));
+		} catch (_) {
+			this.logger.logError('Unable to set Visual Studio Code Context "git-graph:codiconsSupported"');
+		}
 	}
 
 	/**
@@ -69,6 +79,18 @@ export class CommandManager extends Disposable {
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
 		this.registerDisposable(
 			vscode.commands.registerCommand(command, callback)
+		);
+	}
+
+	/**
+	 * Register a context with Visual Studio Code.
+	 * @param key The Context Key.
+	 * @param value The Context Value.
+	 */
+	private registerContext(key: string, value: any) {
+		return vscode.commands.executeCommand('setContext', key, value).then(
+			() => this.logger.log('Successfully set Visual Studio Code Context "' + key + '" to "' + JSON.stringify(value) + '"'),
+			() => this.logger.logError('Failed to set Visual Studio Code Context "' + key + '" to "' + JSON.stringify(value) + '"')
 		);
 	}
 
@@ -289,6 +311,26 @@ export class CommandManager extends Disposable {
 			}, () => { });
 		} catch (_) {
 			showErrorMessage('An unexpected error occurred while retrieving version information.');
+		}
+	}
+
+	/**
+	 * Opens a file in Visual Studio Code, based on a Git Graph URI (from the Diff View).
+	 * The method run when the `git-graph.openFile` command is invoked.
+	 * @param arg The Git Graph URI. 
+	 */
+	private openFile(arg?: vscode.Uri) {
+		const uri = arg || vscode.window.activeTextEditor?.document.uri;
+		if (typeof uri === 'object' && uri.scheme === DiffDocProvider.scheme) {
+			// A Git Graph URI has been provided
+			const request = decodeDiffDocUri(uri);
+			return openFile(request.repo, request.filePath, vscode.ViewColumn.Active).then((errorInfo) => {
+				if (errorInfo !== null) {
+					return showErrorMessage('Unable to Open File: ' + errorInfo);
+				}
+			});
+		} else {
+			return showErrorMessage('Unable to Open File: The command was not called with the required arguments.');
 		}
 	}
 

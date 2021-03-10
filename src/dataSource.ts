@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { CICDConfig, CICDProvider, CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCICDData, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 import * as request from 'request-promise';
@@ -89,7 +89,7 @@ export class DataSource extends Disposable {
 	 */
 	public setGitExecutable(gitExecutable: GitExecutable | null) {
 		this.gitExecutable = gitExecutable;
-		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? isGitAtLeastVersion(gitExecutable, '2.4.0') : false;
+		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? doesVersionMeetRequirement(gitExecutable.version, '2.4.0') : false;
 		this.generateGitCommandFormats();
 	}
 
@@ -733,7 +733,7 @@ export class DataSource extends Disposable {
 		if (pruneTags) {
 			if (!prune) {
 				return Promise.resolve('In order to Prune Tags, pruning must also be enabled when fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
-			} else if (this.gitExecutable !== null && !isGitAtLeastVersion(this.gitExecutable, '2.17.0')) {
+			} else if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, '2.17.0')) {
 				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
 			}
 			args.push('--prune-tags');
@@ -1211,8 +1211,7 @@ export class DataSource extends Disposable {
 	public pushStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
-		}
-		if (!isGitAtLeastVersion(this.gitExecutable, '2.13.2')) {
+		} else if (!doesVersionMeetRequirement(this.gitExecutable.version, '2.13.2')) {
 			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.13.2'));
 		}
 

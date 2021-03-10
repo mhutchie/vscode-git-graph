@@ -334,16 +334,17 @@ export function openExternalUrl(url: string, type: string = 'External URL'): The
  * Open a file within a repository in Visual Studio Code.
  * @param repo The repository the file is contained in.
  * @param filePath The relative path of the file within the repository.
+ * @param viewColumn An optional ViewColumn that the file should be opened in.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
-export function openFile(repo: string, filePath: string) {
+export function openFile(repo: string, filePath: string, viewColumn: vscode.ViewColumn | null = null) {
 	return new Promise<ErrorInfo>(resolve => {
 		const p = path.join(repo, filePath);
 		fs.access(p, fs.constants.R_OK, (err) => {
 			if (err === null) {
 				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), {
 					preview: true,
-					viewColumn: getConfig().openNewTabEditorGroup
+					viewColumn: viewColumn === null ? getConfig().openNewTabEditorGroup : viewColumn
 				}).then(
 					() => resolve(null),
 					() => resolve('Visual Studio Code was unable to open ' + filePath + '.')
@@ -710,17 +711,17 @@ export async function getGitExecutableFromPaths(paths: string[]): Promise<GitExe
 }
 
 
-/* Git Version Handling */
+/* Version Handling */
 
 /**
- * Checks whether a Git executable is at least the specified version.
- * @param executable The Git executable to check.
- * @param version The minimum required version.
- * @returns TRUE => `executable` is at least `version`, FALSE => `executable` is older than `version`.
+ * Checks whether a version is at least a required version.
+ * @param version The version to check.
+ * @param requiredVersion The minimum required version.
+ * @returns TRUE => `version` is at least `requiredVersion`, FALSE => `version` is older than `requiredVersion`.
  */
-export function isGitAtLeastVersion(executable: GitExecutable, version: string) {
-	const v1 = parseVersion(executable.version);
-	const v2 = parseVersion(version);
+export function doesVersionMeetRequirement(version: string, requiredVersion: string) {
+	const v1 = parseVersion(version);
+	const v2 = parseVersion(requiredVersion);
 
 	if (v1 === null || v2 === null) {
 		// Unable to parse a version number

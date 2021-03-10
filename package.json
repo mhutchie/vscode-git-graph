@@ -89,6 +89,13 @@
 				"category": "Git Graph",
 				"command": "git-graph.version",
 				"title": "Get Version Information"
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.openFile",
+				"title": "Open File",
+				"icon": "$(go-to-file)",
+				"enablement": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
 			}
 		],
 		"configuration": {
@@ -1422,6 +1429,19 @@
 			}
 		},
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "git-graph.openFile",
+					"when": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "git-graph.openFile",
+					"group": "navigation",
+					"when": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
+				}
+			],
 			"scm/title": [
 				{
 					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'Inline'",

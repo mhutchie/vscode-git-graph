@@ -357,6 +357,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.commits.fetchCICDs` Extension Setting.
+	 */
+	get fetchCICDs() {
+		return !!this.getRenamedExtensionSetting('repository.commits.fetchCICDs', 'fetchCICDs', false);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.commits.initialLoad` Extension Setting.
 	 */
 	get initialLoadCommits() {

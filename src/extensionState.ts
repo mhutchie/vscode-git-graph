@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
+import { CICD, CICDCache } from './cicdManager';
 import { getConfig } from './config';
 import { BooleanOverride, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
@@ -9,6 +10,7 @@ import { Event } from './utils/event';
 
 const AVATAR_STORAGE_FOLDER = '/avatars';
 const AVATAR_CACHE = 'avatarCache';
+const CICD_CACHE = 'cicdCache';
 const CODE_REVIEWS = 'codeReviews';
 const GLOBAL_VIEW_STATE = 'globalViewState';
 const IGNORED_REPOS = 'ignoredRepos';
@@ -306,6 +308,51 @@ export class ExtensionState extends Disposable {
 				fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => { });
 			}
 		});
+	}
+
+
+	/* CICDs */
+
+	/**
+	 * Gets the cache of cicds known to Git Graph.
+	 * @returns The cicd cache.
+	 */
+	public getCICDCache() {
+		return this.workspaceState.get<CICDCache>(CICD_CACHE, {});
+	}
+
+	/**
+	 * Add a new cicd to the cache of cicds known to Git Graph.
+	 * @param email The email address that the cicd is for.
+	 * @param cicd The details of the cicd.
+	 */
+	public saveCICD(email: string, cicd: CICD) {
+		let cicds = this.getCICDCache();
+		cicds[email] = cicd;
+		this.updateWorkspaceState(CICD_CACHE, cicds);
+	}
+
+	/**
+	 * Removes an cicd from the cache of cicds known to Git Graph.
+	 * @param email The email address of the cicd to remove.
+	 */
+	public removeCICDFromCache(email: string) {
+		let cicds = this.getCICDCache();
+		delete cicds[email];
+		this.updateWorkspaceState(CICD_CACHE, cicds);
+	}
+
+	/**
+	 * Clear all cicds from the cache of cicds known to Git Graph.
+	 */
+	public clearCICDCache() {
+		this.updateWorkspaceState(CICD_CACHE, {});
+		// fs.readdir(this.globalStoragePath + CICD_STORAGE_FOLDER, (err, files) => {
+		// 	if (err) return;
+		// 	for (let i = 0; i < files.length; i++) {
+		// 		fs.unlink(this.globalStoragePath + CICD_STORAGE_FOLDER + '/' + files[i], () => { });
+		// 	}
+		// });
 	}
 
 

@@ -277,6 +277,7 @@ export interface GitGraphViewConfig {
 	readonly fetchAndPrune: boolean;
 	readonly fetchAndPruneTags: boolean;
 	readonly fetchAvatars: boolean;
+	readonly fetchCICDs: boolean;
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
@@ -902,6 +903,17 @@ export interface ResponseFetchAvatar extends BaseMessage {
 	readonly email: string;
 	readonly image: string;
 }
+export interface RequestFetchCICD extends RepoRequest {
+	readonly command: 'fetchCICD';
+	readonly remote: string | null;
+	readonly email: string;
+	readonly commits: string[];
+}
+export interface ResponseFetchCICD extends BaseMessage {
+	readonly command: 'fetchCICD';
+	readonly email: string;
+	readonly image: string;
+}
 
 export interface RequestFetchIntoLocalBranch extends RepoRequest {
 	readonly command: 'fetchIntoLocalBranch';
@@ -1271,6 +1283,7 @@ export type RequestMessage =
 	| RequestExportRepoConfig
 	| RequestFetch
 	| RequestFetchAvatar
+	| RequestFetchCICD
 	| RequestFetchIntoLocalBranch
 	| RequestLoadCommits
 	| RequestLoadConfig
@@ -1332,6 +1345,7 @@ export type ResponseMessage =
 	| ResponseExportRepoConfig
 	| ResponseFetch
 	| ResponseFetchAvatar
+	| ResponseFetchCICD
 	| ResponseFetchIntoLocalBranch
 	| ResponseLoadCommits
 	| ResponseLoadConfig

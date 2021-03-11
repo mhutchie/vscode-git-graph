@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
+import { CicdManager } from './cicdManager';
 import { getConfig } from './config';
 import { DataSource, GIT_CONFIG, GitCommitDetailsData } from './dataSource';
 import { ExtensionState } from './extensionState';
@@ -20,6 +21,7 @@ export class GitGraphView extends Disposable {
 	private readonly panel: vscode.WebviewPanel;
 	private readonly extensionPath: string;
 	private readonly avatarManager: AvatarManager;
+	private readonly cicdManager: CicdManager;
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly repoFileWatcher: RepoFileWatcher;
@@ -39,11 +41,12 @@ export class GitGraphView extends Disposable {
 	 * @param dataSource The Git Graph DataSource instance.
 	 * @param extensionState The Git Graph ExtensionState instance.
 	 * @param avatarManger The Git Graph AvatarManager instance.
+	 * @param cicdManager The Git Graph CicdManager instance.
 	 * @param repoManager The Git Graph RepoManager instance.
 	 * @param logger The Git Graph Logger instance.
 	 * @param loadViewTo What to load the view to.
 	 */
-	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo) {
+	public static createOrShow(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, cicdManager: CicdManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo) {
 		const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
 		if (GitGraphView.currentPanel) {
@@ -60,7 +63,7 @@ export class GitGraphView extends Disposable {
 			GitGraphView.currentPanel.panel.reveal(column);
 		} else {
 			// If Git Graph panel doesn't already exist
-			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, repoManager, logger, loadViewTo, column);
+			GitGraphView.currentPanel = new GitGraphView(extensionPath, dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, loadViewTo, column);
 		}
 	}
 
@@ -70,15 +73,17 @@ export class GitGraphView extends Disposable {
 	 * @param dataSource The Git Graph DataSource instance.
 	 * @param extensionState The Git Graph ExtensionState instance.
 	 * @param avatarManger The Git Graph AvatarManager instance.
+	 * @param cicdManager The Git Graph CicdManager instance.
 	 * @param repoManager The Git Graph RepoManager instance.
 	 * @param logger The Git Graph Logger instance.
 	 * @param loadViewTo What to load the view to.
 	 * @param column The column the view should be loaded in.
 	 */
-	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo, column: vscode.ViewColumn | undefined) {
+	private constructor(extensionPath: string, dataSource: DataSource, extensionState: ExtensionState, avatarManager: AvatarManager, cicdManager: CicdManager, repoManager: RepoManager, logger: Logger, loadViewTo: LoadGitGraphViewTo, column: vscode.ViewColumn | undefined) {
 		super();
 		this.extensionPath = extensionPath;
 		this.avatarManager = avatarManager;
+		this.cicdManager = cicdManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.repoManager = repoManager;
@@ -138,6 +143,15 @@ export class GitGraphView extends Disposable {
 			avatarManager.onAvatar((event) => {
 				this.sendMessage({
 					command: 'fetchAvatar',
+					email: event.email,
+					image: event.image
+				});
+			}),
+
+			// Subscribe to events triggered when an cicd is available
+			cicdManager.onCICD((event) => {
+				this.sendMessage({
+					command: 'fetchCICD',
 					email: event.email,
 					image: event.image
 				});
@@ -382,6 +396,9 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'fetchAvatar':
 				this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
+				break;
+			case 'fetchCICD':
+				this.cicdManager.fetchCICDImage(msg.email, msg.repo, msg.remote, msg.commits);
 				break;
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({
@@ -641,6 +658,7 @@ export class GitGraphView extends Disposable {
 				fetchAndPrune: config.fetchAndPrune,
 				fetchAndPruneTags: config.fetchAndPruneTags,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
+				fetchCICDs: config.fetchCICDs,
 				graph: config.graph,
 				includeCommitsMentionedByReflogs: config.includeCommitsMentionedByReflogs,
 				initialLoadCommits: config.initialLoadCommits,

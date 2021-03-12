@@ -2736,7 +2736,7 @@ class GitGraphView {
 			let i = expandedCommit.codeReview.remainingFiles.indexOf(filePath);
 			if (i > -1) {
 				sendMessage({ command: 'codeReviewFileReviewed', repo: this.currentRepo, id: expandedCommit.codeReview.id, filePath: filePath });
-				alterFileTreeFileReviewed(expandedCommit.fileTree, filePath);
+				alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, true);
 				updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
 				expandedCommit.codeReview.remainingFiles.splice(i, 1);
 				if (expandedCommit.codeReview.remainingFiles.length === 0) {
@@ -2745,6 +2745,27 @@ class GitGraphView {
 				}
 			}
 		}
+		this.saveState();
+	}
+
+	private cdvFileUnviewed(filePath: string) {
+		const expandedCommit = this.expandedCommit;
+		const filesElem = document.getElementById('cdvFiles');
+
+		if (expandedCommit === null || expandedCommit.fileTree === null ||
+			expandedCommit.codeReview === null || filesElem === null) {
+			return;
+		}
+
+		sendMessage({
+			command: 'codeReviewFileUnreviewed',
+			repo: this.currentRepo,
+			id: expandedCommit.codeReview.id,
+			filePath
+		});
+		alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, false);
+		updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
+		expandedCommit.codeReview.remainingFiles.push(filePath);
 		this.saveState();
 	}
 
@@ -2953,6 +2974,11 @@ class GitGraphView {
 						title: 'Mark as Reviewd',
 						visible: expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
 						onClick: () => this.cdvFileViewed(file.newFilePath)
+					},
+					{
+						title: 'Mark as Unreviewd',
+						visible: expandedCommit.codeReview !== null && !expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
+						onClick: () => this.cdvFileUnviewed(file.newFilePath)
 					}
 				],
 				[
@@ -3414,7 +3440,7 @@ function alterFileTreeFolderOpen(folder: FileTreeFolder, folderPath: string, ope
 	}
 }
 
-function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
+function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string, reviewed: boolean) {
 	let path = filePath.split('/'), i, cur = folder, folders = [folder];
 	for (i = 0; i < path.length; i++) {
 		if (typeof cur.contents[path[i]] !== 'undefined') {
@@ -3422,22 +3448,22 @@ function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
 				cur = <FileTreeFolder>cur.contents[path[i]];
 				folders.push(cur);
 			} else {
-				(<FileTreeFile>cur.contents[path[i]]).reviewed = true;
+				(<FileTreeFile>cur.contents[path[i]]).reviewed = reviewed;
 			}
 		} else {
 			break;
 		}
 	}
 	for (i = folders.length - 1; i >= 0; i--) {
-		let keys = Object.keys(folders[i].contents), reviewed = true;
+		let keys = Object.keys(folders[i].contents), entireFolderReviewed = reviewed;
 		for (let j = 0; j < keys.length; j++) {
 			let cur = folders[i].contents[keys[j]];
 			if ((cur.type === 'folder' || cur.type === 'file') && !cur.reviewed) {
-				reviewed = false;
+				entireFolderReviewed = false;
 				break;
 			}
 		}
-		folders[i].reviewed = reviewed;
+		folders[i].reviewed = entireFolderReviewed;
 	}
 }
 

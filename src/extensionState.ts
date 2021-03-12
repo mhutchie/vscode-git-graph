@@ -380,6 +380,23 @@ export class ExtensionState extends Disposable {
 	}
 
 	/**
+	 * Record that a file has been unreviewed in a Code Review.
+	 * @param repo The repository the Code Review is in.
+	 * @param id The ID of the Code Review.
+	 * @param file The file that has been unreviewed.
+	 */
+	public updateCodeReviewFileUnreviewed(repo: string, id: string, file: string) {
+		let reviews = this.getCodeReviews();
+		if (typeof reviews[repo] === 'undefined' || typeof reviews[repo][id] === 'undefined') {
+			return;
+		}
+
+		let i = reviews[repo][id].remainingFiles.indexOf(file);
+		if (i === -1) reviews[repo][id].remainingFiles.push(file);
+		this.setCodeReviews(reviews);
+	}
+
+	/**
 	 * Delete any Code Reviews that haven't been active during the last 90 days.
 	 */
 	public expireOldCodeReviews() {

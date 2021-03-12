@@ -645,6 +645,12 @@ export interface RequestCodeReviewFileReviewed extends RepoRequest {
 	readonly filePath: string;
 }
 
+export interface RequestCodeReviewFileUnreviewed extends RepoRequest {
+    readonly command: 'codeReviewFileUnreviewed';
+    readonly id: string;
+    readonly filePath: string;
+}
+
 export interface RequestCommitDetails extends RepoRequest {
 	readonly command: 'commitDetails';
 	readonly commitHash: string;
@@ -1190,6 +1196,7 @@ export type RequestMessage =
 	| RequestCherrypickCommit
 	| RequestCleanUntrackedFiles
 	| RequestCodeReviewFileReviewed
+	| RequestCodeReviewFileUnreviewed
 	| RequestCommitDetails
 	| RequestCompareCommits
 	| RequestCopyFilePath

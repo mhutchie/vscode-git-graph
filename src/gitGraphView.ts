@@ -228,7 +228,7 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'codeReviewFileReviewed':
-				this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath);
+				this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath, msg.fileWasOpened);
 				break;
 			case 'codeReviewFileUnreviewed':
 				this.extensionState.updateCodeReviewFileUnreviewed(msg.repo, msg.id, msg.filePath);

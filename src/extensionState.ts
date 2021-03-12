@@ -363,14 +363,17 @@ export class ExtensionState extends Disposable {
 	 * @param repo The repository the Code Review is in.
 	 * @param id The ID of the Code Review.
 	 * @param file The file that has been reviewed.
+	 * @param fileWasOpened Whether the file was actually opened or just marked as reviewed
 	 */
-	public updateCodeReviewFileReviewed(repo: string, id: string, file: string) {
+	public updateCodeReviewFileReviewed(repo: string, id: string, file: string, fileWasOpened: boolean) {
 		let reviews = this.getCodeReviews();
 		if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
 			let i = reviews[repo][id].remainingFiles.indexOf(file);
 			if (i > -1) reviews[repo][id].remainingFiles.splice(i, 1);
 			if (reviews[repo][id].remainingFiles.length > 0) {
-				reviews[repo][id].lastViewedFile = file;
+				if (fileWasOpened) {
+					reviews[repo][id].lastViewedFile = file;
+				}
 				reviews[repo][id].lastActive = (new Date()).getTime();
 			} else {
 				removeCodeReview(reviews, repo, id);

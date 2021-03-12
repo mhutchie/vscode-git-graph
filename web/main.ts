@@ -2728,14 +2728,14 @@ class GitGraphView {
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 	}
 
-	private cdvFileViewed(filePath: string) {
+	private cdvFileViewed(filePath: string, fileWasOpened: boolean) {
 		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
 		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
 
 		if (expandedCommit.codeReview !== null) {
 			let i = expandedCommit.codeReview.remainingFiles.indexOf(filePath);
 			if (i > -1) {
-				sendMessage({ command: 'codeReviewFileReviewed', repo: this.currentRepo, id: expandedCommit.codeReview.id, filePath: filePath });
+				sendMessage({ command: 'codeReviewFileReviewed', repo: this.currentRepo, id: expandedCommit.codeReview.id, filePath, fileWasOpened });
 				alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, true);
 				updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
 				expandedCommit.codeReview.remainingFiles.splice(i, 1);
@@ -2838,7 +2838,7 @@ class GitGraphView {
 			}
 
 			this.setLastViewedFile(file.newFilePath, fileElem);
-			this.cdvFileViewed(file.newFilePath);
+			this.cdvFileViewed(file.newFilePath, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2868,14 +2868,14 @@ class GitGraphView {
 			}
 
 			this.setLastViewedFile(file.newFilePath, fileElem);
-			this.cdvFileViewed(file.newFilePath);
+			this.cdvFileViewed(file.newFilePath, true);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: hash, filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const filePath = file.newFilePath;
 			this.setLastViewedFile(filePath, fileElem);
-			this.cdvFileViewed(filePath);
+			this.cdvFileViewed(filePath, true);
 			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath });
 		};
 
@@ -2973,7 +2973,7 @@ class GitGraphView {
 					{
 						title: 'Mark as Reviewd',
 						visible: expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvFileViewed(file.newFilePath)
+						onClick: () => this.cdvFileViewed(file.newFilePath, false)
 					},
 					{
 						title: 'Mark as Unreviewd',

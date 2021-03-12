@@ -643,6 +643,7 @@ export interface RequestCodeReviewFileReviewed extends RepoRequest {
 	readonly command: 'codeReviewFileReviewed';
 	readonly id: string;
 	readonly filePath: string;
+	readonly fileWasOpened: boolean;
 }
 
 export interface RequestCodeReviewFileUnreviewed extends RepoRequest {

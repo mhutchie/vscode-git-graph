@@ -1252,8 +1252,8 @@ class GitGraphView {
 				title: 'Fetch into local branch' + ELLIPSIS,
 				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Yes, fetch', () => {
-						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName }, 'Fetching Branch');
+					dialog.showCheckbox('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Force Fetch<span class="dialogInfo" title="Force the local branch to be reset to this remote branch.">' + SVG_ICONS.info + '</span>', this.config.dialogDefaults.fetchIntoLocalBranch.forceFetch, 'Yes, fetch', (force) => {
+						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName, force: force }, 'Fetching Branch');
 					}, target);
 				}
 			}, {
@@ -2813,6 +2813,17 @@ class GitGraphView {
 		const getFileElemOfEventTarget = (target: EventTarget) => <HTMLElement>(<Element>target).closest('.fileTreeFileRecord');
 		const getFileOfFileElem = (fileChanges: ReadonlyArray<GG.GitFileChange>, fileElem: HTMLElement) => fileChanges[parseInt(fileElem.dataset.index!)];
 
+		const getCommitHashForFile = (file: GG.GitFileChange, expandedCommit: ExpandedCommit) => {
+			const commit = this.commits[this.commitLookup[expandedCommit.commitHash]];
+			if (expandedCommit.compareWithHash !== null) {
+				return this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash).to;
+			} else if (commit.stash !== null && file.type === GG.GitFileStatus.Untracked) {
+				return commit.stash.untrackedFilesHash!;
+			} else {
+				return expandedCommit.commitHash;
+			}
+		};
+
 		const triggerViewFileDiff = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
@@ -2851,31 +2862,29 @@ class GitGraphView {
 			});
 		};
 
-		const triggerCopyFilePath = (file: GG.GitFileChange) => {
-			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: file.newFilePath });
+		const triggerCopyFilePath = (file: GG.GitFileChange, absolute: boolean) => {
+			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: file.newFilePath, absolute: absolute });
 		};
 
 		const triggerViewFileAtRevision = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			let commit = this.commits[this.commitLookup[expandedCommit.commitHash]], hash: string;
-			if (expandedCommit.compareWithHash !== null) {
-				hash = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash).to;
-			} else if (commit.stash !== null && file.type === GG.GitFileStatus.Untracked) {
-				hash = commit.stash.untrackedFilesHash!;
-			} else {
-				hash = expandedCommit.commitHash;
-			}
+			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
+			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
+		};
+
+		const triggerViewFileDiffWithWorkingFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
+			const expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
 
 			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
-			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: hash, filePath: file.newFilePath });
+			sendMessage({ command: 'viewDiffWithWorkingFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
-			const filePath = file.newFilePath;
-			this.cdvChangeFileReviewedState(filePath, fileElem, true, true);
-			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath });
+			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
+			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: file.newFilePath });
 		};
 
 		addListenerToClass('fileTreeFolder', 'click', (e) => {
@@ -2913,7 +2922,7 @@ class GitGraphView {
 			if (expandedCommit === null || expandedCommit.fileChanges === null || e.target === null) return;
 
 			const fileElem = getFileElemOfEventTarget(e.target);
-			triggerCopyFilePath(getFileOfFileElem(expandedCommit.fileChanges, fileElem));
+			triggerCopyFilePath(getFileOfFileElem(expandedCommit.fileChanges, fileElem), true);
 		});
 
 		addListenerToClass('viewGitFileAtRevision', 'click', (e) => {
@@ -2951,6 +2960,7 @@ class GitGraphView {
 				elem: fileElem
 			};
 			const diffPossible = file.type === GG.GitFileStatus.Untracked || (file.additions !== null && file.deletions !== null);
+			const fileExistsAtThisRevisionAndDiffPossible = file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted;
 
 			contextMenu.show([
 				[
@@ -2961,8 +2971,13 @@ class GitGraphView {
 					},
 					{
 						title: 'View File at this Revision',
-						visible: file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted,
+						visible: fileExistsAtThisRevisionAndDiffPossible,
 						onClick: () => triggerViewFileAtRevision(file, fileElem)
+					},
+					{
+						title: 'View Diff with Working File',
+						visible: fileExistsAtThisRevisionAndDiffPossible,
+						onClick: () => triggerViewFileDiffWithWorkingFile(file, fileElem)
 					},
 					{
 						title: 'Open File',
@@ -2982,9 +2997,14 @@ class GitGraphView {
 				],
 				[
 					{
-						title: 'Copy File Path to the Clipboard',
+						title: 'Copy Absolute File Path to Clipboard',
 						visible: true,
-						onClick: () => triggerCopyFilePath(file)
+						onClick: () => triggerCopyFilePath(file, true)
+					},
+					{
+						title: 'Copy Relative File Path to Clipboard',
+						visible: true,
+						onClick: () => triggerCopyFilePath(file, false)
 					}
 				]
 			], false, target, <MouseEvent>e, this.isCdvDocked() ? document.body : this.viewElem, () => {
@@ -3123,7 +3143,7 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'copyFilePath':
-				finishOrDisplayError(msg.error, 'Unable to Copy File Path to the Clipboard');
+				finishOrDisplayError(msg.error, 'Unable to Copy File Path to Clipboard');
 				break;
 			case 'copyToClipboard':
 				finishOrDisplayError(msg.error, 'Unable to Copy ' + msg.type + ' to Clipboard');
@@ -3279,7 +3299,10 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'viewDiff':
-				finishOrDisplayError(msg.error, 'Unable to View Diff of File');
+				finishOrDisplayError(msg.error, 'Unable to View Diff');
+				break;
+			case 'viewDiffWithWorkingFile':
+				finishOrDisplayError(msg.error, 'Unable to View Diff with Working File');
 				break;
 			case 'viewFileAtRevision':
 				finishOrDisplayError(msg.error, 'Unable to View File at Revision');
@@ -3421,7 +3444,7 @@ function generateFileTreeLeafHtml(name: string, leaf: FileTreeLeaf, gitFiles: Re
 			(initialState.config.enhancedAccessibility ? '<span class="fileTreeFileType" title="' + changeTypeMessage + '">' + fileTreeFile.type + '</span>' : '') +
 			(fileTreeFile.type !== GG.GitFileStatus.Added && fileTreeFile.type !== GG.GitFileStatus.Untracked && fileTreeFile.type !== GG.GitFileStatus.Deleted && textFile ? '<span class="fileTreeFileAddDel">(<span class="fileTreeFileAdd" title="' + fileTreeFile.additions + ' addition' + (fileTreeFile.additions !== 1 ? 's' : '') + '">+' + fileTreeFile.additions + '</span>|<span class="fileTreeFileDel" title="' + fileTreeFile.deletions + ' deletion' + (fileTreeFile.deletions !== 1 ? 's' : '') + '">-' + fileTreeFile.deletions + '</span>)</span>' : '') +
 			(fileTreeFile.newFilePath === lastViewedFile ? '<span id="cdvLastFileViewed" title="Last File Viewed">' + SVG_ICONS.eyeOpen + '</span>' : '') +
-			'<span class="copyGitFile fileTreeFileAction" title="Copy File Path to the Clipboard">' + SVG_ICONS.copy + '</span>' +
+			'<span class="copyGitFile fileTreeFileAction" title="Copy Absolute File Path to Clipboard">' + SVG_ICONS.copy + '</span>' +
 			(fileTreeFile.type !== GG.GitFileStatus.Deleted
 				? (diffPossible && !isUncommitted ? '<span class="viewGitFileAtRevision fileTreeFileAction" title="View File at this Revision">' + SVG_ICONS.commit + '</span>' : '') +
 				'<span class="openGitFile fileTreeFileAction" title="Open File">' + SVG_ICONS.openFile + '</span>'

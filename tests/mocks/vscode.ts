@@ -119,7 +119,7 @@ export enum StatusBarAlignment {
 	Right = 2
 }
 
-export const version = '1.51.0';
+export let version = '1.51.0';
 
 export enum ViewColumn {
 	Active = -1,
@@ -136,7 +136,7 @@ export enum ViewColumn {
 }
 
 export const window = {
-	activeTextEditor: { document: { uri: Uri.file('/path/to/workspace-folder/active-file.txt') } },
+	activeTextEditor: { document: { uri: Uri.file('/path/to/workspace-folder/active-file.txt') } } as any,
 	createOutputChannel: jest.fn(() => mocks.outputChannel),
 	createStatusBarItem: jest.fn(() => mocks.statusBarItem),
 	createTerminal: jest.fn(() => mocks.terminal),
@@ -170,8 +170,14 @@ beforeEach(() => {
 	Object.keys(mockedExtensionSettingValues).forEach((section) => {
 		delete mockedExtensionSettingValues[section];
 	});
+
+	version = '1.51.0';
 });
 
 export function mockExtensionSettingReturnValue(section: string, value: any) {
 	mockedExtensionSettingValues[section] = value;
+}
+
+export function mockVscodeVersion(newVersion: string) {
+	version = newVersion;
 }

@@ -15,10 +15,12 @@ import { ConfigurationChangeEvent } from 'vscode';
 import { AvatarManager } from '../src/avatarManager';
 import { CommandManager } from '../src/commands';
 import { DataSource } from '../src/dataSource';
+import { DiffSide, encodeDiffDocUri } from '../src/diffDocProvider';
 import { DEFAULT_REPO_STATE, ExtensionState } from '../src/extensionState';
 import { GitGraphView } from '../src/gitGraphView';
 import { Logger } from '../src/logger';
 import { RepoManager } from '../src/repoManager';
+import { GitFileStatus } from '../src/types';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -69,7 +71,7 @@ describe('CommandManager', () => {
 
 	it('Should construct a CommandManager, and be disposed', () => {
 		// Assert
-		expect(commandManager['disposables']).toHaveLength(10);
+		expect(commandManager['disposables']).toHaveLength(11);
 		expect(commandManager['gitExecutable']).toStrictEqual({
 			path: '/path/to/git',
 			version: '2.25.0'
@@ -93,6 +95,81 @@ describe('CommandManager', () => {
 		expect(commandManager['gitExecutable']).toStrictEqual({
 			path: '/path/to/other-git',
 			version: '2.26.0'
+		});
+	});
+
+	describe('git-graph:codiconsSupported', () => {
+		it('Should set git-graph:codiconsSupported to TRUE when vscode.version >= 1.42.0', () => {
+			// Setup
+			commandManager.dispose();
+			const spyOnExecuteCommand = jest.spyOn(vscode.commands, 'executeCommand');
+			const spyOnLog = jest.spyOn(logger, 'log');
+			vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+			// Run
+			commandManager = new CommandManager(vscode.mocks.extensionContext, avatarManager, dataSource, extensionState, repoManager, { path: '/path/to/git', version: '2.25.0' }, onDidChangeGitExecutable.subscribe, logger);
+
+			// Assert
+			waitForExpect(() => {
+				expect(spyOnExecuteCommand).toHaveBeenCalledWith('setContext', 'git-graph:codiconsSupported', true);
+				expect(spyOnLog).toHaveBeenCalledWith('Successfully set Visual Studio Code Context "git-graph:codiconsSupported" to "true"');
+			});
+		});
+
+		it('Should set git-graph:codiconsSupported to FALSE when vscode.version < 1.42.0', () => {
+			// Setup
+			commandManager.dispose();
+			vscode.mockVscodeVersion('1.41.1');
+			const spyOnExecuteCommand = jest.spyOn(vscode.commands, 'executeCommand');
+			const spyOnLog = jest.spyOn(logger, 'log');
+			vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+			// Run
+			commandManager = new CommandManager(vscode.mocks.extensionContext, avatarManager, dataSource, extensionState, repoManager, { path: '/path/to/git', version: '2.25.0' }, onDidChangeGitExecutable.subscribe, logger);
+
+			// Assert
+			waitForExpect(() => {
+				expect(spyOnExecuteCommand).toHaveBeenCalledWith('setContext', 'git-graph:codiconsSupported', false);
+				expect(spyOnLog).toHaveBeenCalledWith('Successfully set Visual Studio Code Context "git-graph:codiconsSupported" to "false"');
+			});
+		});
+
+		it('Should log an error message when vscode.commands.executeCommand rejects', () => {
+			// Setup
+			commandManager.dispose();
+			const spyOnExecuteCommand = jest.spyOn(vscode.commands, 'executeCommand');
+			const spyOnLogError = jest.spyOn(logger, 'logError');
+			vscode.commands.executeCommand.mockRejectedValueOnce(null);
+
+			// Run
+			commandManager = new CommandManager(vscode.mocks.extensionContext, avatarManager, dataSource, extensionState, repoManager, { path: '/path/to/git', version: '2.25.0' }, onDidChangeGitExecutable.subscribe, logger);
+
+			// Assert
+			waitForExpect(() => {
+				expect(spyOnExecuteCommand).toHaveBeenCalledWith('setContext', 'git-graph:codiconsSupported', true);
+				expect(spyOnLogError).toHaveBeenCalledWith('Failed to set Visual Studio Code Context "git-graph:codiconsSupported" to "true"');
+			});
+		});
+
+		it('Should log an error message when an exception is thrown', () => {
+			// Setup
+			commandManager.dispose();
+			const spyOnExecuteCommand = jest.spyOn(vscode.commands, 'executeCommand');
+			const spyOnDoesVersionMeetRequirement = jest.spyOn(utils, 'doesVersionMeetRequirement');
+			const spyOnLogError = jest.spyOn(logger, 'logError');
+			vscode.commands.executeCommand.mockRejectedValueOnce(null);
+			spyOnDoesVersionMeetRequirement.mockImplementationOnce(() => {
+				throw new Error();
+			});
+
+			// Run
+			commandManager = new CommandManager(vscode.mocks.extensionContext, avatarManager, dataSource, extensionState, repoManager, { path: '/path/to/git', version: '2.25.0' }, onDidChangeGitExecutable.subscribe, logger);
+
+			// Assert
+			waitForExpect(() => {
+				expect(spyOnExecuteCommand).toHaveBeenCalledWith('setContext', 'git-graph:codiconsSupported', true);
+				expect(spyOnLogError).toHaveBeenCalledWith('Unable to set Visual Studio Code Context "git-graph:codiconsSupported"');
+			});
 		});
 	});
 
@@ -141,6 +218,7 @@ describe('CommandManager', () => {
 
 		it('Should open the Git Graph View to the repository containing the active text editor', async () => {
 			// Setup
+			vscode.window.activeTextEditor = { document: { uri: vscode.Uri.file('/path/to/workspace-folder/active-file.txt') } };
 			vscode.mockExtensionSettingReturnValue('openToTheRepoOfTheActiveTextEditorDocument', true);
 			jest.spyOn(repoManager, 'getRepoContainingFile').mockReturnValueOnce('/path/to/workspace-folder');
 
@@ -1116,6 +1194,71 @@ describe('CommandManager', () => {
 				expect(vscode.window.showInformationMessage).toHaveBeenCalledWith('Git Graph: 1.27.0\nVisual Studio Code: 1.51.0\nOS: X Y Z\nGit: 2.25.0', { modal: true }, 'Copy');
 				expect(spyOnCopyToClipboard).not.toHaveBeenCalled();
 			});
+		});
+	});
+
+	describe('git-graph.openFile', () => {
+		let spyOnOpenFile: jest.SpyInstance;
+		beforeAll(() => {
+			spyOnOpenFile = jest.spyOn(utils, 'openFile');
+		});
+
+		it('Should open the provided file', async () => {
+			spyOnOpenFile.mockResolvedValueOnce(null);
+
+			// Run
+			await vscode.commands.executeCommand('git-graph.openFile', encodeDiffDocUri('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', GitFileStatus.Modified, DiffSide.New));
+
+			// Assert
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+		});
+
+		it('Should open the file of the active text editor', async () => {
+			vscode.window.activeTextEditor = { document: { uri: encodeDiffDocUri('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', GitFileStatus.Modified, DiffSide.New) } };
+			spyOnOpenFile.mockResolvedValueOnce(null);
+
+			// Run
+			await vscode.commands.executeCommand('git-graph.openFile');
+
+			// Assert
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+		});
+
+		it('Should display an error message when no URI is provided', async () => {
+			vscode.window.activeTextEditor = undefined;
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			await vscode.commands.executeCommand('git-graph.openFile');
+
+			// Assert
+			expect(spyOnOpenFile).not.toHaveBeenCalled();
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Unable to Open File: The command was not called with the required arguments.');
+		});
+
+		it('Should display an error message when no Git Graph URI is provided', async () => {
+			vscode.window.activeTextEditor = { document: { uri: vscode.Uri.file('/path/to/workspace-folder/active-file.txt') } };
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			await vscode.commands.executeCommand('git-graph.openFile');
+
+			// Assert
+			expect(spyOnOpenFile).not.toHaveBeenCalled();
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Unable to Open File: The command was not called with the required arguments.');
+		});
+
+		it('Should display an error message when the file can\'t be opened', async () => {
+			vscode.window.activeTextEditor = { document: { uri: encodeDiffDocUri('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', GitFileStatus.Modified, DiffSide.New) } };
+			spyOnOpenFile.mockResolvedValueOnce('Error Message');
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			await vscode.commands.executeCommand('git-graph.openFile');
+
+			// Assert
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Unable to Open File: Error Message');
 		});
 	});
 });

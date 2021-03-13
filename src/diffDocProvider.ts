@@ -47,15 +47,20 @@ export class DiffDocProvider extends Disposable implements vscode.TextDocumentCo
 	 * @returns The content of the text document.
 	 */
 	public provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
-		let document = this.docs.get(uri.toString());
-		if (document) return document.value;
+		const document = this.docs.get(uri.toString());
+		if (document) {
+			return document.value;
+		}
 
-		let request = decodeDiffDocUri(uri);
-		if (request === null) return ''; // Return empty file (used for one side of added / deleted file diff)
+		const request = decodeDiffDocUri(uri);
+		if (!request.exists) {
+			// Return empty file (used for one side of added / deleted file diff)
+			return '';
+		}
 
 		return this.dataSource.getCommitFile(request.repo, request.commit, request.filePath).then(
 			(contents) => {
-				let document = new DiffDocument(contents);
+				const document = new DiffDocument(contents);
 				this.docs.set(uri.toString(), document);
 				return document.value;
 			},
@@ -99,7 +104,8 @@ type DiffDocUriData = {
 	filePath: string;
 	commit: string;
 	repo: string;
-} | null;
+	exists: boolean;
+};
 
 /**
  * Produce the URI of a file to be used in the Visual Studio Diff View.
@@ -115,17 +121,19 @@ export function encodeDiffDocUri(repo: string, filePath: string, commit: string,
 		return vscode.Uri.file(path.join(repo, filePath));
 	}
 
-	let data: DiffDocUriData, extension: string;
-	if ((diffSide === DiffSide.Old && type === GitFileStatus.Added) || (diffSide === DiffSide.New && type === GitFileStatus.Deleted)) {
-		data = null;
+	const fileDoesNotExist = (diffSide === DiffSide.Old && type === GitFileStatus.Added) || (diffSide === DiffSide.New && type === GitFileStatus.Deleted);
+	const data: DiffDocUriData = {
+		filePath: getPathFromStr(filePath),
+		commit: commit,
+		repo: repo,
+		exists: !fileDoesNotExist
+	};
+
+	let extension: string;
+	if (fileDoesNotExist) {
 		extension = '';
 	} else {
-		data = {
-			filePath: getPathFromStr(filePath),
-			commit: commit,
-			repo: repo
-		};
-		let extIndex = data.filePath.indexOf('.', data.filePath.lastIndexOf('/') + 1);
+		const extIndex = data.filePath.indexOf('.', data.filePath.lastIndexOf('/') + 1);
 		extension = extIndex > -1 ? data.filePath.substring(extIndex) : '';
 	}
 

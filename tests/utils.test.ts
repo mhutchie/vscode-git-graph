@@ -24,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isGitAtLeastVersion, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 const extensionContext = vscode.mocks.extensionContext;
@@ -642,12 +642,12 @@ describe('archive', () => {
 });
 
 describe('copyFilePathToClipboard', () => {
-	it('Appends the file path to the repository path, and copies the result to the clipboard', async () => {
+	it('Appends the relative file path to the repository path, and copies the result to the clipboard', async () => {
 		// Setup
 		vscode.env.clipboard.writeText.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt');
+		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt', true);
 
 		// Assert
 		const receivedArgs: any[] = vscode.env.clipboard.writeText.mock.calls[0];
@@ -655,12 +655,25 @@ describe('copyFilePathToClipboard', () => {
 		expect(getPathFromStr(receivedArgs[0])).toBe('/a/b/c/d.txt');
 	});
 
+	it('Copies the relative file path to the clipboard', async () => {
+		// Setup
+		vscode.env.clipboard.writeText.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt', false);
+
+		// Assert
+		const receivedArgs: any[] = vscode.env.clipboard.writeText.mock.calls[0];
+		expect(result).toBe(null);
+		expect(getPathFromStr(receivedArgs[0])).toBe('c/d.txt');
+	});
+
 	it('Returns an error message when writeText fails', async () => {
 		// Setup
 		vscode.env.clipboard.writeText.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt');
+		const result = await copyFilePathToClipboard('/a/b', 'c/d.txt', true);
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to write to the Clipboard.');
@@ -927,7 +940,7 @@ describe('openExternalUrl', () => {
 });
 
 describe('openFile', () => {
-	it('Should open the file in vscode', async () => {
+	it('Should open the file in vscode (with the user defined ViewColumn)', async () => {
 		// Setup
 		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
@@ -942,6 +955,25 @@ describe('openFile', () => {
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+	});
+
+	it('Should open the file in vscode (in the specified ViewColumn)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await openFile('/path/to/repo', 'file.txt', vscode.ViewColumn.Beside);
+
+		// Assert
+		const [command, uri, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.open');
+		expect(getPathFromUri(uri)).toBe('/path/to/repo/file.txt');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Beside
 		});
 		expect(result).toBe(null);
 	});
@@ -976,13 +1008,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9hZGRlZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/added.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '/path/to/repo', false));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/added.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
 		expect(title).toBe('added.txt (Added in 1a2b3c4d)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -996,13 +1028,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmZeIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
 		expect(title).toBe('modified.txt (1a2b3c4d^ ↔ 1a2b3c4d)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1016,13 +1048,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2Zl4iLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', false));
 		expect(title).toBe('deleted.txt (Deleted in 1a2b3c4d)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1036,13 +1068,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9hZGRlZC50eHQiLCJjb21taXQiOiJhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/added.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', false));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/added.txt', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '/path/to/repo', true));
 		expect(title).toBe('added.txt (Added between 1a2b3c4d & a1b2c3d4)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1056,13 +1088,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(rightUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiJhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyYzNkNGU1ZjZhMWIyIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '/path/to/repo', true));
 		expect(title).toBe('modified.txt (1a2b3c4d ↔ a1b2c3d4)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1076,13 +1108,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
-		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', '/path/to/repo', false));
 		expect(title).toBe('deleted.txt (Deleted between 1a2b3c4d & a1b2c3d4)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1096,12 +1128,12 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/added.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', false));
 		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/added.txt');
 		expect(title).toBe('added.txt (Added between 1a2b3c4d & Present)');
 		expect(config).toStrictEqual({
@@ -1116,12 +1148,12 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
 		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/modified.txt');
 		expect(title).toBe('modified.txt (1a2b3c4d ↔ Present)');
 		expect(config).toStrictEqual({
@@ -1136,13 +1168,13 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
-		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '*', '/path/to/repo', false));
 		expect(title).toBe('deleted.txt (Deleted between 1a2b3c4d & Present)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1161,7 +1193,7 @@ describe('viewDiff', () => {
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/added.txt', 'HEAD', '/path/to/repo', false));
 		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/added.txt');
 		expect(title).toBe('added.txt (Uncommitted)');
 		expect(config).toStrictEqual({
@@ -1181,7 +1213,7 @@ describe('viewDiff', () => {
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9tb2RpZmllZC50eHQiLCJjb21taXQiOiJIRUFEIiwicmVwbyI6Ii9wYXRoL3RvL3JlcG8ifQ==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', 'HEAD', '/path/to/repo', true));
 		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/modified.txt');
 		expect(title).toBe('modified.txt (Uncommitted)');
 		expect(config).toStrictEqual({
@@ -1201,8 +1233,8 @@ describe('viewDiff', () => {
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.diff');
-		expect(leftUri.toString()).toBe('git-graph://file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9kZWxldGVkLnR4dCIsImNvbW1pdCI6IkhFQUQiLCJyZXBvIjoiL3BhdGgvdG8vcmVwbyJ9');
-		expect(rightUri.toString()).toBe('git-graph://file?bnVsbA==');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', 'HEAD', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '*', '/path/to/repo', false));
 		expect(title).toBe('deleted.txt (Uncommitted)');
 		expect(config).toStrictEqual({
 			preview: true,
@@ -1216,10 +1248,10 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
 
 		// Assert
-		expect(result).toBe('Visual Studio Code was unable load the diff editor for subfolder/modified.txt.');
+		expect(result).toBe('Visual Studio Code was unable to load the diff editor for subfolder/modified.txt.');
 	});
 
 	it('Should open an untracked file in vscode', async () => {
@@ -1242,18 +1274,74 @@ describe('viewDiff', () => {
 	});
 });
 
+describe('viewDiffWithWorkingFile', () => {
+	it('Should load the vscode diff view (modified file)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt');
+
+		// Assert
+		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.diff');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/modified.txt');
+		expect(title).toBe('modified.txt (1a2b3c4d ↔ Present)');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+	});
+
+	it('Should load the vscode diff view (deleted file)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/deleted.txt');
+
+		// Assert
+		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.diff');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/deleted.txt', '*', '/path/to/repo', false));
+		expect(title).toBe('deleted.txt (Deleted between 1a2b3c4d & Present)');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+	});
+
+	it('Should return an error message when vscode was unable to load the diff view', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockRejectedValueOnce(null);
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt');
+
+		// Assert
+		expect(result).toBe('Visual Studio Code was unable to load the diff editor for subfolder/modified.txt.');
+	});
+});
+
 describe('viewFileAtRevision', () => {
 	it('Should open the file in vscode', async () => {
 		// Setup
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewFileAtRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/file.txt');
+		const result = await viewFileAtRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/file.txt');
 
 		// Assert
 		const [command, uri, config] = vscode.commands.executeCommand.mock.calls[0];
 		expect(command).toBe('vscode.open');
-		expect(uri.toString()).toBe('git-graph://1a2b3c4d: file.txt?eyJmaWxlUGF0aCI6InN1YmZvbGRlci9maWxlLnR4dCIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZiIsInJlcG8iOiIvcGF0aC90by9yZXBvIn0=');
+		expect(uri.toString()).toBe(expectedValueGitGraphUri('subfolder/file.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true).replace('file.txt', '1a2b3c4d: file.txt'));
 		expect(config).toStrictEqual({
 			preview: true,
 			viewColumn: vscode.ViewColumn.Active
@@ -1266,7 +1354,7 @@ describe('viewFileAtRevision', () => {
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await viewFileAtRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f', 'subfolder/file.txt');
+		const result = await viewFileAtRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/file.txt');
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to open subfolder/file.txt at commit 1a2b3c4d.');
@@ -2094,10 +2182,10 @@ describe('getGitExecutableFromPaths', () => {
 	});
 });
 
-describe('isGitAtLeastVersion', () => {
+describe('doesVersionMeetRequirement', () => {
 	it('Should correctly determine major newer', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6.windows.0', path: '' }, '1.4.6');
+		const result = doesVersionMeetRequirement('2.4.6.windows.0', '1.4.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2105,7 +2193,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine major older', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6.windows.0', path: '' }, '3.4.6');
+		const result = doesVersionMeetRequirement('2.4.6.windows.0', '3.4.6');
 
 		// Assert
 		expect(result).toBe(false);
@@ -2113,7 +2201,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine minor newer', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6 (Apple Git-122.3)', path: '' }, '2.3.6');
+		const result = doesVersionMeetRequirement('2.4.6 (Apple Git-122.3)', '2.3.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2121,7 +2209,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine minor older', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6 (Apple Git-122.3)', path: '' }, '2.5.6');
+		const result = doesVersionMeetRequirement('2.4.6 (Apple Git-122.3)', '2.5.6');
 
 		// Assert
 		expect(result).toBe(false);
@@ -2129,7 +2217,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine patch newer', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '2.4.5');
+		const result = doesVersionMeetRequirement('2.4.6', '2.4.5');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2137,7 +2225,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine patch older', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '2.4.7');
+		const result = doesVersionMeetRequirement('2.4.6', '2.4.7');
 
 		// Assert
 		expect(result).toBe(false);
@@ -2145,7 +2233,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine same version', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, '2.4.6');
+		const result = doesVersionMeetRequirement('2.4.6', '2.4.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2153,7 +2241,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine major newer if missing patch version', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4', path: '' }, '1.4');
+		const result = doesVersionMeetRequirement('2.4', '1.4');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2161,7 +2249,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should correctly determine major newer if missing minor & patch versions', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2', path: '' }, '1');
+		const result = doesVersionMeetRequirement('2', '1');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2169,13 +2257,13 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should only use the valid portion of the version number to compute the result', () => {
 		// Run
-		const result1 = isGitAtLeastVersion({ version: '2.4..6-windows.0', path: '' }, '2.4.1');
+		const result1 = doesVersionMeetRequirement('2.4..6-windows.0', '2.4.1');
 
 		// Assert
 		expect(result1).toBe(false);
 
 		// Run
-		const result2 = isGitAtLeastVersion({ version: '2.4..6-windows.0', path: '' }, '2.4.0');
+		const result2 = doesVersionMeetRequirement('2.4..6-windows.0', '2.4.0');
 
 		// Assert
 		expect(result2).toBe(true);
@@ -2183,7 +2271,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should return TRUE if executable version is invalid', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: 'a2.4.6', path: '' }, '1.4.6');
+		const result = doesVersionMeetRequirement('a2.4.6', '1.4.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2191,7 +2279,7 @@ describe('isGitAtLeastVersion', () => {
 
 	it('Should return TRUE if version is invalid', () => {
 		// Run
-		const result = isGitAtLeastVersion({ version: '2.4.6', path: '' }, 'a1.4.6');
+		const result = doesVersionMeetRequirement('2.4.6', 'a1.4.6');
 
 		// Assert
 		expect(result).toBe(true);
@@ -2207,3 +2295,9 @@ describe('constructIncompatibleGitVersionMessage', () => {
 		expect(result).toBe('A newer version of Git (>= 3.0.0) is required for this feature. Git 2.4.5 is currently installed. Please install a newer version of Git to use this feature.');
 	});
 });
+
+function expectedValueGitGraphUri(filePath: string, commit: string, repo: string, exists: boolean) {
+	const extIndex = filePath.indexOf('.', filePath.lastIndexOf('/') + 1);
+	const extension = exists && extIndex > -1 ? filePath.substring(extIndex) : '';
+	return 'git-graph://file' + extension + '?' + Buffer.from(JSON.stringify({ filePath: filePath, commit: commit, repo: repo, exists: exists })).toString('base64');
+}

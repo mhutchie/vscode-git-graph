@@ -447,9 +447,15 @@ export interface DialogDefaults {
 	readonly deleteBranch: {
 		readonly forceDelete: boolean
 	};
+	readonly fetchIntoLocalBranch: {
+		readonly forceFetch: boolean
+	};
 	readonly fetchRemote: {
 		readonly prune: boolean,
 		readonly pruneTags: boolean
+	};
+	readonly general: {
+		readonly referenceInputSpaceSubstitution: string | null
 	};
 	readonly merge: {
 		readonly noCommit: boolean,
@@ -675,6 +681,7 @@ export interface ResponseCompareCommits extends ResponseWithErrorInfo {
 export interface RequestCopyFilePath extends RepoRequest {
 	readonly command: 'copyFilePath';
 	readonly filePath: string;
+	readonly absolute: boolean;
 }
 export interface ResponseCopyFilePath extends ResponseWithErrorInfo {
 	readonly command: 'copyFilePath';
@@ -852,6 +859,7 @@ export interface RequestFetchIntoLocalBranch extends RepoRequest {
 	readonly remote: string;
 	readonly remoteBranch: string;
 	readonly localBranch: string;
+	readonly force: boolean;
 }
 export interface ResponseFetchIntoLocalBranch extends ResponseWithErrorInfo {
 	readonly command: 'fetchIntoLocalBranch';
@@ -1169,6 +1177,15 @@ export interface ResponseViewDiff extends ResponseWithErrorInfo {
 	readonly command: 'viewDiff';
 }
 
+export interface RequestViewDiffWithWorkingFile extends RepoRequest {
+	readonly command: 'viewDiffWithWorkingFile';
+	readonly hash: string;
+	readonly filePath: string;
+}
+export interface ResponseViewDiffWithWorkingFile extends ResponseWithErrorInfo {
+	readonly command: 'viewDiffWithWorkingFile';
+}
+
 export interface RequestViewFileAtRevision extends RepoRequest {
 	readonly command: 'viewFileAtRevision';
 	readonly hash: string;
@@ -1244,6 +1261,7 @@ export type RequestMessage =
 	| RequestTagDetails
 	| RequestUpdateCodeReview
 	| RequestViewDiff
+	| RequestViewDiffWithWorkingFile
 	| RequestViewFileAtRevision
 	| RequestViewScm;
 
@@ -1303,6 +1321,7 @@ export type ResponseMessage =
 	| ResponseTagDetails
 	| ResponseUpdateCodeReview
 	| ResponseViewDiff
+	| ResponseViewDiffWithWorkingFile
 	| ResponseViewFileAtRevision
 	| ResponseViewScm;
 

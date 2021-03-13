@@ -4945,11 +4945,23 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop');
+			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', false);
 
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', 'origin', 'master:develop'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should (force) fetch a remote branch into a local branch', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', '-f', 'origin', 'master:develop'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -4957,7 +4969,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop');
+			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', false);
 
 			// Assert
 			expect(result).toBe('error message');

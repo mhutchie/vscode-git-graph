@@ -359,43 +359,29 @@ export class ExtensionState extends Disposable {
 	}
 
 	/**
-	 * Record that a file has been reviewed in a Code Review.
+	 * Update information for a specific code review
 	 * @param repo The repository the Code Review is in.
 	 * @param id The ID of the Code Review.
-	 * @param file The file that has been reviewed.
-	 * @param fileWasOpened Whether the file was actually opened or just marked as reviewed
+	 * @param remainingFiles The files remaining for review
+	 * @param lastViewedFile The last viewed file. If null, don't change the last viewed file.
 	 */
-	public updateCodeReviewFileReviewed(repo: string, id: string, file: string, fileWasOpened: boolean) {
-		let reviews = this.getCodeReviews();
-		if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
-			let i = reviews[repo][id].remainingFiles.indexOf(file);
-			if (i > -1) reviews[repo][id].remainingFiles.splice(i, 1);
-			if (reviews[repo][id].remainingFiles.length > 0) {
-				if (fileWasOpened) {
-					reviews[repo][id].lastViewedFile = file;
-				}
-				reviews[repo][id].lastActive = (new Date()).getTime();
-			} else {
-				removeCodeReview(reviews, repo, id);
-			}
-			this.setCodeReviews(reviews);
-		}
-	}
+	public updateCodeReview(repo: string, id: string, remainingFiles: string[], lastViewedFile: string | null) {
+		const reviews = this.getCodeReviews();
 
-	/**
-	 * Record that a file has been unreviewed in a Code Review.
-	 * @param repo The repository the Code Review is in.
-	 * @param id The ID of the Code Review.
-	 * @param file The file that has been unreviewed.
-	 */
-	public updateCodeReviewFileUnreviewed(repo: string, id: string, file: string) {
-		let reviews = this.getCodeReviews();
 		if (typeof reviews[repo] === 'undefined' || typeof reviews[repo][id] === 'undefined') {
 			return;
 		}
 
-		let i = reviews[repo][id].remainingFiles.indexOf(file);
-		if (i === -1) reviews[repo][id].remainingFiles.push(file);
+		if (remainingFiles.length > 0) {
+			reviews[repo][id].remainingFiles = remainingFiles;
+			reviews[repo][id].lastActive = (new Date()).getTime();
+			if (lastViewedFile !== null) {
+				reviews[repo][id].lastViewedFile = lastViewedFile;
+			}
+		} else {
+			removeCodeReview(reviews, repo, id);
+		}
+
 		this.setCodeReviews(reviews);
 	}
 

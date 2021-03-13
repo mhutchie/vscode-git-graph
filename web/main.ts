@@ -2728,27 +2728,7 @@ class GitGraphView {
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 	}
 
-	private cdvFileViewed(filePath: string, fileWasOpened: boolean) {
-		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
-		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
-
-		if (expandedCommit.codeReview !== null) {
-			let i = expandedCommit.codeReview.remainingFiles.indexOf(filePath);
-			if (i > -1) {
-				sendMessage({ command: 'codeReviewFileReviewed', repo: this.currentRepo, id: expandedCommit.codeReview.id, filePath, fileWasOpened });
-				alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, true);
-				updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
-				expandedCommit.codeReview.remainingFiles.splice(i, 1);
-				if (expandedCommit.codeReview.remainingFiles.length === 0) {
-					expandedCommit.codeReview = null;
-					this.renderCodeReviewBtn();
-				}
-			}
-		}
-		this.saveState();
-	}
-
-	private cdvFileUnviewed(filePath: string) {
+	private cdvChangeFileReviewedState(filePath: string, isReviewed: boolean, fileWasViewed: boolean) {
 		const expandedCommit = this.expandedCommit;
 		const filesElem = document.getElementById('cdvFiles');
 
@@ -2757,15 +2737,32 @@ class GitGraphView {
 			return;
 		}
 
+		const { remainingFiles, id } = expandedCommit.codeReview;
+
+		if (isReviewed) {
+			expandedCommit.codeReview.remainingFiles = remainingFiles.filter((path: string) => path !== filePath);
+		} else {
+			remainingFiles.push(filePath);
+		}
+
+		const lastViewedFile = fileWasViewed ? filePath : null;
 		sendMessage({
-			command: 'codeReviewFileUnreviewed',
+			command: 'updateCodeReview',
 			repo: this.currentRepo,
-			id: expandedCommit.codeReview.id,
-			filePath
+			id,
+			remainingFiles,
+			lastViewedFile
 		});
-		alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, false);
-		updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
-		expandedCommit.codeReview.remainingFiles.push(filePath);
+
+		const { fileTree } = expandedCommit;
+		alterFileTreeFileReviewed(fileTree, filePath, isReviewed);
+		updateFileTreeHtmlFileReviewed(filesElem, fileTree, filePath);
+
+		if (remainingFiles.length === 0) {
+			expandedCommit.codeReview = null;
+			this.renderCodeReviewBtn();
+		}
+
 		this.saveState();
 	}
 
@@ -2838,7 +2835,7 @@ class GitGraphView {
 			}
 
 			this.setLastViewedFile(file.newFilePath, fileElem);
-			this.cdvFileViewed(file.newFilePath, true);
+			this.cdvChangeFileReviewedState(file.newFilePath, true, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2868,14 +2865,14 @@ class GitGraphView {
 			}
 
 			this.setLastViewedFile(file.newFilePath, fileElem);
-			this.cdvFileViewed(file.newFilePath, true);
+			this.cdvChangeFileReviewedState(file.newFilePath, true, true);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: hash, filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const filePath = file.newFilePath;
 			this.setLastViewedFile(filePath, fileElem);
-			this.cdvFileViewed(filePath, true);
+			this.cdvChangeFileReviewedState(filePath, true, true);
 			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath });
 		};
 
@@ -2973,12 +2970,12 @@ class GitGraphView {
 					{
 						title: 'Mark as Reviewd',
 						visible: expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvFileViewed(file.newFilePath, false)
+						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, true, false)
 					},
 					{
 						title: 'Mark as Unreviewd',
 						visible: expandedCommit.codeReview !== null && !expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvFileUnviewed(file.newFilePath)
+						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, false, false)
 					}
 				],
 				[

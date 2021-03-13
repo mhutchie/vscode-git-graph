@@ -639,17 +639,11 @@ export interface ResponseCleanUntrackedFiles extends ResponseWithErrorInfo {
 	readonly command: 'cleanUntrackedFiles';
 }
 
-export interface RequestCodeReviewFileReviewed extends RepoRequest {
-	readonly command: 'codeReviewFileReviewed';
+export interface RequestUpdateCodeReview extends RepoRequest {
+	readonly command: 'updateCodeReview';
 	readonly id: string;
-	readonly filePath: string;
-	readonly fileWasOpened: boolean;
-}
-
-export interface RequestCodeReviewFileUnreviewed extends RepoRequest {
-    readonly command: 'codeReviewFileUnreviewed';
-    readonly id: string;
-    readonly filePath: string;
+	readonly remainingFiles: string[];
+	readonly lastViewedFile: string | null;
 }
 
 export interface RequestCommitDetails extends RepoRequest {
@@ -1196,8 +1190,7 @@ export type RequestMessage =
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCleanUntrackedFiles
-	| RequestCodeReviewFileReviewed
-	| RequestCodeReviewFileUnreviewed
+	| RequestUpdateCodeReview
 	| RequestCommitDetails
 	| RequestCompareCommits
 	| RequestCopyFilePath

@@ -324,7 +324,7 @@ export class CommandManager extends Disposable {
 		if (typeof uri === 'object' && uri.scheme === DiffDocProvider.scheme) {
 			// A Git Graph URI has been provided
 			const request = decodeDiffDocUri(uri);
-			return openFile(request.repo, request.filePath, vscode.ViewColumn.Active).then((errorInfo) => {
+			return openFile(request.repo, request.filePath, request.commit, this.dataSource, vscode.ViewColumn.Active).then((errorInfo) => {
 				if (errorInfo !== null) {
 					return showErrorMessage('Unable to Open File: ' + errorInfo);
 				}

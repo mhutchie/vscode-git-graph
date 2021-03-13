@@ -464,7 +464,7 @@ export class GitGraphView extends Disposable {
 			case 'openFile':
 				this.sendMessage({
 					command: 'openFile',
-					error: await openFile(msg.repo, msg.filePath)
+					error: await openFile(msg.repo, msg.filePath, msg.hash, this.dataSource)
 				});
 				break;
 			case 'openTerminal':
@@ -589,7 +589,7 @@ export class GitGraphView extends Disposable {
 			case 'viewDiffWithWorkingFile':
 				this.sendMessage({
 					command: 'viewDiffWithWorkingFile',
-					error: await viewDiffWithWorkingFile(msg.repo, msg.hash, msg.filePath)
+					error: await viewDiffWithWorkingFile(msg.repo, msg.hash, msg.filePath, this.dataSource)
 				});
 				break;
 			case 'viewFileAtRevision':

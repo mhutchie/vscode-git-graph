@@ -2883,8 +2883,11 @@ class GitGraphView {
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
+			const expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
 			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
-			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: file.newFilePath });
+			sendMessage({ command: 'openFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
 		addListenerToClass('fileTreeFolder', 'click', (e) => {

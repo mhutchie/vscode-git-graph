@@ -1210,7 +1210,7 @@ describe('CommandManager', () => {
 			await vscode.commands.executeCommand('git-graph.openFile', encodeDiffDocUri('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', GitFileStatus.Modified, DiffSide.New));
 
 			// Assert
-			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource, vscode.ViewColumn.Active);
 		});
 
 		it('Should open the file of the active text editor', async () => {
@@ -1221,7 +1221,7 @@ describe('CommandManager', () => {
 			await vscode.commands.executeCommand('git-graph.openFile');
 
 			// Assert
-			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource, vscode.ViewColumn.Active);
 		});
 
 		it('Should display an error message when no URI is provided', async () => {
@@ -1257,7 +1257,7 @@ describe('CommandManager', () => {
 			await vscode.commands.executeCommand('git-graph.openFile');
 
 			// Assert
-			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource, vscode.ViewColumn.Active);
 			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Unable to Open File: Error Message');
 		});
 	});

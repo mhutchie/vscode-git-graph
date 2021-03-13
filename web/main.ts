@@ -2714,7 +2714,7 @@ class GitGraphView {
 		});
 	}
 
-	private setLastViewedFile(filePath: string, fileElem: HTMLElement) {
+	private cdvSetLastViewedFile(filePath: string, fileElem: HTMLElement) {
 		const expandedCommit = this.expandedCommit;
 		if (expandedCommit === null || expandedCommit.fileTree === null) return;
 
@@ -2728,7 +2728,7 @@ class GitGraphView {
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 	}
 
-	private cdvChangeFileReviewedState(filePath: string, isReviewed: boolean, fileWasViewed: boolean) {
+	private cdvChangeFileReviewedState(filePath: string, fileElem: HTMLElement, isReviewed: boolean, fileWasViewed: boolean) {
 		const expandedCommit = this.expandedCommit;
 		const filesElem = document.getElementById('cdvFiles');
 
@@ -2757,6 +2757,10 @@ class GitGraphView {
 		const { fileTree } = expandedCommit;
 		alterFileTreeFileReviewed(fileTree, filePath, isReviewed);
 		updateFileTreeHtmlFileReviewed(filesElem, fileTree, filePath);
+
+		if (fileWasViewed) {
+			this.cdvSetLastViewedFile(filePath, fileElem);
+		}
 
 		if (remainingFiles.length === 0) {
 			expandedCommit.codeReview = null;
@@ -2834,8 +2838,7 @@ class GitGraphView {
 				toHash = expandedCommit.commitHash;
 			}
 
-			this.setLastViewedFile(file.newFilePath, fileElem);
-			this.cdvChangeFileReviewedState(file.newFilePath, true, true);
+			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2864,15 +2867,13 @@ class GitGraphView {
 				hash = expandedCommit.commitHash;
 			}
 
-			this.setLastViewedFile(file.newFilePath, fileElem);
-			this.cdvChangeFileReviewedState(file.newFilePath, true, true);
+			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: hash, filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const filePath = file.newFilePath;
-			this.setLastViewedFile(filePath, fileElem);
-			this.cdvChangeFileReviewedState(filePath, true, true);
+			this.cdvChangeFileReviewedState(filePath, fileElem, true, true);
 			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath });
 		};
 
@@ -2970,12 +2971,12 @@ class GitGraphView {
 					{
 						title: 'Mark as Reviewd',
 						visible: expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, true, false)
+						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, false)
 					},
 					{
 						title: 'Mark as Unreviewd',
 						visible: expandedCommit.codeReview !== null && !expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, false, false)
+						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, fileElem, false, false)
 					}
 				],
 				[

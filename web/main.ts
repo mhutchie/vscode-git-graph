@@ -2737,10 +2737,11 @@ class GitGraphView {
 			return;
 		}
 
-		const { remainingFiles, id } = expandedCommit.codeReview;
+		let { remainingFiles, id } = expandedCommit.codeReview;
 
 		if (isReviewed) {
-			expandedCommit.codeReview.remainingFiles = remainingFiles.filter((path: string) => path !== filePath);
+			remainingFiles = remainingFiles.filter((path: string) => path !== filePath);
+			expandedCommit.codeReview.remainingFiles = remainingFiles;
 		} else {
 			remainingFiles.push(filePath);
 		}

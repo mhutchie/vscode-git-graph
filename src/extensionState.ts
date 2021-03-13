@@ -364,12 +364,13 @@ export class ExtensionState extends Disposable {
 	 * @param id The ID of the Code Review.
 	 * @param remainingFiles The files remaining for review
 	 * @param lastViewedFile The last viewed file. If null, don't change the last viewed file.
+	 * @returns An error message if request can't be completed
 	 */
 	public updateCodeReview(repo: string, id: string, remainingFiles: string[], lastViewedFile: string | null) {
 		const reviews = this.getCodeReviews();
 
 		if (typeof reviews[repo] === 'undefined' || typeof reviews[repo][id] === 'undefined') {
-			return;
+			return 'Code review not found';
 		}
 
 		if (remainingFiles.length > 0) {
@@ -383,6 +384,8 @@ export class ExtensionState extends Disposable {
 		}
 
 		this.setCodeReviews(reviews);
+
+		return null;
 	}
 
 	/**

@@ -639,13 +639,6 @@ export interface ResponseCleanUntrackedFiles extends ResponseWithErrorInfo {
 	readonly command: 'cleanUntrackedFiles';
 }
 
-export interface RequestUpdateCodeReview extends RepoRequest {
-	readonly command: 'updateCodeReview';
-	readonly id: string;
-	readonly remainingFiles: string[];
-	readonly lastViewedFile: string | null;
-}
-
 export interface RequestCommitDetails extends RepoRequest {
 	readonly command: 'commitDetails';
 	readonly commitHash: string;
@@ -1153,6 +1146,17 @@ export interface ResponseTagDetails extends ResponseWithErrorInfo {
 	readonly message: string;
 }
 
+export interface RequestUpdateCodeReview extends RepoRequest {
+	readonly command: 'updateCodeReview';
+	readonly id: string;
+	readonly remainingFiles: string[];
+	readonly lastViewedFile: string | null;
+}
+
+export interface ResponseUpdateCodeReview extends ResponseWithErrorInfo {
+	readonly command: 'updateCodeReview';
+}
+
 export interface RequestViewDiff extends RepoRequest {
 	readonly command: 'viewDiff';
 	readonly fromHash: string;
@@ -1190,7 +1194,6 @@ export type RequestMessage =
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCleanUntrackedFiles
-	| RequestUpdateCodeReview
 	| RequestCommitDetails
 	| RequestCompareCommits
 	| RequestCopyFilePath
@@ -1239,6 +1242,7 @@ export type RequestMessage =
 	| RequestShowErrorDialog
 	| RequestStartCodeReview
 	| RequestTagDetails
+	| RequestUpdateCodeReview
 	| RequestViewDiff
 	| RequestViewFileAtRevision
 	| RequestViewScm;
@@ -1297,6 +1301,7 @@ export type ResponseMessage =
 	| ResponseSetWorkspaceViewState
 	| ResponseStartCodeReview
 	| ResponseTagDetails
+	| ResponseUpdateCodeReview
 	| ResponseViewDiff
 	| ResponseViewFileAtRevision
 	| ResponseViewScm;

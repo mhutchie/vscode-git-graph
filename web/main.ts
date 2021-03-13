@@ -3271,6 +3271,11 @@ window.addEventListener('load', () => {
 					dialog.showError('Unable to retrieve Tag Details', msg.error, null, null);
 				}
 				break;
+			case 'updateCodeReview':
+				if (msg.error) {
+					dialog.showError('Unable to update code review', msg.error, null, null);
+				}
+				break;
 			case 'viewDiff':
 				finishOrDisplayError(msg.error, 'Unable to View Diff of File');
 				break;

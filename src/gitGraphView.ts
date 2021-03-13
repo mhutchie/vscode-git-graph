@@ -574,7 +574,11 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'updateCodeReview':
-				this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile);
+				const error = this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile);
+				this.sendMessage({
+					command: 'updateCodeReview',
+					error
+				});
 				break;
 			case 'viewDiff':
 				this.sendMessage({

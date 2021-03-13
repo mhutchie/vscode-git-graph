@@ -24,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 const extensionContext = vscode.mocks.extensionContext;
@@ -306,6 +306,32 @@ describe('resolveToSymbolicPath', () => {
 
 		// Assert
 		expect(result).toBe('/a/b');
+	});
+});
+
+describe('doesFileExist', () => {
+	it('Should return TRUE when the file exists', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+
+		// Run
+		const result = await doesFileExist('file.txt');
+
+		// Assert
+		expect(result).toBe(true);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, 'file.txt', fs.constants.R_OK, expect.anything());
+	});
+
+	it('Should return FILE when the file doesn\'t exist', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+
+		// Run
+		const result = await doesFileExist('file.txt');
+
+		// Assert
+		expect(result).toBe(false);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, 'file.txt', fs.constants.R_OK, expect.anything());
 	});
 });
 
@@ -957,6 +983,7 @@ describe('openFile', () => {
 			viewColumn: vscode.ViewColumn.Active
 		});
 		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'file.txt'), fs.constants.R_OK, expect.anything());
 	});
 
 	it('Should open the file in vscode (in the specified ViewColumn)', async () => {
@@ -965,7 +992,7 @@ describe('openFile', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await openFile('/path/to/repo', 'file.txt', vscode.ViewColumn.Beside);
+		const result = await openFile('/path/to/repo', 'file.txt', null, null, vscode.ViewColumn.Beside);
 
 		// Assert
 		const [command, uri, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -976,6 +1003,32 @@ describe('openFile', () => {
 			viewColumn: vscode.ViewColumn.Beside
 		});
 		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'file.txt'), fs.constants.R_OK, expect.anything());
+	});
+
+	it('Should open a renamed file in vscode', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+		const spyOnGetNewPathOfRenamedFile = jest.spyOn(dataSource, 'getNewPathOfRenamedFile');
+		spyOnGetNewPathOfRenamedFile.mockResolvedValueOnce('renamed-new.txt');
+
+		// Run
+		const result = await openFile('/path/to/repo', 'renamed-old.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
+
+		// Assert
+		const [command, uri, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.open');
+		expect(getPathFromUri(uri)).toBe('/path/to/repo/renamed-new.txt');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'renamed-old.txt'), fs.constants.R_OK, expect.anything());
+		expect(spyOnGetNewPathOfRenamedFile).toHaveBeenCalledWith('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'renamed-old.txt');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(2, path.join('/path/to/repo', 'renamed-new.txt'), fs.constants.R_OK, expect.anything());
 	});
 
 	it('Should return an error message if vscode was unable to open the file', async () => {
@@ -988,6 +1041,7 @@ describe('openFile', () => {
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to open file.txt.');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'file.txt'), fs.constants.R_OK, expect.anything());
 	});
 
 	it('Should return an error message if the file doesn\'t exist in the repository', async () => {
@@ -995,10 +1049,45 @@ describe('openFile', () => {
 		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
 
 		// Run
-		const result = await openFile('/path/to/repo', 'file.txt');
+		const result = await openFile('/path/to/repo', 'deleted.txt');
 
 		// Assert
-		expect(result).toBe('The file file.txt doesn\'t currently exist in this repository.');
+		expect(result).toBe('The file deleted.txt doesn\'t currently exist in this repository.');
+		expect(mockedFileSystemModule.access).toHaveBeenCalledTimes(1);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'deleted.txt'), fs.constants.R_OK, expect.anything());
+	});
+
+	it('Should return an error message if the file doesn\'t exist in the repository, and it wasn\'t renamed', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		const spyOnGetNewPathOfRenamedFile = jest.spyOn(dataSource, 'getNewPathOfRenamedFile');
+		spyOnGetNewPathOfRenamedFile.mockResolvedValueOnce(null);
+
+		// Run
+		const result = await openFile('/path/to/repo', 'deleted.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
+
+		// Assert
+		expect(result).toBe('The file deleted.txt doesn\'t currently exist in this repository.');
+		expect(mockedFileSystemModule.access).toHaveBeenCalledTimes(1);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'deleted.txt'), fs.constants.R_OK, expect.anything());
+		expect(spyOnGetNewPathOfRenamedFile).toHaveBeenCalledWith('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'deleted.txt');
+	});
+
+	it('Should return an error message if the file doesn\'t exist in the repository, and it was renamed', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		const spyOnGetNewPathOfRenamedFile = jest.spyOn(dataSource, 'getNewPathOfRenamedFile');
+		spyOnGetNewPathOfRenamedFile.mockResolvedValueOnce('renamed-new.txt');
+
+		// Run
+		const result = await openFile('/path/to/repo', 'renamed-old.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource);
+
+		// Assert
+		expect(result).toBe('The file renamed-old.txt doesn\'t currently exist in this repository.');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'renamed-old.txt'), fs.constants.R_OK, expect.anything());
+		expect(spyOnGetNewPathOfRenamedFile).toHaveBeenCalledWith('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'renamed-old.txt');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(2, path.join('/path/to/repo', 'renamed-new.txt'), fs.constants.R_OK, expect.anything());
 	});
 });
 
@@ -1271,6 +1360,7 @@ describe('viewDiff', () => {
 			viewColumn: vscode.ViewColumn.Active
 		});
 		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'subfolder/untracked.txt'), fs.constants.R_OK, expect.anything());
 	});
 });
 
@@ -1281,7 +1371,7 @@ describe('viewDiffWithWorkingFile', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt');
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1294,15 +1384,45 @@ describe('viewDiffWithWorkingFile', () => {
 			viewColumn: vscode.ViewColumn.Active
 		});
 		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'subfolder/modified.txt'), fs.constants.R_OK, expect.anything());
+	});
+
+	it('Should load the vscode diff view (renamed file)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(null));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+		const spyOnGetNewPathOfRenamedFile = jest.spyOn(dataSource, 'getNewPathOfRenamedFile');
+		spyOnGetNewPathOfRenamedFile.mockResolvedValueOnce('subfolder/renamed-new.txt');
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/renamed-old.txt', dataSource);
+
+		// Assert
+		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.diff');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/renamed-old.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(getPathFromUri(rightUri)).toBe('/path/to/repo/subfolder/renamed-new.txt');
+		expect(title).toBe('renamed-new.txt (1a2b3c4d ↔ Present)');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'subfolder/renamed-old.txt'), fs.constants.R_OK, expect.anything());
+		expect(spyOnGetNewPathOfRenamedFile).toHaveBeenCalledWith('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/renamed-old.txt');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(2, path.join('/path/to/repo', 'subfolder/renamed-new.txt'), fs.constants.R_OK, expect.anything());
 	});
 
 	it('Should load the vscode diff view (deleted file)', async () => {
 		// Setup
 		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+		const spyOnGetNewPathOfRenamedFile = jest.spyOn(dataSource, 'getNewPathOfRenamedFile');
+		spyOnGetNewPathOfRenamedFile.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/deleted.txt');
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/deleted.txt', dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1315,6 +1435,35 @@ describe('viewDiffWithWorkingFile', () => {
 			viewColumn: vscode.ViewColumn.Active
 		});
 		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenCalledTimes(1);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'subfolder/deleted.txt'), fs.constants.R_OK, expect.anything());
+	});
+
+	it('Should load the vscode diff view (renamed and deleted file)', async () => {
+		// Setup
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
+		vscode.commands.executeCommand.mockResolvedValueOnce(null);
+		const spyOnGetNewPathOfRenamedFile = jest.spyOn(dataSource, 'getNewPathOfRenamedFile');
+		spyOnGetNewPathOfRenamedFile.mockResolvedValueOnce('subfolder/renamed-new.txt');
+
+		// Run
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/renamed-old.txt', dataSource);
+
+		// Assert
+		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
+		expect(command).toBe('vscode.diff');
+		expect(leftUri.toString()).toBe(expectedValueGitGraphUri('subfolder/renamed-old.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '/path/to/repo', true));
+		expect(rightUri.toString()).toBe(expectedValueGitGraphUri('subfolder/renamed-old.txt', '*', '/path/to/repo', false));
+		expect(title).toBe('renamed-old.txt (Deleted between 1a2b3c4d & Present)');
+		expect(config).toStrictEqual({
+			preview: true,
+			viewColumn: vscode.ViewColumn.Active
+		});
+		expect(result).toBe(null);
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'subfolder/renamed-old.txt'), fs.constants.R_OK, expect.anything());
+		expect(spyOnGetNewPathOfRenamedFile).toHaveBeenCalledWith('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/renamed-old.txt');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(2, path.join('/path/to/repo', 'subfolder/renamed-new.txt'), fs.constants.R_OK, expect.anything());
 	});
 
 	it('Should return an error message when vscode was unable to load the diff view', async () => {
@@ -1323,10 +1472,11 @@ describe('viewDiffWithWorkingFile', () => {
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt');
+		const result = await viewDiffWithWorkingFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', dataSource);
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to load the diff editor for subfolder/modified.txt.');
+		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, path.join('/path/to/repo', 'subfolder/modified.txt'), fs.constants.R_OK, expect.anything());
 	});
 });
 

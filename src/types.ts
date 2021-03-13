@@ -978,6 +978,7 @@ export interface ResponseOpenExternalUrl extends ResponseWithErrorInfo {
 
 export interface RequestOpenFile extends RepoRequest {
 	readonly command: 'openFile';
+	readonly hash: string;
 	readonly filePath: string;
 }
 export interface ResponseOpenFile extends ResponseWithErrorInfo {

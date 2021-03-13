@@ -105,6 +105,17 @@ export async function resolveToSymbolicPath(path: string) {
 	return path;
 }
 
+/**
+ * Checks whether a file exists, and the user has access to read it.
+ * @param path The path of the file.
+ * @returns Promise resolving to a boolean: TRUE => File exists, FALSE => File doesn't exist.
+ */
+export function doesFileExist(path: string) {
+	return new Promise<boolean>((resolve) => {
+		fs.access(path, fs.constants.R_OK, (err) => resolve(err === null));
+	});
+}
+
 
 /* General Methods */
 
@@ -334,26 +345,38 @@ export function openExternalUrl(url: string, type: string = 'External URL'): The
  * Open a file within a repository in Visual Studio Code.
  * @param repo The repository the file is contained in.
  * @param filePath The relative path of the file within the repository.
+ * @param hash An optional commit hash where the file is known to have existed.
+ * @param dataSource An optional DataSource instance, that's used to check if the file has been renamed.
  * @param viewColumn An optional ViewColumn that the file should be opened in.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
-export function openFile(repo: string, filePath: string, viewColumn: vscode.ViewColumn | null = null) {
-	return new Promise<ErrorInfo>(resolve => {
-		const p = path.join(repo, filePath);
-		fs.access(p, fs.constants.R_OK, (err) => {
-			if (err === null) {
-				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(p), {
-					preview: true,
-					viewColumn: viewColumn === null ? getConfig().openNewTabEditorGroup : viewColumn
-				}).then(
-					() => resolve(null),
-					() => resolve('Visual Studio Code was unable to open ' + filePath + '.')
-				);
-			} else {
-				resolve('The file ' + filePath + ' doesn\'t currently exist in this repository.');
+export async function openFile(repo: string, filePath: string, hash: string | null = null, dataSource: DataSource | null = null, viewColumn: vscode.ViewColumn | null = null) {
+	let newFilePath = filePath;
+	let newAbsoluteFilePath = path.join(repo, newFilePath);
+	let fileExists = await doesFileExist(newAbsoluteFilePath);
+	if (!fileExists && hash !== null && dataSource !== null) {
+		const renamedFilePath = await dataSource.getNewPathOfRenamedFile(repo, hash, filePath);
+		if (renamedFilePath !== null) {
+			const renamedAbsoluteFilePath = path.join(repo, renamedFilePath);
+			if (await doesFileExist(renamedAbsoluteFilePath)) {
+				newFilePath = renamedFilePath;
+				newAbsoluteFilePath = renamedAbsoluteFilePath;
+				fileExists = true;
 			}
-		});
-	});
+		}
+	}
+
+	if (fileExists) {
+		return vscode.commands.executeCommand('vscode.open', vscode.Uri.file(newAbsoluteFilePath), {
+			preview: true,
+			viewColumn: viewColumn === null ? getConfig().openNewTabEditorGroup : viewColumn
+		}).then(
+			() => null,
+			() => 'Visual Studio Code was unable to open ' + newFilePath + '.'
+		);
+	} else {
+		return 'The file ' + newFilePath + ' doesn\'t currently exist in this repository.';
+	}
 }
 
 /**
@@ -394,15 +417,27 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
  * @param repo The repository the file is contained in.
  * @param hash The revision of the left-side of the Diff View.
  * @param filePath The relative path of the file within the repository.
+ * @param dataSource A DataSource instance, that's used to check if the file has been renamed.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
-export function viewDiffWithWorkingFile(repo: string, hash: string, filePath: string) {
-	return new Promise<ErrorInfo>((resolve) => {
-		const p = path.join(repo, filePath);
-		fs.access(p, fs.constants.R_OK, (err) => {
-			resolve(viewDiff(repo, hash, UNCOMMITTED, filePath, filePath, err === null ? GitFileStatus.Modified : GitFileStatus.Deleted));
-		});
-	});
+export async function viewDiffWithWorkingFile(repo: string, hash: string, filePath: string, dataSource: DataSource) {
+	let newFilePath = filePath;
+	let fileExists = await doesFileExist(path.join(repo, newFilePath));
+	if (!fileExists) {
+		const renamedFilePath = await dataSource.getNewPathOfRenamedFile(repo, hash, filePath);
+		if (renamedFilePath !== null && await doesFileExist(path.join(repo, renamedFilePath))) {
+			newFilePath = renamedFilePath;
+			fileExists = true;
+		}
+	}
+
+	const type = fileExists
+		? filePath === newFilePath
+			? GitFileStatus.Modified
+			: GitFileStatus.Renamed
+		: GitFileStatus.Deleted;
+
+	return viewDiff(repo, hash, UNCOMMITTED, filePath, newFilePath, type);
 }
 
 /**
@@ -412,7 +447,7 @@ export function viewDiffWithWorkingFile(repo: string, hash: string, filePath: st
  * @param filePath The relative path of the file within the repository.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
-export async function viewFileAtRevision(repo: string, hash: string, filePath: string) {
+export function viewFileAtRevision(repo: string, hash: string, filePath: string) {
 	const pathComponents = filePath.split('/');
 	const title = abbrevCommit(hash) + ': ' + pathComponents[pathComponents.length - 1];
 

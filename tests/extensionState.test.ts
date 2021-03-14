@@ -1188,9 +1188,12 @@ describe('ExtensionState', () => {
 			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
 		});
 
-		it('Should update the reviewed files and change the last viewed file', () => {
-			expect(extensionState.updateCodeReview(repo, id, ['file3.txt'], 'file2.txt')).toBeNull();
+		it('Should update the reviewed files and change the last viewed file', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id, ['file3.txt'], 'file2.txt');
 
+			// Asset
+			expect(result).toBeNull();
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('codeReviews', {
 				[repo]: {
 					[id]: {
@@ -1202,9 +1205,12 @@ describe('ExtensionState', () => {
 			});
 		});
 
-		it('Should update the reviewed files without changing the last viewed file', () => {
-			expect(extensionState.updateCodeReview(repo, id, ['file3.txt'], null)).toBeNull();
+		it('Should update the reviewed files without changing the last viewed file', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id, ['file3.txt'], null);
 
+			// Assert
+			expect(result).toBeNull();
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('codeReviews', {
 				[repo]: {
 					[id]: {
@@ -1216,9 +1222,12 @@ describe('ExtensionState', () => {
 			});
 		});
 
-		it('Should update the unreviewed files without changing the last viewed file', () => {
-			expect(extensionState.updateCodeReview(repo, id, ['file2.txt', 'file3.txt', 'file4.txt'], null)).toBeNull();
+		it('Should update the not reviewed files without changing the last viewed file', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id, ['file2.txt', 'file3.txt', 'file4.txt'], null);
 
+			// Assert
+			expect(result).toBeNull();
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('codeReviews', {
 				[repo]: {
 					[id]: {
@@ -1230,9 +1239,12 @@ describe('ExtensionState', () => {
 			});
 		});
 
-		it('Should set the last viewed file', () => {
-			expect(extensionState.updateCodeReview(repo, id, ['file2.txt', 'file3.txt'], 'file2.txt')).toBeNull();
+		it('Should set the last viewed file', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id, ['file2.txt', 'file3.txt'], 'file2.txt');
 
+			// Assert
+			expect(result).toBeNull();
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('codeReviews', {
 				[repo]: {
 					[id]: {
@@ -1244,19 +1256,43 @@ describe('ExtensionState', () => {
 			});
 		});
 
-		it('Should remove the code review the last file in it has been reviewed', () => {
-			expect(extensionState.updateCodeReview(repo, id, [], null)).toBeNull();
+		it('Should remove the code review the last file in it has been reviewed', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id, [], null);
+
+			// Assert
+			expect(result).toBeNull();
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('codeReviews', {});
 		});
 
-		it('Shouldn\'t change the state if no code review could be found in the specified repository', () => {
-			expect(typeof extensionState.updateCodeReview(repo + '1', id, ['file3.txt'], null)).toBe('string');
+		it('Shouldn\'t change the state if no code review could be found in the specified repository', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo + '1', id, ['file3.txt'], null);
+
+			// Assert
+			expect(result).toBe('The Code Review could not be found.');
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledTimes(0);
 		});
 
-		it('Shouldn\'t change the state if no code review could be found with the specified id', () => {
-			expect(typeof extensionState.updateCodeReview(repo, id + '1', ['file3.txt'], null)).toBe('string');
+		it('Shouldn\'t change the state if no code review could be found with the specified id', async () => {
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id + '1', ['file3.txt'], null);
+
+			// Assert
+			expect(result).toBe('The Code Review could not be found.');
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledTimes(0);
+		});
+
+		it('Should return an error message when workspaceState.update rejects', async () => {
+			// Setup
+			extensionContext.workspaceState.update.mockReset();
+			extensionContext.workspaceState.update.mockRejectedValueOnce(null);
+
+			// Run
+			const result = await extensionState.updateCodeReview(repo, id, ['file3.txt'], 'file2.txt');
+
+			// Asset
+			expect(result).toBe('Visual Studio Code was unable to save the Git Graph Workspace State Memento.');
 		});
 	});
 

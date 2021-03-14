@@ -625,7 +625,7 @@ class GitGraphView {
 			refreshState.hard = refreshState.hard || hard;
 			refreshState.configChanges = refreshState.configChanges || configChanges;
 			if (!skipRepoInfo) {
-				// This request will trigger a loadCommit request after the loadRepoInfo request has completed.
+				// This request will trigger a loadCommit request after the loadRepoInfo request has completed. 
 				// Invalidate any previous commit requests in progress.
 				refreshState.loadCommitsRefreshId++;
 			}
@@ -1661,7 +1661,7 @@ class GitGraphView {
 		}
 
 		if (columnWidths[0] !== COLUMN_AUTO) {
-			// Table should have fixed layout
+			// Table should have fixed layout 
 			makeTableFixedLayout();
 		} else {
 			// Table should have automatic layout
@@ -2728,42 +2728,36 @@ class GitGraphView {
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 	}
 
-	private cdvChangeFileReviewedState(filePath: string, fileElem: HTMLElement, isReviewed: boolean, fileWasViewed: boolean) {
-		const expandedCommit = this.expandedCommit;
+	private cdvChangeFileReviewedState(file: GG.GitFileChange, fileElem: HTMLElement, isReviewed: boolean, fileWasViewed: boolean) {
+		const expandedCommit = this.expandedCommit, filePath = file.newFilePath;
 		const filesElem = document.getElementById('cdvFiles');
 
-		if (expandedCommit === null || expandedCommit.fileTree === null ||
-			expandedCommit.codeReview === null || filesElem === null) {
+		if (expandedCommit === null || expandedCommit.fileTree === null || expandedCommit.codeReview === null || filesElem === null) {
 			return;
 		}
 
-		let { remainingFiles, id } = expandedCommit.codeReview;
-
 		if (isReviewed) {
-			remainingFiles = remainingFiles.filter((path: string) => path !== filePath);
-			expandedCommit.codeReview.remainingFiles = remainingFiles;
+			expandedCommit.codeReview.remainingFiles = expandedCommit.codeReview.remainingFiles.filter((path: string) => path !== filePath);
 		} else {
-			remainingFiles.push(filePath);
+			expandedCommit.codeReview.remainingFiles.push(filePath);
 		}
-
-		const lastViewedFile = fileWasViewed ? filePath : null;
-		sendMessage({
-			command: 'updateCodeReview',
-			repo: this.currentRepo,
-			id,
-			remainingFiles,
-			lastViewedFile
-		});
-
-		const { fileTree } = expandedCommit;
-		alterFileTreeFileReviewed(fileTree, filePath, isReviewed);
-		updateFileTreeHtmlFileReviewed(filesElem, fileTree, filePath);
 
 		if (fileWasViewed) {
 			this.cdvSetLastViewedFile(filePath, fileElem);
 		}
 
-		if (remainingFiles.length === 0) {
+		sendMessage({
+			command: 'updateCodeReview',
+			repo: this.currentRepo,
+			id: expandedCommit.codeReview.id,
+			remainingFiles: expandedCommit.codeReview.remainingFiles,
+			lastViewedFile: expandedCommit.lastViewedFile
+		});
+
+		alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, isReviewed);
+		updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
+
+		if (expandedCommit.codeReview.remainingFiles.length === 0) {
 			expandedCommit.codeReview = null;
 			this.renderCodeReviewBtn();
 		}
@@ -2850,7 +2844,7 @@ class GitGraphView {
 				toHash = expandedCommit.commitHash;
 			}
 
-			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
+			this.cdvChangeFileReviewedState(file, fileElem, true, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2870,7 +2864,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
+			this.cdvChangeFileReviewedState(file, fileElem, true, true);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -2878,7 +2872,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
+			this.cdvChangeFileReviewedState(file, fileElem, false, true);
 			sendMessage({ command: 'viewDiffWithWorkingFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -2886,7 +2880,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, true);
+			this.cdvChangeFileReviewedState(file, fileElem, true, true);
 			sendMessage({ command: 'openFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -2964,6 +2958,7 @@ class GitGraphView {
 			};
 			const diffPossible = file.type === GG.GitFileStatus.Untracked || (file.additions !== null && file.deletions !== null);
 			const fileExistsAtThisRevisionAndDiffPossible = file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted;
+			const codeReviewInProgressAndNotReviewed = expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath);
 
 			contextMenu.show([
 				[
@@ -2986,16 +2981,18 @@ class GitGraphView {
 						title: 'Open File',
 						visible: file.type !== GG.GitFileStatus.Deleted,
 						onClick: () => triggerOpenFile(file, fileElem)
+					}
+				],
+				[
+					{
+						title: 'Mark as Reviewed',
+						visible: codeReviewInProgressAndNotReviewed,
+						onClick: () => this.cdvChangeFileReviewedState(file, fileElem, true, false)
 					},
 					{
-						title: 'Mark as Reviewd',
-						visible: expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, fileElem, true, false)
-					},
-					{
-						title: 'Mark as Unreviewd',
-						visible: expandedCommit.codeReview !== null && !expandedCommit.codeReview.remainingFiles.includes(file.newFilePath),
-						onClick: () => this.cdvChangeFileReviewedState(file.newFilePath, fileElem, false, false)
+						title: 'Mark as Not Reviewed',
+						visible: expandedCommit.codeReview !== null && !codeReviewInProgressAndNotReviewed,
+						onClick: () => this.cdvChangeFileReviewedState(file, fileElem, false, false)
 					}
 				],
 				[
@@ -3297,8 +3294,8 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'updateCodeReview':
-				if (msg.error) {
-					dialog.showError('Unable to update code review', msg.error, null, null);
+				if (msg.error !== null) {
+					dialog.showError('Unable to update Code Review', msg.error, null, null);
 				}
 				break;
 			case 'viewDiff':
@@ -3484,8 +3481,10 @@ function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string, rev
 			break;
 		}
 	}
+
+	// Recalculate whether each of the folders leading to the file are now reviewed (deepest first).
 	for (i = folders.length - 1; i >= 0; i--) {
-		let keys = Object.keys(folders[i].contents), entireFolderReviewed = reviewed;
+		let keys = Object.keys(folders[i].contents), entireFolderReviewed = true;
 		for (let j = 0; j < keys.length; j++) {
 			let cur = folders[i].contents[keys[j]];
 			if ((cur.type === 'folder' || cur.type === 'file') && !cur.reviewed) {

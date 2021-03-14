@@ -54,7 +54,7 @@ export class GitGraphView extends Disposable {
 					GitGraphView.currentPanel.respondLoadRepos(repoManager.getRepos(), loadViewTo);
 				}
 			} else {
-				// If the Git Graph panel is not visible
+				// If the Git Graph panel is not visible 
 				GitGraphView.currentPanel.loadViewTo = loadViewTo;
 			}
 			GitGraphView.currentPanel.panel.reveal(column);
@@ -150,7 +150,7 @@ export class GitGraphView extends Disposable {
 			this.panel
 		);
 
-		// Instantiate a RepoFileWatcher that watches for file changes in the repository currently open in the Git Graph View
+		// Instantiate a RepoFileWatcher that watches for file changes in the repository currently open in the Git Graph View 
 		this.repoFileWatcher = new RepoFileWatcher(logger, () => {
 			if (this.panel.visible) {
 				this.sendMessage({ command: 'refresh' });
@@ -574,10 +574,9 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'updateCodeReview':
-				const error = this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile);
 				this.sendMessage({
 					command: 'updateCodeReview',
-					error
+					error: await this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile)
 				});
 				break;
 			case 'viewDiff':

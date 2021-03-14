@@ -207,6 +207,7 @@ export interface GitRepoState {
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
 	showTags: BooleanOverride;
+	workspaceFolderIndex: number | null;
 }
 
 
@@ -515,7 +516,8 @@ export const enum RepoCommitOrdering {
 
 export const enum RepoDropdownOrder {
 	FullPath,
-	Name
+	Name,
+	WorkspaceFullPath
 }
 
 export const enum SquashMessageFormat {

@@ -2743,7 +2743,7 @@ describe('Config', () => {
 			const value = config.repoDropdownOrder;
 
 			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Workspace Full Path');
 			expect(value).toBe(RepoDropdownOrder.Name);
 		});
 
@@ -2755,11 +2755,23 @@ describe('Config', () => {
 			const value = config.repoDropdownOrder;
 
 			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Workspace Full Path');
 			expect(value).toBe(RepoDropdownOrder.FullPath);
 		});
 
-		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is invalid', () => {
+		it('Should return RepoDropdownOrder.WorkspaceFullPath when the configuration value is "Workspace Full Path"', () => {
+			// Setup
+			vscode.mockExtensionSettingReturnValue('repositoryDropdownOrder', 'Workspace Full Path');
+
+			// Run
+			const value = config.repoDropdownOrder;
+
+			// Assert
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Workspace Full Path');
+			expect(value).toBe(RepoDropdownOrder.WorkspaceFullPath);
+		});
+
+		it('Should return the default value (RepoDropdownOrder.WorkspaceFullPath) when the configuration value is invalid', () => {
 			// Setup
 			vscode.mockExtensionSettingReturnValue('repositoryDropdownOrder', 'invalid');
 
@@ -2767,17 +2779,17 @@ describe('Config', () => {
 			const value = config.repoDropdownOrder;
 
 			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
-			expect(value).toBe(RepoDropdownOrder.FullPath);
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Workspace Full Path');
+			expect(value).toBe(RepoDropdownOrder.WorkspaceFullPath);
 		});
 
-		it('Should return the default value (RepoDropdownOrder.FullPath) when the configuration value is not set', () => {
+		it('Should return the default value (RepoDropdownOrder.WorkspaceFullPath) when the configuration value is not set', () => {
 			// Run
 			const value = config.repoDropdownOrder;
 
 			// Assert
-			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Full Path');
-			expect(value).toBe(RepoDropdownOrder.FullPath);
+			expect(workspaceConfiguration.get).toBeCalledWith('repositoryDropdownOrder', 'Workspace Full Path');
+			expect(value).toBe(RepoDropdownOrder.WorkspaceFullPath);
 		});
 	});
 

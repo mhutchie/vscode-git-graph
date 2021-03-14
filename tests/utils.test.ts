@@ -21,10 +21,10 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { ExtensionState } from '../src/extensionState';
+import { DEFAULT_REPO_STATE, ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
-import { GitFileStatus, PullRequestProvider } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitFileStatus, PullRequestProvider, RepoDropdownOrder } from '../src/types';
+import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 const extensionContext = vscode.mocks.extensionContext;
@@ -166,7 +166,7 @@ describe('realpath', () => {
 describe('isPathInWorkspace', () => {
 	it('Should return TRUE if a path is a workspace folder', () => {
 		// Setup
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }, { uri: vscode.Uri.file('/path/to/workspace-folder2') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1'), index: 0 }, { uri: vscode.Uri.file('/path/to/workspace-folder2'), index: 1 }];
 
 		// Run
 		const result = isPathInWorkspace('/path/to/workspace-folder1');
@@ -177,7 +177,7 @@ describe('isPathInWorkspace', () => {
 
 	it('Should return TRUE if a path is within a workspace folder', () => {
 		// Setup
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }, { uri: vscode.Uri.file('/path/to/workspace-folder2') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1'), index: 0 }, { uri: vscode.Uri.file('/path/to/workspace-folder2'), index: 1 }];
 
 		// Run
 		const result = isPathInWorkspace('/path/to/workspace-folder1/subfolder');
@@ -188,7 +188,7 @@ describe('isPathInWorkspace', () => {
 
 	it('Should return FALSE if a path is not within a workspace folder', () => {
 		// Setup
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }, { uri: vscode.Uri.file('/path/to/workspace-folder2') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1'), index: 0 }, { uri: vscode.Uri.file('/path/to/workspace-folder2'), index: 1 }];
 
 		// Run
 		const result = isPathInWorkspace('/path/to/workspace-folder3/file');
@@ -213,7 +213,7 @@ describe('resolveToSymbolicPath', () => {
 	it('Should return the original path if it matches a vscode workspace folder', async () => {
 		// Setup
 		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, path as string));
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/path/to/workspace-folder1');
@@ -225,7 +225,7 @@ describe('resolveToSymbolicPath', () => {
 	it('Should return the symbolic path if a vscode workspace folder resolves to it', async () => {
 		// Setup
 		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder1') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder1'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/path/to/workspace-folder1');
@@ -237,7 +237,7 @@ describe('resolveToSymbolicPath', () => {
 	it('Should return the original path if it is within a vscode workspace folder', async () => {
 		// Setup
 		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, path as string));
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/workspace-folder1'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/path/to/workspace-folder1/subfolder/file.txt');
@@ -249,7 +249,7 @@ describe('resolveToSymbolicPath', () => {
 	it('Should return the symbolic path if a vscode workspace folder resolves to contain it', async () => {
 		// Setup
 		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder1') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder1'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/path/to/workspace-folder1/subfolder/file.txt');
@@ -261,7 +261,7 @@ describe('resolveToSymbolicPath', () => {
 	it('Should return the symbolic path if the vscode workspace folder resolves to be contained within it', async () => {
 		// Setup
 		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder/dir') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder/dir'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/path/to/workspace-folder');
@@ -276,7 +276,7 @@ describe('resolveToSymbolicPath', () => {
 			path = path as string;
 			callback(null, path === '/symbolic-folder/path/to/dir' ? path.replace('symbolic', 'workspace') : path);
 		});
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/symbolic-folder/path/to/dir') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/symbolic-folder/path/to/dir'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/workspace-folder/path');
@@ -288,7 +288,7 @@ describe('resolveToSymbolicPath', () => {
 	it('Should return the original path if it is unrelated to the vscode workspace folders', async () => {
 		// Setup
 		mockedFileSystemModule.realpath.mockImplementation((path: fs.PathLike, callback: (err: NodeJS.ErrnoException | null, resolvedPath: string) => void) => callback(null, (path as string).replace('symbolic', 'workspace')));
-		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder/dir') }];
+		vscode.workspace.workspaceFolders = [{ uri: vscode.Uri.file('/path/to/symbolic-folder/dir'), index: 0 }];
 
 		// Run
 		const result = await resolveToSymbolicPath('/an/unrelated/directory');
@@ -573,6 +573,64 @@ describe('getRepoName', () => {
 
 		// Asset
 		expect(name).toBe('d');
+	});
+});
+
+describe('getSortedRepositoryPaths', () => {
+	const mockRepoState = (name: string | null, workspaceFolderIndex: number | null) => Object.assign({}, DEFAULT_REPO_STATE, { name: name, workspaceFolderIndex: workspaceFolderIndex });
+
+	it('Should sort by RepoDropdownOrder.WorkspaceFullPath', () => {
+		// Run
+		const repoPaths = getSortedRepositoryPaths({
+			'/path/to/workspace-1/a': mockRepoState(null, 1),
+			'/path/to/workspace-2/c': mockRepoState(null, 0),
+			'/path/to/workspace-3/a': mockRepoState(null, null),
+			'/path/to/workspace-2/b': mockRepoState(null, 0),
+			'/path/to/workspace-1/b': mockRepoState(null, 1),
+			'/path/to/workspace-1/d': mockRepoState(null, 1),
+			'/path/to/workspace-3/b': mockRepoState(null, null),
+			'/path/to/workspace-3/d': mockRepoState(null, null),
+			'/path/to/workspace-2/a': mockRepoState(null, 0),
+			'/path/to/workspace-1/c': mockRepoState(null, 1),
+			'/path/to/workspace-3/c': mockRepoState(null, null),
+			'/path/to/workspace-2/d': mockRepoState(null, 0)
+		}, RepoDropdownOrder.WorkspaceFullPath);
+
+		// Assert
+		expect(repoPaths).toStrictEqual(['/path/to/workspace-2/a', '/path/to/workspace-2/b', '/path/to/workspace-2/c', '/path/to/workspace-2/d', '/path/to/workspace-1/a', '/path/to/workspace-1/b', '/path/to/workspace-1/c', '/path/to/workspace-1/d', '/path/to/workspace-3/a', '/path/to/workspace-3/b', '/path/to/workspace-3/c', '/path/to/workspace-3/d']);
+	});
+
+	it('Should sort by RepoDropdownOrder.FullPath', () => {
+		// Run
+		const repoPaths = getSortedRepositoryPaths({
+			'/path/to/a': mockRepoState(null, 1),
+			'/path/to/f': mockRepoState(null, 2),
+			'/path/to/D': mockRepoState(null, 3),
+			'/path/to/b': mockRepoState(null, 4),
+			'/path/to/é': mockRepoState(null, 5),
+			'/path/to/C': mockRepoState(null, 6),
+			'/path/a': mockRepoState(null, 1)
+		}, RepoDropdownOrder.FullPath);
+
+		// Assert
+		expect(repoPaths).toStrictEqual(['/path/a', '/path/to/a', '/path/to/b', '/path/to/C', '/path/to/D', '/path/to/é', '/path/to/f']);
+	});
+
+	it('Should sort by RepoDropdownOrder.Name', () => {
+		// Run
+		const repoPaths = getSortedRepositoryPaths({
+			'/path/to/a': mockRepoState(null, 1),
+			'/path/to/x': mockRepoState('f', 2),
+			'/path/to/y': mockRepoState('D', 3),
+			'/path/to/b': mockRepoState(null, 4),
+			'/path/to/z': mockRepoState('é', 5),
+			'/path/to/C': mockRepoState(null, 6),
+			'/path/to/another/A': mockRepoState(null, 7),
+			'/path/a': mockRepoState(null, 1)
+		}, RepoDropdownOrder.Name);
+
+		// Assert
+		expect(repoPaths).toStrictEqual(['/path/a', '/path/to/a', '/path/to/another/A', '/path/to/b', '/path/to/C', '/path/to/y', '/path/to/z', '/path/to/x']);
 	});
 });
 

@@ -174,7 +174,9 @@ class GitGraphView {
 		if (loadViewTo !== null && this.currentRepo !== loadViewTo.repo && typeof repos[loadViewTo.repo] !== 'undefined') {
 			newRepo = loadViewTo.repo;
 		} else if (typeof repos[this.currentRepo] === 'undefined') {
-			newRepo = lastActiveRepo !== null && typeof repos[lastActiveRepo] !== 'undefined' ? lastActiveRepo : repoPaths[0];
+			newRepo = lastActiveRepo !== null && typeof repos[lastActiveRepo] !== 'undefined'
+				? lastActiveRepo
+				: getSortedRepositoryPaths(repos, this.config.repoDropdownOrder)[0];
 		} else {
 			newRepo = this.currentRepo;
 		}
@@ -3672,8 +3674,8 @@ function abbrevCommit(commitHash: string) {
 }
 
 function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
-	const repoPaths = Object.keys(repos);
-	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
+	const repoPaths = getSortedRepositoryPaths(repos, initialState.config.repoDropdownOrder);
+	const paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
 		let firstOccurrence: { [name: string]: number } = {}, ambiguous: { [name: string]: number[] } = {};
@@ -3714,11 +3716,11 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 	};
 
 	// Initialise recursion
-	let indexes = [];
+	const indexes = [];
 	for (let i = 0; i < repoPaths.length; i++) {
 		firstSep.push(repoPaths[i].indexOf('/'));
 		const repo = repos[repoPaths[i]];
-		if (repo.name !== null) {
+		if (repo.name) {
 			// A name has been set for the repository
 			paths.push(repoPaths[i]);
 			names.push(repo.name);
@@ -3738,7 +3740,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 	}
 	resolveAmbiguous(indexes);
 
-	let options: DropdownOption[] = [];
+	const options: DropdownOption[] = [];
 	for (let i = 0; i < repoPaths.length; i++) {
 		let hint;
 		if (names[i] === distinctNames[i]) {
@@ -3759,9 +3761,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 		options.push({ name: names[i], value: repoPaths[i], hint: hint });
 	}
 
-	return initialState.config.repoDropdownOrder === GG.RepoDropdownOrder.Name
-		? options.sort((a, b) => a.name !== b.name ? a.name.localeCompare(b.name) : a.value.localeCompare(b.value))
-		: options;
+	return options;
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {

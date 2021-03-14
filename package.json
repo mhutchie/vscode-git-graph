@@ -1068,13 +1068,15 @@
 					"type": "string",
 					"enum": [
 						"Full Path",
-						"Name"
+						"Name",
+						"Workspace Full Path"
 					],
 					"enumDescriptions": [
 						"Sort repositories alphabetically by the full path of the repository.",
-						"Sort repositories alphabetically by the name of the repository."
+						"Sort repositories alphabetically by the name of the repository.",
+						"Sort repositories according to the workspace folder order, then alphabetically by the full path of the repository."
 					],
-					"default": "Full Path",
+					"default": "Workspace Full Path",
 					"description": "Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace)."
 				},
 				"git-graph.retainContextWhenHidden": {

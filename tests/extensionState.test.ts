@@ -5,7 +5,7 @@ jest.mock('fs');
 
 import * as fs from 'fs';
 import { ExtensionState } from '../src/extensionState';
-import { BooleanOverride, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, RepoCommitOrdering } from '../src/types';
+import { BooleanOverride, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoState, RepoCommitOrdering } from '../src/types';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -56,7 +56,7 @@ describe('ExtensionState', () => {
 	describe('getRepos', () => {
 		it('Should return the stored repositories', () => {
 			// Setup
-			const repoState = {
+			const repoState: GitRepoState = {
 				cdvDivider: 0.5,
 				cdvHeight: 250,
 				columnWidths: null,
@@ -74,7 +74,8 @@ describe('ExtensionState', () => {
 				showRemoteBranches: true,
 				showRemoteBranchesV2: BooleanOverride.Enabled,
 				showStashes: BooleanOverride.Enabled,
-				showTags: BooleanOverride.Enabled
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
 			};
 			extensionContext.workspaceState.get.mockReturnValueOnce({
 				'/path/to/repo': repoState
@@ -121,7 +122,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				}
 			});
 		});
@@ -158,7 +160,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				}
 			});
 		});
@@ -195,7 +198,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Disabled,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				}
 			});
 		});
@@ -232,7 +236,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Default,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				}
 			});
 		});
@@ -269,7 +274,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Enabled,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				}
 			});
 		});
@@ -309,7 +315,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: true,
 					showRemoteBranchesV2: BooleanOverride.Default,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				},
 				'/path/to/repo-2': {
 					cdvDivider: 0.5,
@@ -329,7 +336,8 @@ describe('ExtensionState', () => {
 					showRemoteBranches: false,
 					showRemoteBranchesV2: BooleanOverride.Disabled,
 					showStashes: BooleanOverride.Default,
-					showTags: BooleanOverride.Default
+					showTags: BooleanOverride.Default,
+					workspaceFolderIndex: null
 				}
 			});
 			expect(workspaceConfiguration.get).toHaveBeenCalledTimes(1);

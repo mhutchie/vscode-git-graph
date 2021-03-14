@@ -8,7 +8,7 @@ import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -157,7 +157,7 @@ export class CommandManager extends Disposable {
 		}
 
 		const repos = this.repoManager.getRepos();
-		const items: vscode.QuickPickItem[] = Object.keys(repos).map((path) => ({
+		const items: vscode.QuickPickItem[] = getSortedRepositoryPaths(repos, getConfig().repoDropdownOrder).map((path) => ({
 			label: repos[path].name || getRepoName(path),
 			description: path
 		}));
@@ -188,7 +188,7 @@ export class CommandManager extends Disposable {
 	 */
 	private fetch() {
 		const repos = this.repoManager.getRepos();
-		const repoPaths = Object.keys(repos);
+		const repoPaths = getSortedRepositoryPaths(repos, getConfig().repoDropdownOrder);
 
 		if (repoPaths.length > 1) {
 			const items: vscode.QuickPickItem[] = repoPaths.map((path) => ({

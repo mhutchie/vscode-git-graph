@@ -448,6 +448,23 @@ body.selection-background-color-exists ::selection{
 	opacity:0.8;
 }
 
+.cicdInfo{
+	margin-left:4px;
+	vertical-align:middle;
+}
+.cicdInfo.G svg{
+	fill:#009028;
+	opacity:0.9;
+}
+.cicdInfo.U svg{
+	fill:#f09000;
+	opacity:1;
+}
+.cicdInfo.B svg{
+	fill:#e00000;
+	opacity:0.8;
+}
+
 #cdvFiles{
 	left:50%;
 	right:0;

@@ -379,6 +379,7 @@ class GitGraphView {
 
 		this.finaliseLoadCommits();
 		this.requestAvatars(avatarsNeeded);
+		this.requestCICDs();
 	}
 
 	private finaliseLoadCommits() {
@@ -515,6 +516,19 @@ class GitGraphView {
 		}
 	}
 
+	public loadCicd(cicdData: GG.CICDData) {
+		// this.avatars[sha] = image;
+		// this.saveState();
+		let cicdElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicd'), hash = cicdData.sha;
+		for (let i = 0; i < cicdElems.length; i++) {
+			if (cicdElems[i].dataset.hash === hash) {
+				cicdElems[i].innerHTML = (cicdData.status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
+					((cicdData.status === 'failed' || cicdData.status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
+						'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
+					'<a href="' + cicdData.web_url + '">' + cicdData.status + '</a></td>';
+			}
+		}
+	}
 
 	/* Getters */
 
@@ -615,8 +629,7 @@ class GitGraphView {
 			commitOrdering: getCommitOrdering(repoState.commitOrdering),
 			remotes: this.gitRemotes,
 			hideRemotes: repoState.hideRemotes,
-			stashes: this.gitStashes,
-			cicdConfigs: repoState.cicdConfigs
+			stashes: this.gitStashes
 		});
 	}
 
@@ -690,6 +703,16 @@ class GitGraphView {
 		}
 	}
 
+	private requestCICDs() {
+		this.commits.forEach(commit => {
+			if (typeof this.currentRepo === 'string' && typeof this.gitRepos[this.currentRepo] !== 'undefined') {
+				let cicdConfigs = this.gitRepos[this.currentRepo].cicdConfigs;
+				if (cicdConfigs !== null) {
+					sendMessage({ command: 'fetchCICD', repo: this.currentRepo, sha: commit.hash, cicdConfigs: cicdConfigs });
+				}
+			}
+		});
+	}
 
 	/* State */
 
@@ -821,7 +844,7 @@ class GitGraphView {
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
 			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
-			(colVisibility.cicd ? '<th class="tableColHeader" data-col="5">CI/CD Status</th>' : '') +
+			(colVisibility.cicd ? '<th class="tableColHeader" data-col="5">CI/CD</th>' : '') +
 			'</tr>';
 
 		for (let i = 0; i < this.commits.length; i++) {
@@ -870,7 +893,7 @@ class GitGraphView {
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
-				(colVisibility.cicd ? (commit.cicd ? '<td class="text" title="' + escapeHtml(commit.cicd.status) + '">' + '<a href="' + commit.cicd.web_url + '">' + commit.cicd.status + '</a></td>' : '<td class="text">*</td>') : '') +
+				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="text" title="' + '">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">*</span>' + '</td>' : '<td class="text">-</td>') : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -3170,6 +3193,9 @@ window.addEventListener('load', () => {
 				imageResizer.resize(msg.image, (resizedImage) => {
 					gitGraph.loadAvatar(msg.email, resizedImage);
 				});
+				break;
+			case 'fetchCICD':
+				gitGraph.loadCicd(msg.cicdData);
 				break;
 			case 'fetchIntoLocalBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');

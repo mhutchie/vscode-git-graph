@@ -11,17 +11,6 @@ export interface GitCommit {
 	readonly tags: ReadonlyArray<GitCommitTag>;
 	readonly remotes: ReadonlyArray<GitCommitRemote>;
 	readonly stash: GitCommitStash | null; // null => not a stash, otherwise => stash info
-	readonly cicd: GitCICDData | null;
-}
-
-export interface GitCICDData {
-	id: string;
-	status: string;
-	ref: string;
-	sha: string;
-	web_url: string;
-	created_at: string;
-	updated_at: string;
 }
 
 export interface GitCommitTag {
@@ -199,7 +188,15 @@ interface PullRequestConfigCustom extends PullRequestConfigBase {
 
 export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCustom;
 
-
+export interface CICDData {
+	id: string;
+	status: string;
+	ref: string;
+	sha: string;
+	web_url: string;
+	created_at: string;
+	updated_at: string;
+}
 
 export interface CICDConfigBase {
 	readonly gitUrl: string;
@@ -905,14 +902,12 @@ export interface ResponseFetchAvatar extends BaseMessage {
 }
 export interface RequestFetchCICD extends RepoRequest {
 	readonly command: 'fetchCICD';
-	readonly remote: string | null;
-	readonly email: string;
-	readonly commits: string[];
+	readonly sha: string;
+	readonly cicdConfigs: CICDConfig[];
 }
 export interface ResponseFetchCICD extends BaseMessage {
 	readonly command: 'fetchCICD';
-	readonly email: string;
-	readonly image: string;
+	readonly cicdData: CICDData;
 }
 
 export interface RequestFetchIntoLocalBranch extends RepoRequest {
@@ -939,7 +934,6 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly remotes: ReadonlyArray<string>;
 	readonly hideRemotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
-	readonly cicdConfigs: CICDConfig[] | null;
 }
 export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly command: 'loadCommits';

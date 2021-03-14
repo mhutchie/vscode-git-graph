@@ -42,7 +42,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const dataSource = new DataSource(gitExecutable, onDidChangeConfiguration, onDidChangeGitExecutable, logger);
 	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
-	const cicdManager = new CicdManager(dataSource, extensionState, logger);
+	const cicdManager = new CicdManager(extensionState, logger);
 	const repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration, logger);
 	const statusBarItem = new StatusBarItem(repoManager.getNumRepos(), repoManager.onDidChangeRepos, onDidChangeConfiguration, logger);
 	const commandManager = new CommandManager(context, avatarManager, cicdManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);

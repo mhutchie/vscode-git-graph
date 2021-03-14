@@ -152,8 +152,7 @@ export class GitGraphView extends Disposable {
 			cicdManager.onCICD((event) => {
 				this.sendMessage({
 					command: 'fetchCICD',
-					email: event.email,
-					image: event.image
+					cicdData: event.cicdData
 				});
 			}),
 
@@ -398,7 +397,7 @@ export class GitGraphView extends Disposable {
 				this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
 				break;
 			case 'fetchCICD':
-				this.cicdManager.fetchCICDImage(msg.email, msg.repo, msg.remote, msg.commits);
+				this.cicdManager.fetchCICDStatus(msg.sha, msg.cicdConfigs);
 				break;
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({
@@ -421,7 +420,7 @@ export class GitGraphView extends Disposable {
 					command: 'loadCommits',
 					refreshId: msg.refreshId,
 					onlyFollowFirstParent: msg.onlyFollowFirstParent,
-					...await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes, msg.cicdConfigs)
+					...await this.dataSource.getCommits(msg.repo, msg.branches, msg.maxCommits, msg.showTags, msg.showRemoteBranches, msg.includeCommitsMentionedByReflogs, msg.onlyFollowFirstParent, msg.commitOrdering, msg.remotes, msg.hideRemotes, msg.stashes)
 				});
 				break;
 			case 'loadConfig':

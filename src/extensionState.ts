@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
-import { CICD, CICDCache } from './cicdManager';
+import { CICDCache } from './cicdManager';
 import { getConfig } from './config';
-import { BooleanOverride, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
+import { BooleanOverride, CICDData, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -323,22 +323,21 @@ export class ExtensionState extends Disposable {
 
 	/**
 	 * Add a new cicd to the cache of cicds known to Git Graph.
-	 * @param email The email address that the cicd is for.
-	 * @param cicd The details of the cicd.
+	 * @param cicdData The CICDData.
 	 */
-	public saveCICD(email: string, cicd: CICD) {
+	public saveCICD(cicdData: CICDData) {
 		let cicds = this.getCICDCache();
-		cicds[email] = cicd;
+		cicds[cicdData.sha] = cicdData;
 		this.updateWorkspaceState(CICD_CACHE, cicds);
 	}
 
 	/**
 	 * Removes an cicd from the cache of cicds known to Git Graph.
-	 * @param email The email address of the cicd to remove.
+	 * @param hash The hash of the cicd to remove.
 	 */
-	public removeCICDFromCache(email: string) {
+	public removeCICDFromCache(hash: string) {
 		let cicds = this.getCICDCache();
-		delete cicds[email];
+		delete cicds[hash];
 		this.updateWorkspaceState(CICD_CACHE, cicds);
 	}
 
@@ -347,12 +346,6 @@ export class ExtensionState extends Disposable {
 	 */
 	public clearCICDCache() {
 		this.updateWorkspaceState(CICD_CACHE, {});
-		// fs.readdir(this.globalStoragePath + CICD_STORAGE_FOLDER, (err, files) => {
-		// 	if (err) return;
-		// 	for (let i = 0; i < files.length; i++) {
-		// 		fs.unlink(this.globalStoragePath + CICD_STORAGE_FOLDER + '/' + files[i], () => { });
-		// 	}
-		// });
 	}
 
 

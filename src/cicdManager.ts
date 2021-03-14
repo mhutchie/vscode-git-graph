@@ -1,9 +1,9 @@
-import * as crypto from 'crypto';
+// import * as crypto from 'crypto';
 import * as https from 'https';
-import * as url from 'url';
-import { DataSource } from './dataSource';
+// import * as url from 'url';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
+import { CICDConfig, CICDData, CICDProvider } from './types';
 import { Disposable, toDisposable } from './utils/disposable';
 import { EventEmitter } from './utils/event';
 
@@ -11,28 +11,25 @@ import { EventEmitter } from './utils/event';
  * Manages fetching and caching CICDs.
  */
 export class CicdManager extends Disposable {
-	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
 	private readonly cicdEventEmitter: EventEmitter<CICDEvent>;
 
 	private cicds: CICDCache;
 	private queue: CicdRequestQueue;
-	private remoteSourceCache: { [repo: string]: RemoteSource } = {};
 	private interval: NodeJS.Timer | null = null;
 
 	private githubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
+	private initialState: boolean = true;
 
 	/**
 	 * Creates the Git Graph CICD Manager.
-	 * @param dataSource The Git Graph DataSource instance.
 	 * @param extensionState The Git Graph ExtensionState instance.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(dataSource: DataSource, extensionState: ExtensionState, logger: Logger) {
+	constructor(extensionState: ExtensionState, logger: Logger) {
 		super();
-		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.logger = logger;
 		this.cicdEventEmitter = new EventEmitter<CICDEvent>();
@@ -64,48 +61,48 @@ export class CicdManager extends Disposable {
 		if (this.interval !== null) {
 			clearInterval(this.interval);
 			this.interval = null;
-			this.remoteSourceCache = {};
 		}
 	}
 
 	/**
 	 * Fetch an cicd, either from the cache if it already exists, or queue it to be fetched.
-	 * @param email The email address identifying the cicd.
-	 * @param repo The repository that the cicd is used in.
-	 * @param remote The remote that the cicd can be fetched from.
-	 * @param commits The commits that reference the cicd.
+	 * @param hash The hash identifying the cicd.
 	 */
-	public fetchCICDImage(email: string, repo: string, remote: string | null, commits: string[]) {
-		if (typeof this.cicds[email] !== 'undefined') {
+	public fetchCICDStatus(hash: string, cicdConfigs: CICDConfig[]) {
+		if (typeof this.cicds[hash] !== 'undefined') {
 			// CICD exists in the cache
-			let t = (new Date()).getTime();
-			if (this.cicds[email].timestamp < t - 1209600000 || (this.cicds[email].identicon && this.cicds[email].timestamp < t - 345600000)) {
-				// Refresh cicd after 14 days, or if an cicd couldn't previously be found after 4 days
-				this.queue.add(email, repo, remote, commits, false);
-			}
-
-			this.emitCICD(email).catch(() => {
+			this.emitCICD(this.cicds[hash]).catch(() => {
 				// CICD couldn't be found, request it again
-				this.removeCICDFromCache(email);
-				this.queue.add(email, repo, remote, commits, true);
+				this.removeCICDFromCache(hash);
+				cicdConfigs.forEach(cicdConfig => {
+					this.queue.add(cicdConfig, -1, true);
+				});
 			});
 		} else {
 			// CICD not in the cache, request it
-			this.queue.add(email, repo, remote, commits, true);
+			if (this.initialState === true) {
+				this.initialState = false;
+				cicdConfigs.forEach(cicdConfig => {
+					this.queue.add(cicdConfig, -1, true);
+				});
+				// Reset initial state for 10 seconds
+				setTimeout(() => {
+					this.logger.log('Reset initial timer of CICD');
+					this.initialState = true;
+				}, 10000);
+			}
 		}
 	}
 
 	/**
-	 * Get the image data of an cicd.
-	 * @param email The email address identifying the cicd.
-	 * @returns A base64 encoded data URI if the cicd exists, otherwise NULL.
+	 * Get the data of an cicd.
+	 * @param hash The hash identifying the cicd.
+	 * @returns A JSON encoded data of an cicd if the cicd exists, otherwise NULL.
 	 */
-	public getCICDImage(email: string) {
+	public getCICDImage(hash: string) {
 		return new Promise<string | null>((resolve) => {
-			if (typeof this.cicds[email] !== 'undefined' && this.cicds[email].image !== null) {
-				// fs.readFile(this.cicdStorageFolder + '/' + this.cicds[email].image, (err, data) => {
-				// 	resolve(err ? null : 'data:image/' + this.cicds[email].image.split('.')[1] + ';base64,' + data.toString('base64'));
-				// });
+			if (typeof this.cicds[hash] !== 'undefined' && this.cicds[hash] !== null) {
+				resolve(JSON.stringify(this.cicds[hash]));
 			} else {
 				resolve(null);
 			}
@@ -122,11 +119,11 @@ export class CicdManager extends Disposable {
 
 	/**
 	 * Remove an cicd from the cache.
-	 * @param email The email address identifying the cicd.
+	 * @param hash The hash identifying the cicd.
 	 */
-	private removeCICDFromCache(email: string) {
-		delete this.cicds[email];
-		this.extensionState.removeCICDFromCache(email);
+	private removeCICDFromCache(hash: string) {
+		delete this.cicds[hash];
+		this.extensionState.removeCICDFromCache(hash);
 	}
 
 	/**
@@ -138,23 +135,23 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
-	 * Triggered by an interval to fetch cicds from Github, GitLab and Grcicd.
+	 * Triggered by an interval to fetch cicds from GitHub and GitLab.
 	 */
 	private async fetchCICDsInterval() {
 		if (this.queue.hasItems()) {
+
 			let cicdRequest = this.queue.takeItem();
 			if (cicdRequest === null) return; // No cicd can be checked at the current time
 
-			let remoteSource = await this.getRemoteSource(cicdRequest); // Fetch the remote source of the cicd
-			switch (remoteSource.type) {
-				case 'github':
-					this.fetchFromGithub(cicdRequest, remoteSource.owner, remoteSource.repo);
+			switch (cicdRequest.cicdConfig.provider) {
+				case CICDProvider.GitHubV3:
+					this.fetchFromGitHub(cicdRequest);
 					break;
-				case 'gitlab':
+				case CICDProvider.GitLabV4:
 					this.fetchFromGitLab(cicdRequest);
 					break;
 				default:
-					this.fetchFromGrcicd(cicdRequest);
+					break;
 			}
 		} else {
 			// Stop the interval if there are no items remaining in the queue
@@ -163,57 +160,44 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
-	 * Get the remote source of an cicd request.
-	 * @param cicdRequest The cicd request.
-	 * @returns The remote source.
-	 */
-	private async getRemoteSource(cicdRequest: CICDRequestItem) {
-		if (typeof this.remoteSourceCache[cicdRequest.repo] === 'object') {
-			// If the repo exists in the cache of remote sources
-			return this.remoteSourceCache[cicdRequest.repo];
-		} else {
-			// Fetch the remote repo source
-			let remoteSource: RemoteSource = { type: 'grcicd' };
-			if (cicdRequest.remote !== null) {
-				let remoteUrl = await this.dataSource.getRemoteUrl(cicdRequest.repo, cicdRequest.remote);
-				if (remoteUrl !== null) {
-					// Depending on the domain of the remote repo source, determine the type of source it is
-					let match;
-					if ((match = remoteUrl.match(/^(https:\/\/github\.com\/|git@github\.com:)([^\/]+)\/(.*)\.git$/)) !== null) {
-						remoteSource = { type: 'github', owner: match[2], repo: match[3] };
-					} else if (remoteUrl.startsWith('https://gitlab.com/') || remoteUrl.startsWith('git@gitlab.com:')) {
-						remoteSource = { type: 'gitlab' };
-					}
-				}
-			}
-			this.remoteSourceCache[cicdRequest.repo] = remoteSource; // Add the remote source to the cache for future use
-			return remoteSource;
-		}
-	}
-
-	/**
-	 * Fetch an cicd from Github.
+	 * Fetch an cicd from GitHub.
 	 * @param cicdRequest The cicd request to fetch.
-	 * @param owner The owner of the repository.
-	 * @param repo The repository that the cicd is used in.
 	 */
-	private fetchFromGithub(cicdRequest: CICDRequestItem, owner: string, repo: string) {
+	private fetchFromGitHub(cicdRequest: CICDRequestItem) {
 		let t = (new Date()).getTime();
-		if (t < this.githubTimeout) {
+		if (cicdRequest.checkAfter !== 0 && t < this.githubTimeout) {
 			// Defer request until after timeout
 			this.queue.addItem(cicdRequest, this.githubTimeout, false);
 			this.fetchCICDsInterval();
 			return;
 		}
 
-		this.logger.log('Requesting CICD for ' + maskEmail(cicdRequest.email) + ' from GitHub');
+		let cicdConfig = cicdRequest.cicdConfig;
+		this.logger.log('Requesting CICD for ' + cicdConfig.gitUrl + ' page=' + cicdRequest.page + ' from GitHub');
 
-		const commitIndex = cicdRequest.commits.length < 5
-			? cicdRequest.commits.length - 1 - cicdRequest.attempts
-			: Math.round((4 - cicdRequest.attempts) * 0.25 * (cicdRequest.commits.length - 1));
+		const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
+		let hostRootUrl = match1 !== null ? 'api.' + match1[3] : '';
+
+		const match2 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
+		let sourceOwner = match2 !== null ? match2[2] : '';
+		let sourceRepo = match2 !== null ? match2[3] : '';
+
+		let cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
+		if (cicdRequest.page > 1) {
+			cicdRootPath = `${cicdRootPath}&page=${cicdRequest.page}`;
+		}
+
+		let headers: any = {
+			'Accept': 'application/vnd.github.v3+json',
+			'User-Agent': 'vscode-git-graph'
+		};
+		if (cicdConfig.glToken !== '') {
+			headers['Authorization'] = `token ${cicdConfig.glToken}`;
+		}
 
 		let triggeredOnError = false;
-		const onError = () => {
+		const onError = (err: Error) => {
+			this.logger.log('GitHub API HTTPS Error - ' + err.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
@@ -223,8 +207,8 @@ export class CicdManager extends Disposable {
 		};
 
 		https.get({
-			hostname: 'api.github.com', path: '/repos/' + owner + '/' + repo + '/commits/' + cicdRequest.commits[commitIndex],
-			headers: { 'User-Agent': 'vscode-git-graph' },
+			hostname: hostRootUrl, path: cicdRootPath,
+			headers: headers,
 			agent: false, timeout: 15000
 		}, (res) => {
 			let respBody = '';
@@ -237,21 +221,77 @@ export class CicdManager extends Disposable {
 				}
 
 				if (res.statusCode === 200) { // Success
-					let commit: any = JSON.parse(respBody);
-					if (commit.author && commit.author.cicd_url) { // CICD url found
-						let img = await this.downloadCICDImage(cicdRequest.email, commit.author.cicd_url + '&size=162');
-						if (img !== null) {
-							this.saveCICD(cicdRequest.email, img, false);
-						} else {
-							this.logger.log('Failed to download cicd from GitHub for ' + maskEmail(cicdRequest.email));
+					try {
+						let respJson: any = JSON.parse(respBody);
+						if (typeof respJson['workflow_runs'] !== 'undefined' && respJson['workflow_runs'].length >= 1) { // url found
+							let ret: CICDData[] = respJson['workflow_runs'].map((elm: { [x: string]: any; }) => {
+								return {
+									id: elm['id'],
+									status: elm['conclusion'],
+									ref: elm['name'],
+									sha: elm['head_sha'],
+									web_url: elm['html_url'],
+									created_at: elm['created_at'],
+									updated_at: elm['updated_at']
+								};
+							});
+							ret.forEach(element => {
+								this.saveCICD(element);
+							});
+
+							if (cicdRequest.page === -1) {
+								let last = 1;
+								if (typeof res.headers['link'] === 'string') {
+									const DELIM_LINKS = ',';
+									const DELIM_LINK_PARAM = ';';
+									let links = res.headers['link'].split(DELIM_LINKS);
+									links.forEach(link => {
+										let segments = link.split(DELIM_LINK_PARAM);
+
+										let linkPart = segments[0].trim();
+										if (!linkPart.startsWith('<') || !linkPart.endsWith('>')) {
+											return true;
+										}
+										linkPart = linkPart.substring(1, linkPart.length - 1);
+										let match3 = linkPart.match(/&page=(\d+).*$/);
+										let linkPage = match3 !== null ? match3[1] : '0';
+
+										for (let i = 1; i < segments.length; i++) {
+											let rel = segments[i].trim().split('=');
+											if (rel.length < 2) {
+												continue;
+											}
+
+											let relValue = rel[1];
+											if (relValue.startsWith('"') && relValue.endsWith('"')) {
+												relValue = relValue.substring(1, relValue.length - 1);
+											}
+
+											if (relValue === 'last') {
+												last = parseInt(linkPage);
+											}
+										}
+									});
+								}
+
+								for (var i = 1; i < last; i++) {
+									// let cicdRequestNew = Object.assign({}, cicdRequest);;
+									// cicdRequestNew.page = i + 1;
+									// this.queue.addItem(cicdRequestNew, 0, false);
+									this.queue.add(cicdRequest.cicdConfig, i + 1, true);
+								}
+							}
+							return;
 						}
-						return;
+					} catch (e) {
+						this.logger.log('GitHub API Error - (' + res.statusCode + ')API Result error.');
 					}
+					return;
 				} else if (res.statusCode === 403) {
 					// Rate limit reached, try again after timeout
 					this.queue.addItem(cicdRequest, this.githubTimeout, false);
 					return;
-				} else if (res.statusCode === 422 && cicdRequest.commits.length > cicdRequest.attempts + 1 && cicdRequest.attempts < 4) {
+				} else if (res.statusCode === 422 && cicdRequest.attempts < 4) {
 					// Commit not found on remote, try again with the next commit if less than 5 attempts have been made
 					this.queue.addItem(cicdRequest, 0, true);
 					return;
@@ -260,8 +300,15 @@ export class CicdManager extends Disposable {
 					this.githubTimeout = t + 600000;
 					this.queue.addItem(cicdRequest, this.githubTimeout, false);
 					return;
+				} else {
+					// API Error
+					try {
+						let respJson: any = JSON.parse(respBody);
+						this.logger.log('GitHub API Error - (' + res.statusCode + ')' + respJson.message);
+					} catch (e) {
+						this.logger.log('GitHub API Error - (' + res.statusCode + ')' + res.statusMessage);
+					}
 				}
-				this.fetchFromGrcicd(cicdRequest); // Fallback to Grcicd
 			});
 			res.on('error', onError);
 		}).on('error', onError);
@@ -273,17 +320,35 @@ export class CicdManager extends Disposable {
 	 */
 	private fetchFromGitLab(cicdRequest: CICDRequestItem) {
 		let t = (new Date()).getTime();
-		if (t < this.gitLabTimeout) {
+		if (cicdRequest.checkAfter !== 0 && t < this.gitLabTimeout) {
 			// Defer request until after timeout
 			this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
 			this.fetchCICDsInterval();
 			return;
 		}
 
-		this.logger.log('Requesting CICD for ' + maskEmail(cicdRequest.email) + ' from GitLab');
+		let cicdConfig = cicdRequest.cicdConfig;
+		this.logger.log('Requesting CICD for ' + cicdConfig.gitUrl + ' page=' + cicdRequest.page + ' from GitLab');
+
+		const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
+		let hostRootUrl = match1 !== null ? '' + match1[3] : '';
+
+		const match2 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
+		let sourceOwner = match2 !== null ? match2[2] : '';
+		let sourceRepo = match2 !== null ? match2[3] : '';
+
+		const cicdRootPath = `/api/v4/projects/${sourceOwner}%2F${sourceRepo.replace(/\//g, '%2F')}/pipelines?per_page=100`;
+
+		let headers: any = {
+			'User-Agent': 'vscode-git-graph'
+		};
+		if (cicdConfig.glToken !== '') {
+			headers['PRIVATE-TOKEN'] = cicdConfig.glToken;
+		}
 
 		let triggeredOnError = false;
-		const onError = () => {
+		const onError = (err: Error) => {
+			this.logger.log('GitLab API HTTPS Error - ' + err.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
@@ -293,8 +358,8 @@ export class CicdManager extends Disposable {
 		};
 
 		https.get({
-			hostname: 'gitlab.com', path: '/api/v4/users?search=' + cicdRequest.email,
-			headers: { 'User-Agent': 'vscode-git-graph', 'Private-Token': 'w87U_3gAxWWaPtFgCcus' }, // Token only has read access
+			hostname: hostRootUrl, path: cicdRootPath,
+			headers: headers,
 			agent: false, timeout: 15000
 		}, (res) => {
 			let respBody = '';
@@ -307,15 +372,29 @@ export class CicdManager extends Disposable {
 				}
 
 				if (res.statusCode === 200) { // Success
-					let users: any = JSON.parse(respBody);
-					if (users.length > 0 && users[0].cicd_url) { // CICD url found
-						let img = await this.downloadCICDImage(cicdRequest.email, users[0].cicd_url);
-						if (img !== null) {
-							this.saveCICD(cicdRequest.email, img, false);
-						} else {
-							this.logger.log('Failed to download cicd from GitLab for ' + maskEmail(cicdRequest.email));
+					try {
+						if (typeof res.headers['x-page'] === 'string' && typeof res.headers['x-total-pages'] === 'string' && typeof res.headers['x-total'] === 'string') {
+							let respJson: any = JSON.parse(respBody);
+							if (parseInt(res.headers['x-total']) !== 0 && respJson.length && respJson[0].id) { // url found
+								let ret: CICDData[] = respJson;
+								ret.forEach(element => {
+									this.saveCICD(element);
+								});
+
+								let last = parseInt(res.headers['x-total-pages']);
+								if (cicdRequest.page === -1) {
+									for (var i = 1; i < last; i++) {
+										// let cicdRequestNew = Object.assign({}, cicdRequest);;
+										// cicdRequestNew.page = i + 1;
+										// this.queue.addItem(cicdRequestNew, 0, false);
+										this.queue.add(cicdRequest.cicdConfig, i + 1, true);
+									}
+								}
+								return;
+							}
 						}
-						return;
+					} catch (e) {
+						this.logger.log('GitLab API Error - (' + res.statusCode + ')API Result error.');
 					}
 				} else if (res.statusCode === 429) {
 					// Rate limit reached, try again after timeout
@@ -326,94 +405,32 @@ export class CicdManager extends Disposable {
 					this.gitLabTimeout = t + 600000;
 					this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
 					return;
+				} else {
+					// API Error
+					try {
+						let respJson: any = JSON.parse(respBody);
+						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + respJson.message);
+					} catch (e) {
+						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + res.statusMessage);
+					}
 				}
-				this.fetchFromGrcicd(cicdRequest); // Fallback to Grcicd
 			});
 			res.on('error', onError);
 		}).on('error', onError);
 	}
 
 	/**
-	 * Fetch an cicd from Grcicd.
-	 * @param cicdRequest The cicd request to fetch.
-	 */
-	private async fetchFromGrcicd(cicdRequest: CICDRequestItem) {
-		this.logger.log('Requesting CICD for ' + maskEmail(cicdRequest.email) + ' from Grcicd');
-		const hash: string = crypto.createHash('md5').update(cicdRequest.email.trim().toLowerCase()).digest('hex');
-
-		let img = await this.downloadCICDImage(cicdRequest.email, 'https://secure.grcicd.com/cicd/' + hash + '?s=162&d=404'), identicon = false;
-		if (img === null) {
-			img = await this.downloadCICDImage(cicdRequest.email, 'https://secure.grcicd.com/cicd/' + hash + '?s=162&d=identicon');
-			identicon = true;
-		}
-
-		if (img !== null) {
-			this.saveCICD(cicdRequest.email, img, identicon);
-		} else {
-			this.logger.log('No CICD could be found for ' + maskEmail(cicdRequest.email));
-		}
-	}
-
-	/**
-	 * Download and save an cicd image.
-	 * @param _email The email address identifying the cicd.
-	 * @param imageUrl The URL the cicd can be downloaded from.
-	 * @returns A promise that resolves to the image name of the cicd on disk, or NULL if downloading failed.
-	 */
-	private downloadCICDImage(_email: string, imageUrl: string) {
-		return (new Promise<string | null>((resolve) => {
-			// const hash = crypto.createHash('md5').update(email).digest('hex');
-			const imgUrl = url.parse(imageUrl);
-
-			let completed = false;
-			const complete = (fileName: string | null = null) => {
-				if (!completed) {
-					completed = true;
-					resolve(fileName);
-				}
-			};
-
-			https.get({
-				hostname: imgUrl.hostname, path: imgUrl.path,
-				headers: { 'User-Agent': 'vscode-git-graph' },
-				agent: false, timeout: 15000
-			}, (res) => {
-				let imageBufferArray: Buffer[] = [];
-				res.on('data', (chunk: Buffer) => { imageBufferArray.push(chunk); });
-				res.on('end', () => {
-					if (res.statusCode === 200) { // If success response, save the image to the cicd folder
-						// let format = res.headers['content-type']!.split('/')[1];
-						// fs.writeFile(this.cicdStorageFolder + '/' + hash + '.' + format, Buffer.concat(imageBufferArray), err => {
-						// 	complete(err ? null : hash + '.' + format);
-						// });
-					} else {
-						complete();
-					}
-				});
-				res.on('error', complete);
-			}).on('error', complete);
-		})).catch(() => null);
-	}
-
-	/**
 	 * Emit an CICDEvent to any listeners.
-	 * @param email The email address identifying the cicd.
+	 * @param cicdData The CICDData.
 	 * @returns A promise indicating if the event was emitted successfully.
 	 */
-	private emitCICD(email: string) {
-		return new Promise<boolean>((resolve, reject) => {
+	private emitCICD(cicdData: CICDData) {
+		return new Promise<boolean>((resolve, _reject) => {
 			if (this.cicdEventEmitter.hasSubscribers()) {
-				this.getCICDImage(email).then((image) => {
-					if (image === null) {
-						reject();
-					} else {
-						this.cicdEventEmitter.emit({
-							email: email,
-							image: image
-						});
-						resolve(true);
-					}
+				this.cicdEventEmitter.emit({
+					cicdData: cicdData
 				});
+				resolve(true);
 			} else {
 				resolve(false);
 			}
@@ -422,28 +439,19 @@ export class CicdManager extends Disposable {
 
 	/**
 	 * Save an cicd in the cache.
-	 * @param email The email address identifying the cicd.
-	 * @param image The image name of the cicd on disk.
-	 * @param identicon Whether this cicd is an identicon.
+	 * @param cicdData The CICDData.
 	 */
-	private saveCICD(email: string, image: string, identicon: boolean) {
-		if (typeof this.cicds[email] !== 'undefined') {
-			if (!identicon || this.cicds[email].identicon) {
-				this.cicds[email].image = image;
-				this.cicds[email].identicon = identicon;
-			}
-			this.cicds[email].timestamp = (new Date()).getTime();
-		} else {
-			this.cicds[email] = { image: image, timestamp: (new Date()).getTime(), identicon: identicon };
-		}
-		this.extensionState.saveCICD(email, this.cicds[email]);
-		this.logger.log('Saved CICD for ' + maskEmail(email));
-		this.emitCICD(email).then(
-			(sent) => this.logger.log(sent
-				? 'Sent CICD for ' + maskEmail(email) + ' to the Git Graph View'
-				: 'CICD for ' + maskEmail(email) + ' is ready to be used the next time the Git Graph View is opened'
-			),
-			() => this.logger.log('Failed to Send CICD for ' + maskEmail(email) + ' to the Git Graph View')
+	private saveCICD(cicdData: CICDData) {
+		this.cicds[cicdData.sha] = cicdData;
+		this.extensionState.saveCICD(this.cicds[cicdData.sha]);
+		// this.logger.log('Saved CICD for ' + cicdData.sha);
+		this.emitCICD(this.cicds[cicdData.sha]).then(
+			// (sent) => this.logger.log(sent
+			// 	? 'Sent CICD for ' + cicdData.sha + ' to the Git Graph View'
+			// 	: 'CICD for ' + cicdData.sha + ' is ready to be used the next time the Git Graph View is opened'
+			// ),
+			() => { },
+			() => this.logger.log('Failed to Send CICD for ' + cicdData.sha + ' to the Git Graph View')
 		);
 	}
 }
@@ -465,26 +473,17 @@ class CicdRequestQueue {
 
 	/**
 	 * Create and add a new cicd request to the queue.
-	 * @param email The email address identifying the cicd.
-	 * @param repo The repository that the cicd is used in.
-	 * @param remote The remote that the cicd can be fetched from.
-	 * @param commits The commits that reference the cicd.
-	 * @param immediate Whether the cicd should be fetched immediately.
+	 * @param cicdConfig The CICDConfig.
+	 * @param page The page of cicd request.
+	 * @param immediate Whether the avatar should be fetched immediately.
 	 */
-	public add(email: string, repo: string, remote: string | null, commits: string[], immediate: boolean) {
-		const existingRequest = this.queue.find((request) => request.email === email && request.repo === repo);
+	public add(cicdConfig: CICDConfig, page: number, immediate: boolean) {
+		const existingRequest = this.queue.find((request) => request.cicdConfig.gitUrl === cicdConfig.gitUrl && request.page === page);
 		if (existingRequest) {
-			commits.forEach((commit) => {
-				if (!existingRequest.commits.includes(commit)) {
-					existingRequest.commits.push(commit);
-				}
-			});
 		} else {
 			this.insertItem({
-				email: email,
-				repo: repo,
-				remote: remote,
-				commits: commits,
+				cicdConfig: cicdConfig,
+				page: page,
 				checkAfter: immediate || this.queue.length === 0
 					? 0
 					: this.queue[this.queue.length - 1].checkAfter + 1,
@@ -541,49 +540,19 @@ class CicdRequestQueue {
 	}
 }
 
-/**
- * Mask an email address for logging.
- * @param email The string containing the email address.
- * @returns The masked email address.
- */
-function maskEmail(email: string) {
-	return email.substring(0, email.indexOf('@')) + '@*****';
-}
 
-export interface CICD {
-	image: string;
-	timestamp: number;
-	identicon: boolean;
-}
+export type CICDCache = { [hash: string]: CICDData };
 
-export type CICDCache = { [email: string]: CICD };
 
+// Request item to CicdRequestQueue
 interface CICDRequestItem {
-	email: string;
-	repo: string;
-	remote: string | null;
-	commits: string[];
+	cicdConfig: CICDConfig;
+	page: number;
 	checkAfter: number;
 	attempts: number;
 }
 
-interface GitHubRemoteSource {
-	readonly type: 'github';
-	readonly owner: string;
-	readonly repo: string;
-}
-
+// Event to GitGraphView
 export interface CICDEvent {
-	email: string;
-	image: string;
+	cicdData: CICDData;
 }
-
-interface GitLabRemoteSource {
-	readonly type: 'gitlab';
-}
-
-interface GrcicdRemoteSource {
-	readonly type: 'grcicd';
-}
-
-type RemoteSource = GitHubRemoteSource | GitLabRemoteSource | GrcicdRemoteSource;

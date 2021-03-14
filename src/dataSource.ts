@@ -6,11 +6,10 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CICDConfig, CICDProvider, CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCICDData, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
-import * as request from 'request-promise';
 
 const DRIVE_LETTER_PATH_REGEX = /^[a-z]:\//;
 const EOL_REGEX = /\r\n|\r|\n/g;
@@ -159,15 +158,13 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns The commits in the repository.
 	 */
-	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>, cicdConfigs: CICDConfig[] | null): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
 			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
-			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage),
-			this.getCICDs(cicdConfigs).then((refData: GitCICDData[] | string | undefined) => refData, (errorMessage: string) => errorMessage)
+			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
 			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
-			let cicds: GitCICDData[] | string | undefined = results[2];
 			let moreCommitsAvailable = commits.length === maxCommits + 1;
 			if (moreCommitsAvailable) commits.pop();
 
@@ -200,7 +197,7 @@ export class DataSource extends Disposable {
 
 			for (i = 0; i < commits.length; i++) {
 				commitLookup[commits[i].hash] = i;
-				commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null, cicd: null });
+				commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null });
 			}
 
 			/* Insert Stashes */
@@ -220,7 +217,6 @@ export class DataSource extends Disposable {
 			for (i = toAdd.length - 1; i >= 0; i--) {
 				let stash = toAdd[i].data;
 				commitNodes.splice(toAdd[i].index, 0, {
-					cicd: null,
 					hash: stash.hash,
 					parents: [stash.baseHash],
 					author: stash.author,
@@ -258,16 +254,6 @@ export class DataSource extends Disposable {
 					let name = refData.remotes[i].name;
 					let remote = remotes.find(remote => name.startsWith(remote + '/'));
 					commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
-				}
-			}
-
-			if (typeof cicds === 'string' || typeof cicds === 'undefined') {
-				cicds = [];
-			}
-			/* Annotate CI/CDs */
-			for (i = 0; i < cicds.length; i++) {
-				if (typeof commitLookup[cicds[i].sha] === 'number') {
-					commitNodes[commitLookup[cicds[i].sha]].cicd = cicds[i];
 				}
 			}
 
@@ -1510,182 +1496,6 @@ export class DataSource extends Disposable {
 		});
 	}
 
-	/**
-	 * Get the result in a CI/CDs.
-	 * @param cicdConfigs CI/CD configuration.
-	 * @returns The references data.
-	 */
-	private async getCICDs(cicdConfigs: CICDConfig[] | null) {
-		if (cicdConfigs === null) {
-			return '';
-		}
-
-		return await Promise.all(
-			cicdConfigs.map(async cicdConfig => {
-				if (cicdConfig.provider === CICDProvider.GitHubV3) {
-
-					const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
-					let hostRootUrl = match1 !== null ? 'https://api.' + match1[3] : '';
-
-					const match2 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
-					let sourceOwner = match2 !== null ? match2[2] : '';
-					let sourceRepo = match2 !== null ? match2[3] : '';
-
-					const apiRoot = `${hostRootUrl}`;
-					const cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
-
-					let config: request.RequestPromiseOptions = {
-						method: 'GET',
-						headers: {
-							'Authorization': `token ${cicdConfig.glToken}`,
-							'Accept': 'application/vnd.github.v3+json',
-							'User-Agent': 'vscode-git-graph'
-						}
-					};
-					if (cicdConfig.glToken === '' && config.headers) {
-						delete config.headers['Authorization'];
-					}
-
-					config.transform = (body, response) => {
-						try {
-							let res: any = JSON.parse(body);
-							let last = 1;
-							let next = 2;
-							if (typeof response.headers['link'] === 'string') {
-								next = 3;
-								const DELIM_LINKS = ',';
-								const DELIM_LINK_PARAM = ';';
-								let links = response.headers['link'].split(DELIM_LINKS);
-								links.forEach(link => {
-									let segments = link.split(DELIM_LINK_PARAM);
-
-									let linkPart = segments[0].trim();
-									if (!linkPart.startsWith('<') || !linkPart.endsWith('>')) {
-										return true;
-									}
-									linkPart = linkPart.substring(1, linkPart.length - 1);
-									let match3 = linkPart.match(/&page=(\d+).*$/);
-									let linkPage = match3 !== null ? match3[1] : '0';
-
-									for (let i = 1; i < segments.length; i++) {
-										let rel = segments[i].trim().split('=');
-										if (rel.length < 2) {
-											continue;
-										}
-
-										let relValue = rel[1];
-										if (relValue.startsWith('"') && relValue.endsWith('"')) {
-											relValue = relValue.substring(1, relValue.length - 1);
-										}
-
-										if (relValue === 'last') {
-											last = parseInt(linkPage);
-										} else if (relValue === 'next') {
-											next = parseInt(linkPage);
-										}
-									}
-								});
-							}
-							if (typeof res['workflow_runs'] !== 'undefined' && res['workflow_runs'].length >= 1) { // url found
-								let ret: GitCICDData[] = res['workflow_runs'].map( (elm: { [x: string]: any; }) => {
-									return {
-										id: elm['id'],
-										status: elm['conclusion'],
-										ref: elm['name'],
-										sha: elm['head_sha'],
-										web_url: elm['html_url'],
-										created_at: elm['created_at'],
-										updated_at: elm['updated_at']
-									};
-								});
-								if (next === 2) {
-									return { x_total_pages: last, ret: ret };
-								}
-								return ret;
-							}
-							return { x_total_pages: 0, ret: 'error' };
-						} catch (e) {
-							return { x_total_pages: 0, ret: e };
-						}
-					};
-					return request(`${apiRoot}${cicdRootPath}`, config).then(async (result1st) => {
-						let promises = [];
-						promises.push(result1st.ret);
-						for (let i = 1; i < result1st.x_total_pages; i++) {
-							promises.push(request(`${apiRoot}${cicdRootPath}&page=${i + 1}`, config));
-						}
-						return await Promise.all(promises);
-					}).then((resultAll) => {
-						let retAll: GitCICDData[] = [];
-						for (let i = 0; i < resultAll.length; i++) {
-							retAll = retAll.concat(resultAll[i]);
-						}
-						return retAll;
-					});
-				}
-				if (cicdConfig.provider === CICDProvider.GitLabV4) {
-
-					const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
-					let hostRootUrl = match1 !== null ? 'https://' + match1[3] : '';
-
-					const match2 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
-					let sourceOwner = match2 !== null ? match2[2] : '';
-					let sourceRepo = match2 !== null ? match2[3] : '';
-
-					const apiRoot = `${hostRootUrl}/api/v4`;
-					const cicdRootPath = `/projects/${sourceOwner}%2F${sourceRepo.replace(/\//g, '%2F')}/pipelines?per_page=100`;
-
-					const config: request.RequestPromiseOptions = {
-						method: 'GET',
-						headers: {
-							'PRIVATE-TOKEN': cicdConfig.glToken,
-							'User-Agent': 'vscode-git-graph'
-						}
-					};
-
-					config.transform = (body, response) => {
-						try {
-							if (typeof response.headers['x-page'] === 'string' && typeof response.headers['x-total-pages'] === 'string' && typeof response.headers['x-total'] === 'string') {
-								let res: any = JSON.parse(body);
-								if (parseInt(response.headers['x-total']) !== 0 && res.length && res[0].id) { // url found
-									let ret: GitCICDData[] = res;
-									if (parseInt(response.headers['x-page']) === 1) {
-										return { x_total_pages: parseInt(response.headers['x-total-pages']), ret: ret };
-									}
-									return ret;
-								}
-							}
-							return { x_total_pages: 0, ret: 'error' };
-						} catch (e) {
-							return { x_total_pages: 0, ret: e };
-						}
-					};
-					return request(`${apiRoot}${cicdRootPath}`, config).then(async (result1st) => {
-						let promises = [];
-						promises.push(result1st.ret);
-						for (let i = 1; i < result1st.x_total_pages; i++) {
-							promises.push(request(`${apiRoot}${cicdRootPath}&page=${i + 1}`, config));
-						}
-						return await Promise.all(promises);
-					}).then((resultAll) => {
-						let retAll: GitCICDData[] = [];
-						for (let i = 0; i < resultAll.length; i++) {
-							retAll = retAll.concat(resultAll[i]);
-						}
-						return retAll;
-					});
-				}
-			})
-		).then((resultAll2) => {
-			let retAll: GitCICDData[] = [];
-			resultAll2.forEach(resultList => {
-				resultList?.forEach(result => {
-					retAll = retAll.concat(result);
-				});
-			});
-			return retAll;
-		});
-	}
 	/**
 	 * Get the references in a repository.
 	 * @param repo The path of the repository.

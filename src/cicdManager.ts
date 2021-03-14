@@ -24,6 +24,7 @@ export class CicdManager extends Disposable {
 	private initialState: boolean = true;
 	private requestPage: number = -1;
 	private requestPageTimeout: NodeJS.Timer | null = null;
+	private cicdConfigsPrev: CICDConfig[] = [];
 
 	/**
 	 * Creates the Git Graph CICD Manager.
@@ -74,13 +75,23 @@ export class CicdManager extends Disposable {
 		if (typeof this.cicds[hash] !== 'undefined') {
 			// CICD exists in the cache
 			this.emitCICD(this.cicds[hash]).catch(() => {
-				// CICD couldn't be found, request it again
+				// CICD couldn't be found
 				this.removeCICDFromCache(hash);
-				cicdConfigs.forEach(cicdConfig => {
-					this.queue.add(cicdConfig, this.requestPage, true);
-				});
 			});
 		} else {
+
+			// Check update user config
+			const cicdConfigsJSON = Object.entries(cicdConfigs).sort().toString();
+			const cicdConfigsPrevJSON = Object.entries(this.cicdConfigsPrev).sort().toString();
+			if (cicdConfigsJSON !== cicdConfigsPrevJSON) {
+				this.initialState = true;
+				this.requestPage = -1;
+				if (this.requestPageTimeout !== null) {
+					clearTimeout(this.requestPageTimeout);
+				}
+				this.requestPageTimeout = null;
+			}
+			this.cicdConfigsPrev = Object.assign({}, cicdConfigs);
 			// CICD not in the cache, request it
 			if (this.initialState === true) {
 				this.initialState = false;

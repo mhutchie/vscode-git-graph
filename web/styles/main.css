@@ -449,8 +449,13 @@ body.selection-background-color-exists ::selection{
 }
 
 .cicdInfo{
-	margin-left:4px;
-	vertical-align:middle;
+	vertical-align:top;
+	display:inline-block;
+	width:13px;
+	height:13px;
+	vertical-align:top;
+	margin-top:3px;
+	margin-right:4px;
 }
 .cicdInfo.G svg{
 	fill:#009028;

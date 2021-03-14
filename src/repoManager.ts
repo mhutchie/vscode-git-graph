@@ -66,7 +66,10 @@ export class RepoManager extends Disposable {
 		this.startupTasks();
 
 		this.registerDisposables(
-			// Monitor changes to the workspace folders to: search added folders for repositories, remove repositories within deleted folders
+			// Monitor changes to the workspace folders to:
+			// - search added folders for repositories
+			// - remove repositories within deleted folders
+			// - apply changes to the order of workspace folders
 			vscode.workspace.onDidChangeWorkspaceFolders(async (e) => {
 				let changes = false, path;
 				if (e.added.length > 0) {
@@ -83,7 +86,11 @@ export class RepoManager extends Disposable {
 						this.stopWatchingFolder(path);
 					}
 				}
-				if (changes) this.sendRepos();
+				changes = this.updateReposWorkspaceFolderIndex() || changes;
+
+				if (changes) {
+					this.sendRepos();
+				}
 			}),
 
 			// Monitor changes to the maxDepthOfRepoSearch Extension Setting, and trigger a new search if needed
@@ -143,6 +150,7 @@ export class RepoManager extends Disposable {
 	 */
 	private async startupTasks() {
 		this.removeReposNotInWorkspace();
+		this.updateReposWorkspaceFolderIndex();
 		if (!await this.checkReposExist()) this.sendRepos();
 		this.checkReposForNewConfig();
 		await this.checkReposForNewSubmodules();
@@ -154,16 +162,10 @@ export class RepoManager extends Disposable {
 	 * Remove any repositories that are no longer in the current workspace.
 	 */
 	private removeReposNotInWorkspace() {
-		let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders, repoPaths = Object.keys(this.repos), path;
-		if (typeof workspaceFolders !== 'undefined') {
-			for (let i = 0; i < workspaceFolders.length; i++) {
-				path = getPathFromUri(workspaceFolders[i].uri);
-				rootsExact.push(path);
-				rootsFolder.push(pathWithTrailingSlash(path));
-			}
-		}
+		const workspaceFolderInfo = getWorkspaceFolderInfoForRepoInclusionMapping();
+		const rootsExact = workspaceFolderInfo.rootsExact, rootsFolder = workspaceFolderInfo.rootsFolder, repoPaths = Object.keys(this.repos);
 		for (let i = 0; i < repoPaths.length; i++) {
-			let repoPathFolder = pathWithTrailingSlash(repoPaths[i]);
+			const repoPathFolder = pathWithTrailingSlash(repoPaths[i]);
 			if (rootsExact.indexOf(repoPaths[i]) === -1 && !rootsFolder.find(root => repoPaths[i].startsWith(root)) && !rootsExact.find(root => root.startsWith(repoPathFolder))) {
 				this.removeRepo(repoPaths[i]);
 			}
@@ -219,11 +221,7 @@ export class RepoManager extends Disposable {
 	 * @returns The set of repositories.
 	 */
 	public getRepos() {
-		let repoPaths = Object.keys(this.repos).sort((a, b) => a.localeCompare(b)), repos: GitRepoSet = {};
-		for (let i = 0; i < repoPaths.length; i++) {
-			repos[repoPaths[i]] = this.repos[repoPaths[i]];
-		}
-		return repos;
+		return Object.assign({}, this.repos);
 	}
 
 	/**
@@ -303,6 +301,7 @@ export class RepoManager extends Disposable {
 			return false;
 		} else {
 			this.repos[repo] = Object.assign({}, DEFAULT_REPO_STATE);
+			this.updateReposWorkspaceFolderIndex(repo);
 			this.extensionState.saveRepos(this.repos);
 			this.logger.log('Added new repo: ' + repo);
 			await this.checkRepoForNewConfig(repo, true);
@@ -380,6 +379,36 @@ export class RepoManager extends Disposable {
 				resolve(changes);
 			});
 		});
+	}
+
+	/**
+	 * Update each repositories workspaceFolderIndex based on the current workspace.
+	 * @param repo If provided, only update this specific repository.
+	 * @returns TRUE => At least one repository was changed, FALSE => No repositories were changed.
+	 */
+	private updateReposWorkspaceFolderIndex(repo: string | null = null) {
+		const workspaceFolderInfo = getWorkspaceFolderInfoForRepoInclusionMapping();
+		const rootsExact = workspaceFolderInfo.rootsExact, rootsFolder = workspaceFolderInfo.rootsFolder, workspaceFolders = workspaceFolderInfo.workspaceFolders;
+		const repoPaths = repo !== null && this.isKnownRepo(repo) ? [repo] : Object.keys(this.repos);
+		let changes = false, rootIndex: number, workspaceFolderIndex: number | null;
+		for (let i = 0; i < repoPaths.length; i++) {
+			rootIndex = rootsExact.indexOf(repoPaths[i]);
+			if (rootIndex === -1) {
+				// Find a workspace folder that contains the repository
+				rootIndex = rootsFolder.findIndex((root) => repoPaths[i].startsWith(root));
+			}
+			if (rootIndex === -1) {
+				// Find a workspace folder that is contained within the repository
+				const repoPathFolder = pathWithTrailingSlash(repoPaths[i]);
+				rootIndex = rootsExact.findIndex((root) => root.startsWith(repoPathFolder));
+			}
+			workspaceFolderIndex = rootIndex > -1 ? workspaceFolders[rootIndex].index : null;
+			if (this.repos[repoPaths[i]].workspaceFolderIndex !== workspaceFolderIndex) {
+				this.repos[repoPaths[i]].workspaceFolderIndex = workspaceFolderIndex;
+				changes = true;
+			}
+		}
+		return changes;
 	}
 
 	/**
@@ -657,6 +686,24 @@ export class RepoManager extends Disposable {
 			return null;
 		}, (error) => error);
 	}
+}
+
+/**
+ * Gets the current workspace folders, and generates information required to identify whether a repository is within any of the workspace folders.
+ * @returns The Workspace Folder Information.
+ */
+function getWorkspaceFolderInfoForRepoInclusionMapping() {
+	let rootsExact = [], rootsFolder = [], workspaceFolders = vscode.workspace.workspaceFolders || [], path;
+	for (let i = 0; i < workspaceFolders.length; i++) {
+		path = getPathFromUri(workspaceFolders[i].uri);
+		rootsExact.push(path);
+		rootsFolder.push(pathWithTrailingSlash(path));
+	}
+	return {
+		workspaceFolders: workspaceFolders,
+		rootsExact: rootsExact,
+		rootsFolder: rootsFolder
+	};
 }
 
 /**

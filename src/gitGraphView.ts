@@ -240,9 +240,6 @@ export class GitGraphView extends Disposable {
 					error: await this.dataSource.cleanUntrackedFiles(msg.repo, msg.directories)
 				});
 				break;
-			case 'codeReviewFileReviewed':
-				this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath);
-				break;
 			case 'commitDetails':
 				let data = await Promise.all<GitCommitDetailsData, string | null>([
 					msg.commitHash === UNCOMMITTED
@@ -483,7 +480,7 @@ export class GitGraphView extends Disposable {
 			case 'openFile':
 				this.sendMessage({
 					command: 'openFile',
-					error: await openFile(msg.repo, msg.filePath)
+					error: await openFile(msg.repo, msg.filePath, msg.hash, this.dataSource)
 				});
 				break;
 			case 'openTerminal':
@@ -592,6 +589,12 @@ export class GitGraphView extends Disposable {
 					...await this.dataSource.getTagDetails(msg.repo, msg.tagName)
 				});
 				break;
+			case 'updateCodeReview':
+				this.sendMessage({
+					command: 'updateCodeReview',
+					error: await this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile)
+				});
+				break;
 			case 'viewDiff':
 				this.sendMessage({
 					command: 'viewDiff',
@@ -601,7 +604,7 @@ export class GitGraphView extends Disposable {
 			case 'viewDiffWithWorkingFile':
 				this.sendMessage({
 					command: 'viewDiffWithWorkingFile',
-					error: await viewDiffWithWorkingFile(msg.repo, msg.hash, msg.filePath)
+					error: await viewDiffWithWorkingFile(msg.repo, msg.hash, msg.filePath, this.dataSource)
 				});
 				break;
 			case 'viewFileAtRevision':

@@ -20,7 +20,7 @@ import { DEFAULT_REPO_STATE, ExtensionState } from '../src/extensionState';
 import { GitGraphView } from '../src/gitGraphView';
 import { Logger } from '../src/logger';
 import { RepoManager } from '../src/repoManager';
-import { GitFileStatus } from '../src/types';
+import { GitFileStatus, RepoDropdownOrder } from '../src/types';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 import { CicdManager } from '../src/cicdManager';
@@ -349,22 +349,25 @@ describe('CommandManager', () => {
 
 		it('Should ignore the selected repository', async () => {
 			// Setup
-			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
-			});
+			const repos = {
+				'/path/to/repo2': mockRepoState('Custom Name', 1),
+				'/path/to/repo1': mockRepoState(null, 0)
+			};
+			spyOnGetRepos.mockReturnValueOnce(repos);
 			vscode.window.showQuickPick.mockResolvedValueOnce({
 				label: 'repo1',
 				description: '/path/to/repo1'
 			});
 			spyOnIgnoreRepo.mockReturnValueOnce(true);
 			vscode.window.showInformationMessage.mockResolvedValueOnce(null);
+			const spyOnGetSortedRepositoryPaths = jest.spyOn(utils, 'getSortedRepositoryPaths');
 
 			// Run
 			vscode.commands.executeCommand('git-graph.removeGitRepository');
 
 			// Assert
 			await waitForExpect(() => {
+				expect(spyOnGetSortedRepositoryPaths).toHaveBeenCalledWith(repos, RepoDropdownOrder.WorkspaceFullPath);
 				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
 					[
 						{
@@ -388,8 +391,8 @@ describe('CommandManager', () => {
 		it('Should display an error message if the selected repository no longer exists', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			vscode.window.showQuickPick.mockResolvedValueOnce({
 				label: 'repo1',
@@ -426,8 +429,8 @@ describe('CommandManager', () => {
 		it('Shouldn\'t attempt to ignore a repository if none was selected', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			vscode.window.showQuickPick.mockResolvedValueOnce(null);
 
@@ -459,8 +462,8 @@ describe('CommandManager', () => {
 		it('Should handle if showQuickPick rejects', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			vscode.window.showQuickPick.mockRejectedValueOnce(null);
 
@@ -524,21 +527,25 @@ describe('CommandManager', () => {
 
 		it('Should display a quick pick to select a repository to open in the Git Graph View (with last active repository first)', async () => {
 			// Setup
-			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
-			});
+			const repos = {
+				'/path/to/repo3': mockRepoState(null, 2),
+				'/path/to/repo2': mockRepoState('Custom Name', 1),
+				'/path/to/repo1': mockRepoState(null, 0)
+			};
+			spyOnGetRepos.mockReturnValueOnce(repos);
 			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo2');
 			vscode.window.showQuickPick.mockResolvedValueOnce({
 				label: 'repo1',
 				description: '/path/to/repo1'
 			});
+			const spyOnGetSortedRepositoryPaths = jest.spyOn(utils, 'getSortedRepositoryPaths');
 
 			// Run
 			vscode.commands.executeCommand('git-graph.fetch');
 
 			// Assert
 			await waitForExpect(() => {
+				expect(spyOnGetSortedRepositoryPaths).toHaveBeenCalledWith(repos, RepoDropdownOrder.WorkspaceFullPath);
 				expect(vscode.window.showQuickPick).toHaveBeenCalledWith(
 					[
 						{
@@ -548,6 +555,10 @@ describe('CommandManager', () => {
 						{
 							label: 'repo1',
 							description: '/path/to/repo1'
+						},
+						{
+							label: 'repo3',
+							description: '/path/to/repo3'
 						}
 					],
 					{
@@ -562,8 +573,8 @@ describe('CommandManager', () => {
 		it('Should display a quick pick to select a repository to open in the Git Graph View (no last active repository)', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			spyOnGetLastActiveRepo.mockReturnValueOnce(null);
 			vscode.window.showQuickPick.mockResolvedValueOnce({
@@ -599,8 +610,8 @@ describe('CommandManager', () => {
 		it('Should display a quick pick to select a repository to open in the Git Graph View (last active repository is unknown)', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo3');
 			vscode.window.showQuickPick.mockResolvedValueOnce({
@@ -636,8 +647,8 @@ describe('CommandManager', () => {
 		it('Shouldn\'t open the Git Graph View when no item is selected in the quick pick', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo3');
 			vscode.window.showQuickPick.mockResolvedValueOnce(null);
@@ -670,8 +681,8 @@ describe('CommandManager', () => {
 		it('Should display an error message when showQuickPick rejects', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': { name: null },
-				'/path/to/repo2': { name: 'Custom Name' }
+				'/path/to/repo1': mockRepoState(null, 0),
+				'/path/to/repo2': mockRepoState('Custom Name', 0)
 			});
 			spyOnGetLastActiveRepo.mockReturnValueOnce('/path/to/repo2');
 			vscode.window.showQuickPick.mockRejectedValueOnce(null);
@@ -706,7 +717,7 @@ describe('CommandManager', () => {
 		it('Should open the Git Graph View immediately when there is only one repository', async () => {
 			// Setup
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo1': DEFAULT_REPO_STATE
+				'/path/to/repo1': mockRepoState(null, 0)
 			});
 
 			// Run
@@ -760,7 +771,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockImplementationOnce((items: Promise<any[]>, _: any) => items.then((items) => items[0]));
@@ -816,7 +827,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockResolvedValueOnce(null);
@@ -843,7 +854,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockImplementationOnce((items: Promise<any[]>, _: any) => items.then((items) => items[0]));
@@ -872,7 +883,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockImplementationOnce((items: Promise<any[]>, _: any) => items.then((items) => items[0]));
@@ -900,7 +911,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockRejectedValueOnce(null);
@@ -941,7 +952,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockImplementationOnce((_: string, hash: string) => hash === '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b' ? 'subject-' + hash : null);
 			spyOnGetCommitSubject.mockImplementationOnce((_: string, hash: string) => hash === '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b' ? 'subject-' + hash : null);
@@ -997,7 +1008,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockImplementationOnce((_: string, hash: string) => 'subject-' + hash);
 			spyOnGetCommitSubject.mockImplementationOnce((_: string, hash: string) => 'subject-' + hash);
@@ -1043,7 +1054,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockResolvedValueOnce(null);
@@ -1083,7 +1094,7 @@ describe('CommandManager', () => {
 				}
 			});
 			spyOnGetRepos.mockReturnValueOnce({
-				'/path/to/repo': DEFAULT_REPO_STATE
+				'/path/to/repo': mockRepoState(null, 0)
 			});
 			spyOnGetCommitSubject.mockResolvedValueOnce('Commit Subject');
 			vscode.window.showQuickPick.mockRejectedValueOnce(null);
@@ -1214,7 +1225,7 @@ describe('CommandManager', () => {
 			await vscode.commands.executeCommand('git-graph.openFile', encodeDiffDocUri('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', GitFileStatus.Modified, DiffSide.New));
 
 			// Assert
-			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource, vscode.ViewColumn.Active);
 		});
 
 		it('Should open the file of the active text editor', async () => {
@@ -1225,7 +1236,7 @@ describe('CommandManager', () => {
 			await vscode.commands.executeCommand('git-graph.openFile');
 
 			// Assert
-			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource, vscode.ViewColumn.Active);
 		});
 
 		it('Should display an error message when no URI is provided', async () => {
@@ -1261,8 +1272,12 @@ describe('CommandManager', () => {
 			await vscode.commands.executeCommand('git-graph.openFile');
 
 			// Assert
-			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', vscode.ViewColumn.Active);
+			expect(spyOnOpenFile).toHaveBeenCalledWith('/path/to/repo', 'subfolder/modified.txt', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', dataSource, vscode.ViewColumn.Active);
 			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Unable to Open File: Error Message');
 		});
 	});
 });
+
+function mockRepoState(name: string | null, workspaceFolderIndex: number | null) {
+	return Object.assign({}, DEFAULT_REPO_STATE, { name: name, workspaceFolderIndex: workspaceFolderIndex });
+}

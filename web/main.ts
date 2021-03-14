@@ -174,7 +174,9 @@ class GitGraphView {
 		if (loadViewTo !== null && this.currentRepo !== loadViewTo.repo && typeof repos[loadViewTo.repo] !== 'undefined') {
 			newRepo = loadViewTo.repo;
 		} else if (typeof repos[this.currentRepo] === 'undefined') {
-			newRepo = lastActiveRepo !== null && typeof repos[lastActiveRepo] !== 'undefined' ? lastActiveRepo : repoPaths[0];
+			newRepo = lastActiveRepo !== null && typeof repos[lastActiveRepo] !== 'undefined'
+				? lastActiveRepo
+				: getSortedRepositoryPaths(repos, this.config.repoDropdownOrder)[0];
 		} else {
 			newRepo = this.currentRepo;
 		}
@@ -2747,9 +2749,9 @@ class GitGraphView {
 		});
 	}
 
-	private cdvFileViewed(filePath: string, fileElem: HTMLElement, markAsCodeReviewed: boolean) {
-		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles');
-		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
+	private cdvSetLastViewedFile(filePath: string, fileElem: HTMLElement) {
+		const expandedCommit = this.expandedCommit;
+		if (expandedCommit === null || expandedCommit.fileTree === null) return;
 
 		expandedCommit.lastViewedFile = filePath;
 		let lastViewedElem = document.getElementById('cdvLastFileViewed');
@@ -2759,20 +2761,42 @@ class GitGraphView {
 		lastViewedElem.title = 'Last File Viewed';
 		lastViewedElem.innerHTML = SVG_ICONS.eyeOpen;
 		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
+	}
 
-		if (expandedCommit.codeReview !== null && markAsCodeReviewed) {
-			let i = expandedCommit.codeReview.remainingFiles.indexOf(filePath);
-			if (i > -1) {
-				sendMessage({ command: 'codeReviewFileReviewed', repo: this.currentRepo, id: expandedCommit.codeReview.id, filePath: filePath });
-				alterFileTreeFileReviewed(expandedCommit.fileTree, filePath);
-				updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
-				expandedCommit.codeReview.remainingFiles.splice(i, 1);
-				if (expandedCommit.codeReview.remainingFiles.length === 0) {
-					expandedCommit.codeReview = null;
-					this.renderCodeReviewBtn();
-				}
-			}
+	private cdvChangeFileReviewedState(file: GG.GitFileChange, fileElem: HTMLElement, isReviewed: boolean, fileWasViewed: boolean) {
+		const expandedCommit = this.expandedCommit, filePath = file.newFilePath;
+		const filesElem = document.getElementById('cdvFiles');
+
+		if (expandedCommit === null || expandedCommit.fileTree === null || expandedCommit.codeReview === null || filesElem === null) {
+			return;
 		}
+
+		if (isReviewed) {
+			expandedCommit.codeReview.remainingFiles = expandedCommit.codeReview.remainingFiles.filter((path: string) => path !== filePath);
+		} else {
+			expandedCommit.codeReview.remainingFiles.push(filePath);
+		}
+
+		if (fileWasViewed) {
+			this.cdvSetLastViewedFile(filePath, fileElem);
+		}
+
+		sendMessage({
+			command: 'updateCodeReview',
+			repo: this.currentRepo,
+			id: expandedCommit.codeReview.id,
+			remainingFiles: expandedCommit.codeReview.remainingFiles,
+			lastViewedFile: expandedCommit.lastViewedFile
+		});
+
+		alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, isReviewed);
+		updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
+
+		if (expandedCommit.codeReview.remainingFiles.length === 0) {
+			expandedCommit.codeReview = null;
+			this.renderCodeReviewBtn();
+		}
+
 		this.saveState();
 	}
 
@@ -2855,7 +2879,7 @@ class GitGraphView {
 				toHash = expandedCommit.commitHash;
 			}
 
-			this.cdvFileViewed(file.newFilePath, fileElem, true);
+			this.cdvChangeFileReviewedState(file, fileElem, true, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2875,7 +2899,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvFileViewed(file.newFilePath, fileElem, true);
+			this.cdvChangeFileReviewedState(file, fileElem, true, true);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -2883,13 +2907,16 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvFileViewed(file.newFilePath, fileElem, false);
+			this.cdvChangeFileReviewedState(file, fileElem, false, true);
 			sendMessage({ command: 'viewDiffWithWorkingFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
 		const triggerOpenFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
-			this.cdvFileViewed(file.newFilePath, fileElem, true);
-			sendMessage({ command: 'openFile', repo: this.currentRepo, filePath: file.newFilePath });
+			const expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
+			this.cdvChangeFileReviewedState(file, fileElem, true, true);
+			sendMessage({ command: 'openFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
 		addListenerToClass('fileTreeFolder', 'click', (e) => {
@@ -2966,6 +2993,7 @@ class GitGraphView {
 			};
 			const diffPossible = file.type === GG.GitFileStatus.Untracked || (file.additions !== null && file.deletions !== null);
 			const fileExistsAtThisRevisionAndDiffPossible = file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted;
+			const codeReviewInProgressAndNotReviewed = expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath);
 
 			contextMenu.show([
 				[
@@ -2988,6 +3016,18 @@ class GitGraphView {
 						title: 'Open File',
 						visible: file.type !== GG.GitFileStatus.Deleted,
 						onClick: () => triggerOpenFile(file, fileElem)
+					}
+				],
+				[
+					{
+						title: 'Mark as Reviewed',
+						visible: codeReviewInProgressAndNotReviewed,
+						onClick: () => this.cdvChangeFileReviewedState(file, fileElem, true, false)
+					},
+					{
+						title: 'Mark as Not Reviewed',
+						visible: expandedCommit.codeReview !== null && !codeReviewInProgressAndNotReviewed,
+						onClick: () => this.cdvChangeFileReviewedState(file, fileElem, false, false)
 					}
 				],
 				[
@@ -3291,6 +3331,11 @@ window.addEventListener('load', () => {
 					dialog.showError('Unable to retrieve Tag Details', msg.error, null, null);
 				}
 				break;
+			case 'updateCodeReview':
+				if (msg.error !== null) {
+					dialog.showError('Unable to update Code Review', msg.error, null, null);
+				}
+				break;
 			case 'viewDiff':
 				finishOrDisplayError(msg.error, 'Unable to View Diff');
 				break;
@@ -3460,7 +3505,7 @@ function alterFileTreeFolderOpen(folder: FileTreeFolder, folderPath: string, ope
 	}
 }
 
-function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
+function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string, reviewed: boolean) {
 	let path = filePath.split('/'), i, cur = folder, folders = [folder];
 	for (i = 0; i < path.length; i++) {
 		if (typeof cur.contents[path[i]] !== 'undefined') {
@@ -3468,22 +3513,24 @@ function alterFileTreeFileReviewed(folder: FileTreeFolder, filePath: string) {
 				cur = <FileTreeFolder>cur.contents[path[i]];
 				folders.push(cur);
 			} else {
-				(<FileTreeFile>cur.contents[path[i]]).reviewed = true;
+				(<FileTreeFile>cur.contents[path[i]]).reviewed = reviewed;
 			}
 		} else {
 			break;
 		}
 	}
+
+	// Recalculate whether each of the folders leading to the file are now reviewed (deepest first).
 	for (i = folders.length - 1; i >= 0; i--) {
-		let keys = Object.keys(folders[i].contents), reviewed = true;
+		let keys = Object.keys(folders[i].contents), entireFolderReviewed = true;
 		for (let j = 0; j < keys.length; j++) {
 			let cur = folders[i].contents[keys[j]];
 			if ((cur.type === 'folder' || cur.type === 'file') && !cur.reviewed) {
-				reviewed = false;
+				entireFolderReviewed = false;
 				break;
 			}
 		}
-		folders[i].reviewed = reviewed;
+		folders[i].reviewed = entireFolderReviewed;
 	}
 }
 
@@ -3663,8 +3710,8 @@ function abbrevCommit(commitHash: string) {
 }
 
 function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
-	const repoPaths = Object.keys(repos);
-	let paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
+	const repoPaths = getSortedRepositoryPaths(repos, initialState.config.repoDropdownOrder);
+	const paths: string[] = [], names: string[] = [], distinctNames: string[] = [], firstSep: number[] = [];
 	const resolveAmbiguous = (indexes: number[]) => {
 		// Find ambiguous names within indexes
 		let firstOccurrence: { [name: string]: number } = {}, ambiguous: { [name: string]: number[] } = {};
@@ -3705,11 +3752,11 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 	};
 
 	// Initialise recursion
-	let indexes = [];
+	const indexes = [];
 	for (let i = 0; i < repoPaths.length; i++) {
 		firstSep.push(repoPaths[i].indexOf('/'));
 		const repo = repos[repoPaths[i]];
-		if (repo.name !== null) {
+		if (repo.name) {
 			// A name has been set for the repository
 			paths.push(repoPaths[i]);
 			names.push(repo.name);
@@ -3729,7 +3776,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 	}
 	resolveAmbiguous(indexes);
 
-	let options: DropdownOption[] = [];
+	const options: DropdownOption[] = [];
 	for (let i = 0; i < repoPaths.length; i++) {
 		let hint;
 		if (names[i] === distinctNames[i]) {
@@ -3750,9 +3797,7 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 		options.push({ name: names[i], value: repoPaths[i], hint: hint });
 	}
 
-	return initialState.config.repoDropdownOrder === GG.RepoDropdownOrder.Name
-		? options.sort((a, b) => a.name !== b.name ? a.name.localeCompare(b.name) : a.value.localeCompare(b.value))
-		: options;
+	return options;
 }
 
 function runAction(msg: GG.RequestMessage, action: string) {

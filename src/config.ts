@@ -530,9 +530,12 @@ class Config {
 	 * Get the value of the `git-graph.repositoryDropdownOrder` Extension Setting.
 	 */
 	get repoDropdownOrder(): RepoDropdownOrder {
-		return this.config.get<string>('repositoryDropdownOrder', 'Full Path') === 'Name'
-			? RepoDropdownOrder.Name
-			: RepoDropdownOrder.FullPath;
+		const order = this.config.get<string>('repositoryDropdownOrder', 'Workspace Full Path');
+		return order === 'Full Path'
+			? RepoDropdownOrder.FullPath
+			: order === 'Name'
+				? RepoDropdownOrder.Name
+				: RepoDropdownOrder.WorkspaceFullPath;
 	}
 
 	/**

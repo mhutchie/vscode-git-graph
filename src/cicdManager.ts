@@ -250,7 +250,7 @@ export class CicdManager extends Disposable {
 							let ret: CICDData[] = respJson['workflow_runs'].map((elm: { [x: string]: any; }) => {
 								return {
 									id: elm['id'],
-									status: elm['conclusion'],
+									status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
 									ref: elm['name'],
 									sha: elm['head_sha'],
 									web_url: elm['html_url'],

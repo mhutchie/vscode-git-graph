@@ -22,6 +22,8 @@ export class CicdManager extends Disposable {
 	private githubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
 	private initialState: boolean = true;
+	private requestPage: number = -1;
+	private requestPageTimeout: NodeJS.Timer | null = null;
 
 	/**
 	 * Creates the Git Graph CICD Manager.
@@ -37,9 +39,9 @@ export class CicdManager extends Disposable {
 		this.queue = new CicdRequestQueue(() => {
 			if (this.interval !== null) return;
 			this.interval = setInterval(() => {
-				// Fetch cicds every 10 seconds
+				// Fetch cicds every 1 seconds
 				this.fetchCICDsInterval();
-			}, 10000);
+			}, 1000);
 			this.fetchCICDsInterval();
 		});
 
@@ -75,7 +77,7 @@ export class CicdManager extends Disposable {
 				// CICD couldn't be found, request it again
 				this.removeCICDFromCache(hash);
 				cicdConfigs.forEach(cicdConfig => {
-					this.queue.add(cicdConfig, -1, true);
+					this.queue.add(cicdConfig, this.requestPage, true);
 				});
 			});
 		} else {
@@ -83,13 +85,23 @@ export class CicdManager extends Disposable {
 			if (this.initialState === true) {
 				this.initialState = false;
 				cicdConfigs.forEach(cicdConfig => {
-					this.queue.add(cicdConfig, -1, true);
+					this.queue.add(cicdConfig, this.requestPage, true);
 				});
 				// Reset initial state for 10 seconds
 				setTimeout(() => {
 					this.logger.log('Reset initial timer of CICD');
 					this.initialState = true;
 				}, 10000);
+				// set request page to top 
+				this.requestPage = 1;
+				// Reset request page to all after 10 minutes
+				if (this.requestPageTimeout === null) {
+					this.requestPageTimeout = setTimeout(() => {
+						this.logger.log('Reset request page of CICD');
+						this.requestPage = -1;
+						this.requestPageTimeout = null;
+					}, 600000);
+				}
 			}
 		}
 	}

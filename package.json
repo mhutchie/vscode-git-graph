@@ -943,7 +943,7 @@
 				"git-graph.repository.commits.fetchCICDs": {
 					"type": "boolean",
 					"default": true,
-					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the repositories and user configuration."
+					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the user configuration."
 				},
 				"git-graph.repository.commits.initialLoad": {
 					"type": "number",
@@ -1251,7 +1251,7 @@
 				"git-graph.fetchCICDs": {
 					"type": "boolean",
 					"default": true,
-					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the repositories and user configuration.",
+					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the user configuration.",
 					"deprecationMessage": "Depreciated: This setting has been renamed to git-graph.repository.commits.fetchCICDs",
 					"markdownDeprecationMessage": "Depreciated: This setting has been renamed to `#git-graph.repository.commits.fetchCICDs#`"
 				},

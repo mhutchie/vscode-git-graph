@@ -11,6 +11,7 @@ class GitGraphView {
 	private commitLookup: { [hash: string]: number } = {};
 	private onlyFollowFirstParent: boolean = false;
 	private avatars: AvatarImageCollection = {};
+	private cicdDatas: CICDDataCollection = {};
 	private currentBranches: string[] | null = null;
 
 	private currentRepo!: string;
@@ -124,6 +125,7 @@ class GitGraphView {
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
+			this.cicdDatas = prevState.cicdDatas;
 			this.gitConfig = prevState.gitConfig;
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitTags, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
@@ -519,15 +521,15 @@ class GitGraphView {
 	}
 
 	public loadCicd(cicdData: GG.CICDData) {
-		// this.avatars[sha] = image;
-		// this.saveState();
+		this.cicdDatas[cicdData.sha] = cicdData;
+		this.saveState();
 		let cicdElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicd'), hash = cicdData.sha;
 		for (let i = 0; i < cicdElems.length; i++) {
 			if (cicdElems[i].dataset.hash === hash) {
 				cicdElems[i].innerHTML = (cicdData.status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
 					((cicdData.status === 'failed' || cicdData.status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
 						'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
-					'<a href="' + cicdData.web_url + '">' + cicdData.status + '</a></td>';
+					'<a href="' + cicdData.web_url + '">' + cicdData.status + '</a>';
 			}
 		}
 	}
@@ -745,6 +747,7 @@ class GitGraphView {
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,
+			cicdDatas: this.cicdDatas,
 			currentBranches: this.currentBranches,
 			moreCommitsAvailable: this.moreCommitsAvailable,
 			maxCommits: this.maxCommits,
@@ -895,7 +898,13 @@ class GitGraphView {
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
-				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="text" title="' + '">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">*</span>' + '</td>' : '<td class="text">-</td>') : '') +
+				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="text" title="' + '">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
+					(typeof this.cicdDatas[commit.hash] === 'object' ?
+						((this.cicdDatas[commit.hash].status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
+							((this.cicdDatas[commit.hash].status === 'failed' || this.cicdDatas[commit.hash].status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
+								'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
+							'<a href="' + this.cicdDatas[commit.hash].web_url + '">' + this.cicdDatas[commit.hash].status + '</a>') : '*') +
+					'</span>' + '</td>' : '<td class="text">-</td>') : ':') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';

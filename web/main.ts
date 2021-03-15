@@ -904,7 +904,7 @@ class GitGraphView {
 							((this.cicdDatas[commit.hash].status === 'failed' || this.cicdDatas[commit.hash].status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
 								'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
 							'<a href="' + this.cicdDatas[commit.hash].web_url + '">' + this.cicdDatas[commit.hash].status + '</a>') : '*') +
-					'</span>' + '</td>' : '<td class="text">-</td>') : ':') +
+					'</span>' + '</td>' : '<td class="text">-</td>') : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';

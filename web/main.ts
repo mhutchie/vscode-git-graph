@@ -627,7 +627,7 @@ class GitGraphView {
 			refreshState.hard = refreshState.hard || hard;
 			refreshState.configChanges = refreshState.configChanges || configChanges;
 			if (!skipRepoInfo) {
-				// This request will trigger a loadCommit request after the loadRepoInfo request has completed. 
+				// This request will trigger a loadCommit request after the loadRepoInfo request has completed.
 				// Invalidate any previous commit requests in progress.
 				refreshState.loadCommitsRefreshId++;
 			}
@@ -1663,7 +1663,7 @@ class GitGraphView {
 		}
 
 		if (columnWidths[0] !== COLUMN_AUTO) {
-			// Table should have fixed layout 
+			// Table should have fixed layout
 			makeTableFixedLayout();
 		} else {
 			// Table should have automatic layout
@@ -2070,7 +2070,7 @@ class GitGraphView {
 			const isExternalUrl = isExternalUrlElem(eventTarget), isInternalUrl = isInternalUrlElem(eventTarget);
 			if (isExternalUrl || isInternalUrl) {
 				const viewElem: HTMLElement | null = eventTarget.closest('#view');
-				let eventElem;
+				let eventElem: HTMLElement | null;
 
 				let target: (ContextMenuTarget & CommitTarget) | RepoTarget, isInDialog = false;
 				if (this.expandedCommit !== null && eventTarget.closest('#cdv') !== null) {
@@ -2083,7 +2083,7 @@ class GitGraphView {
 					};
 					GitGraphView.closeCdvContextMenuIfOpen(this.expandedCommit);
 					this.expandedCommit.contextMenuOpen.summary = true;
-				} else if ((eventElem = <HTMLElement | null>eventTarget.closest('.commit')) !== null) {
+				} else if ((eventElem = eventTarget.closest('.commit')) !== null) {
 					// URL is in the Commits
 					const commit = this.getCommitOfElem(eventElem);
 					if (commit === null) return;
@@ -2140,16 +2140,16 @@ class GitGraphView {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
 			if (isUrlElem(eventTarget)) return;
-			let eventElem;
+			let eventElem: HTMLElement | null;
 
-			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
+			if ((eventElem = eventTarget.closest('.gitRef')) !== null) {
 				// .gitRef was clicked
 				e.stopPropagation();
 				if (contextMenu.isOpen()) {
 					contextMenu.close();
 				}
 
-			} else if ((eventElem = <HTMLElement>eventTarget.closest('.commit')) !== null) {
+			} else if ((eventElem = eventTarget.closest('.commit')) !== null) {
 				// .commit was clicked
 				if (this.expandedCommit !== null) {
 					const commit = this.getCommitOfElem(eventElem);
@@ -2177,9 +2177,9 @@ class GitGraphView {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
 			if (isUrlElem(eventTarget)) return;
-			let eventElem;
+			let eventElem: HTMLElement | null;
 
-			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
+			if ((eventElem = eventTarget.closest('.gitRef')) !== null) {
 				// .gitRef was double clicked
 				e.stopPropagation();
 				closeDialogAndContextMenu();
@@ -2214,9 +2214,9 @@ class GitGraphView {
 			if (e.target === null) return;
 			const eventTarget = <Element>e.target;
 			if (isUrlElem(eventTarget)) return;
-			let eventElem;
+			let eventElem: HTMLElement | null;
 
-			if ((eventElem = <HTMLElement>eventTarget.closest('.gitRef')) !== null) {
+			if ((eventElem = eventTarget.closest('.gitRef')) !== null) {
 				// .gitRef was right clicked
 				handledEvent(e);
 				const commitElem = <HTMLElement>eventElem.closest('.commit')!;
@@ -2253,7 +2253,7 @@ class GitGraphView {
 
 				contextMenu.show(actions, false, target, <MouseEvent>e, this.viewElem);
 
-			} else if ((eventElem = <HTMLElement>eventTarget.closest('.commit')) !== null) {
+			} else if ((eventElem = eventTarget.closest('.commit')) !== null) {
 				// .commit was right clicked
 				handledEvent(e);
 				const commit = this.getCommitOfElem(eventElem);
@@ -2706,10 +2706,10 @@ class GitGraphView {
 		};
 
 		document.getElementById('cdvDivider')!.addEventListener('mousedown', () => {
-			let contentElem = document.getElementById('cdvContent')!;
+			const contentElem = document.getElementById('cdvContent');
 			if (contentElem === null) return;
 
-			let bounds = contentElem.getBoundingClientRect();
+			const bounds = contentElem.getBoundingClientRect();
 			minX = bounds.left;
 			width = bounds.width;
 			eventOverlay.create('colResize', processDraggingCdvDivider, stopDraggingCdvDivider);

@@ -556,7 +556,7 @@ class TextFormatter {
 	}
 
 	/**
-	 * Is a range included (partially or completely) within a tree. 
+	 * Is a range included (partially or completely) within a tree.
 	 * @param tree The tree to check.
 	 * @param start The index defining the start of the range.
 	 * @param end The index defining the end of the range.

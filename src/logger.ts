@@ -48,7 +48,7 @@ export class Logger extends Disposable {
 	}
 }
 
-/** 
+/**
  * Pad a number with a leading zero if it is less than two digits long.
  * @param n The number to be padded.
  * @returns The padded number.
@@ -57,7 +57,7 @@ function pad2(n: number) {
 	return (n > 9 ? '' : '0') + n;
 }
 
-/** 
+/**
  * Pad a number with leading zeros if it is less than three digits long.
  * @param n The number to be padded.
  * @returns The padded number.

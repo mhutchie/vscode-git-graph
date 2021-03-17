@@ -5,9 +5,9 @@ declare global {
 	/* Visual Studio Code API Types */
 
 	function acquireVsCodeApi(): {
-		getState(): WebViewState | null,
-		postMessage(message: GG.RequestMessage): void,
-		setState(state: WebViewState): void
+		getState: () => WebViewState | null,
+		postMessage: (message: GG.RequestMessage) => void,
+		setState: (state: WebViewState) => void
 	};
 
 

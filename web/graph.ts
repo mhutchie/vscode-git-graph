@@ -102,7 +102,7 @@ class Branch {
 			lines.push({ p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 }, isCommitted: i >= this.numUncommitted, lockedFirst: line.lockedFirst });
 		}
 
-		// Simplify consecutive lines that are straight by removing the 'middle' point 
+		// Simplify consecutive lines that are straight by removing the 'middle' point
 		i = 0;
 		while (i < lines.length - 1) {
 			line = lines[i];

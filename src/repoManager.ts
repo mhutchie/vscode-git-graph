@@ -811,7 +811,7 @@ function readExternalConfigFile(repo: string) {
 /**
  * Writes the External Configuration File of a repository to the File System.
  * @param repo The path of the repository.
- * @param file The file contents. 
+ * @param file The file contents.
  * @returns A promise that resolves to a success message, or rejects to an error message.
  */
 function writeExternalConfigFile(repo: string, file: ExternalRepoConfig.File) {
@@ -910,7 +910,7 @@ function generateExternalConfigFile(state: GitRepoState): Readonly<ExternalRepoC
 /**
  * Validate an external configuration file.
  * @param file The external configuration file.
- * @returns NULL => Value, String => The first field that is invalid. 
+ * @returns NULL => Value, String => The first field that is invalid.
  */
 function validateExternalConfigFile(file: Readonly<ExternalRepoConfig.File>) {
 	if (typeof file.commitOrdering !== 'undefined' && file.commitOrdering !== RepoCommitOrdering.Date && file.commitOrdering !== RepoCommitOrdering.AuthorDate && file.commitOrdering !== RepoCommitOrdering.Topological) {

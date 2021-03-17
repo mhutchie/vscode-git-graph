@@ -2008,19 +2008,19 @@ class GitGraphView {
 					const elem = findCommitElemWithId(getCommitElems(), newHashIndex);
 					if (elem !== null) this.loadCommitDetails(elem);
 				}
-			} else if (e.ctrlKey || e.metaKey) {
-				const key = e.key.toLowerCase();
-				if (key === this.config.keybindings.scrollToStash) {
+			} else if (e.key && (e.ctrlKey || e.metaKey)) {
+				const key = e.key.toLowerCase(), keybindings = this.config.keybindings;
+				if (key === keybindings.scrollToStash) {
 					this.scrollToStash(!e.shiftKey);
 					handledEvent(e);
 				} else if (!e.shiftKey) {
-					if (key === this.config.keybindings.refresh) {
+					if (key === keybindings.refresh) {
 						this.refresh(true, true);
 						handledEvent(e);
-					} else if (key === this.config.keybindings.find) {
+					} else if (key === keybindings.find) {
 						this.findWidget.show(true);
 						handledEvent(e);
-					} else if (key === this.config.keybindings.scrollToHead && this.commitHead !== null) {
+					} else if (key === keybindings.scrollToHead && this.commitHead !== null) {
 						this.scrollToCommit(this.commitHead, true, true);
 						handledEvent(e);
 					}

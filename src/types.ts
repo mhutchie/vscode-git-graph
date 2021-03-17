@@ -279,10 +279,10 @@ export interface GraphConfig {
 }
 
 export interface KeybindingConfig {
-	readonly find: string;
-	readonly refresh: string;
-	readonly scrollToHead: string;
-	readonly scrollToStash: string;
+	readonly find: string | null;
+	readonly refresh: string | null;
+	readonly scrollToHead: string | null;
+	readonly scrollToStash: string | null;
 }
 
 export type LoadGitGraphViewTo = {

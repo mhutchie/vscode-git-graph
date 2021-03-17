@@ -578,11 +578,14 @@ class Config {
 	 */
 	private getKeybinding(section: string, defaultValue: string) {
 		const configValue = this.config.get<string>(section);
-		if (typeof configValue === 'string' && Config.KEYBINDING_REGEXP.test(configValue)) {
-			return configValue.substring(11).toLowerCase();
-		} else {
-			return defaultValue;
+		if (typeof configValue === 'string') {
+			if (configValue === 'UNASSIGNED') {
+				return null;
+			} else if (Config.KEYBINDING_REGEXP.test(configValue)) {
+				return configValue.substring(11).toLowerCase();
+			}
 		}
+		return defaultValue;
 	}
 
 	/**

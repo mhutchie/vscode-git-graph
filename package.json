@@ -730,6 +730,7 @@
 				"git-graph.keyboardShortcut.find": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -763,6 +764,7 @@
 				"git-graph.keyboardShortcut.refresh": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -796,6 +798,7 @@
 				"git-graph.keyboardShortcut.scrollToHead": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -829,6 +832,7 @@
 				"git-graph.keyboardShortcut.scrollToStash": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",

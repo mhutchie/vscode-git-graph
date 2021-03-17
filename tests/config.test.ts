@@ -1825,6 +1825,18 @@ describe('Config', () => {
 				expect(value).toBe('a');
 			});
 
+			it('Should return the configured keybinding (unassigned)', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.find', 'UNASSIGNED');
+
+				// Run
+				const value = config.keybindings.find;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.find');
+				expect(value).toBeNull();
+			});
+
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('keyboardShortcut.find', 'CTRL/CMD + Shift + A');
@@ -1870,6 +1882,18 @@ describe('Config', () => {
 				// Assert
 				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.refresh');
 				expect(value).toBe('a');
+			});
+
+			it('Should return the configured keybinding (unassigned)', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.refresh', 'UNASSIGNED');
+
+				// Run
+				const value = config.keybindings.refresh;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.refresh');
+				expect(value).toBeNull();
 			});
 
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
@@ -1919,6 +1943,18 @@ describe('Config', () => {
 				expect(value).toBe('a');
 			});
 
+			it('Should return the configured keybinding (unassigned)', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToHead', 'UNASSIGNED');
+
+				// Run
+				const value = config.keybindings.scrollToHead;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToHead');
+				expect(value).toBeNull();
+			});
+
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {
 				// Setup
 				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToHead', 'CTRL/CMD + Shift + A');
@@ -1964,6 +2000,18 @@ describe('Config', () => {
 				// Assert
 				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToStash');
 				expect(value).toBe('a');
+			});
+
+			it('Should return the configured keybinding (unassigned)', () => {
+				// Setup
+				vscode.mockExtensionSettingReturnValue('keyboardShortcut.scrollToStash', 'UNASSIGNED');
+
+				// Run
+				const value = config.keybindings.scrollToStash;
+
+				// Assert
+				expect(workspaceConfiguration.get).toBeCalledWith('keyboardShortcut.scrollToStash');
+				expect(value).toBeNull();
 			});
 
 			it('Should return the default keybinding when the value is not one of the available keybindings', () => {

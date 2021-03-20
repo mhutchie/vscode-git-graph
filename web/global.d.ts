@@ -25,6 +25,7 @@ declare global {
 		index: number;
 		commitHash: string;
 		commitElem: HTMLElement | null;
+		parentIndex: number;
 		compareWithHash: string | null;
 		compareWithElem: HTMLElement | null;
 		commitDetails: GG.GitCommitDetails | null;

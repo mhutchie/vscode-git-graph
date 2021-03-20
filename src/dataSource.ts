@@ -341,8 +341,8 @@ export class DataSource extends Disposable {
 	 * @param hasParents Does the commit have parents
 	 * @returns The commit details.
 	 */
-	public getCommitDetails(repo: string, commitHash: string, hasParents: boolean): Promise<GitCommitDetailsData> {
-		const fromCommit = commitHash + (hasParents ? '^' : '');
+	public getCommitDetails(repo: string, commitHash: string, hasParents: boolean, parentIndex: number): Promise<GitCommitDetailsData> {
+		const fromCommit = commitHash + (hasParents ? `^${parentIndex}` : '');
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
 			this.getDiffNameStatus(repo, fromCommit, commitHash),

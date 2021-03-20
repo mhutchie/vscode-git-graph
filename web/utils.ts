@@ -100,6 +100,8 @@ const CSS_PROP_LIMIT_GRAPH_WIDTH = '--limitGraphWidth';
 
 const ATTR_ERROR = 'data-error';
 
+const DEFAULT_PARENT_INDEX = 1;
+
 
 /* General Helpers */
 

@@ -322,7 +322,7 @@ class GitGraphView {
 					if (this.expandedCommit.compareWithHash === null) {
 						// Commit Details View is open
 						if (this.expandedCommit.commitHash === UNCOMMITTED) {
-							this.requestCommitDetails(this.expandedCommit.commitHash, true);
+							this.requestCommitDetails(this.expandedCommit.commitHash, true, this.expandedCommit.parentIndex);
 						}
 					} else {
 						// Commit Comparison is open
@@ -424,7 +424,7 @@ class GitGraphView {
 					if (compareWithElem !== null) {
 						this.loadCommitComparison(commitElem, compareWithElem);
 					} else {
-						this.loadCommitDetails(commitElem);
+						this.loadCommitDetails(commitElem, DEFAULT_PARENT_INDEX);
 					}
 				} else {
 					showErrorMessage('Unable to resume Code Review, it could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
@@ -660,13 +660,14 @@ class GitGraphView {
 		this.settingsWidget.refresh();
 	}
 
-	public requestCommitDetails(hash: string, refresh: boolean) {
+	public requestCommitDetails(hash: string, refresh: boolean, parentIndex: number) {
 		let commit = this.commits[this.commitLookup[hash]];
 		sendMessage({
 			command: 'commitDetails',
 			repo: this.currentRepo,
 			commitHash: hash,
 			hasParents: commit.parents.length > 0,
+			parentIndex: parentIndex,
 			stash: commit.stash,
 			avatarEmail: this.config.fetchAvatars && hash !== UNCOMMITTED ? commit.email : null,
 			refresh: refresh
@@ -746,6 +747,7 @@ class GitGraphView {
 			index: index,
 			commitHash: commitHash,
 			commitElem: commitElem,
+			parentIndex: DEFAULT_PARENT_INDEX,
 			compareWithHash: compareWithHash,
 			compareWithElem: compareWithElem,
 			commitDetails: null,
@@ -900,12 +902,12 @@ class GitGraphView {
 				if (expandedCommit.compareWithHash === null) {
 					// Commit Details View is open
 					if (!expandedCommit.loading && expandedCommit.commitDetails !== null && expandedCommit.fileTree !== null) {
-						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.fileTree, expandedCommit.avatar, expandedCommit.codeReview, expandedCommit.lastViewedFile, true);
+						this.showCommitDetails(expandedCommit.commitDetails, expandedCommit.parentIndex, expandedCommit.fileTree, expandedCommit.avatar, expandedCommit.codeReview, expandedCommit.lastViewedFile, true);
 						if (expandedCommit.commitHash === UNCOMMITTED) {
-							this.requestCommitDetails(expandedCommit.commitHash, true);
+							this.requestCommitDetails(expandedCommit.commitHash, true, expandedCommit.parentIndex);
 						}
 					} else {
-						this.loadCommitDetails(commitElem);
+						this.loadCommitDetails(commitElem, expandedCommit.parentIndex);
 					}
 				} else {
 					// Commit Comparison is open
@@ -2006,7 +2008,7 @@ class GitGraphView {
 				if (newHashIndex > -1) {
 					handledEvent(e);
 					const elem = findCommitElemWithId(getCommitElems(), newHashIndex);
-					if (elem !== null) this.loadCommitDetails(elem);
+					if (elem !== null) this.loadCommitDetails(elem, this.expandedCommit.parentIndex);
 				}
 			} else if (e.key && (e.ctrlKey || e.metaKey)) {
 				const key = e.key.toLowerCase(), keybindings = this.config.keybindings;
@@ -2054,7 +2056,15 @@ class GitGraphView {
 					case 'commit':
 						if (typeof this.commitLookup[value] === 'number' && (this.expandedCommit === null || this.expandedCommit.commitHash !== value || this.expandedCommit.compareWithHash !== null)) {
 							const elem = findCommitElemWithId(getCommitElems(), this.commitLookup[value]);
-							if (elem !== null) this.loadCommitDetails(elem);
+							if (elem === null) return;
+							if (e.ctrlKey || e.metaKey) {
+								if(this.expandedCommit !== null && this.expandedCommit.commitElem !== null && this.expandedCommit.commitDetails !== null) {
+									const parentIndex = this.expandedCommit.commitDetails.parents.indexOf(value) + 1;
+									this.loadCommitDetails(this.expandedCommit.commitElem, parentIndex);
+								}
+							} else {
+								this.loadCommitDetails(elem, DEFAULT_PARENT_INDEX);
+							}
 						}
 						break;
 				}
@@ -2164,10 +2174,10 @@ class GitGraphView {
 							this.loadCommitComparison(this.expandedCommit.commitElem, eventElem);
 						}
 					} else {
-						this.loadCommitDetails(eventElem);
+						this.loadCommitDetails(eventElem, this.expandedCommit.parentIndex);
 					}
 				} else {
-					this.loadCommitDetails(eventElem);
+					this.loadCommitDetails(eventElem, DEFAULT_PARENT_INDEX);
 				}
 			}
 		});
@@ -2284,7 +2294,7 @@ class GitGraphView {
 
 	/* Commit Details View */
 
-	public loadCommitDetails(commitElem: HTMLElement) {
+	public loadCommitDetails(commitElem: HTMLElement, parentIndex: number) {
 		const commit = this.getCommitOfElem(commitElem);
 		if (commit === null) return;
 
@@ -2292,7 +2302,7 @@ class GitGraphView {
 		this.saveExpandedCommitLoading(parseInt(commitElem.dataset.id!), commit.hash, commitElem, null, null);
 		commitElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 		this.renderCommitDetailsView(false);
-		this.requestCommitDetails(commit.hash, false);
+		this.requestCommitDetails(commit.hash, false, parentIndex);
 	}
 
 	public closeCommitDetails(saveAndRender: boolean) {
@@ -2322,7 +2332,7 @@ class GitGraphView {
 		}
 	}
 
-	public showCommitDetails(commitDetails: GG.GitCommitDetails, fileTree: FileTreeFolder, avatar: string | null, codeReview: GG.CodeReview | null, lastViewedFile: string | null, refresh: boolean) {
+	public showCommitDetails(commitDetails: GG.GitCommitDetails, parentIndex: number, fileTree: FileTreeFolder, avatar: string | null, codeReview: GG.CodeReview | null, lastViewedFile: string | null, refresh: boolean) {
 		const expandedCommit = this.expandedCommit;
 		if (expandedCommit === null || expandedCommit.commitElem === null || expandedCommit.commitHash !== commitDetails.hash || expandedCommit.compareWithHash !== null) return;
 
@@ -2337,6 +2347,7 @@ class GitGraphView {
 			expandedCommit.fileTree = fileTree;
 			GitGraphView.closeCdvContextMenuIfOpen(expandedCommit);
 		}
+		expandedCommit.parentIndex = parentIndex;
 		expandedCommit.avatar = avatar;
 		expandedCommit.codeReview = codeReview;
 		if (!refresh) {
@@ -2415,7 +2426,7 @@ class GitGraphView {
 			if (expandedCommit.commitElem !== null) {
 				this.saveExpandedCommitLoading(expandedCommit.index, expandedCommit.commitHash, expandedCommit.commitElem, null, null);
 				this.renderCommitDetailsView(false);
-				this.requestCommitDetails(expandedCommit.commitHash, false);
+				this.requestCommitDetails(expandedCommit.commitHash, false, expandedCommit.parentIndex);
 			} else {
 				this.closeCommitDetails(true);
 			}
@@ -2484,16 +2495,17 @@ class GitGraphView {
 					});
 					const commitDetails = expandedCommit.commitDetails!;
 					const parents = commitDetails.parents.length > 0
-						? commitDetails.parents.map((parent) => {
+						? commitDetails.parents.map((parent, parentIndex) => {
 							const escapedParent = escapeHtml(parent);
+							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 							return typeof this.commitLookup[parent] === 'number'
-								? '<span class="' + CLASS_INTERNAL_URL + '" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedParent + '</span>'
+								? `&nbsp;&nbsp;${isComparedToParent ? '<b>' : ''}#${parentIndex + 1} <span class="${CLASS_INTERNAL_URL}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${abbrevCommit(escapedParent)}</span>${isComparedToParent ? '</b>' : ''}`
 								: escapedParent;
-						}).join(', ')
+						}).join('<br>')
 						: 'None';
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'
 						+ '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>'
-						+ '<b>Parents: </b>' + parents + '<br>'
+						+ '<b>Parents: </b><br>' + parents + '<br>'
 						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
 						+ (commitDetails.authorDate !== commitDetails.committerDate ? '<b>Author Date: </b>' + formatLongDate(commitDetails.authorDate) + '<br>' : '')
 						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
@@ -3130,7 +3142,7 @@ window.addEventListener('load', () => {
 				break;
 			case 'commitDetails':
 				if (msg.commitDetails !== null) {
-					gitGraph.showCommitDetails(msg.commitDetails, gitGraph.createFileTree(msg.commitDetails.fileChanges, msg.codeReview), msg.avatar, msg.codeReview, msg.codeReview !== null ? msg.codeReview.lastViewedFile : null, msg.refresh);
+					gitGraph.showCommitDetails(msg.commitDetails, msg.parentIndex, gitGraph.createFileTree(msg.commitDetails.fileChanges, msg.codeReview), msg.avatar, msg.codeReview, msg.codeReview !== null ? msg.codeReview.lastViewedFile : null, msg.refresh);
 				} else {
 					gitGraph.closeCommitDetails(true);
 					dialog.showError('Unable to load Commit Details', msg.error, null, null);

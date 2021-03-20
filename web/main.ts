@@ -520,18 +520,47 @@ class GitGraphView {
 		}
 	}
 
-	public loadCicd(cicdData: GG.CICDData) {
-		this.cicdDatas[cicdData.sha] = cicdData;
+	public loadCicd(hash: string, cicdDataSaves: { [id: string]: GG.CICDDataSave }) {
+		this.cicdDatas[hash] = cicdDataSaves;
 		this.saveState();
-		let cicdElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicd'), hash = cicdData.sha;
+		let cicdElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicd');
 		for (let i = 0; i < cicdElems.length; i++) {
 			if (cicdElems[i].dataset.hash === hash) {
-				cicdElems[i].innerHTML = (cicdData.status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
-					((cicdData.status === 'failed' || cicdData.status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
-						'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
-					'<a href="' + cicdData.web_url + '">' + cicdData.status + '</a>';
+				cicdElems[i].innerHTML = this.getCicdHtml(cicdDataSaves);
 			}
 		}
+		let cicdDetailElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicdDetail');
+		for (let i = 0; i < cicdDetailElems.length; i++) {
+			if (cicdDetailElems[i].dataset.hash === hash) {
+				cicdDetailElems[i].innerHTML = this.getCicdHtml(cicdDataSaves, true);
+			}
+		}
+	}
+
+	private getCicdHtml(cicdDataSaves: { [id: string]: GG.CICDDataSave }, detail: boolean = false) {
+		let ret: string = '';
+		for (let name in cicdDataSaves) {
+			// Multiplicity
+			// GitHub: Commit 1 - 0..n Workflow 0..n - 1 PullRequest  0..1 - 1..n Commit
+			// GitLab: Commit 1 - 0..n Pipeline 0..n - 1 MergeRequest 0..1 - 1..n Commit
+			let cicdDataSave = cicdDataSaves[name];
+			let event = cicdDataSave.event || '';
+			let detailCurrent = cicdDataSave.detail || false;
+			let title = (typeof cicdDataSave.name !== 'undefined' ? cicdDataSave.name + '/' : '') + cicdDataSave.status + '/' + event;
+			if (detailCurrent === detail && event === 'push' || event === 'pull_request') {
+			// if (detailCurrent === detail && event !== 'issues' && event !== 'issue_comment' && event !== 'schedule' && event !== 'workflow_run') {
+				ret +=
+					'<a href="' + cicdDataSave.web_url + '" title="' + title + '">' +
+					(cicdDataSave.status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
+						((cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
+							'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
+					'</a>';
+			}
+		}
+		if (ret === '') {
+			ret = '-';
+		}
+		return ret;
 	}
 
 	/* Getters */
@@ -685,7 +714,8 @@ class GitGraphView {
 			hasParents: commit.parents.length > 0,
 			stash: commit.stash,
 			avatarEmail: this.config.fetchAvatars && hash !== UNCOMMITTED ? commit.email : null,
-			refresh: refresh
+			refresh: refresh,
+			cicdConfigs: this.gitRepos[this.currentRepo].cicdConfigs
 		});
 	}
 
@@ -712,7 +742,7 @@ class GitGraphView {
 			if (typeof this.currentRepo === 'string' && typeof this.gitRepos[this.currentRepo] !== 'undefined') {
 				let cicdConfigs = this.gitRepos[this.currentRepo].cicdConfigs;
 				if (cicdConfigs !== null) {
-					sendMessage({ command: 'fetchCICD', repo: this.currentRepo, sha: commit.hash, cicdConfigs: cicdConfigs });
+					sendMessage({ command: 'fetchCICD', repo: this.currentRepo, hash: commit.hash, cicdConfigs: cicdConfigs });
 				}
 			}
 		});
@@ -899,11 +929,7 @@ class GitGraphView {
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
 				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="text" title="' + '">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
-					(typeof this.cicdDatas[commit.hash] === 'object' ?
-						((this.cicdDatas[commit.hash].status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
-							((this.cicdDatas[commit.hash].status === 'failed' || this.cicdDatas[commit.hash].status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
-								'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
-							'<a href="' + this.cicdDatas[commit.hash].web_url + '">' + this.cicdDatas[commit.hash].status + '</a>') : '*') +
+				(typeof this.cicdDatas[commit.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commit.hash])) : '*') +
 					'</span>' + '</td>' : '<td class="text">-</td>') : '') +
 				'</tr>';
 		}
@@ -2539,8 +2565,10 @@ class GitGraphView {
 						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
 						+ (commitDetails.authorDate !== commitDetails.committerDate ? '<b>Author Date: </b>' + formatLongDate(commitDetails.authorDate) + '<br>' : '')
 						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
-						+ '<b>' + (commitDetails.authorDate !== commitDetails.committerDate ? 'Committer ' : '') + 'Date: </b>' + formatLongDate(commitDetails.committerDate)
-						+ '</span>'
+						+ '<b>' + (commitDetails.authorDate !== commitDetails.committerDate ? 'Committer ' : '') + 'Date: </b>' + formatLongDate(commitDetails.committerDate) + '<br>'
+						+ (this.config.fetchCICDs ? '<b>CI/CD detail: </b>' + '<span class="cicdDetail" data-hash="' + escapeHtml(commitDetails.hash) + '">'
+							+ (typeof this.cicdDatas[commitDetails.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commitDetails.hash], true)) : '*')
+							+ '</span>' : '')
 						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
 						+ '</span></span><br><br>' + textFormatter.format(commitDetails.body);
 				} else {
@@ -3244,7 +3272,7 @@ window.addEventListener('load', () => {
 				});
 				break;
 			case 'fetchCICD':
-				gitGraph.loadCicd(msg.cicdData);
+				gitGraph.loadCicd(msg.hash, msg.cicdDataSaves);
 				break;
 			case 'fetchIntoLocalBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');

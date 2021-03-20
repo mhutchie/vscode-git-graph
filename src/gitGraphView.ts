@@ -152,7 +152,8 @@ export class GitGraphView extends Disposable {
 			cicdManager.onCICD((event) => {
 				this.sendMessage({
 					command: 'fetchCICD',
-					cicdData: event.cicdData
+					hash: event.hash,
+					cicdDataSaves: event.cicdDataSaves
 				});
 			}),
 
@@ -241,20 +242,22 @@ export class GitGraphView extends Disposable {
 				});
 				break;
 			case 'commitDetails':
-				let data = await Promise.all<GitCommitDetailsData, string | null>([
+				let data = await Promise.all<GitCommitDetailsData, string | null, string | null>([
 					msg.commitHash === UNCOMMITTED
 						? this.dataSource.getUncommittedDetails(msg.repo)
 						: msg.stash === null
 							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.hasParents)
 							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
-					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
+					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null),
+					msg.cicdConfigs !== null ? this.cicdManager.getCICDDetail(msg.commitHash, msg.cicdConfigs) : Promise.resolve(null)
 				]);
 				this.sendMessage({
 					command: 'commitDetails',
 					...data[0],
 					avatar: data[1],
 					codeReview: msg.commitHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.commitHash) : null,
-					refresh: msg.refresh
+					refresh: msg.refresh,
+					cicdDataSaves: JSON.parse(data[2] || '{}')
 				});
 				break;
 			case 'compareCommits':
@@ -394,7 +397,7 @@ export class GitGraphView extends Disposable {
 				this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
 				break;
 			case 'fetchCICD':
-				this.cicdManager.fetchCICDStatus(msg.sha, msg.cicdConfigs);
+				this.cicdManager.fetchCICDStatus(msg.hash, msg.cicdConfigs);
 				break;
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({
@@ -661,6 +664,7 @@ export class GitGraphView extends Disposable {
 				fetchAndPruneTags: config.fetchAndPruneTags,
 				fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
 				fetchCICDs: config.fetchCICDs,
+				fetchCICDsPage: config.fetchCICDsPage,
 				graph: config.graph,
 				includeCommitsMentionedByReflogs: config.includeCommitsMentionedByReflogs,
 				initialLoadCommits: config.initialLoadCommits,

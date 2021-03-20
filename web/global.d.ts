@@ -1,5 +1,4 @@
 import * as GG from '../out/types'; // Import types from back-end (requires `npm run compile-src`)
-import { CICDData } from '../out/types';
 
 declare global {
 
@@ -21,7 +20,7 @@ declare global {
 	const workspaceState: GG.DeepReadonly<GG.GitGraphViewWorkspaceState>;
 
 	type AvatarImageCollection = { [email: string]: string };
-	type CICDDataCollection = { [hash: string]: CICDData };
+	type CICDDataCollection = { [hash: string]: { [id: string]: GG.CICDDataSave } };
 
 	interface ExpandedCommit {
 		index: number;

@@ -364,6 +364,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.commits.fetchCICDsPage` Extension Setting.
+	 */
+	get fetchCICDsPage() {
+		return this.getRenamedExtensionSetting('repository.commits.fetchCICDsPage', 'fetchCICDsPage', 10);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.commits.initialLoad` Extension Setting.
 	 */
 	get initialLoadCommits() {

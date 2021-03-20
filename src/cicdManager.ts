@@ -1,9 +1,11 @@
 // import * as crypto from 'crypto';
+import { IncomingMessage } from 'http';
 import * as https from 'https';
+import { getConfig } from './config';
 // import * as url from 'url';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
-import { CICDConfig, CICDData, CICDProvider } from './types';
+import { CICDConfig, CICDData, CICDDataSave, CICDProvider } from './types';
 import { Disposable, toDisposable } from './utils/disposable';
 import { EventEmitter } from './utils/event';
 
@@ -69,12 +71,13 @@ export class CicdManager extends Disposable {
 
 	/**
 	 * Fetch an cicd, either from the cache if it already exists, or queue it to be fetched.
-	 * @param hash The hash identifying the cicd.
+	 * @param hash The hash identifying the cicd commit.
+	 * @param cicdConfigs The CICDConfigs.
 	 */
 	public fetchCICDStatus(hash: string, cicdConfigs: CICDConfig[]) {
 		if (typeof this.cicds[hash] !== 'undefined') {
 			// CICD exists in the cache
-			this.emitCICD(this.cicds[hash]).catch(() => {
+			this.emitCICD(hash, this.cicds[hash]).catch(() => {
 				// CICD couldn't be found
 				this.removeCICDFromCache(hash);
 			});
@@ -119,11 +122,15 @@ export class CicdManager extends Disposable {
 
 	/**
 	 * Get the data of an cicd.
-	 * @param hash The hash identifying the cicd.
+	 * @param hash The hash identifying the cicd commit.
+	 * @param cicdConfigs The CICDConfigs.
 	 * @returns A JSON encoded data of an cicd if the cicd exists, otherwise NULL.
 	 */
-	public getCICDImage(hash: string) {
+	public getCICDDetail(hash: string, cicdConfigs: CICDConfig[]) {
 		return new Promise<string | null>((resolve) => {
+			cicdConfigs.forEach(cicdConfig => {
+				this.queue.add(cicdConfig, -1, true, true, hash);
+			});
 			if (typeof this.cicds[hash] !== 'undefined' && this.cicds[hash] !== null) {
 				resolve(JSON.stringify(this.cicds[hash]));
 			} else {
@@ -142,7 +149,7 @@ export class CicdManager extends Disposable {
 
 	/**
 	 * Remove an cicd from the cache.
-	 * @param hash The hash identifying the cicd.
+	 * @param hash The hash identifying the cicd commit.
 	 */
 	private removeCICDFromCache(hash: string) {
 		delete this.cicds[hash];
@@ -196,7 +203,7 @@ export class CicdManager extends Disposable {
 		}
 
 		let cicdConfig = cicdRequest.cicdConfig;
-		this.logger.log('Requesting CICD for ' + cicdConfig.gitUrl + ' page=' + cicdRequest.page + ' from GitHub');
+		this.logger.log('Requesting CICD for ' + cicdConfig.gitUrl + ' detail=' + cicdRequest.detail + ' page=' + cicdRequest.page + ' from GitHub');
 
 		const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
 		let hostRootUrl = match1 !== null ? 'api.' + match1[3] : '';
@@ -206,6 +213,9 @@ export class CicdManager extends Disposable {
 		let sourceRepo = match2 !== null ? match2[3] : '';
 
 		let cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
+		if (cicdRequest.detail) {
+			cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/commits/${cicdRequest.hash}/check-runs?per_page=100`;
+		}
 		if (cicdRequest.page > 1) {
 			cicdRootPath = `${cicdRootPath}&page=${cicdRequest.page}`;
 		}
@@ -240,70 +250,57 @@ export class CicdManager extends Disposable {
 				if (res.headers['x-ratelimit-remaining'] === '0') {
 					// If the GitHub Api rate limit was reached, store the github timeout to prevent subsequent requests
 					this.githubTimeout = parseInt(<string>res.headers['x-ratelimit-reset']) * 1000;
-					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset');
+					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/' + new Date(this.githubTimeout).toString() + ')');
+					if (cicdRequest.cicdConfig.glToken === '') {
+						this.logger.log('GitHub API Rate Limit can upgrade by Access Token.');
+					}
 				}
 
 				if (res.statusCode === 200) { // Success
 					try {
 						let respJson: any = JSON.parse(respBody);
-						if (typeof respJson['workflow_runs'] !== 'undefined' && respJson['workflow_runs'].length >= 1) { // url found
+						if (typeof respJson['check_runs'] !== 'undefined' && respJson['check_runs'].length >= 1) { // url found
+							let ret: CICDData[] = respJson['check_runs'].map((elm: { [x: string]: any; }) => {
+								return {
+									id: elm['id'],
+									status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
+									ref: '',
+									sha: elm['head_sha'],
+									web_url: elm['html_url'],
+									created_at: elm['created_at'],
+									updated_at: elm['updated_at'],
+									name: elm['name'],
+									event: '',
+									detail: cicdRequest.detail
+								};
+							});
+							ret.forEach(element => {
+								let save = this.convCICDData2CICDDataSave(element);
+								this.saveCICD(element.sha, element.id, save);
+							});
+							this.reFetchPage(cicdRequest, res, cicdConfig);
+							return;
+						} else if (typeof respJson['workflow_runs'] !== 'undefined' && respJson['workflow_runs'].length >= 1) { // url found
 							let ret: CICDData[] = respJson['workflow_runs'].map((elm: { [x: string]: any; }) => {
 								return {
 									id: elm['id'],
 									status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
-									ref: elm['name'],
+									ref: elm['head_branch'],
 									sha: elm['head_sha'],
 									web_url: elm['html_url'],
 									created_at: elm['created_at'],
-									updated_at: elm['updated_at']
+									updated_at: elm['updated_at'],
+									name: elm['name'],
+									event: elm['event'],
+									detail: cicdRequest.detail
 								};
 							});
 							ret.forEach(element => {
-								this.saveCICD(element);
+								let save = this.convCICDData2CICDDataSave(element);
+								this.saveCICD(element.sha, element.id, save);
 							});
 
-							if (cicdRequest.page === -1) {
-								let last = 1;
-								if (typeof res.headers['link'] === 'string') {
-									const DELIM_LINKS = ',';
-									const DELIM_LINK_PARAM = ';';
-									let links = res.headers['link'].split(DELIM_LINKS);
-									links.forEach(link => {
-										let segments = link.split(DELIM_LINK_PARAM);
-
-										let linkPart = segments[0].trim();
-										if (!linkPart.startsWith('<') || !linkPart.endsWith('>')) {
-											return true;
-										}
-										linkPart = linkPart.substring(1, linkPart.length - 1);
-										let match3 = linkPart.match(/&page=(\d+).*$/);
-										let linkPage = match3 !== null ? match3[1] : '0';
-
-										for (let i = 1; i < segments.length; i++) {
-											let rel = segments[i].trim().split('=');
-											if (rel.length < 2) {
-												continue;
-											}
-
-											let relValue = rel[1];
-											if (relValue.startsWith('"') && relValue.endsWith('"')) {
-												relValue = relValue.substring(1, relValue.length - 1);
-											}
-
-											if (relValue === 'last') {
-												last = parseInt(linkPage);
-											}
-										}
-									});
-								}
-
-								for (var i = 1; i < last; i++) {
-									// let cicdRequestNew = Object.assign({}, cicdRequest);;
-									// cicdRequestNew.page = i + 1;
-									// this.queue.addItem(cicdRequestNew, 0, false);
-									this.queue.add(cicdRequest.cicdConfig, i + 1, true);
-								}
-							}
+							this.reFetchPage(cicdRequest, res, cicdConfig);
 							return;
 						}
 					} catch (e) {
@@ -335,6 +332,56 @@ export class CicdManager extends Disposable {
 			});
 			res.on('error', onError);
 		}).on('error', onError);
+	}
+
+	private reFetchPage(cicdRequest: CICDRequestItem, res: IncomingMessage, cicdConfig: CICDConfig) {
+		if (cicdRequest.page === -1) {
+			let last = 1;
+			if (typeof res.headers['link'] === 'string') {
+				const DELIM_LINKS = ',';
+				const DELIM_LINK_PARAM = ';';
+				let links = res.headers['link'].split(DELIM_LINKS);
+				links.forEach(link => {
+					let segments = link.split(DELIM_LINK_PARAM);
+
+					let linkPart = segments[0].trim();
+					if (!linkPart.startsWith('<') || !linkPart.endsWith('>')) {
+						return true;
+					}
+					linkPart = linkPart.substring(1, linkPart.length - 1);
+					let match3 = linkPart.match(/&page=(\d+).*$/);
+					let linkPage = match3 !== null ? match3[1] : '0';
+
+					for (let i = 1; i < segments.length; i++) {
+						let rel = segments[i].trim().split('=');
+						if (rel.length < 2) {
+							continue;
+						}
+
+						let relValue = rel[1];
+						if (relValue.startsWith('"') && relValue.endsWith('"')) {
+							relValue = relValue.substring(1, relValue.length - 1);
+						}
+
+						if (relValue === 'last') {
+							last = parseInt(linkPage);
+						}
+					}
+				});
+			}
+			if (last > cicdRequest.maxPage) {
+				last = cicdRequest.maxPage;
+				this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
+			}
+
+			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/Remaining=' + res.headers['x-ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() + ') from GitHub');
+			for (var i = 1; i < last; i++) {
+				// let cicdRequestNew = Object.assign({}, cicdRequest);;
+				// cicdRequestNew.page = i + 1;
+				// this.queue.addItem(cicdRequestNew, 0, false);
+				this.queue.add(cicdRequest.cicdConfig, i + 1, true);
+			}
+		}
 	}
 
 	/**
@@ -391,7 +438,7 @@ export class CicdManager extends Disposable {
 				if (res.headers['ratelimit-remaining'] === '0') {
 					// If the GitLab Api rate limit was reached, store the gitlab timeout to prevent subsequent requests
 					this.gitLabTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
-					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset');
+					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/' + new Date(this.gitLabTimeout).toString() + ')');
 				}
 
 				if (res.statusCode === 200) { // Success
@@ -401,11 +448,17 @@ export class CicdManager extends Disposable {
 							if (parseInt(res.headers['x-total']) !== 0 && respJson.length && respJson[0].id) { // url found
 								let ret: CICDData[] = respJson;
 								ret.forEach(element => {
-									this.saveCICD(element);
+									let save = this.convCICDData2CICDDataSave(element);
+									this.saveCICD(element.sha, element.id, save);
 								});
 
-								let last = parseInt(res.headers['x-total-pages']);
 								if (cicdRequest.page === -1) {
+									let last = parseInt(res.headers['x-total-pages']);
+									if (last > cicdRequest.maxPage) {
+										last = cicdRequest.maxPage;
+										this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
+									}
+									this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/Remaining=' + res.headers['ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() + ') from GitLab');
 									for (var i = 1; i < last; i++) {
 										// let cicdRequestNew = Object.assign({}, cicdRequest);;
 										// cicdRequestNew.page = i + 1;
@@ -443,15 +496,32 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
-	 * Emit an CICDEvent to any listeners.
+	 * Fetch an cicd from GitHub.
 	 * @param cicdData The CICDData.
+	 * @returns The CICDDataSave.
+	 */
+	private convCICDData2CICDDataSave(cicdData: CICDData): CICDDataSave {
+		return {
+			name: cicdData.name,
+			ref: cicdData.ref,
+			status: cicdData.status,
+			web_url: cicdData.web_url,
+			event: cicdData.event,
+			detail: cicdData.detail
+		};
+	}
+	/**
+	 * Emit an CICDEvent to any listeners.
+	 * @param hash The hash identifying the cicd commit.
+	 * @param cicdDataSaves The hash of CICDDataSave.
 	 * @returns A promise indicating if the event was emitted successfully.
 	 */
-	private emitCICD(cicdData: CICDData) {
+	private emitCICD(hash: string, cicdDataSaves: { [id: string]: CICDDataSave }) {
 		return new Promise<boolean>((resolve, _reject) => {
 			if (this.cicdEventEmitter.hasSubscribers()) {
 				this.cicdEventEmitter.emit({
-					cicdData: cicdData
+					hash: hash,
+					cicdDataSaves: cicdDataSaves
 				});
 				resolve(true);
 			} else {
@@ -462,19 +532,24 @@ export class CicdManager extends Disposable {
 
 	/**
 	 * Save an cicd in the cache.
-	 * @param cicdData The CICDData.
+	 * @param hash The hash identifying the cicd commit.
+	 * @param id The identifying the cicdDataSave.
+	 * @param cicdDataSave The CICDDataSave.
 	 */
-	private saveCICD(cicdData: CICDData) {
-		this.cicds[cicdData.sha] = cicdData;
-		this.extensionState.saveCICD(this.cicds[cicdData.sha]);
+	private saveCICD(hash: string, id: string, cicdDataSave: CICDDataSave) {
+		if (typeof this.cicds[hash] === 'undefined') {
+			this.cicds[hash] = {};
+		}
+		this.cicds[hash][id] = cicdDataSave;
+		this.extensionState.saveCICD(hash, id, cicdDataSave);
 		// this.logger.log('Saved CICD for ' + cicdData.sha);
-		this.emitCICD(this.cicds[cicdData.sha]).then(
+		this.emitCICD(hash, this.cicds[hash]).then(
 			// (sent) => this.logger.log(sent
 			// 	? 'Sent CICD for ' + cicdData.sha + ' to the Git Graph View'
 			// 	: 'CICD for ' + cicdData.sha + ' is ready to be used the next time the Git Graph View is opened'
 			// ),
 			() => { },
-			() => this.logger.log('Failed to Send CICD for ' + cicdData.sha + ' to the Git Graph View')
+			() => this.logger.log('Failed to Send CICD for ' + hash + ' to the Git Graph View')
 		);
 	}
 }
@@ -499,18 +574,24 @@ class CicdRequestQueue {
 	 * @param cicdConfig The CICDConfig.
 	 * @param page The page of cicd request.
 	 * @param immediate Whether the avatar should be fetched immediately.
+	 * @param detail Flag of fetch detail.
+	 * @param hash hash for fetch detail.
 	 */
-	public add(cicdConfig: CICDConfig, page: number, immediate: boolean) {
-		const existingRequest = this.queue.find((request) => request.cicdConfig.gitUrl === cicdConfig.gitUrl && request.page === page);
+	public add(cicdConfig: CICDConfig, page: number, immediate: boolean, detail: boolean = false, hash: string = '') {
+		const existingRequest = this.queue.find((request) => request.cicdConfig.gitUrl === cicdConfig.gitUrl && request.page === page && request.detail === detail && request.hash === hash);
 		if (existingRequest) {
 		} else {
+			const config = getConfig();
 			this.insertItem({
 				cicdConfig: cicdConfig,
 				page: page,
 				checkAfter: immediate || this.queue.length === 0
 					? 0
 					: this.queue[this.queue.length - 1].checkAfter + 1,
-				attempts: 0
+				attempts: 0,
+				detail: detail,
+				hash: hash,
+				maxPage: config.fetchCICDsPage
 			});
 		}
 	}
@@ -564,7 +645,7 @@ class CicdRequestQueue {
 }
 
 
-export type CICDCache = { [hash: string]: CICDData };
+export type CICDCache = { [hash: string]: { [id: string]: CICDDataSave } };
 
 
 // Request item to CicdRequestQueue
@@ -573,9 +654,13 @@ interface CICDRequestItem {
 	page: number;
 	checkAfter: number;
 	attempts: number;
+	detail: boolean;
+	hash: string;
+	maxPage: number;
 }
 
 // Event to GitGraphView
 export interface CICDEvent {
-	cicdData: CICDData;
+	hash: string;
+	cicdDataSaves: { [id: string]: CICDDataSave };
 }

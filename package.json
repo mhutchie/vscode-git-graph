@@ -945,6 +945,11 @@
 					"default": true,
 					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the repositories and user configuration."
 				},
+				"git-graph.repository.commits.fetchCICDsPage": {
+					"type": "number",
+					"default": 10,
+					"description": "Specifies the number of CI/CD fetch maximum page."
+				},
 				"git-graph.repository.commits.initialLoad": {
 					"type": "number",
 					"default": 300,
@@ -1254,6 +1259,13 @@
 					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the repositories and user configuration.",
 					"deprecationMessage": "Depreciated: This setting has been renamed to git-graph.repository.commits.fetchCICDs",
 					"markdownDeprecationMessage": "Depreciated: This setting has been renamed to `#git-graph.repository.commits.fetchCICDs#`"
+				},
+				"git-graph.fetchCICDsPage": {
+					"type": "number",
+					"default": 10,
+					"description": "Specifies the number of CI/CD fetch maximum page.",
+					"deprecationMessage": "Depreciated: This setting has been renamed to git-graph.repository.commits.fetchCICDsPage",
+					"markdownDeprecationMessage": "Depreciated: This setting has been renamed to `#git-graph.repository.commits.fetchCICDsPage#`"
 				},
 				"git-graph.graphColours": {
 					"type": "array",

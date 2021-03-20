@@ -196,6 +196,18 @@ export interface CICDData {
 	web_url: string;
 	created_at: string;
 	updated_at: string;
+	name: string;
+	event: string;
+	detail: boolean;
+}
+
+export interface CICDDataSave {
+	name: string;
+	status: string;
+	ref: string;
+	web_url: string;
+	event: string;
+	detail: boolean;
 }
 
 export interface CICDConfigBase {
@@ -276,6 +288,7 @@ export interface GitGraphViewConfig {
 	readonly fetchAndPruneTags: boolean;
 	readonly fetchAvatars: boolean;
 	readonly fetchCICDs: boolean;
+	readonly fetchCICDsPage: number;
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
@@ -695,6 +708,7 @@ export interface RequestCommitDetails extends RepoRequest {
 	readonly stash: GitCommitStash | null; // null => request is for a commit, otherwise => request is for a stash
 	readonly avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	readonly refresh: boolean;
+	readonly cicdConfigs: CICDConfig[] | null;
 }
 export interface ResponseCommitDetails extends ResponseWithErrorInfo {
 	readonly command: 'commitDetails';
@@ -702,6 +716,7 @@ export interface ResponseCommitDetails extends ResponseWithErrorInfo {
 	readonly avatar: string | null;
 	readonly codeReview: CodeReview | null;
 	readonly refresh: boolean;
+	readonly cicdDataSaves: { [id: string]: CICDDataSave };
 }
 
 export interface RequestCompareCommits extends RepoRequest {
@@ -898,12 +913,13 @@ export interface ResponseFetchAvatar extends BaseMessage {
 }
 export interface RequestFetchCICD extends RepoRequest {
 	readonly command: 'fetchCICD';
-	readonly sha: string;
+	readonly hash: string;
 	readonly cicdConfigs: CICDConfig[];
 }
 export interface ResponseFetchCICD extends BaseMessage {
 	readonly command: 'fetchCICD';
-	readonly cicdData: CICDData;
+	readonly hash: string;
+	readonly cicdDataSaves: { [id: string]: CICDDataSave };
 }
 
 export interface RequestFetchIntoLocalBranch extends RepoRequest {

@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { CICDCache } from './cicdManager';
 import { getConfig } from './config';
-import { BooleanOverride, CICDData, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
+import { BooleanOverride, CICDDataSave, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -324,11 +324,15 @@ export class ExtensionState extends Disposable {
 
 	/**
 	 * Add a new cicd to the cache of cicds known to Git Graph.
-	 * @param cicdData The CICDData.
+	 * @param hash The hash identifying the cicd commit.
+	 * @param cicdDataSave The CICDDataSave.
 	 */
-	public saveCICD(cicdData: CICDData) {
+	public saveCICD(hash: string, id: string, cicdDataSave: CICDDataSave) {
 		let cicds = this.getCICDCache();
-		cicds[cicdData.sha] = cicdData;
+		if (typeof cicds[hash] === 'undefined') {
+			cicds[hash] = {};
+		}
+		cicds[hash][id] = cicdDataSave;
 		this.updateWorkspaceState(CICD_CACHE, cicds);
 	}
 

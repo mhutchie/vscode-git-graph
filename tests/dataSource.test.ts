@@ -3066,6 +3066,59 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^1', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
+		it('Should return the commit details (and request diff to 2nd parent)', async () => {
+			// Setup
+			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
+			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+			mockGitSuccessOnce(['0	0	dir/deleted.txt', '1	1	dir/modified.txt', '2	3	', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, 2);
+
+			// Assert
+			expect(result).toStrictEqual({
+				commitDetails: {
+					hash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					parents: ['a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'],
+					author: 'Test Author',
+					authorEmail: 'test-author@mhutchie.com',
+					authorDate: 1587559258,
+					committer: 'Test Committer',
+					committerEmail: 'test-committer@mhutchie.com',
+					committerDate: 1587559259,
+					signature: null,
+					body: 'Commit Message.\nSecond Line.',
+					fileChanges: [
+						{
+							additions: 0,
+							deletions: 0,
+							newFilePath: 'dir/deleted.txt',
+							oldFilePath: 'dir/deleted.txt',
+							type: 'D'
+						},
+						{
+							additions: 1,
+							deletions: 1,
+							newFilePath: 'dir/modified.txt',
+							oldFilePath: 'dir/modified.txt',
+							type: 'M'
+						},
+						{
+							additions: 2,
+							deletions: 3,
+							newFilePath: 'dir/renamed-new.txt',
+							oldFilePath: 'dir/renamed-old.txt',
+							type: 'R'
+						}
+					]
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['-c', 'log.showSignature=false', 'show', '--quiet', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--format=%HXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%PXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%anXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%aeXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%atXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%cnXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ceXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%ctXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%B'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^2', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
 		it('Should return an error message thrown by git (when thrown by git show)', async () => {
 			// Setup
 			mockGitThrowingErrorOnce();

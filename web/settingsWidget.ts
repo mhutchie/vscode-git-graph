@@ -505,8 +505,8 @@ class SettingsWidget {
 							options: providerOptions, default: defaultProvider,
 							info: 'In addition to the built-in publicly hosted CI/CD providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git URL', default: '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
-						{ type: DialogInputType.Password, name: 'Access Token', default: '', info: 'The GitHub/GitLab personal access token or project access token.' }
+						{ type: DialogInputType.Text, name: 'Git/Jenkins URL', default: '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git) / Jenkins Job URL.' },
+						{ type: DialogInputType.Password, name: 'Access Token', default: '', info: 'The GitHub/GitLab personal or project access token / The Jenkin user_name:password or user_name:access_token' }
 					], 'Add CI/CD', (values) => {
 						let configs: GG.CICDConfig[] = copyConfigs();
 						let config: GG.CICDConfig = updateConfigWithFormValues(values);
@@ -530,8 +530,8 @@ class SettingsWidget {
 							options: providerOptions, default: cicdConfig.provider.toString(),
 							info: 'In addition to the built-in publicly hosted CI/CD providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git URL', default: cicdConfig.gitUrl || '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git).' },
-						{ type: DialogInputType.Password, name: 'Access Token', default: cicdConfig.glToken, info: 'The GitHub/GitLab personal access token or project access token.' }
+						{ type: DialogInputType.Text, name: 'Git/Jenkins URL', default: cicdConfig.gitUrl || '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git) / Jenkins Job URL.' },
+						{ type: DialogInputType.Password, name: 'Access Token', default: cicdConfig.glToken, info: 'The GitHub/GitLab personal or project access token / The Jenkin user_name:password or user_name:access_token' }
 					], 'Save Changes', (values) => {
 						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
 						let configs: GG.CICDConfig[] = copyConfigs();

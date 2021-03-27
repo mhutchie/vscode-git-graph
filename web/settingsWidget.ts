@@ -246,7 +246,8 @@ class SettingsWidget {
 					cicdConfigs.forEach((cicdConfig, i) => {
 						let providerOptions:any = {};
 						providerOptions[(GG.CICDProvider.GitHubV3).toString()] = 'GitHub';
-						providerOptions[(GG.CICDProvider.GitLabV4).toString()] = 'GitLab APIv4(ver8.11-)';
+						providerOptions[(GG.CICDProvider.GitLabV4).toString()] = 'GitLab API v4(ver8.11-)';
+						providerOptions[(GG.CICDProvider.JenkinsV2).toString()] = 'Jenkins v2';
 						const gitUrl = escapeHtml(cicdConfig.gitUrl || 'Not Set');
 						html += '<tr class="lineAbove">' +
 							'<td class="left">' + escapeHtml(providerOptions[cicdConfig.provider]) + '</td>' +
@@ -496,7 +497,8 @@ class SettingsWidget {
 					let providerOptions = [
 						// { name: 'Bitbucket', value: (GG.CICDProvider.Bitbucket).toString() },
 						{ name: 'GitHub', value: (GG.CICDProvider.GitHubV3).toString() },
-						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() }
+						{ name: 'GitLab API v4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() },
+						{ name: 'Jenkins v2', value: (GG.CICDProvider.JenkinsV2).toString() }
 					];
 					dialog.showForm('Add a new cicd to this repository:', [
 						{
@@ -520,7 +522,8 @@ class SettingsWidget {
 					let providerOptions = [
 						// { name: 'Bitbucket', value: (GG.CICDProvider.Bitbucket).toString() },
 						{ name: 'GitHub', value: (GG.CICDProvider.GitHubV3).toString() },
-						{ name: 'GitLab APIv4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() }
+						{ name: 'GitLab API v4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() },
+						{ name: 'Jenkins v2', value: (GG.CICDProvider.JenkinsV2).toString() }
 					];
 					dialog.showForm('Edit the CI/CD <b><i>' + escapeHtml(cicdConfig.gitUrl || 'Not Set') + '</i></b>:', [
 						{

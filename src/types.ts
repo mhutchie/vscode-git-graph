@@ -220,7 +220,7 @@ export const enum CICDProvider {
 	Custom,
 	GitHubV3,
 	GitLabV4,
-	Jenkins
+	JenkinsV2
 }
 
 interface CICDConfigBuiltIn extends CICDConfigBase {

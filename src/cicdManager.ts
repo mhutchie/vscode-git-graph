@@ -1,6 +1,7 @@
 // import * as crypto from 'crypto';
 import { IncomingMessage } from 'http';
 import * as https from 'https';
+import * as http from 'http';
 import { getConfig } from './config';
 // import * as url from 'url';
 import { ExtensionState } from './extensionState';
@@ -23,6 +24,7 @@ export class CicdManager extends Disposable {
 
 	private githubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
+	private jenkinsTimeout: number = 0;
 	private initialState: boolean = true;
 	private requestPage: number = -1;
 	private requestPageTimeout: NodeJS.Timer | null = null;
@@ -180,6 +182,9 @@ export class CicdManager extends Disposable {
 				case CICDProvider.GitLabV4:
 					this.fetchFromGitLab(cicdRequest);
 					break;
+				case CICDProvider.JenkinsV2:
+					this.fetchFromJenkins(cicdRequest);
+					break;
 				default:
 					break;
 			}
@@ -203,7 +208,6 @@ export class CicdManager extends Disposable {
 		}
 
 		let cicdConfig = cicdRequest.cicdConfig;
-		this.logger.log('Requesting CICD for ' + cicdConfig.gitUrl + ' detail=' + cicdRequest.detail + ' page=' + cicdRequest.page + ' from GitHub');
 
 		const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
 		let hostRootUrl = match1 !== null ? 'api.' + match1[3] : '';
@@ -239,6 +243,7 @@ export class CicdManager extends Disposable {
 			}
 		};
 
+		this.logger.log('Requesting CICD for https://' + hostRootUrl + cicdRootPath + ' detail=' + cicdRequest.detail + ' page=' + cicdRequest.page + ' from GitHub');
 		https.get({
 			hostname: hostRootUrl, path: cicdRootPath,
 			headers: headers,
@@ -257,6 +262,7 @@ export class CicdManager extends Disposable {
 				}
 
 				if (res.statusCode === 200) { // Success
+					this.logger.log('GitHub API - (' + res.statusCode + ')' + 'https://' + hostRootUrl + cicdRootPath);
 					try {
 						let respJson: any = JSON.parse(respBody);
 						if (typeof respJson['check_runs'] !== 'undefined' && respJson['check_runs'].length >= 1) { // url found
@@ -269,7 +275,7 @@ export class CicdManager extends Disposable {
 									web_url: elm['html_url'],
 									created_at: elm['created_at'],
 									updated_at: elm['updated_at'],
-									name: elm['name'],
+									name: elm['app']!['name'] + '(' + elm['name'] + ')',
 									event: '',
 									detail: cicdRequest.detail
 								};
@@ -278,7 +284,7 @@ export class CicdManager extends Disposable {
 								let save = this.convCICDData2CICDDataSave(element);
 								this.saveCICD(element.sha, element.id, save);
 							});
-							this.reFetchPage(cicdRequest, res, cicdConfig);
+							this.reFetchPageGitHub(cicdRequest, res, cicdConfig);
 							return;
 						} else if (typeof respJson['workflow_runs'] !== 'undefined' && respJson['workflow_runs'].length >= 1) { // url found
 							let ret: CICDData[] = respJson['workflow_runs'].map((elm: { [x: string]: any; }) => {
@@ -299,12 +305,11 @@ export class CicdManager extends Disposable {
 								let save = this.convCICDData2CICDDataSave(element);
 								this.saveCICD(element.sha, element.id, save);
 							});
-
-							this.reFetchPage(cicdRequest, res, cicdConfig);
+							this.reFetchPageGitHub(cicdRequest, res, cicdConfig);
 							return;
 						}
 					} catch (e) {
-						this.logger.log('GitHub API Error - (' + res.statusCode + ')API Result error.');
+						this.logger.log('GitHub API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
 					}
 					return;
 				} else if (res.statusCode === 403) {
@@ -334,7 +339,13 @@ export class CicdManager extends Disposable {
 		}).on('error', onError);
 	}
 
-	private reFetchPage(cicdRequest: CICDRequestItem, res: IncomingMessage, cicdConfig: CICDConfig) {
+	/**
+	 * ReFetch an cicd from GitHub.
+	 * @param cicdRequest The cicd request to fetch.
+	 * @param res The IncomingMessage.
+	 * @param cicdConfig The CICDConfig.
+	 */
+	private reFetchPageGitHub(cicdRequest: CICDRequestItem, res: IncomingMessage, cicdConfig: CICDConfig) {
 		if (cicdRequest.page === -1) {
 			let last = 1;
 			if (typeof res.headers['link'] === 'string') {
@@ -376,9 +387,6 @@ export class CicdManager extends Disposable {
 
 			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/Remaining=' + res.headers['x-ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() + ') from GitHub');
 			for (var i = 1; i < last; i++) {
-				// let cicdRequestNew = Object.assign({}, cicdRequest);;
-				// cicdRequestNew.page = i + 1;
-				// this.queue.addItem(cicdRequestNew, 0, false);
 				this.queue.add(cicdRequest.cicdConfig, i + 1, true);
 			}
 		}
@@ -398,16 +406,21 @@ export class CicdManager extends Disposable {
 		}
 
 		let cicdConfig = cicdRequest.cicdConfig;
-		this.logger.log('Requesting CICD for ' + cicdConfig.gitUrl + ' page=' + cicdRequest.page + ' from GitLab');
 
-		const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
-		let hostRootUrl = match1 !== null ? '' + match1[3] : '';
+		let gitUrl = cicdConfig.gitUrl.replace(/\/$/g, '');
+		gitUrl = gitUrl.replace(/.git$/g, '');
+		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
+		let hostProtocol = match1 !== null ? '' + match1[1] : '';
+		let hostRootUrl = match1 !== null ? '' + match1[2] : '';
+		let hostPort = match1 !== null ? (match1[3] || '') : '';
+		let hostpath = match1 !== null ? '' + match1[4].replace(/^\//, '').replace(/\//g, '%2F') : '';
 
-		const match2 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
-		let sourceOwner = match2 !== null ? match2[2] : '';
-		let sourceRepo = match2 !== null ? match2[3] : '';
-
-		const cicdRootPath = `/api/v4/projects/${sourceOwner}%2F${sourceRepo.replace(/\//g, '%2F')}/pipelines?per_page=100`;
+		// Pipelines API https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
+		let cicdRootPath = `/api/v4/projects/${hostpath}/pipelines?per_page=100`;
+		if (cicdRequest.detail) {
+			// Commits API https://docs.gitlab.com/ee/api/commits.html#list-the-statuses-of-a-commit
+			cicdRootPath = `/api/v4/projects/${hostpath}/repository/commits/${cicdRequest.hash}/statuses?per_page=100`;
+		}
 
 		let headers: any = {
 			'User-Agent': 'vscode-git-graph'
@@ -418,7 +431,7 @@ export class CicdManager extends Disposable {
 
 		let triggeredOnError = false;
 		const onError = (err: Error) => {
-			this.logger.log('GitLab API HTTPS Error - ' + err.message);
+			this.logger.log('GitLab API ' + hostProtocol + ' Error - ' + err.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
@@ -427,8 +440,10 @@ export class CicdManager extends Disposable {
 			}
 		};
 
-		https.get({
+		this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' page=' + cicdRequest.page + ' from GitLab');
+		(hostProtocol === 'http' ? http : https).get({
 			hostname: hostRootUrl, path: cicdRootPath,
+			port: hostPort,
 			headers: headers,
 			agent: false, timeout: 15000
 		}, (res) => {
@@ -443,34 +458,37 @@ export class CicdManager extends Disposable {
 
 				if (res.statusCode === 200) { // Success
 					try {
+						this.logger.log('GitLab API - (' + res.statusCode + ')' + hostProtocol + '://' + hostRootUrl + cicdRootPath);
 						if (typeof res.headers['x-page'] === 'string' && typeof res.headers['x-total-pages'] === 'string' && typeof res.headers['x-total'] === 'string') {
 							let respJson: any = JSON.parse(respBody);
 							if (parseInt(res.headers['x-total']) !== 0 && respJson.length && respJson[0].id) { // url found
 								let ret: CICDData[] = respJson;
 								ret.forEach(element => {
-									let save = this.convCICDData2CICDDataSave(element);
+									let save: CICDDataSave;
+									if (cicdRequest.detail) {
+										save = this.convComitStatuses2CICDDataSave(element, cicdRequest.detail);
+									} else {
+										save = this.convCICDData2CICDDataSave(element);
+									}
 									this.saveCICD(element.sha, element.id, save);
 								});
-
-								if (cicdRequest.page === -1) {
-									let last = parseInt(res.headers['x-total-pages']);
-									if (last > cicdRequest.maxPage) {
-										last = cicdRequest.maxPage;
-										this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
-									}
-									this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/Remaining=' + res.headers['ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() + ') from GitLab');
-									for (var i = 1; i < last; i++) {
-										// let cicdRequestNew = Object.assign({}, cicdRequest);;
-										// cicdRequestNew.page = i + 1;
-										// this.queue.addItem(cicdRequestNew, 0, false);
-										this.queue.add(cicdRequest.cicdConfig, i + 1, true);
-									}
-								}
-								return;
 							}
+
+							if (cicdRequest.page === -1) {
+								let last = parseInt(res.headers['x-total-pages']);
+								if (last > cicdRequest.maxPage) {
+									last = cicdRequest.maxPage;
+									this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
+								}
+								this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/Remaining=' + res.headers['ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() + ') from GitLab');
+								for (var i = 1; i < last; i++) {
+									this.queue.add(cicdRequest.cicdConfig, i + 1, true);
+								}
+							}
+							return;
 						}
 					} catch (e) {
-						this.logger.log('GitLab API Error - (' + res.statusCode + ')API Result error.');
+						this.logger.log('GitLab API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
 					}
 				} else if (res.statusCode === 429) {
 					// Rate limit reached, try again after timeout
@@ -496,20 +514,161 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
+	 * Fetch an cicd from Jenkins.
+	 * @param cicdRequest The cicd request to fetch.
+	 */
+	private fetchFromJenkins(cicdRequest: CICDRequestItem) {
+		if (cicdRequest.detail) {
+			return;
+		}
+		let t = (new Date()).getTime();
+		if (cicdRequest.checkAfter !== 0 && t < this.jenkinsTimeout) {
+			// Defer request until after timeout
+			this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
+			this.fetchCICDsInterval();
+			return;
+		}
+
+		let cicdConfig = cicdRequest.cicdConfig;
+
+		let gitUrl = cicdConfig.gitUrl.replace(/\/$/g, '');
+		gitUrl = gitUrl.replace(/.git$/g, '');
+		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
+		let hostProtocol = match1 !== null ? '' + match1[1] : '';
+		let hostRootUrl = match1 !== null ? '' + match1[2] : '';
+		let hostPort = match1 !== null ? (match1[3] || '') : '';
+		let hostpath = match1 !== null ? '' + match1[4].replace(/^\//, '') : '';
+
+		let cicdRootPath = `/${hostpath}/api/json?tree=builds[id,timestamp,fullDisplayName,result,url,actions[lastBuiltRevision[branch[*]]]]`;
+
+		let headers: any = {
+			'User-Agent': 'vscode-git-graph'
+		};
+		if (cicdConfig.glToken !== '') {
+			// headers['Authorization'] = 'Basic ' + new Buffer(username + ':' + passw).toString('base64');
+			headers['Authorization'] = 'Basic ' + new Buffer(cicdConfig.glToken).toString('base64');
+		}
+
+		let triggeredOnError = false;
+		const onError = (err: Error) => {
+			this.logger.log('Jenkins API HTTPS Error - ' + err.message);
+			if (!triggeredOnError) {
+				// If an error occurs, try again after 5 minutes
+				triggeredOnError = true;
+				this.jenkinsTimeout = t + 300000;
+				this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
+			}
+		};
+
+		this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' page=' + cicdRequest.page + ' from Jenkins');
+		(hostProtocol === 'http' ? http : https).get({
+			hostname: hostRootUrl, path: cicdRootPath,
+			port: hostPort,
+			headers: headers,
+			agent: false, timeout: 15000
+		}, (res) => {
+			let respBody = '';
+			res.on('data', (chunk: Buffer) => { respBody += chunk; });
+			res.on('end', async () => {
+				if (res.headers['ratelimit-remaining'] === '0') {
+					// If the GitLab Api rate limit was reached, store the gitlab timeout to prevent subsequent requests
+					this.jenkinsTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
+					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/' + new Date(this.jenkinsTimeout).toString() + ')');
+				}
+
+				if (res.statusCode === 200) { // Success
+					try {
+						if (typeof res.headers['x-jenkins'] === 'string' && res.headers['x-jenkins'].startsWith('2.')) {
+							let respJson: any = JSON.parse(respBody);
+							if (respJson['builds'].length) { // url found
+								let ret: CICDData[] = [];
+								respJson['builds'].forEach((elmBuild: { [x: string]: any; })=> {
+									elmBuild['actions'].forEach((elmAction: { [x: string]: any; }) => {
+										if (typeof elmAction['lastBuiltRevision'] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'] !== 'undefined'
+											&& typeof elmAction['lastBuiltRevision']['branch'][0] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'][0].SHA1 !== 'undefined') {
+											ret.push(
+												{
+													id: elmBuild['id'],
+													status: elmBuild['result'],
+													ref: elmAction['lastBuiltRevision']!['branch']![0]!.name,
+													sha: elmAction['lastBuiltRevision']!['branch']![0]!.SHA1,
+													web_url: elmBuild['url'],
+													created_at: '',
+													updated_at: elmBuild['timestamp'],
+													name: elmBuild['fullDisplayName'],
+													event: '',
+													detail: cicdRequest.detail
+												}
+											);
+										}
+									});
+								});
+								ret.forEach(element => {
+									let save = this.convCICDData2CICDDataSave(element);
+									this.saveCICD(element.sha, element.id, save);
+								});
+								return;
+							}
+						}
+					} catch (e) {
+						this.logger.log('Jenkins API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
+					}
+				} else if (res.statusCode === 429) {
+					// Rate limit reached, try again after timeout
+					this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
+					return;
+				} else if (res.statusCode! >= 500) {
+					// If server error, try again after 10 minutes
+					this.jenkinsTimeout = t + 600000;
+					this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
+					return;
+				} else {
+					// API Error
+					try {
+						let respJson: any = JSON.parse(respBody);
+						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + respJson.message);
+					} catch (e) {
+						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + res.statusMessage);
+					}
+				}
+			});
+			res.on('error', onError);
+		}).on('error', onError);
+	}
+
+	/**
 	 * Fetch an cicd from GitHub.
 	 * @param cicdData The CICDData.
 	 * @returns The CICDDataSave.
 	 */
 	private convCICDData2CICDDataSave(cicdData: CICDData): CICDDataSave {
 		return {
-			name: cicdData.name,
-			ref: cicdData.ref,
-			status: cicdData.status,
-			web_url: cicdData.web_url,
-			event: cicdData.event,
-			detail: cicdData.detail
+			name: cicdData!.name,
+			ref: cicdData!.ref,
+			status: cicdData!.status,
+			web_url: cicdData!.web_url,
+			event: cicdData!.event,
+			detail: cicdData!.detail
 		};
 	}
+
+	/**
+	 * Fetch an cicd from GitHub.
+	 * @param cicdData The CICDData.
+	 * @param detail Detail fetch flag.
+	 * @returns The CICDDataSave.
+	 */
+	private convComitStatuses2CICDDataSave(data: any, detail: boolean): CICDDataSave {
+		return {
+			name: data!.name,
+			ref: data!.ref,
+			status: data!.status,
+			web_url: data!.target_url,
+			event: '',
+			detail: detail
+		};
+	}
+
 	/**
 	 * Emit an CICDEvent to any listeners.
 	 * @param hash The hash identifying the cicd commit.

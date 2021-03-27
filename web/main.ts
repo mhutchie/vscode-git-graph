@@ -546,14 +546,18 @@ class GitGraphView {
 			let cicdDataSave = cicdDataSaves[name];
 			let event = cicdDataSave.event || '';
 			let detailCurrent = cicdDataSave.detail || false;
-			let title = (typeof cicdDataSave.name !== 'undefined' ? cicdDataSave.name + '/' : '') + cicdDataSave.status + '/' + event;
-			if (detailCurrent === detail && event === 'push' || event === 'pull_request') {
-			// if (detailCurrent === detail && event !== 'issues' && event !== 'issue_comment' && event !== 'schedule' && event !== 'workflow_run') {
+			let status = ((cicdDataSave.status === 'success' || cicdDataSave.status === 'SUCCESS') ? 'G' : ((cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure') ? 'B' : 'U'));
+			// if (detailCurrent === detail && event === 'push' || event === 'pull_request' || event === '') {
+			if (detailCurrent === detail && event !== 'issues' && event !== 'issue_comment' && event !== 'schedule' && event !== 'workflow_run') {
 				ret +=
-					'<a href="' + cicdDataSave.web_url + '" title="' + title + '">' +
-					(cicdDataSave.status === 'success' ? '<span class="cicdInfo G">' + SVG_ICONS.passed + '</span>' :
-						((cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure') ? '<span class="cicdInfo B">' + SVG_ICONS.failed + '</span>' :
-							'<span class="cicdInfo U">' + SVG_ICONS.inconclusive + '</span>')) +
+					'<a class="cicdAnchor cicdTooltip" href="' + cicdDataSave.web_url + '">' +
+					// '<div class="cicdTooltipContent ' + status + ' ' + (detail === true ? 'right' : 'left') + '">' +
+					`<div class="cicdTooltipContent ${status} ${(detail === true ? 'right' : 'left')}">` +
+					(typeof cicdDataSave.name !== 'undefined' ? `<div class="cicdTooltipTitle">${cicdDataSave.name}</div>` : '') +
+					(typeof cicdDataSave.status !== 'undefined' ? `<div class="cicdTooltipSection">Status: ${cicdDataSave.status}</div>` : '') +
+					((typeof cicdDataSave.event !== 'undefined' && cicdDataSave.event !== '') ? `<div class="cicdTooltipSection">Event: ${cicdDataSave.event}</div>` : '') +
+					'</div>' +
+					`<span class="cicdInfo ${status}">${(status === 'G' ? SVG_ICONS.passed : (status === 'B' ? SVG_ICONS.failed : SVG_ICONS.inconclusive))}</span>` +
 					'</a>';
 			}
 		}
@@ -928,9 +932,9 @@ class GitGraphView {
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
-				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="text" title="' + '">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
+				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="cicdCol text">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
 				(typeof this.cicdDatas[commit.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commit.hash])) : '*') +
-					'</span>' + '</td>' : '<td class="text">-</td>') : '') +
+					'</span>' + '</td>' : '<td class="cicdCol text">-</td>') : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -2217,6 +2221,8 @@ class GitGraphView {
 					contextMenu.close();
 				}
 
+			} if ((eventElem = <HTMLElement>eventTarget.closest('.cicdAnchor')) !== null) {
+				// .cicdAnchor was clicked
 			} else if ((eventElem = <HTMLElement>eventTarget.closest('.commit')) !== null) {
 				// .commit was clicked
 				if (this.expandedCommit !== null) {
@@ -2566,11 +2572,12 @@ class GitGraphView {
 						+ (commitDetails.authorDate !== commitDetails.committerDate ? '<b>Author Date: </b>' + formatLongDate(commitDetails.authorDate) + '<br>' : '')
 						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'
 						+ '<b>' + (commitDetails.authorDate !== commitDetails.committerDate ? 'Committer ' : '') + 'Date: </b>' + formatLongDate(commitDetails.committerDate) + '<br>'
+						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
+						+ '</span></span>'
 						+ (this.config.fetchCICDs ? '<b>CI/CD detail: </b>' + '<span class="cicdDetail" data-hash="' + escapeHtml(commitDetails.hash) + '">'
 							+ (typeof this.cicdDatas[commitDetails.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commitDetails.hash], true)) : '*')
 							+ '</span>' : '')
-						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
-						+ '</span></span><br><br>' + textFormatter.format(commitDetails.body);
+						+ '<br><br>' + textFormatter.format(commitDetails.body);
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}

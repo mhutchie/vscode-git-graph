@@ -472,7 +472,6 @@ class SettingsWidget {
 					this.view.saveRepoStateValue(this.currentRepo, 'hideRemotes', this.repo.hideRemotes);
 					this.view.refresh(true);
 				});
-				
 				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
 					let config: GG.CICDConfig = {
 						provider: <GG.CICDProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],

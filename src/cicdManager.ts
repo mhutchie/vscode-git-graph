@@ -98,7 +98,7 @@ export class CicdManager extends Disposable {
 			}
 			this.cicdConfigsPrev = Object.assign({}, cicdConfigs);
 			// CICD not in the cache, request it
-			if (this.initialState === true) {
+			if (this.initialState) {
 				this.initialState = false;
 				cicdConfigs.forEach(cicdConfig => {
 					this.queue.add(cicdConfig, this.requestPage, true);
@@ -108,7 +108,7 @@ export class CicdManager extends Disposable {
 					this.logger.log('Reset initial timer of CICD');
 					this.initialState = true;
 				}, 10000);
-				// set request page to top 
+				// set request page to top
 				this.requestPage = 1;
 				// Reset request page to all after 10 minutes
 				if (this.requestPageTimeout === null) {
@@ -386,7 +386,7 @@ export class CicdManager extends Disposable {
 			}
 
 			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/Remaining=' + res.headers['x-ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() + ') from GitHub');
-			for (var i = 1; i < last; i++) {
+			for (let i = 1; i < last; i++) {
 				this.queue.add(cicdRequest.cicdConfig, i + 1, true);
 			}
 		}
@@ -481,7 +481,7 @@ export class CicdManager extends Disposable {
 									this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
 								}
 								this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/Remaining=' + res.headers['ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() + ') from GitLab');
-								for (var i = 1; i < last; i++) {
+								for (let i = 1; i < last; i++) {
 									this.queue.add(cicdRequest.cicdConfig, i + 1, true);
 								}
 							}
@@ -582,7 +582,7 @@ export class CicdManager extends Disposable {
 							let respJson: any = JSON.parse(respBody);
 							if (respJson['builds'].length) { // url found
 								let ret: CICDData[] = [];
-								respJson['builds'].forEach((elmBuild: { [x: string]: any; })=> {
+								respJson['builds'].forEach((elmBuild: { [x: string]: any; }) => {
 									elmBuild['actions'].forEach((elmAction: { [x: string]: any; }) => {
 										if (typeof elmAction['lastBuiltRevision'] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'] !== 'undefined'
 											&& typeof elmAction['lastBuiltRevision']['branch'][0] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'][0].SHA1 !== 'undefined') {
@@ -789,7 +789,7 @@ class CicdRequestQueue {
 	 * @param item The cicd request item.
 	 */
 	private insertItem(item: CICDRequestItem) {
-		var l = 0, r = this.queue.length - 1, c, prevLength = this.queue.length;
+		let l = 0, r = this.queue.length - 1, c, prevLength = this.queue.length;
 		while (l <= r) {
 			c = l + r >> 1;
 			if (this.queue[c].checkAfter <= item.checkAfter) {

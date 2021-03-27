@@ -552,7 +552,7 @@ class GitGraphView {
 				ret +=
 					'<a class="cicdAnchor cicdTooltip" href="' + cicdDataSave.web_url + '">' +
 					// '<div class="cicdTooltipContent ' + status + ' ' + (detail === true ? 'right' : 'left') + '">' +
-					`<div class="cicdTooltipContent ${status} ${(detail === true ? 'right' : 'left')}">` +
+					`<div class="cicdTooltipContent ${status} ${(detail ? 'right' : 'left')}">` +
 					(typeof cicdDataSave.name !== 'undefined' ? `<div class="cicdTooltipTitle">${cicdDataSave.name}</div>` : '') +
 					(typeof cicdDataSave.status !== 'undefined' ? `<div class="cicdTooltipSection">Status: ${cicdDataSave.status}</div>` : '') +
 					((typeof cicdDataSave.event !== 'undefined' && cicdDataSave.event !== '') ? `<div class="cicdTooltipSection">Event: ${cicdDataSave.event}</div>` : '') +

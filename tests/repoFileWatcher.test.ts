@@ -90,7 +90,7 @@ describe('RepoFileWatcher', () => {
 		const onDidCreate = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidCreate).mock.calls[0][0];
 		const onDidChange = (<jest.Mock<any, any>>repoFileWatcher['fsWatcher']!.onDidChange).mock.calls[0][0];
 
-		// Run 
+		// Run
 		repoFileWatcher.mute();
 		repoFileWatcher.unmute();
 		onDidCreate(vscode.Uri.file('/path/to/repo/file'));

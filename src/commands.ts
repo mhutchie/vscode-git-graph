@@ -329,7 +329,7 @@ export class CommandManager extends Disposable {
 	/**
 	 * Opens a file in Visual Studio Code, based on a Git Graph URI (from the Diff View).
 	 * The method run when the `git-graph.openFile` command is invoked.
-	 * @param arg The Git Graph URI. 
+	 * @param arg The Git Graph URI.
 	 */
 	private openFile(arg?: vscode.Uri) {
 		const uri = arg || vscode.window.activeTextEditor?.document.uri;

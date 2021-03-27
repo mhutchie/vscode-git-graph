@@ -44,7 +44,7 @@ export class StatusBarItem extends Disposable {
 		this.setNumRepos(initialNumRepos);
 	}
 
-	/** 
+	/**
 	 * Sets the number of repositories known to Git Graph, before refreshing the Status Bar Item.
 	 * @param numRepos The number of repositories known to Git Graph.
 	 */
@@ -53,7 +53,7 @@ export class StatusBarItem extends Disposable {
 		this.refresh();
 	}
 
-	/** 
+	/**
 	 * Show or hide the Status Bar Item according to the configured value of `git-graph.showStatusBarItem`, and the number of repositories known to Git Graph.
 	 */
 	private refresh() {

@@ -624,8 +624,8 @@ export class DataSource extends Disposable {
 	/**
 	 * Edit an existing remote of a repository.
 	 * @param repo The path of the repository.
-	 * @param nameOld The old name of the remote. 
-	 * @param nameNew The new name of the remote. 
+	 * @param nameOld The old name of the remote.
+	 * @param nameNew The new name of the remote.
 	 * @param urlOld The old URL of the remote.
 	 * @param urlNew The new URL of the remote.
 	 * @param pushUrlOld The old Push URL of the remote.
@@ -1703,7 +1703,7 @@ export class DataSource extends Disposable {
 
 	/**
 	 * Spawn Git, with the return value resolved from `stdout` as a string.
-	 * @param args The arguments to pass to Git. 
+	 * @param args The arguments to pass to Git.
 	 * @param repo The repository to run the command in.
 	 * @param resolveValue A callback invoked to resolve the data from `stdout`.
 	 */
@@ -1713,7 +1713,7 @@ export class DataSource extends Disposable {
 
 	/**
 	 * Spawn Git, with the return value resolved from `stdout` as a buffer.
-	 * @param args The arguments to pass to Git. 
+	 * @param args The arguments to pass to Git.
 	 * @param repo The repository to run the command in.
 	 * @param resolveValue A callback invoked to resolve the data from `stdout`.
 	 */

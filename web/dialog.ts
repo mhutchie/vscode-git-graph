@@ -202,7 +202,7 @@ class Dialog {
 	 * @param target The target that the dialog was triggered on.
 	 * @param secondaryActionName An optional name for the secondary action.
 	 * @param secondaryActioned An optional callback to be invoked when the secondary action is selected by the user.
-	 * @param includeLineBreak Should a line break be added between the message and form inputs. 
+	 * @param includeLineBreak Should a line break be added between the message and form inputs.
 	 */
 	public showForm(message: string, inputs: ReadonlyArray<DialogInput>, actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
@@ -429,7 +429,7 @@ class Dialog {
 					}
 					return;
 				} else {
-					// Dialog is dependent on the commit and ref 
+					// Dialog is dependent on the commit and ref
 					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
 					for (let i = 0; i < elems.length; i++) {
 						if (elems[i].dataset.fullref! === this.target.ref) {

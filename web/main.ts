@@ -932,7 +932,7 @@ class GitGraphView {
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
-				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="cicdCol text">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
+				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="cicdCol">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
 				(typeof this.cicdDatas[commit.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commit.hash])) : '*') +
 					'</span>' + '</td>' : '<td class="cicdCol text">-</td>') : '') +
 				'</tr>';

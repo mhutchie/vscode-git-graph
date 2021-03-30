@@ -278,6 +278,11 @@ describe('RepoManager', () => {
 				'/path/to/workspace-folder2': mockRepoState(2),
 				'/path/to/workspace-folder3': mockRepoState(1)
 			});
+			expect(spyOnSaveRepos).toHaveBeenCalledWith({
+				'/path/to/workspace-folder1': mockRepoState(0),
+				'/path/to/workspace-folder2': mockRepoState(2),
+				'/path/to/workspace-folder3': mockRepoState(1)
+			});
 			expect(onDidChangeReposEvents).toStrictEqual([
 				{
 					repos: {
@@ -372,25 +377,136 @@ describe('RepoManager', () => {
 			// Setup
 			mockRepositoryWithNoSubmodules(); // Exists: /path/to/workspace-folder1/repo1
 			mockDirectoryThatsNotRepository(); // Removed: Re/path/to/workspace-folder1/repo2
-			mockRepositoryWithNoSubmodules(); // New: /path/to/workspace-folder3
-			mockRepositoryWithNoSubmodules(); // New: /path/to/another
+			mockRepositoryWithNoSubmodules(); // Exists: /path/to/another
 			mockDirectoryThatsNotRepository(); // Not Repo: /path/to/workspace-folder1
+			mockRepositoryWithNoSubmodules(); // New: /path/to/workspace-folder3
 
 			// Run
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(
 				['/path/to/workspace-folder1', '/path/to/another/workspace-folder', '/path/to/workspace-folder3'],
-				['/path/to/workspace-folder1/repo1', '/path/to/workspace-folder1/repo2', '/path/to/workspace-folder3', '/path/to/workspace-folder4', '/path/to/another']
+				['/path/to/workspace-folder1/repo1', '/path/to/workspace-folder1/repo2', '/path/to/workspace-folder4', '/path/to/another']
 			);
 
 			// Assert
 			expect(repoManager.getRepos()).toStrictEqual({
 				'/path/to/workspace-folder1/repo1': mockRepoState(0),
-				'/path/to/workspace-folder3': mockRepoState(2),
-				'/path/to/another': mockRepoState(1)
+				'/path/to/another': mockRepoState(1),
+				'/path/to/workspace-folder3': mockRepoState(2)
+			});
+			expect(spyOnSaveRepos).toHaveBeenCalledTimes(4);
+			expect(spyOnSaveRepos).toHaveBeenCalledWith({
+				'/path/to/workspace-folder1/repo1': mockRepoState(0),
+				'/path/to/another': mockRepoState(1),
+				'/path/to/workspace-folder3': mockRepoState(2)
 			});
 			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/workspace-folder1/**');
 			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/another/workspace-folder/**');
 			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/workspace-folder3/**');
+
+			// Run
+			repoManager.dispose();
+		});
+
+		it('Should run startup tasks (calls saveRepos when updateReposWorkspaceFolderIndex makes changes)', async () => {
+			// Setup
+			mockRepositoryWithNoSubmodules();
+
+			// Run
+			const repoManager = await constructRepoManagerAndWaitUntilStarted(
+				['/path/to/workspace-folder1'],
+				{
+					'/path/to/workspace-folder1': mockRepoState(null)
+				}
+			);
+
+			// Assert
+			expect(repoManager.getRepos()).toStrictEqual({
+				'/path/to/workspace-folder1': mockRepoState(0)
+			});
+			expect(spyOnSaveRepos).toHaveBeenCalledWith({
+				'/path/to/workspace-folder1': mockRepoState(0)
+			});
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/workspace-folder1/**');
+
+			// Run
+			repoManager.dispose();
+		});
+
+		it('Should run startup tasks (doesn\'t call saveRepos when updateReposWorkspaceFolderIndex doesn\'t make changes)', async () => {
+			// Setup
+			mockRepositoryWithNoSubmodules();
+
+			// Run
+			const repoManager = await constructRepoManagerAndWaitUntilStarted(
+				['/path/to/workspace-folder1'],
+				{
+					'/path/to/workspace-folder1': mockRepoState(0)
+				}
+			);
+
+			// Assert
+			expect(repoManager.getRepos()).toStrictEqual({
+				'/path/to/workspace-folder1': mockRepoState(0)
+			});
+			expect(spyOnSaveRepos).not.toHaveBeenCalled();
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/workspace-folder1/**');
+
+			// Run
+			repoManager.dispose();
+		});
+
+		it('Should run startup tasks (doesn\'t call sendRepos when checkReposExist makes changes)', async () => {
+			// Setup
+			mockDirectoryThatsNotRepository();
+			mockDirectoryThatsNotRepository();
+
+			// Run
+			const onDidChangeReposEvents: RepoChangeEvent[] = [];
+			const repoManager = constructRepoManager(
+				['/path/to/workspace-folder1'],
+				['/path/to/workspace-folder1']
+			);
+			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
+			await waitForRepoManagerToStart();
+
+			// Assert
+			expect(repoManager.getRepos()).toStrictEqual({});
+			expect(onDidChangeReposEvents).toStrictEqual([
+				{
+					repos: {},
+					numRepos: 0,
+					loadRepo: null
+				}
+			]);
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/workspace-folder1/**');
+
+			// Run
+			repoManager.dispose();
+		});
+
+		it('Should run startup tasks (calls sendRepos when checkReposExist doesn\'t make changes)', async () => {
+			// Setup
+			mockDirectoryThatsNotRepository();
+
+			// Run
+			const onDidChangeReposEvents: RepoChangeEvent[] = [];
+			const repoManager = constructRepoManager(
+				['/path/to/workspace-folder1'],
+				[]
+			);
+			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
+			await waitForRepoManagerToStart();
+
+			// Assert
+			expect(repoManager.getRepos()).toStrictEqual({});
+			expect(onDidChangeReposEvents).toStrictEqual([
+				{
+					repos: {},
+					numRepos: 0,
+					loadRepo: null
+				}
+			]);
+			expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('/path/to/workspace-folder1/**');
 
 			// Run
 			repoManager.dispose();
@@ -962,32 +1078,44 @@ describe('RepoManager', () => {
 			mockRepositoryWithNoSubmodules();
 			mockRepositoryWithNoSubmodules();
 			mockDirectoryThatsNotRepository();
+			mockDirectoryThatsNotRepository();
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(
-				['/path/to/workspace-folder1'],
+				['/path/to/workspace-folder1', '/path/to/workspace-folder2'],
 				['/path/to/workspace-folder1/repo1', '/path/to/workspace-folder1/repo2']
 			);
 
+			// Assert
+			expect(repoManager.getRepos()).toStrictEqual({
+				'/path/to/workspace-folder1/repo1': mockRepoState(0),
+				'/path/to/workspace-folder1/repo2': mockRepoState(0)
+			});
+
+			// Setup
 			const onDidChangeReposEvents: RepoChangeEvent[] = [];
 			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockRepository();
-			mockRepository((path) => path + '-new');
+			mockRepository((path) => path.replace('workspace-folder1', 'workspace-folder2'));
 
 			// Run
 			const result = await repoManager.checkReposExist();
 
 			// Assert
 			expect(result).toBe(true);
+			expect(repoManager.getRepos()).toStrictEqual({
+				'/path/to/workspace-folder1/repo1': mockRepoState(0),
+				'/path/to/workspace-folder2/repo2': mockRepoState(1)
+			});
 			expect(spyOnSaveRepos).toHaveBeenCalledWith({
 				'/path/to/workspace-folder1/repo1': mockRepoState(0),
-				'/path/to/workspace-folder1/repo2-new': mockRepoState(0)
+				'/path/to/workspace-folder2/repo2': mockRepoState(1)
 			});
-			expect(spyOnTransferRepo).toHaveBeenCalledWith('/path/to/workspace-folder1/repo2', '/path/to/workspace-folder1/repo2-new');
-			expect(spyOnLog).toHaveBeenCalledWith('Transferred repo state: /path/to/workspace-folder1/repo2 -> /path/to/workspace-folder1/repo2-new');
+			expect(spyOnTransferRepo).toHaveBeenCalledWith('/path/to/workspace-folder1/repo2', '/path/to/workspace-folder2/repo2');
+			expect(spyOnLog).toHaveBeenCalledWith('Transferred repo state: /path/to/workspace-folder1/repo2 -> /path/to/workspace-folder2/repo2');
 			expect(onDidChangeReposEvents).toStrictEqual([
 				{
 					repos: {
 						'/path/to/workspace-folder1/repo1': mockRepoState(0),
-						'/path/to/workspace-folder1/repo2-new': mockRepoState(0)
+						'/path/to/workspace-folder2/repo2': mockRepoState(1)
 					},
 					numRepos: 2,
 					loadRepo: null
@@ -1020,6 +1148,52 @@ describe('RepoManager', () => {
 			expect(result).toBe(false);
 			expect(spyOnLog).not.toHaveBeenCalledWith('Removed repo: /path/to/workspace-folder1/repo2');
 			expect(onDidChangeReposEvents).toHaveLength(0);
+
+			// Teardown
+			repoManager.dispose();
+		});
+
+		it('Should return gracefully when an exception occurs', async () => {
+			// Setup
+			mockRepositoryWithNoSubmodules();
+			mockRepositoryWithNoSubmodules();
+			mockRepositoryWithNoSubmodules();
+			mockDirectoryThatsNotRepository();
+			mockDirectoryThatsNotRepository();
+			const repoManager = await constructRepoManagerAndWaitUntilStarted(
+				['/path/to/workspace-folder1', '/path/to/workspace-folder2'],
+				['/path/to/workspace-folder1/repo1', '/path/to/workspace-folder1/repo2', '/path/to/workspace-folder1/repo3']
+			);
+
+			const onDidChangeReposEvents: RepoChangeEvent[] = [];
+			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
+			mockRepository((path) => path.replace('workspace-folder1', 'workspace-folder2'));
+			mockRepository((path) => path.replace('workspace-folder1', 'workspace-folder2'));
+			mockRepository((path) => path.replace('workspace-folder1', 'workspace-folder2'));
+			spyOnTransferRepo.mockImplementationOnce(() => { });
+			spyOnTransferRepo.mockImplementationOnce(() => { throw new Error(); });
+
+			// Run
+			const result = await repoManager.checkReposExist();
+
+			// Assert
+			expect(result).toBe(true);
+			expect(spyOnSaveRepos).toHaveBeenCalledWith({
+				'/path/to/workspace-folder2/repo1': mockRepoState(1),
+				'/path/to/workspace-folder2/repo2': mockRepoState(1),
+				'/path/to/workspace-folder1/repo3': mockRepoState(0)
+			});
+			expect(onDidChangeReposEvents).toStrictEqual([
+				{
+					repos: {
+						'/path/to/workspace-folder2/repo1': mockRepoState(1),
+						'/path/to/workspace-folder2/repo2': mockRepoState(1),
+						'/path/to/workspace-folder1/repo3': mockRepoState(0)
+					},
+					numRepos: 3,
+					loadRepo: null
+				}
+			]);
 
 			// Teardown
 			repoManager.dispose();
@@ -2134,6 +2308,7 @@ describe('RepoManager', () => {
 			mockWriteExternalConfigFileOnce();
 			vscode.window.showInformationMessage.mockResolvedValueOnce(null);
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo1']);
+			spyOnSaveRepos.mockClear();
 
 			// Run
 			const result = await repoManager.exportRepoConfig('/path/to/workspace-folder1/repo1');
@@ -2184,6 +2359,7 @@ describe('RepoManager', () => {
 				delete repoManager['repos']['/path/to/workspace-folder1/repo1'];
 				return Promise.resolve();
 			});
+			spyOnSaveRepos.mockClear();
 
 			// Run
 			const result = await repoManager.exportRepoConfig('/path/to/workspace-folder1/repo1');
@@ -2210,6 +2386,7 @@ describe('RepoManager', () => {
 			mockFsWriteFileOnce(null);
 			vscode.window.showInformationMessage.mockResolvedValueOnce(null);
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo1']);
+			spyOnSaveRepos.mockClear();
 
 			// Run
 			const result = await repoManager.exportRepoConfig('/path/to/workspace-folder1/repo1');
@@ -2256,6 +2433,7 @@ describe('RepoManager', () => {
 			mockDirectoryThatsNotRepository();
 			mockFsMkdirOnce(new Error());
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo1']);
+			spyOnSaveRepos.mockClear();
 
 			// Run
 			const result = await repoManager.exportRepoConfig('/path/to/workspace-folder1/repo1');
@@ -2275,6 +2453,7 @@ describe('RepoManager', () => {
 			mockFsMkdirOnce(null);
 			mockFsWriteFileOnce(new Error());
 			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo1']);
+			spyOnSaveRepos.mockClear();
 
 			// Run
 			const result = await repoManager.exportRepoConfig('/path/to/workspace-folder1/repo1');
@@ -2445,9 +2624,14 @@ function mockWriteExternalConfigFileOnce() {
 	mockFsWriteFileOnce(null);
 }
 
-async function constructRepoManagerAndWaitUntilStarted(workspaceFolders: string[] | undefined, repos: string[], ignoreRepos: string[] = []) {
-	const repoSet: GitRepoSet = {};
-	repos.forEach((repo) => repoSet[repo] = Object.assign({}, DEFAULT_REPO_STATE));
+function constructRepoManager(workspaceFolders: string[] | undefined, repos: string[] | GitRepoSet, ignoreRepos: string[] = []) {
+	let repoSet: GitRepoSet = {};
+	if (Array.isArray(repos)) {
+		repos.forEach((repo) => repoSet[repo] = mockRepoState(null));
+	} else {
+		repoSet = Object.assign({}, repos);
+	}
+
 	spyOnGetRepos.mockReturnValueOnce(repoSet);
 
 	spyOnGetIgnoredRepos.mockReturnValueOnce(ignoreRepos);
@@ -2458,10 +2642,16 @@ async function constructRepoManagerAndWaitUntilStarted(workspaceFolders: string[
 		? workspaceFolders.map((path, index) => ({ uri: vscode.Uri.file(path), index: index }))
 		: undefined;
 
-	const repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration.subscribe, logger);
+	return new RepoManager(dataSource, extensionState, onDidChangeConfiguration.subscribe, logger);
+}
 
-	await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('Completed searching workspace for new repos'));
+function waitForRepoManagerToStart() {
+	return waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('Completed searching workspace for new repos'));
+}
 
+async function constructRepoManagerAndWaitUntilStarted(workspaceFolders: string[] | undefined, repos: string[] | GitRepoSet, ignoreRepos: string[] = []) {
+	const repoManager = constructRepoManager(workspaceFolders, repos, ignoreRepos);
+	await waitForRepoManagerToStart();
 	return repoManager;
 }
 

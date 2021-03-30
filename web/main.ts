@@ -170,7 +170,7 @@ class GitGraphView {
 		this.gitRepos = repos;
 		this.saveState();
 
-		let repoPaths: ReadonlyArray<string> = Object.keys(repos), newRepo: string;
+		let newRepo: string;
 		if (loadViewTo !== null && this.currentRepo !== loadViewTo.repo && typeof repos[loadViewTo.repo] !== 'undefined') {
 			newRepo = loadViewTo.repo;
 		} else if (typeof repos[this.currentRepo] === 'undefined') {
@@ -181,7 +181,7 @@ class GitGraphView {
 			newRepo = this.currentRepo;
 		}
 
-		alterClass(this.controlsElem, 'singleRepo', repoPaths.length === 1);
+		alterClass(this.controlsElem, 'singleRepo', Object.keys(repos).length === 1);
 		this.renderRepoDropdownOptions(newRepo);
 
 		if (loadViewTo !== null) {
@@ -3760,7 +3760,6 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 		}
 		options.push({ name: names[i], value: repoPaths[i], hint: hint });
 	}
-
 	return options;
 }
 

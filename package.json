@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.29.0",
+	"version": "1.30.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -1078,7 +1078,7 @@
 					"enumDescriptions": [
 						"Sort repositories alphabetically by the full path of the repository.",
 						"Sort repositories alphabetically by the name of the repository.",
-						"Sort repositories according to the workspace folder order, then alphabetically by the full path of the repository."
+						"Sort repositories according to the Visual Studio Code Workspace Folder order, then alphabetically by the full path of the repository."
 					],
 					"default": "Workspace Full Path",
 					"description": "Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace)."

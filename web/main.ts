@@ -991,8 +991,9 @@ class GitGraphView {
 					if (remotesWithBranch.length > 0) {
 						inputs.push({
 							type: DialogInputType.Checkbox,
-							name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : '') + '<span class="dialogInfo" title="This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map(remote => escapeHtml('"' + remote + '"'))) + '">' + SVG_ICONS.info + '</span>',
-							value: false
+							name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : ''),
+							value: false,
+							info: 'This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map((remote) => '"' + remote + '"'))
 						});
 					}
 					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Yes, delete', (values) => {
@@ -1254,8 +1255,13 @@ class GitGraphView {
 				title: 'Fetch into local branch' + ELLIPSIS,
 				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
 				onClick: () => {
-					dialog.showCheckbox('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Force Fetch<span class="dialogInfo" title="Force the local branch to be reset to this remote branch.">' + SVG_ICONS.info + '</span>', this.config.dialogDefaults.fetchIntoLocalBranch.forceFetch, 'Yes, fetch', (force) => {
-						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName, force: force }, 'Fetching Branch');
+					dialog.showForm('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', [{
+						type: DialogInputType.Checkbox,
+						name: 'Force Fetch',
+						value: this.config.dialogDefaults.fetchIntoLocalBranch.forceFetch,
+						info: 'Force the local branch to be reset to this remote branch.'
+					}], 'Yes, fetch', (values) => {
+						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName, force: <boolean>values[0] }, 'Fetching Branch');
 					}, target);
 				}
 			}, {

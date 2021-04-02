@@ -322,7 +322,7 @@ describe('doesFileExist', () => {
 		expect(mockedFileSystemModule.access).toHaveBeenNthCalledWith(1, 'file.txt', fs.constants.R_OK, expect.anything());
 	});
 
-	it('Should return FILE when the file doesn\'t exist', async () => {
+	it('Should return FALSE when the file doesn\'t exist', async () => {
 		// Setup
 		mockedFileSystemModule.access.mockImplementationOnce((_1: fs.PathLike, _2: number | undefined, callback: (err: NodeJS.ErrnoException | null) => void) => callback(new Error()));
 

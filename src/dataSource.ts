@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, getPathFromStr, getPathFromUri, isGitAtLeastVersion, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -88,7 +88,7 @@ export class DataSource extends Disposable {
 	 */
 	public setGitExecutable(gitExecutable: GitExecutable | null) {
 		this.gitExecutable = gitExecutable;
-		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? isGitAtLeastVersion(gitExecutable, '2.4.0') : false;
+		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? doesVersionMeetRequirement(gitExecutable.version, '2.4.0') : false;
 		this.generateGitCommandFormats();
 	}
 
@@ -474,6 +474,20 @@ export class DataSource extends Disposable {
 	}
 
 	/**
+	 * Check to see if a file has been renamed between a commit and the working tree, and return the new file path.
+	 * @param repo The path of the repository.
+	 * @param commitHash The commit hash where `oldFilePath` is known to have existed.
+	 * @param oldFilePath The file path that may have been renamed.
+	 * @returns The new renamed file path, or NULL if either: the file wasn't renamed or the Git command failed to execute.
+	 */
+	public getNewPathOfRenamedFile(repo: string, commitHash: string, oldFilePath: string) {
+		return this.getDiffNameStatus(repo, commitHash, '', 'R').then((renamed) => {
+			const renamedRecordForFile = renamed.find((record) => record.oldFilePath === oldFilePath);
+			return renamedRecordForFile ? renamedRecordForFile.newFilePath : null;
+		}).catch(() => null);
+	}
+
+	/**
 	 * Get the details of a tag.
 	 * @param repo The path of the repository.
 	 * @param tagName The name of the tag.
@@ -610,8 +624,8 @@ export class DataSource extends Disposable {
 	/**
 	 * Edit an existing remote of a repository.
 	 * @param repo The path of the repository.
-	 * @param nameOld The old name of the remote. 
-	 * @param nameNew The new name of the remote. 
+	 * @param nameOld The old name of the remote.
+	 * @param nameNew The new name of the remote.
 	 * @param urlOld The old URL of the remote.
 	 * @param urlNew The new URL of the remote.
 	 * @param pushUrlOld The old Push URL of the remote.
@@ -719,7 +733,7 @@ export class DataSource extends Disposable {
 		if (pruneTags) {
 			if (!prune) {
 				return Promise.resolve('In order to Prune Tags, pruning must also be enabled when fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
-			} else if (this.gitExecutable !== null && !isGitAtLeastVersion(this.gitExecutable, '2.17.0')) {
+			} else if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, '2.17.0')) {
 				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
 			}
 			args.push('--prune-tags');
@@ -884,10 +898,16 @@ export class DataSource extends Disposable {
 	 * @param remote The name of the remote containing the remote branch.
 	 * @param remoteBranch The name of the remote branch.
 	 * @param localBranch The name of the local branch.
+	 * @param force Force fetch the remote branch.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public fetchIntoLocalBranch(repo: string, remote: string, remoteBranch: string, localBranch: string) {
-		return this.runGitCommand(['fetch', remote, remoteBranch + ':' + localBranch], repo);
+	public fetchIntoLocalBranch(repo: string, remote: string, remoteBranch: string, localBranch: string, force: boolean) {
+		const args = ['fetch'];
+		if (force) {
+			args.push('-f');
+		}
+		args.push(remote, remoteBranch + ':' + localBranch);
+		return this.runGitCommand(args, repo);
 	}
 
 	/**
@@ -1191,8 +1211,7 @@ export class DataSource extends Disposable {
 	public pushStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
-		}
-		if (!isGitAtLeastVersion(this.gitExecutable, '2.13.2')) {
+		} else if (!doesVersionMeetRequirement(this.gitExecutable.version, '2.13.2')) {
 			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.13.2'));
 		}
 
@@ -1381,10 +1400,11 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @param fromHash The revision the diff is from.
 	 * @param toHash The revision the diff is to.
+	 * @param filter The types of file changes to retrieve (defaults to `AMDR`).
 	 * @returns An array of `--name-status` records.
 	 */
-	private getDiffNameStatus(repo: string, fromHash: string, toHash: string) {
-		return this.execDiff(repo, fromHash, toHash, '--name-status').then((output) => {
+	private getDiffNameStatus(repo: string, fromHash: string, toHash: string, filter: string = 'AMDR') {
+		return this.execDiff(repo, fromHash, toHash, '--name-status', filter).then((output) => {
 			let records: DiffNameStatusRecord[] = [], i = 0;
 			while (i < output.length && output[i] !== '') {
 				let type = <GitFileStatus>output[i][0];
@@ -1410,10 +1430,11 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @param fromHash The revision the diff is from.
 	 * @param toHash The revision the diff is to.
+	 * @param filter The types of file changes to retrieve (defaults to `AMDR`).
 	 * @returns An array of `--numstat` records.
 	 */
-	private getDiffNumStat(repo: string, fromHash: string, toHash: string) {
-		return this.execDiff(repo, fromHash, toHash, '--numstat').then((output) => {
+	private getDiffNumStat(repo: string, fromHash: string, toHash: string, filter: string = 'AMDR') {
+		return this.execDiff(repo, fromHash, toHash, '--numstat', filter).then((output) => {
 			let records: DiffNumStatRecord[] = [], i = 0;
 			while (i < output.length && output[i] !== '') {
 				let fields = output[i].split('\t');
@@ -1651,14 +1672,15 @@ export class DataSource extends Disposable {
 	 * @param fromHash The revision the diff is from.
 	 * @param toHash The revision the diff is to.
 	 * @param arg Sets the data reported from the diff.
+	 * @param filter The types of file changes to retrieve.
 	 * @returns The diff output.
 	 */
-	private execDiff(repo: string, fromHash: string, toHash: string, arg: '--numstat' | '--name-status') {
+	private execDiff(repo: string, fromHash: string, toHash: string, arg: '--numstat' | '--name-status', filter: string) {
 		let args: string[];
 		if (fromHash === toHash) {
-			args = ['diff-tree', arg, '-r', '--root', '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
+			args = ['diff-tree', arg, '-r', '--root', '--find-renames', '--diff-filter=' + filter, '-z', fromHash];
 		} else {
-			args = ['diff', arg, '--find-renames', '--diff-filter=AMDR', '-z', fromHash];
+			args = ['diff', arg, '--find-renames', '--diff-filter=' + filter, '-z', fromHash];
 			if (toHash !== '') args.push(toHash);
 		}
 
@@ -1681,7 +1703,7 @@ export class DataSource extends Disposable {
 
 	/**
 	 * Spawn Git, with the return value resolved from `stdout` as a string.
-	 * @param args The arguments to pass to Git. 
+	 * @param args The arguments to pass to Git.
 	 * @param repo The repository to run the command in.
 	 * @param resolveValue A callback invoked to resolve the data from `stdout`.
 	 */
@@ -1691,7 +1713,7 @@ export class DataSource extends Disposable {
 
 	/**
 	 * Spawn Git, with the return value resolved from `stdout` as a buffer.
-	 * @param args The arguments to pass to Git. 
+	 * @param args The arguments to pass to Git.
 	 * @param repo The repository to run the command in.
 	 * @param resolveValue A callback invoked to resolve the data from `stdout`.
 	 */

@@ -91,6 +91,8 @@ class Dialog {
 	private type: DialogType | null = null;
 	private customSelects: { [inputIndex: string]: CustomSelect } = {};
 
+	private static readonly WHITESPACE_REGEXP = /\s/gu;
+
 	/**
 	 * Show a confirmation dialog to the user.
 	 * @param message A message outlining what the user is being asked to confirm.
@@ -192,7 +194,7 @@ class Dialog {
 	 * @param target The target that the dialog was triggered on.
 	 * @param secondaryActionName An optional name for the secondary action.
 	 * @param secondaryActioned An optional callback to be invoked when the secondary action is selected by the user.
-	 * @param includeLineBreak Should a line break be added between the message and form inputs. 
+	 * @param includeLineBreak Should a line break be added between the message and form inputs.
 	 */
 	public showForm(message: string, inputs: ReadonlyArray<DialogInput>, actionName: string, actioned: (values: DialogInputValue[]) => void, target: DialogTarget | null, secondaryActionName: string = 'Cancel', secondaryActioned: ((values: DialogInputValue[]) => void) | null = null, includeLineBreak: boolean = true) {
 		const multiElement = inputs.length > 1;
@@ -269,7 +271,13 @@ class Dialog {
 			if (dialogInput.value === '') this.elem!.classList.add(CLASS_DIALOG_NO_INPUT);
 			dialogInput.addEventListener('keyup', () => {
 				if (this.elem === null) return;
-				let noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
+				if (initialState.config.dialogDefaults.general.referenceInputSpaceSubstitution !== null) {
+					const selectionStart = dialogInput.selectionStart, selectionEnd = dialogInput.selectionEnd;
+					dialogInput.value = dialogInput.value.replace(Dialog.WHITESPACE_REGEXP, initialState.config.dialogDefaults.general.referenceInputSpaceSubstitution);
+					dialogInput.selectionStart = selectionStart;
+					dialogInput.selectionEnd = selectionEnd;
+				}
+				const noInput = dialogInput.value === '', invalidInput = dialogInput.value.match(REF_INVALID_REGEX) !== null;
 				alterClass(this.elem, CLASS_DIALOG_NO_INPUT, noInput);
 				if (alterClass(this.elem, CLASS_DIALOG_INPUT_INVALID, !noInput && invalidInput)) {
 					dialogAction.title = invalidInput ? 'Unable to ' + actionName + ', one or more invalid characters entered.' : '';
@@ -411,7 +419,7 @@ class Dialog {
 					}
 					return;
 				} else {
-					// Dialog is dependent on the commit and ref 
+					// Dialog is dependent on the commit and ref
 					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
 					for (let i = 0; i < elems.length; i++) {
 						if (elems[i].dataset.fullref! === this.target.ref) {

@@ -186,12 +186,38 @@ function pad2(i: number) {
  * @returns The short name.
  */
 function getRepoName(path: string) {
-	let firstSep = path.indexOf('/');
+	const firstSep = path.indexOf('/');
 	if (firstSep === path.length - 1 || firstSep === -1) {
 		return path; // Path has no slashes, or a single trailing slash ==> use the path
 	} else {
-		let p = path.endsWith('/') ? path.substring(0, path.length - 1) : path; // Remove trailing slash if it exists
+		const p = path.endsWith('/') ? path.substring(0, path.length - 1) : path; // Remove trailing slash if it exists
 		return p.substring(p.lastIndexOf('/') + 1);
+	}
+}
+
+/**
+ * Get a sorted list of repository paths from a given GitRepoSet.
+ * @param repos The set of repositories.
+ * @param order The order to sort the repositories.
+ * @returns An array of ordered repository paths.
+ */
+function getSortedRepositoryPaths(repos: GG.GitRepoSet, order: GG.RepoDropdownOrder): ReadonlyArray<string> {
+	const repoPaths = Object.keys(repos);
+	if (order === GG.RepoDropdownOrder.WorkspaceFullPath) {
+		return repoPaths.sort((a, b) => repos[a].workspaceFolderIndex === repos[b].workspaceFolderIndex
+			? a.localeCompare(b)
+			: repos[a].workspaceFolderIndex === null
+				? 1
+				: repos[b].workspaceFolderIndex === null
+					? -1
+					: repos[a].workspaceFolderIndex! - repos[b].workspaceFolderIndex!
+		);
+	} else if (order === GG.RepoDropdownOrder.FullPath) {
+		return repoPaths.sort((a, b) => a.localeCompare(b));
+	} else {
+		return repoPaths.map((path) => ({ name: repos[path].name || getRepoName(path), path: path }))
+			.sort((a, b) => a.name !== b.name ? a.name.localeCompare(b.name) : a.path.localeCompare(b.path))
+			.map((x) => x.path);
 	}
 }
 

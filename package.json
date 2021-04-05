@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.29.0",
+	"version": "1.30.0",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -89,6 +89,13 @@
 				"category": "Git Graph",
 				"command": "git-graph.version",
 				"title": "Get Version Information"
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.openFile",
+				"title": "Open File",
+				"icon": "$(go-to-file)",
+				"enablement": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
 			}
 		],
 		"configuration": {
@@ -525,6 +532,11 @@
 					"default": false,
 					"description": "Default state of the \"Force Delete\" checkbox."
 				},
+				"git-graph.dialog.fetchIntoLocalBranch.forceFetch": {
+					"type": "boolean",
+					"default": false,
+					"description": "Default state of the \"Force Fetch\" checkbox."
+				},
 				"git-graph.dialog.fetchRemote.prune": {
 					"type": "boolean",
 					"default": false,
@@ -534,6 +546,21 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Default state of the \"Prune Tags\" checkbox."
+				},
+				"git-graph.dialog.general.referenceInputSpaceSubstitution": {
+					"type": "string",
+					"enum": [
+						"None",
+						"Hyphen",
+						"Underscore"
+					],
+					"enumDescriptions": [
+						"Don't replace spaces.",
+						"Replace space characters with hyphens, for example: \"new branch\" -> \"new-branch\".",
+						"Replace space characters with underscores, for example: \"new branch\" -> \"new_branch\"."
+					],
+					"default": "None",
+					"description": "Specifies a substitution that is automatically performed when space characters are entered or pasted into reference inputs on dialogs (e.g. Create Branch, Add Tag, etc.)."
 				},
 				"git-graph.dialog.merge.noCommit": {
 					"type": "boolean",
@@ -703,6 +730,7 @@
 				"git-graph.keyboardShortcut.find": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -736,6 +764,7 @@
 				"git-graph.keyboardShortcut.refresh": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -769,6 +798,7 @@
 				"git-graph.keyboardShortcut.scrollToHead": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -802,6 +832,7 @@
 				"git-graph.keyboardShortcut.scrollToStash": {
 					"type": "string",
 					"enum": [
+						"UNASSIGNED",
 						"CTRL/CMD + A",
 						"CTRL/CMD + B",
 						"CTRL/CMD + C",
@@ -1041,13 +1072,15 @@
 					"type": "string",
 					"enum": [
 						"Full Path",
-						"Name"
+						"Name",
+						"Workspace Full Path"
 					],
 					"enumDescriptions": [
 						"Sort repositories alphabetically by the full path of the repository.",
-						"Sort repositories alphabetically by the name of the repository."
+						"Sort repositories alphabetically by the name of the repository.",
+						"Sort repositories according to the Visual Studio Code Workspace Folder order, then alphabetically by the full path of the repository."
 					],
-					"default": "Full Path",
+					"default": "Workspace Full Path",
 					"description": "Specifies the order that repositories are sorted in the repository dropdown on the Git Graph View (only visible when more than one repository exists in the current Visual Studio Code Workspace)."
 				},
 				"git-graph.retainContextWhenHidden": {
@@ -1402,6 +1435,19 @@
 			}
 		},
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "git-graph.openFile",
+					"when": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "git-graph.openFile",
+					"group": "navigation",
+					"when": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
+				}
+			],
 			"scm/title": [
 				{
 					"when": "scmProvider == git && config.git-graph.sourceCodeProviderIntegrationLocation == 'Inline'",
@@ -1424,8 +1470,8 @@
 		"compile-src": "tsc -p ./src && node ./.vscode/package-src.js",
 		"compile-web": "tsc -p ./web && node ./.vscode/package-web.js",
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",
-		"lint": "eslint -c .eslintrc.json --ext .ts ./src ./tests ./web",
-		"package": "npm run clean && vsce package",
+		"lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts ./src ./tests ./web",
+		"package": "vsce package",
 		"package-and-install": "npm run package && node ./.vscode/install-package.js",
 		"test": "jest --verbose",
 		"test-and-report-coverage": "jest --verbose --coverage"

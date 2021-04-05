@@ -2,85 +2,123 @@
     "root": true,
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 6,
-        "sourceType": "module"
+        "project": [
+            "./src/tsconfig.json",
+            "./tests/tsconfig.json",
+            "./web/tsconfig.json"
+        ]
     },
     "plugins": [
         "@typescript-eslint"
     ],
     "rules": {
+        "arrow-spacing": [
+            "warn",
+            {
+                "before": true,
+                "after": true
+            }
+        ],
         "brace-style": [
-            "error",
+            "warn",
             "1tbs",
             {
                 "allowSingleLine": true
             }
         ],
-        "comma-dangle": "error",
-        "comma-spacing": "error",
-        "comma-style": "error",
+        "comma-dangle": "warn",
+        "comma-spacing": "warn",
+        "comma-style": "warn",
         "dot-location": [
-            "error",
+            "warn",
             "property"
         ],
-        "eol-last": "error",
-        "eqeqeq": "error",
-        "func-call-spacing": "error",
+        "eol-last": "warn",
+        "eqeqeq": "warn",
+        "func-call-spacing": "warn",
         "indent": [
-            "error",
+            "warn",
             "tab",
             {
                 "SwitchCase": 1
             }
         ],
-        "key-spacing": "error",
+        "key-spacing": "warn",
         "linebreak-style": [
-            "error",
+            "warn",
             "windows"
         ],
-        "new-cap": "error",
-        "new-parens": "error",
-        "no-console": "warn",
+        "new-cap": "warn",
+        "new-parens": "warn",
+        "no-alert": "error",
+        "no-console": "error",
         "no-eval": "error",
+        "no-extra-boolean-cast": "warn",
+        "no-implied-eval": "error",
+        "no-irregular-whitespace": "warn",
         "no-labels": "error",
-        "no-multi-spaces": "error",
+        "no-multi-spaces": "warn",
+        "no-proto": "error",
+        "no-prototype-builtins": "error",
         "no-redeclare": "error",
+        "no-global-assign": "error",
+        "no-return-await": "warn",
         "no-shadow-restricted-names": "error",
-        "no-throw-literal": "error",
-        "no-unused-expressions": "error",
-        "no-whitespace-before-property": "error",
+        "no-script-url": "error",
+        "no-sparse-arrays": "warn",
+        "no-throw-literal": "warn",
+        "no-trailing-spaces": "warn",
+        "no-unneeded-ternary": "warn",
+        "no-unsafe-negation": "warn",
+        "no-unused-expressions": "warn",
+        "no-var": "warn",
+        "no-whitespace-before-property": "warn",
+        "no-with": "error",
+        "padded-blocks": [
+            "warn",
+            {
+                "classes": "never",
+                "switches": "never"
+            }
+        ],
         "quotes": [
-            "error",
+            "warn",
             "single"
         ],
-        "rest-spread-spacing": "error",
-        "semi": "error",
+        "rest-spread-spacing": "warn",
+        "semi": "warn",
         "sort-imports": [
-            "error",
+            "warn",
             {
                 "allowSeparatedGroups": true,
                 "ignoreDeclarationSort": true
             }
         ],
         "space-before-function-paren": [
-            "error",
+            "warn",
             {
                 "anonymous": "always",
                 "named": "never",
                 "asyncArrow": "always"
             }
         ],
-        "space-before-blocks": "error",
-        "space-infix-ops": "error",
-        "spaced-comment": "error",
-        "template-curly-spacing": "error",
+        "space-before-blocks": "warn",
+        "space-infix-ops": "warn",
+        "spaced-comment": "warn",
+        "template-curly-spacing": "warn",
         "wrap-iife": [
-            "error",
+            "warn",
             "inside"
         ],
-        "yoda": "error",
+        "yoda": "warn",
+        "@typescript-eslint/await-thenable": "warn",
+        "@typescript-eslint/ban-ts-comment": "error",
+        "@typescript-eslint/class-literal-property-style": [
+            "warn",
+            "fields"
+        ],
         "@typescript-eslint/explicit-member-accessibility": [
-            "error",
+            "warn",
             {
                 "overrides": {
                     "accessors": "off",
@@ -88,8 +126,12 @@
                 }
             }
         ],
+        "@typescript-eslint/method-signature-style": [
+            "warn",
+            "property"
+        ],
         "@typescript-eslint/naming-convention": [
-            "error",
+            "warn",
             {
                 "selector": "class",
                 "format": [
@@ -102,7 +144,10 @@
                     "camelCase"
                 ]
             }
-        ]
+        ],
+        "@typescript-eslint/no-misused-new": "warn",
+        "@typescript-eslint/no-this-alias": "warn",
+        "@typescript-eslint/no-unnecessary-boolean-literal-compare": "warn"
     },
     "overrides": [
         {
@@ -110,6 +155,12 @@
             "rules": {
                 "no-console": "off",
                 "spaced-comment": "off"
+            }
+        },
+        {
+            "files": "./tests/mocks/*.ts",
+            "rules": {
+                "no-global-assign": "off"
             }
         }
     ]

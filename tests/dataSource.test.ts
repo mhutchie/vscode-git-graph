@@ -3796,6 +3796,44 @@ describe('DataSource', () => {
 		});
 	});
 
+	describe('getNewPathOfRenamedFile', () => {
+		it('Should return the new path of a file that was renamed', async () => {
+			// Setup
+			mockGitSuccessOnce(['R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getNewPathOfRenamedFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'dir/renamed-old.txt');
+
+			// Assert
+			expect(result).toBe('dir/renamed-new.txt');
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=R', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return NULL when a file wasn\'t renamed', async () => {
+			// Setup
+			mockGitSuccessOnce(['R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
+
+			// Run
+			const result = await dataSource.getNewPathOfRenamedFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'dir/deleted.txt');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=R', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return NULL when git threw an error', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.getNewPathOfRenamedFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'dir/deleted.txt');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--name-status', '--find-renames', '--diff-filter=R', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+	});
+
 	describe('getTagDetails', () => {
 		it('Should return the tags details', async () => {
 			// Setup
@@ -4945,11 +4983,23 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop');
+			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', false);
 
 			// Assert
 			expect(result).toBe(null);
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', 'origin', 'master:develop'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should (force) fetch a remote branch into a local branch', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', true);
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['fetch', '-f', 'origin', 'master:develop'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -4957,7 +5007,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop');
+			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', false);
 
 			// Assert
 			expect(result).toBe('error message');

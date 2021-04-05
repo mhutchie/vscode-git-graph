@@ -173,6 +173,7 @@ class Config {
 	get dialogDefaults(): DialogDefaults {
 		let resetCommitMode = this.config.get<string>('dialog.resetCurrentBranchToCommit.mode', 'Mixed');
 		let resetUncommittedMode = this.config.get<string>('dialog.resetUncommittedChanges.mode', 'Mixed');
+		let refInputSpaceSubstitution = this.config.get<string>('dialog.general.referenceInputSpaceSubstitution', 'None');
 
 		return {
 			addTag: {
@@ -192,9 +193,15 @@ class Config {
 			deleteBranch: {
 				forceDelete: !!this.config.get('dialog.deleteBranch.forceDelete', false)
 			},
+			fetchIntoLocalBranch: {
+				forceFetch: !!this.config.get('dialog.fetchIntoLocalBranch.forceFetch', false)
+			},
 			fetchRemote: {
 				prune: !!this.config.get('dialog.fetchRemote.prune', false),
 				pruneTags: !!this.config.get('dialog.fetchRemote.pruneTags', false)
+			},
+			general: {
+				referenceInputSpaceSubstitution: refInputSpaceSubstitution === 'Hyphen' ? '-' : refInputSpaceSubstitution === 'Underscore' ? '_' : null
 			},
 			merge: {
 				noCommit: !!this.config.get('dialog.merge.noCommit', false),
@@ -516,9 +523,12 @@ class Config {
 	 * Get the value of the `git-graph.repositoryDropdownOrder` Extension Setting.
 	 */
 	get repoDropdownOrder(): RepoDropdownOrder {
-		return this.config.get<string>('repositoryDropdownOrder', 'Full Path') === 'Name'
-			? RepoDropdownOrder.Name
-			: RepoDropdownOrder.FullPath;
+		const order = this.config.get<string>('repositoryDropdownOrder', 'Workspace Full Path');
+		return order === 'Full Path'
+			? RepoDropdownOrder.FullPath
+			: order === 'Name'
+				? RepoDropdownOrder.Name
+				: RepoDropdownOrder.WorkspaceFullPath;
 	}
 
 	/**
@@ -568,11 +578,14 @@ class Config {
 	 */
 	private getKeybinding(section: string, defaultValue: string) {
 		const configValue = this.config.get<string>(section);
-		if (typeof configValue === 'string' && Config.KEYBINDING_REGEXP.test(configValue)) {
-			return configValue.substring(11).toLowerCase();
-		} else {
-			return defaultValue;
+		if (typeof configValue === 'string') {
+			if (configValue === 'UNASSIGNED') {
+				return null;
+			} else if (Config.KEYBINDING_REGEXP.test(configValue)) {
+				return configValue.substring(11).toLowerCase();
+			}
 		}
+		return defaultValue;
 	}
 
 	/**

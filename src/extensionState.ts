@@ -35,7 +35,8 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	showRemoteBranches: true,
 	showRemoteBranchesV2: BooleanOverride.Default,
 	showStashes: BooleanOverride.Default,
-	showTags: BooleanOverride.Default
+	showTags: BooleanOverride.Default,
+	workspaceFolderIndex: null
 };
 
 const DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE: GitGraphViewGlobalState = {
@@ -359,24 +360,31 @@ export class ExtensionState extends Disposable {
 	}
 
 	/**
-	 * Record that a file has been reviewed in a Code Review.
+	 * Update information for a specific Code Review.
 	 * @param repo The repository the Code Review is in.
 	 * @param id The ID of the Code Review.
-	 * @param file The file that has been reviewed.
+	 * @param remainingFiles The files remaining for review.
+	 * @param lastViewedFile The last viewed file. If null, don't change the last viewed file.
+	 * @returns An error message if request can't be completed.
 	 */
-	public updateCodeReviewFileReviewed(repo: string, id: string, file: string) {
-		let reviews = this.getCodeReviews();
-		if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
-			let i = reviews[repo][id].remainingFiles.indexOf(file);
-			if (i > -1) reviews[repo][id].remainingFiles.splice(i, 1);
-			if (reviews[repo][id].remainingFiles.length > 0) {
-				reviews[repo][id].lastViewedFile = file;
-				reviews[repo][id].lastActive = (new Date()).getTime();
-			} else {
-				removeCodeReview(reviews, repo, id);
-			}
-			this.setCodeReviews(reviews);
+	public updateCodeReview(repo: string, id: string, remainingFiles: string[], lastViewedFile: string | null) {
+		const reviews = this.getCodeReviews();
+
+		if (typeof reviews[repo] === 'undefined' || typeof reviews[repo][id] === 'undefined') {
+			return Promise.resolve('The Code Review could not be found.');
 		}
+
+		if (remainingFiles.length > 0) {
+			reviews[repo][id].remainingFiles = remainingFiles;
+			reviews[repo][id].lastActive = (new Date()).getTime();
+			if (lastViewedFile !== null) {
+				reviews[repo][id].lastViewedFile = lastViewedFile;
+			}
+		} else {
+			removeCodeReview(reviews, repo, id);
+		}
+
+		return this.setCodeReviews(reviews);
 	}
 
 	/**

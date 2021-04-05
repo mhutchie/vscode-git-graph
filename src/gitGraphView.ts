@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openExternalUrl, openFile, showErrorMessage, viewDiff, viewFileAtRevision, viewScm } from './utils';
+import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openExternalUrl, openFile, showErrorMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from './utils';
 import { Disposable, toDisposable } from './utils/disposable';
 
 /**
@@ -54,7 +54,7 @@ export class GitGraphView extends Disposable {
 					GitGraphView.currentPanel.respondLoadRepos(repoManager.getRepos(), loadViewTo);
 				}
 			} else {
-				// If the Git Graph panel is not visible 
+				// If the Git Graph panel is not visible
 				GitGraphView.currentPanel.loadViewTo = loadViewTo;
 			}
 			GitGraphView.currentPanel.panel.reveal(column);
@@ -150,7 +150,7 @@ export class GitGraphView extends Disposable {
 			this.panel
 		);
 
-		// Instantiate a RepoFileWatcher that watches for file changes in the repository currently open in the Git Graph View 
+		// Instantiate a RepoFileWatcher that watches for file changes in the repository currently open in the Git Graph View
 		this.repoFileWatcher = new RepoFileWatcher(logger, () => {
 			if (this.panel.visible) {
 				this.sendMessage({ command: 'refresh' });
@@ -227,9 +227,6 @@ export class GitGraphView extends Disposable {
 					error: await this.dataSource.cleanUntrackedFiles(msg.repo, msg.directories)
 				});
 				break;
-			case 'codeReviewFileReviewed':
-				this.extensionState.updateCodeReviewFileReviewed(msg.repo, msg.id, msg.filePath);
-				break;
 			case 'commitDetails':
 				let data = await Promise.all<GitCommitDetailsData, string | null>([
 					msg.commitHash === UNCOMMITTED
@@ -259,7 +256,7 @@ export class GitGraphView extends Disposable {
 			case 'copyFilePath':
 				this.sendMessage({
 					command: 'copyFilePath',
-					error: await copyFilePathToClipboard(msg.repo, msg.filePath)
+					error: await copyFilePathToClipboard(msg.repo, msg.filePath, msg.absolute)
 				});
 				break;
 			case 'copyToClipboard':
@@ -386,7 +383,7 @@ export class GitGraphView extends Disposable {
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({
 					command: 'fetchIntoLocalBranch',
-					error: await this.dataSource.fetchIntoLocalBranch(msg.repo, msg.remote, msg.remoteBranch, msg.localBranch)
+					error: await this.dataSource.fetchIntoLocalBranch(msg.repo, msg.remote, msg.remoteBranch, msg.localBranch, msg.force)
 				});
 				break;
 			case 'endCodeReview':
@@ -467,7 +464,7 @@ export class GitGraphView extends Disposable {
 			case 'openFile':
 				this.sendMessage({
 					command: 'openFile',
-					error: await openFile(msg.repo, msg.filePath)
+					error: await openFile(msg.repo, msg.filePath, msg.hash, this.dataSource)
 				});
 				break;
 			case 'openTerminal':
@@ -576,10 +573,22 @@ export class GitGraphView extends Disposable {
 					...await this.dataSource.getTagDetails(msg.repo, msg.tagName)
 				});
 				break;
+			case 'updateCodeReview':
+				this.sendMessage({
+					command: 'updateCodeReview',
+					error: await this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile)
+				});
+				break;
 			case 'viewDiff':
 				this.sendMessage({
 					command: 'viewDiff',
 					error: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type)
+				});
+				break;
+			case 'viewDiffWithWorkingFile':
+				this.sendMessage({
+					command: 'viewDiffWithWorkingFile',
+					error: await viewDiffWithWorkingFile(msg.repo, msg.hash, msg.filePath, this.dataSource)
 				});
 				break;
 			case 'viewFileAtRevision':

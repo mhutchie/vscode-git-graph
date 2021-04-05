@@ -207,6 +207,7 @@ export interface GitRepoState {
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
 	showTags: BooleanOverride;
+	workspaceFolderIndex: number | null;
 }
 
 
@@ -278,10 +279,10 @@ export interface GraphConfig {
 }
 
 export interface KeybindingConfig {
-	readonly find: string;
-	readonly refresh: string;
-	readonly scrollToHead: string;
-	readonly scrollToStash: string;
+	readonly find: string | null;
+	readonly refresh: string | null;
+	readonly scrollToHead: string | null;
+	readonly scrollToStash: string | null;
 }
 
 export type LoadGitGraphViewTo = {
@@ -447,9 +448,15 @@ export interface DialogDefaults {
 	readonly deleteBranch: {
 		readonly forceDelete: boolean
 	};
+	readonly fetchIntoLocalBranch: {
+		readonly forceFetch: boolean
+	};
 	readonly fetchRemote: {
 		readonly prune: boolean,
 		readonly pruneTags: boolean
+	};
+	readonly general: {
+		readonly referenceInputSpaceSubstitution: string | null
 	};
 	readonly merge: {
 		readonly noCommit: boolean,
@@ -509,7 +516,8 @@ export const enum RepoCommitOrdering {
 
 export const enum RepoDropdownOrder {
 	FullPath,
-	Name
+	Name,
+	WorkspaceFullPath
 }
 
 export const enum SquashMessageFormat {
@@ -639,12 +647,6 @@ export interface ResponseCleanUntrackedFiles extends ResponseWithErrorInfo {
 	readonly command: 'cleanUntrackedFiles';
 }
 
-export interface RequestCodeReviewFileReviewed extends RepoRequest {
-	readonly command: 'codeReviewFileReviewed';
-	readonly id: string;
-	readonly filePath: string;
-}
-
 export interface RequestCommitDetails extends RepoRequest {
 	readonly command: 'commitDetails';
 	readonly commitHash: string;
@@ -681,6 +683,7 @@ export interface ResponseCompareCommits extends ResponseWithErrorInfo {
 export interface RequestCopyFilePath extends RepoRequest {
 	readonly command: 'copyFilePath';
 	readonly filePath: string;
+	readonly absolute: boolean;
 }
 export interface ResponseCopyFilePath extends ResponseWithErrorInfo {
 	readonly command: 'copyFilePath';
@@ -858,6 +861,7 @@ export interface RequestFetchIntoLocalBranch extends RepoRequest {
 	readonly remote: string;
 	readonly remoteBranch: string;
 	readonly localBranch: string;
+	readonly force: boolean;
 }
 export interface ResponseFetchIntoLocalBranch extends ResponseWithErrorInfo {
 	readonly command: 'fetchIntoLocalBranch';
@@ -970,6 +974,7 @@ export interface ResponseOpenExternalUrl extends ResponseWithErrorInfo {
 
 export interface RequestOpenFile extends RepoRequest {
 	readonly command: 'openFile';
+	readonly hash: string;
 	readonly filePath: string;
 }
 export interface ResponseOpenFile extends ResponseWithErrorInfo {
@@ -1152,6 +1157,17 @@ export interface ResponseTagDetails extends ResponseWithErrorInfo {
 	readonly message: string;
 }
 
+export interface RequestUpdateCodeReview extends RepoRequest {
+	readonly command: 'updateCodeReview';
+	readonly id: string;
+	readonly remainingFiles: string[];
+	readonly lastViewedFile: string | null;
+}
+
+export interface ResponseUpdateCodeReview extends ResponseWithErrorInfo {
+	readonly command: 'updateCodeReview';
+}
+
 export interface RequestViewDiff extends RepoRequest {
 	readonly command: 'viewDiff';
 	readonly fromHash: string;
@@ -1162,6 +1178,15 @@ export interface RequestViewDiff extends RepoRequest {
 }
 export interface ResponseViewDiff extends ResponseWithErrorInfo {
 	readonly command: 'viewDiff';
+}
+
+export interface RequestViewDiffWithWorkingFile extends RepoRequest {
+	readonly command: 'viewDiffWithWorkingFile';
+	readonly hash: string;
+	readonly filePath: string;
+}
+export interface ResponseViewDiffWithWorkingFile extends ResponseWithErrorInfo {
+	readonly command: 'viewDiffWithWorkingFile';
 }
 
 export interface RequestViewFileAtRevision extends RepoRequest {
@@ -1189,7 +1214,6 @@ export type RequestMessage =
 	| RequestCheckoutCommit
 	| RequestCherrypickCommit
 	| RequestCleanUntrackedFiles
-	| RequestCodeReviewFileReviewed
 	| RequestCommitDetails
 	| RequestCompareCommits
 	| RequestCopyFilePath
@@ -1238,7 +1262,9 @@ export type RequestMessage =
 	| RequestShowErrorDialog
 	| RequestStartCodeReview
 	| RequestTagDetails
+	| RequestUpdateCodeReview
 	| RequestViewDiff
+	| RequestViewDiffWithWorkingFile
 	| RequestViewFileAtRevision
 	| RequestViewScm;
 
@@ -1296,7 +1322,9 @@ export type ResponseMessage =
 	| ResponseSetWorkspaceViewState
 	| ResponseStartCodeReview
 	| ResponseTagDetails
+	| ResponseUpdateCodeReview
 	| ResponseViewDiff
+	| ResponseViewDiffWithWorkingFile
 	| ResponseViewFileAtRevision
 	| ResponseViewScm;
 

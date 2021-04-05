@@ -140,7 +140,7 @@ class ContextMenu {
 					}
 					return;
 				} else {
-					// ContextMenu is dependent on the commit and ref 
+					// ContextMenu is dependent on the commit and ref
 					const elems = <NodeListOf<HTMLElement>>commitElem.querySelectorAll('[data-fullref]');
 					for (let i = 0; i < elems.length; i++) {
 						if (elems[i].dataset.fullref! === this.target.ref) {

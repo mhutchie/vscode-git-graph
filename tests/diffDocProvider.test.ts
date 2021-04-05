@@ -156,7 +156,7 @@ describe('encodeDiffDocUri', () => {
 		// Assert
 		expect(uri.scheme).toBe('git-graph');
 		expect(uri.fsPath).toBe('file');
-		expect(uri.query).toBe('bnVsbA==');
+		expect(uri.query).toBe('eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZS50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiIiwicmVwbyI6Ii9yZXBvIiwiZXhpc3RzIjpmYWxzZX0=');
 	});
 
 	it('Should return an empty file URI if requested on a file displayed on the new side of the diff, and it is deleted', () => {
@@ -166,7 +166,7 @@ describe('encodeDiffDocUri', () => {
 		// Assert
 		expect(uri.scheme).toBe('git-graph');
 		expect(uri.fsPath).toBe('file');
-		expect(uri.query).toBe('bnVsbA==');
+		expect(uri.query).toBe('eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZS50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiIiwicmVwbyI6Ii9yZXBvIiwiZXhpc3RzIjpmYWxzZX0=');
 	});
 
 	it('Should return a git-graph URI with the provided file extension', () => {
@@ -176,7 +176,7 @@ describe('encodeDiffDocUri', () => {
 		// Assert
 		expect(uri.scheme).toBe('git-graph');
 		expect(uri.fsPath).toBe('file.txt');
-		expect(uri.query).toBe('eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZS50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiIiwicmVwbyI6Ii9yZXBvIn0=');
+		expect(uri.query).toBe('eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZS50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiIiwicmVwbyI6Ii9yZXBvIiwiZXhpc3RzIjp0cnVlfQ==');
 	});
 
 	it('Should return a git-graph URI with no file extension when it is not provided', () => {
@@ -186,34 +186,24 @@ describe('encodeDiffDocUri', () => {
 		// Assert
 		expect(uri.scheme).toBe('git-graph');
 		expect(uri.fsPath).toBe('file');
-		expect(uri.query).toBe('eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZSIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIiLCJyZXBvIjoiL3JlcG8ifQ==');
+		expect(uri.query).toBe('eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZSIsImNvbW1pdCI6IjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIzYzRkNWU2ZjFhMmIiLCJyZXBvIjoiL3JlcG8iLCJleGlzdHMiOnRydWV9');
 	});
 });
 
 describe('decodeDiffDocUri', () => {
-	it('Should return an null if requested on an empty file URI', () => {
-		// Run
-		const value = decodeDiffDocUri(vscode.Uri.file('file').with({
-			scheme: 'git-graph',
-			query: 'bnVsbA=='
-		}));
-
-		// Assert
-		expect(value).toBe(null);
-	});
-
-	it('Should return the parse DiffDocUriData if requested on a git-graph URI', () => {
+	it('Should return the parsed DiffDocUriData from the URI', () => {
 		// Run
 		const value = decodeDiffDocUri(vscode.Uri.file('file.txt').with({
 			scheme: 'git-graph',
-			query: 'eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZS50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiIiwicmVwbyI6Ii9yZXBvIn0='
+			query: 'eyJmaWxlUGF0aCI6InBhdGgvdG8vZmlsZS50eHQiLCJjb21taXQiOiIxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiM2M0ZDVlNmYxYTJiIiwicmVwbyI6Ii9yZXBvIiwiZXhpc3RzIjp0cnVlfQ=='
 		}));
 
 		// Assert
 		expect(value).toStrictEqual({
 			filePath: 'path/to/file.txt',
 			commit: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
-			repo: '/repo'
+			repo: '/repo',
+			exists: true
 		});
 	});
 });

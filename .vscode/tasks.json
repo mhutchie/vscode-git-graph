@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "echo": true,
+        "showReuseMessage": false,
+        "panel": "shared"
+    },
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "compile",
+            "label": "Compile"
+        },
+        {
+            "type": "npm",
+            "script": "compile-src",
+            "label": "Compile (Back-End Only)"
+        },
+        {
+            "type": "npm",
+            "script": "compile-web",
+            "label": "Compile (Front-End Only)"
+        },
+        {
+            "type": "npm",
+            "script": "compile-web-debug",
+            "label": "Compile (Front-End Only) - Debug"
+        },
+        {
+            "type": "npm",
+            "script": "lint",
+            "label": "Lint"
+        },
+        {
+            "type": "npm",
+            "script": "package",
+            "label": "Package VSIX"
+        },
+        {
+            "type": "npm",
+            "script": "package-and-install",
+            "label": "Package VSIX (Install on Completion)"
+        },
+        {
+            "type": "npm",
+            "script": "test",
+            "label": "Run Unit Tests"
+        },
+        {
+            "type": "npm",
+            "script": "test-and-report-coverage",
+            "label": "Run Unit Tests (Report Code Coverage)"
+        }
+    ]
+}

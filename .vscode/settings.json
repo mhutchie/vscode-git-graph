@@ -4,5 +4,9 @@
     },
     "search.exclude": {
         "out": true
-    }
+    },
+    "task.problemMatchers.neverPrompt": {
+        "npm": true
+    },
+    "typescript.tsdk": "./node_modules/typescript/lib"
 }

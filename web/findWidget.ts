@@ -234,15 +234,16 @@ class FindWidget {
 				for (let i = 0; i < commits.length; i++) {
 					commit = commits[i];
 					let branchLabels = getBranchLabels(commit.heads, commit.remotes);
-					if (commit.hash !== UNCOMMITTED && ((colVisibility.author && findPattern.test(commit.author))
+					if (commit.hash !== UNCOMMITTED && (
+						(colVisibility.author && findPattern.test(commit.author))
 						|| (colVisibility.commit && (commit.hash.search(findPattern) === 0 || findPattern.test(abbrevCommit(commit.hash))))
 						|| findPattern.test(commit.message)
 						|| branchLabels.heads.some(head => findPattern!.test(head.name) || head.remotes.some(remote => findPattern!.test(remote)))
 						|| branchLabels.remotes.some(remote => findPattern!.test(remote.name))
 						|| commit.tags.some(tag => findPattern!.test(tag.name))
 						|| (colVisibility.date && findPattern.test(formatShortDate(commit.date).formatted))
-						|| (commit.stash !== null && findPattern.test(commit.stash.selector)))) {
-
+						|| (commit.stash !== null && findPattern.test(commit.stash.selector))
+					)) {
 						let idStr = i.toString();
 						while (j < commitElems.length && commitElems[j].dataset.id !== idStr) j++;
 						if (j === commitElems.length) continue;
@@ -388,7 +389,7 @@ class FindWidget {
 	}
 
 	/**
-	 * If the Find Widget is configured to open the Commit Details View for the current find match, load the Commit Details View accordingly. 
+	 * If the Find Widget is configured to open the Commit Details View for the current find match, load the Commit Details View accordingly.
 	 */
 	private openCommitDetailsViewForCurrentMatchIfEnabled() {
 		if (workspaceState.findOpenCommitDetailsView) {
@@ -413,5 +414,4 @@ class FindWidget {
 		span.innerHTML = text;
 		return span;
 	}
-
 }

@@ -2564,6 +2564,7 @@ class GitGraphView {
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
 			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
+			(expandedCommit.commitDetails && expandedCommit.commitDetails.parents.length > 1 ? '<div id="cdvParentToggle" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
@@ -2633,6 +2634,13 @@ class GitGraphView {
 
 			document.getElementById('cdvFileViewTypeList')!.addEventListener('click', () => {
 				this.changeFileViewType(GG.FileViewType.List);
+			});
+
+			document.getElementById('cdvParentToggle')?.addEventListener('click', () => {
+				const parentIndex = this.expandedCommit!.parentIndex;
+				const parentNumber = this.expandedCommit!.commitDetails!.parents.length;
+				const nextParentIndex = parentIndex < parentNumber ? parentIndex + 1 : 1;
+				this.loadCommitDetails(this.expandedCommit!.commitElem!, nextParentIndex);
 			});
 
 			if (codeReviewPossible) {

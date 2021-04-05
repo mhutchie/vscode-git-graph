@@ -2505,13 +2505,13 @@ class GitGraphView {
 							const escapedParent = escapeHtml(parent);
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 							return typeof this.commitLookup[parent] === 'number'
-								? `&nbsp;&nbsp;${isComparedToParent ? '<b>' : ''}#${parentIndex + 1} <span class="${CLASS_INTERNAL_URL}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${abbrevCommit(escapedParent)}</span>${isComparedToParent ? '</b>' : ''}`
+								? `&nbsp;&nbsp;${isComparedToParent ? '<b>' : ''}<span class="${CLASS_INTERNAL_URL}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${abbrevCommit(escapedParent)}</span>${isComparedToParent ? '</b>' : ''}`
 								: escapedParent;
-						}).join('<br>')
+						}).join(', ')
 						: 'None';
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'
 						+ '<b>Commit: </b>' + escapeHtml(commitDetails.hash) + '<br>'
-						+ '<b>Parents: </b><br>' + parents + '<br>'
+						+ '<b>Parents: </b>' + parents + '<br>'
 						+ '<b>Author: </b>' + escapeHtml(commitDetails.author) + (commitDetails.authorEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.authorEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.authorEmail) + '</a>&gt;' : '') + '<br>'
 						+ (commitDetails.authorDate !== commitDetails.committerDate ? '<b>Author Date: </b>' + formatLongDate(commitDetails.authorDate) + '<br>' : '')
 						+ '<b>Committer: </b>' + escapeHtml(commitDetails.committer) + (commitDetails.committerEmail !== '' ? ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(commitDetails.committerEmail) + '" tabindex="-1">' + escapeHtml(commitDetails.committerEmail) + '</a>&gt;' : '') + (commitDetails.signature !== null ? generateSignatureHtml(commitDetails.signature) : '') + '<br>'

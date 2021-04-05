@@ -89,6 +89,7 @@ const CLASS_REF_TAG = 'tag';
 const CLASS_SELECTED = 'selected';
 const CLASS_TAG_LABELS_RIGHT_ALIGNED = 'tagLabelsRightAligned';
 const CLASS_TRANSITION = 'transition';
+const CLASS_PARENT = 'parent';
 
 const ID_EVENT_CAPTURE_ELEM = 'eventCaptureElem';
 

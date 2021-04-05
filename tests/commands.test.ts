@@ -102,6 +102,7 @@ describe('CommandManager', () => {
 		it('Should set git-graph:codiconsSupported to TRUE when vscode.version >= 1.42.0', () => {
 			// Setup
 			commandManager.dispose();
+			vscode.mockVscodeVersion('1.42.0');
 			const spyOnExecuteCommand = jest.spyOn(vscode.commands, 'executeCommand');
 			const spyOnLog = jest.spyOn(logger, 'log');
 			vscode.commands.executeCommand.mockResolvedValueOnce(null);

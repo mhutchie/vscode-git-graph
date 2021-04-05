@@ -39,6 +39,10 @@ body.selection-background-color-exists ::selection{
 	background-color: var(--vscode-selection-background);
 }
 
+code{
+	line-height:1;
+}
+
 
 /* Content */
 

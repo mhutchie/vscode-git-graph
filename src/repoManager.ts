@@ -86,7 +86,10 @@ export class RepoManager extends Disposable {
 						this.stopWatchingFolder(path);
 					}
 				}
-				changes = this.updateReposWorkspaceFolderIndex() || changes;
+				if (this.updateReposWorkspaceFolderIndex()) {
+					this.extensionState.saveRepos(this.repos);
+					changes = true;
+				}
 
 				if (changes) {
 					this.sendRepos();
@@ -150,8 +153,13 @@ export class RepoManager extends Disposable {
 	 */
 	private async startupTasks() {
 		this.removeReposNotInWorkspace();
-		this.updateReposWorkspaceFolderIndex();
-		if (!await this.checkReposExist()) this.sendRepos();
+		if (this.updateReposWorkspaceFolderIndex()) {
+			this.extensionState.saveRepos(this.repos);
+		}
+		if (!await this.checkReposExist()) {
+			// On startup, ensure that sendRepo is called (even if no changes were made)
+			this.sendRepos();
+		}
 		this.checkReposForNewConfig();
 		await this.checkReposForNewSubmodules();
 		await this.searchWorkspaceForRepos();
@@ -363,21 +371,22 @@ export class RepoManager extends Disposable {
 	 * @returns TRUE => At least one repository was removed or transferred, FALSE => No repositories were removed.
 	 */
 	public checkReposExist() {
-		return new Promise<boolean>(resolve => {
-			let repoPaths = Object.keys(this.repos), changes = false;
-			evalPromises(repoPaths, 3, path => this.dataSource.repoRoot(path)).then(results => {
-				for (let i = 0; i < repoPaths.length; i++) {
-					if (results[i] === null) {
-						this.removeRepo(repoPaths[i]);
-						changes = true;
-					} else if (repoPaths[i] !== results[i]) {
-						this.transferRepoState(repoPaths[i], results[i]!);
-						changes = true;
-					}
+		let repoPaths = Object.keys(this.repos), changes = false;
+		return evalPromises(repoPaths, 3, (path) => this.dataSource.repoRoot(path)).then((results) => {
+			for (let i = 0; i < repoPaths.length; i++) {
+				if (results[i] === null) {
+					this.removeRepo(repoPaths[i]);
+					changes = true;
+				} else if (repoPaths[i] !== results[i]) {
+					this.transferRepoState(repoPaths[i], results[i]!);
+					changes = true;
 				}
-				if (changes) this.sendRepos();
-				resolve(changes);
-			});
+			}
+		}).catch(() => { }).then(() => {
+			if (changes) {
+				this.sendRepos();
+			}
+			return changes;
 		});
 	}
 
@@ -429,6 +438,7 @@ export class RepoManager extends Disposable {
 	private transferRepoState(oldRepo: string, newRepo: string) {
 		this.repos[newRepo] = this.repos[oldRepo];
 		delete this.repos[oldRepo];
+		this.updateReposWorkspaceFolderIndex(newRepo);
 		this.extensionState.saveRepos(this.repos);
 		this.extensionState.transferRepo(oldRepo, newRepo);
 

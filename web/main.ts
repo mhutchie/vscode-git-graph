@@ -2524,10 +2524,21 @@ class GitGraphView {
 					const parents = commitDetails.parents.length > 0
 						? commitDetails.parents.map((parent, parentIndex) => {
 							const escapedParent = escapeHtml(parent);
+
+							const parentWasLoaded = typeof this.commitLookup[parent] === 'number';
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
-							return typeof this.commitLookup[parent] === 'number'
-								? `&nbsp;&nbsp;${isComparedToParent ? '<b>' : ''}<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${abbrevCommit(escapedParent)}</span>${isComparedToParent ? '</b>' : ''}`
-								: escapedParent;
+
+							let parentHtml = abbrevCommit(escapedParent);
+							if(parentWasLoaded) {
+								parentHtml = `<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">
+									${parentHtml}
+								</span>`;
+							}
+							if(isComparedToParent) {
+								parentHtml = `<b>${parentHtml}</b>`;
+							}
+
+							return parentHtml;
 						}).join(', ')
 						: 'None';
 					html += '<span class="cdvSummaryTop' + (expandedCommit.avatar !== null ? ' withAvatar' : '') + '"><span class="cdvSummaryTopRow"><span class="cdvSummaryKeyValues">'

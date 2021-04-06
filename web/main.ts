@@ -2492,6 +2492,7 @@ class GitGraphView {
 		const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
 		const codeReviewPossible = !expandedCommit.loading && commitOrder.to !== UNCOMMITTED;
 		const externalDiffPossible = !expandedCommit.loading && (expandedCommit.compareWithHash !== null || this.commits[this.commitLookup[expandedCommit.commitHash]].parents.length > 0);
+		const loadedParents = expandedCommit.commitDetails?.parents.filter(parent => this.commitLookup[parent]) || [];
 
 		if (elem === null) {
 			elem = document.createElement(isDocked ? 'div' : 'tr');
@@ -2525,7 +2526,7 @@ class GitGraphView {
 						? commitDetails.parents.map((parent, parentIndex) => {
 							const escapedParent = escapeHtml(parent);
 
-							const parentWasLoaded = typeof this.commitLookup[parent] === 'number';
+							const parentWasLoaded = loadedParents.includes(parent);
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 
 							let parentHtml = abbrevCommit(escapedParent);
@@ -2564,7 +2565,7 @@ class GitGraphView {
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
 			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
-			(expandedCommit.commitDetails && expandedCommit.commitDetails.parents.length > 1 ? '<div id="cdvParentToggle" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
+			(loadedParents.length > 1 ? '<div id="cdvParentToggle" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
@@ -2637,10 +2638,19 @@ class GitGraphView {
 			});
 
 			document.getElementById('cdvParentToggle')?.addEventListener('click', () => {
-				const parentIndex = this.expandedCommit!.parentIndex;
-				const parentNumber = this.expandedCommit!.commitDetails!.parents.length;
-				const nextParentIndex = parentIndex < parentNumber ? parentIndex + 1 : 1;
-				this.loadCommitDetails(this.expandedCommit!.commitElem!, nextParentIndex);
+				const expandedCommit = this.expandedCommit!;
+				const parentIndex = expandedCommit.parentIndex;
+				const parents = expandedCommit.commitDetails!.parents;
+
+				let nextParentIndex = parentIndex < parents.length ? parentIndex + 1 : 1;
+				while(!loadedParents.includes(parents[nextParentIndex - 1])) {
+					if(nextParentIndex === parentIndex) {
+						break;
+					}
+					nextParentIndex = nextParentIndex < parents.length ? parentIndex + 1 : 1;
+				}
+
+				this.loadCommitDetails(expandedCommit.commitElem!, nextParentIndex);
 			});
 
 			if (codeReviewPossible) {

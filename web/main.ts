@@ -2014,7 +2014,7 @@ class GitGraphView {
 				if (newHashIndex > -1) {
 					handledEvent(e);
 					const elem = findCommitElemWithId(getCommitElems(), newHashIndex);
-					if (elem !== null) this.loadCommitDetails(elem, this.expandedCommit.parentIndex);
+					if (elem !== null) this.loadCommitDetails(elem, DEFAULT_PARENT_INDEX);
 				}
 			} else if (e.key && (e.ctrlKey || e.metaKey)) {
 				const key = e.key.toLowerCase(), keybindings = this.config.keybindings;
@@ -2201,7 +2201,7 @@ class GitGraphView {
 							this.loadCommitComparison(this.expandedCommit.commitElem, eventElem);
 						}
 					} else {
-						this.loadCommitDetails(eventElem, this.expandedCommit.parentIndex);
+						this.loadCommitDetails(eventElem, DEFAULT_PARENT_INDEX);
 					}
 				} else {
 					this.loadCommitDetails(eventElem, DEFAULT_PARENT_INDEX);

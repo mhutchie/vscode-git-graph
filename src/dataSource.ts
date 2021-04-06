@@ -339,6 +339,7 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @param commitHash The hash of the commit open in the Commit Details View.
 	 * @param hasParents Does the commit have parents
+	 * @param parentIndex The index of the commit parent
 	 * @returns The commit details.
 	 */
 	public getCommitDetails(repo: string, commitHash: string, hasParents: boolean, parentIndex: number): Promise<GitCommitDetailsData> {
@@ -360,13 +361,15 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @param commitHash The hash of the stash commit open in the Commit Details View.
 	 * @param stash The stash.
+	 * @param parentIndex the index of the stash parent
 	 * @returns The stash details.
 	 */
-	public getStashDetails(repo: string, commitHash: string, stash: GitCommitStash): Promise<GitCommitDetailsData> {
+	public getStashDetails(repo: string, commitHash: string, stash: GitCommitStash, parentIndex: number): Promise<GitCommitDetailsData> {
+		const fromCommit = commitHash + `^${parentIndex}`;
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
-			this.getDiffNameStatus(repo, stash.baseHash, commitHash),
-			this.getDiffNumStat(repo, stash.baseHash, commitHash),
+			this.getDiffNameStatus(repo, fromCommit, commitHash),
+			this.getDiffNumStat(repo, fromCommit, commitHash),
 			stash.untrackedFilesHash !== null ? this.getDiffNameStatus(repo, stash.untrackedFilesHash, stash.untrackedFilesHash) : Promise.resolve([]),
 			stash.untrackedFilesHash !== null ? this.getDiffNumStat(repo, stash.untrackedFilesHash, stash.untrackedFilesHash) : Promise.resolve([])
 		]).then((results) => {

@@ -233,7 +233,7 @@ export class GitGraphView extends Disposable {
 						? this.dataSource.getUncommittedDetails(msg.repo)
 						: msg.stash === null
 							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.hasParents, msg.parentIndex)
-							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
+							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash, msg.parentIndex),
 					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null)
 				]);
 				this.sendMessage({

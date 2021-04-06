@@ -2078,16 +2078,16 @@ class GitGraphView {
 		};
 
 		const getParentIndexFromClass = (element: Element) => {
-				const eventTargetClasses = element.classList.value.split(' ');
-				const parentIndexClasses = eventTargetClasses.filter(className => className.startsWith(`${CLASS_PARENT}-`));
+			const eventTargetClasses = element.classList.value.split(' ');
+			const parentIndexClasses = eventTargetClasses.filter(className => className.startsWith(`${CLASS_PARENT}-`));
 
-				const isParentElement = parentIndexClasses.length === 1;
-				if(!isParentElement) {
-					return -1;
-				}
+			const isParentElement = parentIndexClasses.length === 1;
+			if(!isParentElement) {
+				return -1;
+			}
 
-				return parseInt(parentIndexClasses[0].substring(`${CLASS_PARENT}-`.length));
-		}
+			return parseInt(parentIndexClasses[0].substring(`${CLASS_PARENT}-`.length));
+		};
 
 		document.body.addEventListener('click', followInternalLink);
 
@@ -2147,7 +2147,7 @@ class GitGraphView {
 							onClick: () => followInternalLink(e)
 						},
 						{
-							title: "View Changes with this Parent",
+							title: 'View Changes with this Parent',
 							visible: isInternalUrl && parentIndex !== -1,
 							onClick: () => {
 								this.loadCommitDetails(this.expandedCommit!.commitElem!, parentIndex);

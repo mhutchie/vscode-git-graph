@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { DiffSide, encodeDiffDocUri } from './diffDocProvider';
+import { DiffDocUriData, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { ErrorInfo, GitFileStatus, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
 
@@ -426,13 +426,41 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 		if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-		return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {
-			preview: true,
-			viewColumn: getConfig().openNewTabEditorGroup
-		}).then(
-			() => null,
-			() => 'Visual Studio Code was unable to load the diff editor for ' + newFilePath + '.'
-		);
+		if (getConfig().diffSettings.useCustomDiffTool) {
+			const fileOld = encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old);
+			const fileOldData = decodeDiffDocUri(fileOld);
+			const fileNew = encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New);
+			let fileNewData: DiffDocUriData = {
+				filePath: '',
+				commit: '',
+				repo: '',
+				exists: false
+			};
+			if (fileNew.query !== '') {
+				fileNewData = decodeDiffDocUri(fileNew);
+			}
+			const cmdOld = `cd ${fileOldData.repo} && git show ${fileOldData.commit}:${fileOldData.filePath}`;
+			const fileOldCopy = getConfig().diffSettings.revisionTempDir + `/${fileOldData.commit}.${fileOldData.filePath.split('/').join('-')}`;
+			const fileNewCopy = getConfig().diffSettings.revisionTempDir + `/${fileNewData.commit}.${fileNewData.filePath.split('/').join('-')}`;
+
+			fs.writeFileSync(fileOldCopy, cp.execSync(cmdOld).toString());
+			if (fs.existsSync(fileNew.path)) {
+				cp.execSync(getConfig().diffSettings.cmdCallDiffTool.replace('$(oldFile)', fileOldCopy).replace('$(newFile)', fileNew.path));
+			} else {
+				const cmdNew = `cd ${fileNewData.repo} && git show ${fileNewData.commit}:${fileNewData.filePath}`;
+				fs.writeFileSync(fileNewCopy, cp.execSync(cmdNew).toString());
+				cp.execSync(getConfig().diffSettings.cmdCallDiffTool.replace('$(oldFile)', fileOldCopy).replace('$(newFile)', fileNewCopy));
+			}
+			return null;
+		} else {
+			return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {
+				preview: true,
+				viewColumn: getConfig().openNewTabEditorGroup
+			}).then(
+				() => null,
+				() => 'Visual Studio Code was unable to load the diff editor for ' + newFilePath + '.'
+			);
+		}
 	} else {
 		return openFile(repo, newFilePath);
 	}

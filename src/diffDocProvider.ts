@@ -100,7 +100,7 @@ class DiffDocument {
 /**
  * Represents the data passed through `git-graph://file.ext?encoded-data` URI's by the DiffDocProvider.
  */
-type DiffDocUriData = {
+export type DiffDocUriData = {
 	filePath: string;
 	commit: string;
 	repo: string;

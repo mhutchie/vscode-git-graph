@@ -88,6 +88,10 @@ A summary of the Git Graph extension settings are:
     * **Type**: Specifies the date type to be displayed in the "Date" column on the Git Graph View, either the author or commit date.
 * **Default Column Visibility**: An object specifying the default visibility of the Date, Author & Commit columns. Example: `{"Date": true, "Author": true, "Commit": true}`
 * **Dialog > \***: Set the default options on the following dialogs: Add Tag, Apply Stash, Cherry Pick, Create Branch, Delete Branch, Fetch into Local Branch, Fetch Remote, Merge, Pop Stash, Pull Branch, Rebase, Reset, and Stash Uncommitted Changes
+* **Diff Settings**:
+    * **Use custom diff tool**: Check this if you want to specify your own diff tool.
+    * **CMD call diff tool**: Specify the cmd line to call your diff tool.
+    * **Revision temp dir**: Specify a path where the revisions for comparing can be stored.
 * **Enhanced Accessibility**: Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default.
 * **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings).
 * **Graph**:

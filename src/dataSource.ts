@@ -1365,7 +1365,7 @@ export class DataSource extends Disposable {
 	 * @param location The location of the configuration to be listed.
 	 * @returns A set of key-value pairs of Git configuration records.
 	 */
-	private getConfigList(repo: string, location?: GitConfigLocation): Promise<GitConfigSet> {
+	public getConfigList(repo: string, location?: GitConfigLocation): Promise<GitConfigSet> {
 		const args = ['--no-pager', 'config', '--list', '-z', '--includes'];
 		if (location) {
 			args.push('--' + location);
@@ -1587,7 +1587,7 @@ export class DataSource extends Disposable {
 	 * @param repo The path of the repository.
 	 * @returns An array of remote names.
 	 */
-	private getRemotes(repo: string) {
+	public getRemotes(repo: string) {
 		return this.spawnGit(['remote'], repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);
 			lines.pop();
@@ -1786,7 +1786,7 @@ function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatR
  * @param key The key of the desired config.
  * @returns The value for `key` if it exists, otherwise NULL.
  */
-function getConfigValue(configs: GitConfigSet, key: string) {
+export function getConfigValue(configs: GitConfigSet, key: string) {
 	return typeof configs[key] !== 'undefined' ? configs[key] : null;
 }
 
@@ -1881,7 +1881,7 @@ interface GitCommitComparisonData {
 	error: ErrorInfo;
 }
 
-type GitConfigSet = { [key: string]: string };
+export type GitConfigSet = { [key: string]: string };
 
 interface GitRef {
 	hash: string;

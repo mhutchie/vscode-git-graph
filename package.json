@@ -661,15 +661,6 @@
 					"default": true,
 					"description": "Default state of the \"Include Untracked\" checkbox."
 				},
-				"git-graph.diffSettings.useCustomDiffTool": {
-					"type": "boolean",
-					"default": false,
-					"description": "Check this if you want to specify your own diff tool."
-				},
-				"git-graph.diffSettings.cmdCallDiffTool": {
-					"type": "string",
-					"description": "Specify the cmd line to call your diff tool."
-				},
 				"git-graph.enhancedAccessibility": {
 					"type": "boolean",
 					"default": false,

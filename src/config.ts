@@ -231,13 +231,6 @@ class Config {
 		};
 	}
 
-	get diffSettings() {
-		return {
-			useCustomDiffTool: !!this.config.get('diffSettings.useCustomDiffTool', false),
-			cmdCallDiffTool: this.config.get<string>('diffSettings.cmdCallDiffTool', '')
-		};
-	}
-
 	/**
 	 * Get the value of the `git-graph.dialog.merge.squashMessageFormat` Extension Setting.
 	 */

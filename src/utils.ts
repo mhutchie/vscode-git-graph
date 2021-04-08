@@ -4,10 +4,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
-import { DataSource } from './dataSource';
+import { DataSource, GitConfigSet, getConfigValue } from './dataSource';
 import { DiffDocProvider, DiffDocUriData, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
-import { ErrorInfo, GitFileStatus, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
+import { ErrorInfo, GitFileStatus, GitRepoConfig, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
 
 export const UNCOMMITTED = '*';
 export const UNABLE_TO_FIND_GIT_MSG = 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.';
@@ -427,7 +427,15 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 		if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-		if (getConfig().diffSettings.useCustomDiffTool) {
+		const config: GitRepoConfig | null = (await dataSource.getConfig(repo, await dataSource.getRemotes(repo))).config;
+		let diffTool: string | null = null;
+		let guiDiffTool: string | null = null;
+		if (config !== null) {
+			diffTool = config.diffTool;
+			guiDiffTool = config.guiDiffTool;
+		}
+
+		if (((diffTool !== null) && (diffTool !== '')) || ((guiDiffTool !== null) && (guiDiffTool !== ''))) {
 			const fileOld = encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old);
 			const fileOldQuery = decodeDiffDocUri(fileOld);
 			const fileNew = encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New);
@@ -452,7 +460,24 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 				fs.writeFileSync(fileNewCopy, await diffDocProvider.provideTextDocumentContent(fileNew));
 				fileNewPath = fileNewCopy;
 			}
-			cp.execSync(getConfig().diffSettings.cmdCallDiffTool.replace('$(oldFile)', fileOldCopy).replace('$(newFile)', fileNewPath));
+
+			const consolidatedConfigs: GitConfigSet = (await dataSource.getConfigList(repo));
+			if ((guiDiffTool !== null) && (guiDiffTool !== '')) {
+				const cmd: string | null = getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffTool + '.cmd');
+				if (cmd !== null) {
+					cp.execSync(cmd.replace('$LOCAL', fileOldCopy).replace('$REMOTE', fileNewPath));
+				}
+			} else {
+				const cmd: string | null = getConfigValue(consolidatedConfigs, 'difftool.' + diffTool + '.cmd');
+				if (cmd !== null) {
+					const terminal = vscode.window.createTerminal({
+						name: 'Git Graph: Diff',
+						env: { 'PATH': repo }
+					});
+					terminal.sendText(cmd.replace('$LOCAL', fileOldCopy).replace('$REMOTE', fileNewPath));
+					terminal.show();
+				}
+			}
 			return null;
 		} else {
 			return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {

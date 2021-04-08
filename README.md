@@ -91,7 +91,6 @@ A summary of the Git Graph extension settings are:
 * **Diff Settings**:
     * **Use custom diff tool**: Check this if you want to specify your own diff tool.
     * **CMD call diff tool**: Specify the cmd line to call your diff tool.
-    * **Revision temp dir**: Specify a path where the revisions for comparing can be stored.
 * **Enhanced Accessibility**: Visual file change A|M|D|R|U indicators in the Commit Details View for users with colour blindness. In the future, this setting will enable any additional accessibility related features of Git Graph that aren't enabled by default.
 * **File Encoding**: The character set encoding used when retrieving a specific version of repository files (e.g. in the Diff View). A list of all supported encodings can be found [here](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings).
 * **Graph**:

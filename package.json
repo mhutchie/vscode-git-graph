@@ -670,10 +670,6 @@
 					"type": "string",
 					"description": "Specify the cmd line to call your diff tool."
 				},
-				"git-graph.diffSettings.revisionTempDir": {
-					"type": "string",
-					"description": "Specify a path where the revisions for comparing can be stored."
-				},
 				"git-graph.enhancedAccessibility": {
 					"type": "boolean",
 					"default": false,

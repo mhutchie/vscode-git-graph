@@ -234,8 +234,7 @@ class Config {
 	get diffSettings() {
 		return {
 			useCustomDiffTool: !!this.config.get('diffSettings.useCustomDiffTool', false),
-			cmdCallDiffTool: this.config.get<string>('diffSettings.cmdCallDiffTool', ''),
-			revisionTempDir: this.config.get<string>('diffSettings.revisionTempDir', '')
+			cmdCallDiffTool: this.config.get<string>('diffSettings.cmdCallDiffTool', '')
 		};
 	}
 

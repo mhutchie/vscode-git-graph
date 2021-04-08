@@ -1,3 +1,4 @@
+import * as os from 'os';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -440,8 +441,8 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 				fileNewData = decodeDiffDocUri(fileNew);
 			}
 			const cmdOld = `cd ${fileOldData.repo} && git show ${fileOldData.commit}:${fileOldData.filePath}`;
-			const fileOldCopy = getConfig().diffSettings.revisionTempDir + `/${fileOldData.commit}.${fileOldData.filePath.split('/').join('-')}`;
-			const fileNewCopy = getConfig().diffSettings.revisionTempDir + `/${fileNewData.commit}.${fileNewData.filePath.split('/').join('-')}`;
+			const fileOldCopy = os.tmpdir() + `/${fileOldData.commit}.${fileOldData.filePath.split('/').join('-')}`;
+			const fileNewCopy = os.tmpdir() + `/${fileNewData.commit}.${fileNewData.filePath.split('/').join('-')}`;
 
 			fs.writeFileSync(fileOldCopy, cp.execSync(cmdOld).toString());
 			if (fs.existsSync(fileNew.path)) {

@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { DiffDocUriData, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from './diffDocProvider';
+import { DiffDocProvider, DiffDocUriData, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { ErrorInfo, GitFileStatus, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
 
@@ -416,7 +416,7 @@ export async function openFile(repo: string, filePath: string, hash: string | nu
  * @param type The Git file status of the change.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
-export function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileStatus) {
+export async function viewDiff(repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileStatus, dataSource: DataSource) {
 	if (type !== GitFileStatus.Untracked) {
 		let abbrevFromHash = abbrevCommit(fromHash), abbrevToHash = toHash !== UNCOMMITTED ? abbrevCommit(toHash) : 'Present', pathComponents = newFilePath.split('/');
 		let desc = fromHash === toHash
@@ -429,7 +429,7 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 
 		if (getConfig().diffSettings.useCustomDiffTool) {
 			const fileOld = encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old);
-			const fileOldData = decodeDiffDocUri(fileOld);
+			const fileOldQuery = decodeDiffDocUri(fileOld);
 			const fileNew = encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New);
 			let fileNewData: DiffDocUriData = {
 				filePath: '',
@@ -440,18 +440,19 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 			if (fileNew.query !== '') {
 				fileNewData = decodeDiffDocUri(fileNew);
 			}
-			const cmdOld = `cd ${fileOldData.repo} && git show ${fileOldData.commit}:${fileOldData.filePath}`;
-			const fileOldCopy = os.tmpdir() + `/${fileOldData.commit}.${fileOldData.filePath.split('/').join('-')}`;
+			const fileOldCopy = os.tmpdir() + `/${fileOldQuery.commit}.${fileOldQuery.filePath.split('/').join('-')}`;
 			const fileNewCopy = os.tmpdir() + `/${fileNewData.commit}.${fileNewData.filePath.split('/').join('-')}`;
 
-			fs.writeFileSync(fileOldCopy, cp.execSync(cmdOld).toString());
+			const diffDocProvider: DiffDocProvider = new DiffDocProvider(dataSource);
+			let fileNewPath: string = '';
+			fs.writeFileSync(fileOldCopy, await diffDocProvider.provideTextDocumentContent(fileOld));
 			if (fs.existsSync(fileNew.path)) {
-				cp.execSync(getConfig().diffSettings.cmdCallDiffTool.replace('$(oldFile)', fileOldCopy).replace('$(newFile)', fileNew.path));
+				fileNewPath = fileNew.path;
 			} else {
-				const cmdNew = `cd ${fileNewData.repo} && git show ${fileNewData.commit}:${fileNewData.filePath}`;
-				fs.writeFileSync(fileNewCopy, cp.execSync(cmdNew).toString());
-				cp.execSync(getConfig().diffSettings.cmdCallDiffTool.replace('$(oldFile)', fileOldCopy).replace('$(newFile)', fileNewCopy));
+				fs.writeFileSync(fileNewCopy, await diffDocProvider.provideTextDocumentContent(fileNew));
+				fileNewPath = fileNewCopy;
 			}
+			cp.execSync(getConfig().diffSettings.cmdCallDiffTool.replace('$(oldFile)', fileOldCopy).replace('$(newFile)', fileNewPath));
 			return null;
 		} else {
 			return vscode.commands.executeCommand('vscode.diff', encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old), encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New), title, {
@@ -492,7 +493,7 @@ export async function viewDiffWithWorkingFile(repo: string, hash: string, filePa
 			: GitFileStatus.Renamed
 		: GitFileStatus.Deleted;
 
-	return viewDiff(repo, hash, UNCOMMITTED, filePath, newFilePath, type);
+	return viewDiff(repo, hash, UNCOMMITTED, filePath, newFilePath, type, dataSource);
 }
 
 /**

@@ -385,7 +385,7 @@ export class CicdManager extends Disposable {
 				this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
 			}
 
-			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/Remaining=' + res.headers['x-ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() + ') from GitHub');
+			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['x-ratelimit-limit'] || 'None') + '(1 hour)/Remaining=' + (res.headers['x-ratelimit-remaining'] || 'None') + (res.headers['x-ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() : '') + ') from GitHub');
 			for (let i = 1; i < last; i++) {
 				this.queue.add(cicdRequest.cicdConfig, i + 1, true);
 			}
@@ -480,7 +480,8 @@ export class CicdManager extends Disposable {
 									last = cicdRequest.maxPage;
 									this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
 								}
-								this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/Remaining=' + res.headers['ratelimit-remaining'] + '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() + ') from GitLab');
+
+								this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['ratelimit-limit'] || 'None') + '(every minute)/Remaining=' + (res.headers['ratelimit-remaining'] || 'None') + (res.headers['ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() : '') + ') from GitLab');
 								for (let i = 1; i < last; i++) {
 									this.queue.add(cicdRequest.cicdConfig, i + 1, true);
 								}

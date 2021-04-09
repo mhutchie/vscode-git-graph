@@ -337,16 +337,6 @@ export class ExtensionState extends Disposable {
 	}
 
 	/**
-	 * Removes an cicd from the cache of cicds known to Git Graph.
-	 * @param hash The hash of the cicd to remove.
-	 */
-	public removeCICDFromCache(hash: string) {
-		let cicds = this.getCICDCache();
-		delete cicds[hash];
-		this.updateWorkspaceState(CICD_CACHE, cicds);
-	}
-
-	/**
 	 * Clear all cicds from the cache of cicds known to Git Graph.
 	 */
 	public clearCICDCache() {

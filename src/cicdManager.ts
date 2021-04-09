@@ -79,10 +79,7 @@ export class CicdManager extends Disposable {
 	public fetchCICDStatus(hash: string, cicdConfigs: CICDConfig[]) {
 		if (typeof this.cicds[hash] !== 'undefined') {
 			// CICD exists in the cache
-			this.emitCICD(hash, this.cicds[hash]).catch(() => {
-				// CICD couldn't be found
-				this.removeCICDFromCache(hash);
-			});
+			this.emitCICD(hash, this.cicds[hash]);
 		} else {
 
 			// Check update user config
@@ -147,15 +144,6 @@ export class CicdManager extends Disposable {
 	 */
 	get onCICD() {
 		return this.cicdEventEmitter.subscribe;
-	}
-
-	/**
-	 * Remove an cicd from the cache.
-	 * @param hash The hash identifying the cicd commit.
-	 */
-	private removeCICDFromCache(hash: string) {
-		delete this.cicds[hash];
-		this.extensionState.removeCICDFromCache(hash);
 	}
 
 	/**
@@ -703,14 +691,7 @@ export class CicdManager extends Disposable {
 		this.cicds[hash][id] = cicdDataSave;
 		this.extensionState.saveCICD(hash, id, cicdDataSave);
 		// this.logger.log('Saved CICD for ' + cicdData.sha);
-		this.emitCICD(hash, this.cicds[hash]).then(
-			// (sent) => this.logger.log(sent
-			// 	? 'Sent CICD for ' + cicdData.sha + ' to the Git Graph View'
-			// 	: 'CICD for ' + cicdData.sha + ' is ready to be used the next time the Git Graph View is opened'
-			// ),
-			() => { },
-			() => this.logger.log('Failed to Send CICD for ' + hash + ' to the Git Graph View')
-		);
+		this.emitCICD(hash, this.cicds[hash]);
 	}
 }
 

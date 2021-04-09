@@ -85,8 +85,8 @@ export class CicdManager extends Disposable {
 		} else {
 
 			// Check update user config
-			const cicdConfigsJSON = Object.entries(cicdConfigs).sort().toString();
-			const cicdConfigsPrevJSON = Object.entries(this.cicdConfigsPrev).sort().toString();
+			const cicdConfigsJSON = JSON.stringify(Object.entries(cicdConfigs).sort());
+			const cicdConfigsPrevJSON = JSON.stringify(Object.entries(this.cicdConfigsPrev).sort());
 			if (cicdConfigsJSON !== cicdConfigsPrevJSON) {
 				this.initialState = true;
 				this.requestPage = -1;

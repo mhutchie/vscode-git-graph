@@ -30,6 +30,8 @@ export class CicdManager extends Disposable {
 	private requestPageTimeout: NodeJS.Timer | null = null;
 	private cicdConfigsPrev: CICDConfig[] = [];
 
+	private per_page: number = 100;
+
 	/**
 	 * Creates the Git Graph CICD Manager.
 	 * @param extensionState The Git Graph ExtensionState instance.
@@ -204,9 +206,9 @@ export class CicdManager extends Disposable {
 		let sourceOwner = match2 !== null ? match2[2] : '';
 		let sourceRepo = match2 !== null ? match2[3] : '';
 
-		let cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=100`;
+		let cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=${this.per_page}`;
 		if (cicdRequest.detail) {
-			cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/commits/${cicdRequest.hash}/check-runs?per_page=100`;
+			cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/commits/${cicdRequest.hash}/check-runs?per_page=${this.per_page}`;
 		}
 		if (cicdRequest.page > 1) {
 			cicdRootPath = `${cicdRootPath}&page=${cicdRequest.page}`;
@@ -368,9 +370,9 @@ export class CicdManager extends Disposable {
 					}
 				});
 			}
-			if (last > cicdRequest.maxPage) {
-				last = cicdRequest.maxPage;
-				this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
+			if (last > Math.ceil(cicdRequest.maximumStatuses / this.per_page)) {
+				last = Math.ceil(cicdRequest.maximumStatuses / this.per_page);
+				this.logger.log('CICD Maximum Statuses(maximumStatuses=' + cicdRequest.maximumStatuses + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
 			}
 
 			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['x-ratelimit-limit'] || 'None') + '(1 hour)/Remaining=' + (res.headers['x-ratelimit-remaining'] || 'None') + (res.headers['x-ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() : '') + ') from GitHub');
@@ -404,10 +406,10 @@ export class CicdManager extends Disposable {
 		let hostpath = match1 !== null ? '' + match1[4].replace(/^\//, '').replace(/\//g, '%2F') : '';
 
 		// Pipelines API https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
-		let cicdRootPath = `/api/v4/projects/${hostpath}/pipelines?per_page=100`;
+		let cicdRootPath = `/api/v4/projects/${hostpath}/pipelines?per_page=${this.per_page}`;
 		if (cicdRequest.detail) {
 			// Commits API https://docs.gitlab.com/ee/api/commits.html#list-the-statuses-of-a-commit
-			cicdRootPath = `/api/v4/projects/${hostpath}/repository/commits/${cicdRequest.hash}/statuses?per_page=100`;
+			cicdRootPath = `/api/v4/projects/${hostpath}/repository/commits/${cicdRequest.hash}/statuses?per_page=${this.per_page}`;
 		}
 
 		let headers: any = {
@@ -464,9 +466,9 @@ export class CicdManager extends Disposable {
 
 							if (cicdRequest.page === -1) {
 								let last = parseInt(res.headers['x-total-pages']);
-								if (last > cicdRequest.maxPage) {
-									last = cicdRequest.maxPage;
-									this.logger.log('CICD Maximum page(pages=' + cicdRequest.maxPage + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsPage');
+								if (last > Math.ceil(cicdRequest.maximumStatuses / this.per_page)) {
+									last = Math.ceil(cicdRequest.maximumStatuses / this.per_page);
+									this.logger.log('CICD Maximum Statuses(maximumStatuses=' + cicdRequest.maximumStatuses + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
 								}
 
 								this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['ratelimit-limit'] || 'None') + '(every minute)/Remaining=' + (res.headers['ratelimit-remaining'] || 'None') + (res.headers['ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() : '') + ') from GitLab');
@@ -732,7 +734,7 @@ class CicdRequestQueue {
 				attempts: 0,
 				detail: detail,
 				hash: hash,
-				maxPage: config.fetchCICDsPage
+				maximumStatuses: config.fetchCICDsMaximumStatuses
 			});
 		}
 	}
@@ -797,7 +799,7 @@ interface CICDRequestItem {
 	attempts: number;
 	detail: boolean;
 	hash: string;
-	maxPage: number;
+	maximumStatuses: number;
 }
 
 // Event to GitGraphView

@@ -357,10 +357,10 @@ class Config {
 	}
 
 	/**
-	 * Get the value of the `git-graph.repository.commits.fetchCICDsPage` Extension Setting.
+	 * Get the value of the `git-graph.repository.commits.fetchCICDsMaximumStatuses` Extension Setting.
 	 */
-	get fetchCICDsPage() {
-		return this.getRenamedExtensionSetting('repository.commits.fetchCICDsPage', 'fetchCICDsPage', 10);
+	get fetchCICDsMaximumStatuses() {
+		return this.getRenamedExtensionSetting('repository.commits.fetchCICDsMaximumStatuses', 'fetchCICDsMaximumStatuses', 1000);
 	}
 
 	/**

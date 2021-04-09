@@ -742,13 +742,13 @@ class GitGraphView {
 	}
 
 	private requestCICDs() {
-			if (typeof this.currentRepo === 'string' && typeof this.gitRepos[this.currentRepo] !== 'undefined') {
+		if (typeof this.currentRepo === 'string' && typeof this.gitRepos[this.currentRepo] !== 'undefined') {
 			this.commits.forEach(commit => {
 				let cicdConfigs = this.gitRepos[this.currentRepo].cicdConfigs;
 				if (cicdConfigs !== null) {
 					sendMessage({ command: 'fetchCICD', repo: this.currentRepo, hash: commit.hash, cicdConfigs: cicdConfigs });
 				}
-		});
+			});
 		}
 	}
 

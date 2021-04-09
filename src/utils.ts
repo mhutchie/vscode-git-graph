@@ -429,7 +429,7 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 
 		const configData: GitRepoConfigData | null = await dataSource.getConfig(repo, await dataSource.getRemotes(repo));
 		let config: GitRepoConfig | null = null;
-		if (configData !== null) {
+		if ((configData !== null) && (configData !== undefined)) {
 			config = configData.config;
 		}
 		let diffTool: string | null = null;

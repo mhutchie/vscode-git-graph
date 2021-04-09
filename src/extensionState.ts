@@ -324,15 +324,19 @@ export class ExtensionState extends Disposable {
 
 	/**
 	 * Add a new cicd to the cache of cicds known to Git Graph.
+	 * @param repo The repository that the cicd is used in.
 	 * @param hash The hash identifying the cicd commit.
 	 * @param cicdDataSave The CICDDataSave.
 	 */
-	public saveCICD(hash: string, id: string, cicdDataSave: CICDDataSave) {
+	public saveCICD(repo: string, hash: string, id: string, cicdDataSave: CICDDataSave) {
 		let cicds = this.getCICDCache();
-		if (typeof cicds[hash] === 'undefined') {
-			cicds[hash] = {};
+		if (typeof cicds[repo] === 'undefined') {
+			cicds[repo] = {};
 		}
-		cicds[hash][id] = cicdDataSave;
+		if (typeof cicds[repo][hash] === 'undefined') {
+			cicds[repo][hash] = {};
+		}
+		cicds[repo][hash][id] = cicdDataSave;
 		this.updateWorkspaceState(CICD_CACHE, cicds);
 	}
 

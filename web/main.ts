@@ -520,8 +520,11 @@ class GitGraphView {
 		}
 	}
 
-	public loadCicd(hash: string, cicdDataSaves: { [id: string]: GG.CICDDataSave }) {
-		this.cicdDatas[hash] = cicdDataSaves;
+	public loadCicd(repo: string, hash: string, cicdDataSaves: { [id: string]: GG.CICDDataSave }) {
+		if (typeof this.cicdDatas[repo] === 'undefined') {
+			this.cicdDatas[repo] = {};
+		}
+		this.cicdDatas[repo][hash] = cicdDataSaves;
 		this.saveState();
 		let cicdElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicd');
 		for (let i = 0; i < cicdElems.length; i++) {
@@ -933,7 +936,7 @@ class GitGraphView {
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
 				(colVisibility.cicd ? '<td class="cicdCol">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
-				(typeof this.cicdDatas[commit.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commit.hash])) : '*') +
+				(typeof this.cicdDatas[commit.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[this.currentRepo][commit.hash])) : '*') +
 					'</span>' + '</td>' : '') +
 				'</tr>';
 		}
@@ -2576,8 +2579,8 @@ class GitGraphView {
 						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
 						+ '</span></span><br>'
 						+ ('<b>CI/CD detail: </b>' + '<span class="cicdDetail" data-hash="' + escapeHtml(commitDetails.hash) + '">'
-							+ (typeof this.cicdDatas[commitDetails.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commitDetails.hash], true)) : '*')
-							+ '</span>' )
+							+ (typeof this.cicdDatas[commitDetails.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[this.currentRepo][commitDetails.hash], true)) : '*')
+							+ '</span>')
 						+ '<br><br>' + textFormatter.format(commitDetails.body);
 				} else {
 					html += 'Displaying all uncommitted changes.';
@@ -3280,7 +3283,7 @@ window.addEventListener('load', () => {
 				});
 				break;
 			case 'fetchCICD':
-				gitGraph.loadCicd(msg.hash, msg.cicdDataSaves);
+				gitGraph.loadCicd(msg.repo, msg.hash, msg.cicdDataSaves);
 				break;
 			case 'fetchIntoLocalBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');

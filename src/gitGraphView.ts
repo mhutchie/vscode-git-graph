@@ -152,6 +152,7 @@ export class GitGraphView extends Disposable {
 			cicdManager.onCICD((event) => {
 				this.sendMessage({
 					command: 'fetchCICD',
+					repo: event.repo,
 					hash: event.hash,
 					cicdDataSaves: event.cicdDataSaves
 				});
@@ -249,7 +250,7 @@ export class GitGraphView extends Disposable {
 							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.hasParents)
 							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
 					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null),
-					msg.cicdConfigs !== null ? this.cicdManager.getCICDDetail(msg.commitHash, msg.cicdConfigs) : Promise.resolve(null)
+					msg.cicdConfigs !== null ? this.cicdManager.getCICDDetail(msg.repo, msg.commitHash, msg.cicdConfigs) : Promise.resolve(null)
 				]);
 				this.sendMessage({
 					command: 'commitDetails',
@@ -397,7 +398,7 @@ export class GitGraphView extends Disposable {
 				this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
 				break;
 			case 'fetchCICD':
-				this.cicdManager.fetchCICDStatus(msg.hash, msg.cicdConfigs);
+				this.cicdManager.fetchCICDStatus(msg.repo, msg.hash, msg.cicdConfigs);
 				break;
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({

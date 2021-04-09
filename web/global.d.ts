@@ -20,7 +20,7 @@ declare global {
 	const workspaceState: GG.DeepReadonly<GG.GitGraphViewWorkspaceState>;
 
 	type AvatarImageCollection = { [email: string]: string };
-	type CICDDataCollection = { [hash: string]: { [id: string]: GG.CICDDataSave } };
+	type CICDDataCollection = { [repo: string]: { [hash: string]: { [id: string]: GG.CICDDataSave } } };
 
 	interface ExpandedCommit {
 		index: number;

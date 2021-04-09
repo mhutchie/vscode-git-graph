@@ -287,7 +287,6 @@ export interface GitGraphViewConfig {
 	readonly fetchAndPrune: boolean;
 	readonly fetchAndPruneTags: boolean;
 	readonly fetchAvatars: boolean;
-	readonly fetchCICDs: boolean;
 	readonly fetchCICDsPage: number;
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;

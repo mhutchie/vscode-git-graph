@@ -932,9 +932,9 @@ class GitGraphView {
 				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
 				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
 				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
-				(colVisibility.cicd ? (this.config.fetchCICDs ? '<td class="cicdCol">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
+				(colVisibility.cicd ? '<td class="cicdCol">' + '<span class="cicd" data-hash="' + escapeHtml(commit.hash) + '">' +
 				(typeof this.cicdDatas[commit.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commit.hash])) : '*') +
-					'</span>' + '</td>' : '<td class="cicdCol text">-</td>') : '') +
+					'</span>' + '</td>' : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -2575,9 +2575,9 @@ class GitGraphView {
 						+ '</span>'
 						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
 						+ '</span></span><br>'
-						+ (this.config.fetchCICDs ? '<b>CI/CD detail: </b>' + '<span class="cicdDetail" data-hash="' + escapeHtml(commitDetails.hash) + '">'
+						+ ('<b>CI/CD detail: </b>' + '<span class="cicdDetail" data-hash="' + escapeHtml(commitDetails.hash) + '">'
 							+ (typeof this.cicdDatas[commitDetails.hash] === 'object' ? (this.getCicdHtml(this.cicdDatas[commitDetails.hash], true)) : '*')
-							+ '</span>' : '')
+							+ '</span>' )
 						+ '<br><br>' + textFormatter.format(commitDetails.body);
 				} else {
 					html += 'Displaying all uncommitted changes.';

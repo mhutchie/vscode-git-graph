@@ -1155,7 +1155,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1175,7 +1175,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1195,7 +1195,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1215,7 +1215,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1235,7 +1235,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1255,7 +1255,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1275,7 +1275,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1295,7 +1295,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1315,7 +1315,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1335,7 +1335,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added);
+		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/added.txt', 'subfolder/added.txt', GitFileStatus.Added, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1355,7 +1355,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1375,7 +1375,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted);
+		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/deleted.txt', 'subfolder/deleted.txt', GitFileStatus.Deleted, dataSource);
 
 		// Assert
 		const [command, leftUri, rightUri, title, config] = vscode.commands.executeCommand.mock.calls[0];
@@ -1395,7 +1395,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockRejectedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified);
+		const result = await viewDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subfolder/modified.txt', 'subfolder/modified.txt', GitFileStatus.Modified, dataSource);
 
 		// Assert
 		expect(result).toBe('Visual Studio Code was unable to load the diff editor for subfolder/modified.txt.');
@@ -1407,7 +1407,7 @@ describe('viewDiff', () => {
 		vscode.commands.executeCommand.mockResolvedValueOnce(null);
 
 		// Run
-		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/untracked.txt', 'subfolder/untracked.txt', GitFileStatus.Untracked);
+		const result = await viewDiff('/path/to/repo', UNCOMMITTED, UNCOMMITTED, 'subfolder/untracked.txt', 'subfolder/untracked.txt', GitFileStatus.Untracked, dataSource);
 
 		// Assert
 		const [command, uri, config] = vscode.commands.executeCommand.mock.calls[0];

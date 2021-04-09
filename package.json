@@ -1257,20 +1257,6 @@
 					"deprecationMessage": "Depreciated: This setting has been renamed to git-graph.repository.commits.fetchAvatars",
 					"markdownDeprecationMessage": "Depreciated: This setting has been renamed to `#git-graph.repository.commits.fetchAvatars#`"
 				},
-				"git-graph.fetchCICDs": {
-					"type": "boolean",
-					"default": true,
-					"description": "Fetch CI/CD status of commit. By enabling this setting, you consent to Access Token being sent GitHub or GitLab, depending on the repositories and user configuration.",
-					"deprecationMessage": "Depreciated: This setting has been renamed to git-graph.repository.commits.fetchCICDs",
-					"markdownDeprecationMessage": "Depreciated: This setting has been renamed to `#git-graph.repository.commits.fetchCICDs#`"
-				},
-				"git-graph.fetchCICDsPage": {
-					"type": "number",
-					"default": 10,
-					"description": "Specifies the number of CI/CD fetch maximum page.",
-					"deprecationMessage": "Depreciated: This setting has been renamed to git-graph.repository.commits.fetchCICDsPage",
-					"markdownDeprecationMessage": "Depreciated: This setting has been renamed to `#git-graph.repository.commits.fetchCICDsPage#`"
-				},
 				"git-graph.graphColours": {
 					"type": "array",
 					"items": {

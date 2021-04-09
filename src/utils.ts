@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
-import { DataSource, GitConfigSet, getConfigValue } from './dataSource';
+import { DataSource, GitConfigSet, GitRepoConfigData, getConfigValue } from './dataSource';
 import { DiffDocProvider, DiffDocUriData, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { ErrorInfo, GitFileStatus, GitRepoConfig, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
@@ -427,7 +427,11 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 		let title = pathComponents[pathComponents.length - 1] + ' (' + desc + ')';
 		if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
 
-		const config: GitRepoConfig | null = (await dataSource.getConfig(repo, await dataSource.getRemotes(repo))).config;
+		const configData: GitRepoConfigData | null = await dataSource.getConfig(repo, await dataSource.getRemotes(repo));
+		let config: GitRepoConfig | null = null;
+		if (configData !== null) {
+			config = (await dataSource.getConfig(repo, await dataSource.getRemotes(repo))).config;
+		}
 		let diffTool: string | null = null;
 		let guiDiffTool: string | null = null;
 		if (config !== null) {

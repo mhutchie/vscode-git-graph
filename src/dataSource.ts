@@ -1904,7 +1904,7 @@ interface GitRepoInfo extends GitBranchData {
 	stashes: GitStash[];
 }
 
-interface GitRepoConfigData {
+export interface GitRepoConfigData {
 	config: GitRepoConfig | null;
 	error: ErrorInfo;
 }

@@ -398,7 +398,7 @@ export class GitGraphView extends Disposable {
 				this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
 				break;
 			case 'fetchCICD':
-				this.cicdManager.fetchCICDStatus(msg.repo, msg.hash, msg.cicdConfigs);
+				this.cicdManager.fetchCICDStatus(msg.repo, msg.hash);
 				break;
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({

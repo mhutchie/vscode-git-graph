@@ -79,44 +79,52 @@ export class CicdManager extends Disposable {
 	 * @param hash The hash identifying the cicd commit.
 	 * @param cicdConfigs The CICDConfigs.
 	 */
-	public fetchCICDStatus(repo: string, hash: string, cicdConfigs: CICDConfig[]) {
+	public fetchCICDStatus(repo: string, hash: string) {
 		if (typeof this.cicds[repo] !== 'undefined' && typeof this.cicds[repo][hash] !== 'undefined') {
 			// CICD exists in the cache
 			this.emitCICD(repo, hash, this.cicds[repo][hash]);
 		} else {
 
-			// Check update user config
-			const cicdConfigsJSON = JSON.stringify(Object.entries(cicdConfigs).sort());
-			const cicdConfigsPrevJSON = JSON.stringify(Object.entries(this.cicdConfigsPrev).sort());
-			if (cicdConfigsJSON !== cicdConfigsPrevJSON) {
-				this.initialState = true;
-				this.requestPage = -1;
-				if (this.requestPageTimeout !== null) {
-					clearTimeout(this.requestPageTimeout);
-				}
-				this.requestPageTimeout = null;
-			}
-			this.cicdConfigsPrev = Object.assign({}, cicdConfigs);
-			// CICD not in the cache, request it
-			if (this.initialState) {
-				this.initialState = false;
-				cicdConfigs.forEach(cicdConfig => {
-					this.queue.add(repo, cicdConfig, this.requestPage, true);
-				});
-				// Reset initial state for 10 seconds
-				setTimeout(() => {
-					this.logger.log('Reset initial timer of CICD');
-					this.initialState = true;
-				}, 10000);
-				// set request page to top
-				this.requestPage = 1;
-				// Reset request page to all after 10 minutes
-				if (this.requestPageTimeout === null) {
-					this.requestPageTimeout = setTimeout(() => {
-						this.logger.log('Reset request page of CICD');
-						this.requestPage = -1;
-						this.requestPageTimeout = null;
-					}, 600000);
+			let repos = this.extensionState.getRepos();
+			if (typeof repos[repo] !== 'undefined') {
+				if (repos[repo].cicdConfigs !== null) {
+					let cicdConfigs = repos[repo].cicdConfigs;
+					if (cicdConfigs !== null) {
+						// Check update user config
+						const cicdConfigsJSON = JSON.stringify(Object.entries(cicdConfigs).sort());
+						const cicdConfigsPrevJSON = JSON.stringify(Object.entries(this.cicdConfigsPrev).sort());
+						if (cicdConfigsJSON !== cicdConfigsPrevJSON) {
+							this.initialState = true;
+							this.requestPage = -1;
+							if (this.requestPageTimeout !== null) {
+								clearTimeout(this.requestPageTimeout);
+							}
+							this.requestPageTimeout = null;
+						}
+						this.cicdConfigsPrev = Object.assign({}, cicdConfigs);
+						// CICD not in the cache, request it
+						if (this.initialState) {
+							this.initialState = false;
+							cicdConfigs.forEach(cicdConfig => {
+								this.queue.add(repo, cicdConfig, this.requestPage, true);
+							});
+							// Reset initial state for 10 seconds
+							setTimeout(() => {
+								this.logger.log('Reset initial timer of CICD');
+								this.initialState = true;
+							}, 10000);
+							// set request page to top
+							this.requestPage = 1;
+							// Reset request page to all after 10 minutes
+							if (this.requestPageTimeout === null) {
+								this.requestPageTimeout = setTimeout(() => {
+									this.logger.log('Reset request page of CICD');
+									this.requestPage = -1;
+									this.requestPageTimeout = null;
+								}, 600000);
+							}
+						}
+					}
 				}
 			}
 		}

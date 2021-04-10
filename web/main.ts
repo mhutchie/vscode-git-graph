@@ -746,12 +746,12 @@ class GitGraphView {
 
 	private requestCICDs() {
 		if (typeof this.currentRepo === 'string' && typeof this.gitRepos[this.currentRepo] !== 'undefined') {
-			this.commits.forEach(commit => {
-				let cicdConfigs = this.gitRepos[this.currentRepo].cicdConfigs;
-				if (cicdConfigs !== null) {
-					sendMessage({ command: 'fetchCICD', repo: this.currentRepo, hash: commit.hash, cicdConfigs: cicdConfigs });
-				}
-			});
+			let cicdConfigs = this.gitRepos[this.currentRepo].cicdConfigs;
+			if (cicdConfigs !== null && cicdConfigs.length >= 1) {
+				this.commits.forEach(commit => {
+					sendMessage({ command: 'fetchCICD', repo: this.currentRepo, hash: commit.hash });
+				});
+			}
 		}
 	}
 

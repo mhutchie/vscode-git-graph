@@ -914,7 +914,6 @@ export interface RequestFetchCICD extends RepoRequest {
 	readonly command: 'fetchCICD';
 	readonly repo: string;
 	readonly hash: string;
-	readonly cicdConfigs: CICDConfig[];
 }
 export interface ResponseFetchCICD extends BaseMessage {
 	readonly command: 'fetchCICD';

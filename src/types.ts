@@ -89,8 +89,8 @@ export const enum GitPushBranchMode {
 
 export interface GitRepoConfig {
 	readonly branches: GitRepoConfigBranches;
-	readonly diffTool: string | null;
-	readonly guiDiffTool: string | null;
+	readonly diffTool: DifftoolConfig | null;
+	readonly guiDiffTool: DifftoolConfig | null;
 	readonly pushDefault: string | null;
 	readonly remotes: ReadonlyArray<GitRepoSettingsRemote>;
 	readonly user: {
@@ -103,6 +103,12 @@ export interface GitRepoConfig {
 			readonly global: string | null
 		}
 	};
+}
+
+export interface DifftoolConfig {
+	readonly name: string | null;
+	readonly path: string | null;
+	readonly cmd: string | null;
 }
 
 export type GitRepoConfigBranches = { [branchName: string]: GitRepoConfigBranch };
@@ -1176,8 +1182,23 @@ export interface RequestViewDiff extends RepoRequest {
 	readonly newFilePath: string;
 	readonly type: GitFileStatus;
 }
+
+export interface RequestViewDiffInExternalDifftool extends RepoRequest {
+	readonly command: 'viewDiffInExternalDifftool';
+	readonly fromHash: string;
+	readonly toHash: string;
+	readonly oldFilePath: string;
+	readonly newFilePath: string;
+	readonly type: GitFileStatus;
+	readonly difftool: DifftoolConfig;
+	readonly isGui: boolean;
+}
 export interface ResponseViewDiff extends ResponseWithErrorInfo {
 	readonly command: 'viewDiff';
+}
+
+export interface ResponseViewDiffInExternalDifftool extends ResponseWithErrorInfo {
+	readonly command: 'viewDiffInExternalDifftool';
 }
 
 export interface RequestViewDiffWithWorkingFile extends RepoRequest {
@@ -1264,6 +1285,7 @@ export type RequestMessage =
 	| RequestTagDetails
 	| RequestUpdateCodeReview
 	| RequestViewDiff
+	| RequestViewDiffInExternalDifftool
 	| RequestViewDiffWithWorkingFile
 	| RequestViewFileAtRevision
 	| RequestViewScm;
@@ -1324,6 +1346,7 @@ export type ResponseMessage =
 	| ResponseTagDetails
 	| ResponseUpdateCodeReview
 	| ResponseViewDiff
+	| ResponseViewDiffInExternalDifftool
 	| ResponseViewDiffWithWorkingFile
 	| ResponseViewFileAtRevision
 	| ResponseViewScm;

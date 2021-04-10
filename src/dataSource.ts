@@ -302,11 +302,21 @@ export class DataSource extends Disposable {
 				}
 			});
 
+			const diffToolName = getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL);
+			const guiDiffToolName = getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL);
 			return {
 				config: {
 					branches: branches,
-					diffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL),
-					guiDiffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL),
+					diffTool: {
+						name: diffToolName,
+						path: getConfigValue(consolidatedConfigs, 'difftool.' + diffToolName + '.path'),
+						cmd: getConfigValue(consolidatedConfigs, 'difftool.' + diffToolName + '.cmd')
+					},
+					guiDiffTool: {
+						name: guiDiffToolName,
+						path: getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffToolName + 'path'),
+						cmd: getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffToolName + 'cmd')
+					},
 					pushDefault: getConfigValue(consolidatedConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
 					remotes: remotes.map((remote) => ({
 						name: remote,
@@ -1786,7 +1796,7 @@ function generateFileChanges(nameStatusRecords: DiffNameStatusRecord[], numStatR
  * @param key The key of the desired config.
  * @returns The value for `key` if it exists, otherwise NULL.
  */
-export function getConfigValue(configs: GitConfigSet, key: string) {
+function getConfigValue(configs: GitConfigSet, key: string) {
 	return typeof configs[key] !== 'undefined' ? configs[key] : null;
 }
 
@@ -1881,7 +1891,7 @@ interface GitCommitComparisonData {
 	error: ErrorInfo;
 }
 
-export type GitConfigSet = { [key: string]: string };
+type GitConfigSet = { [key: string]: string };
 
 interface GitRef {
 	hash: string;

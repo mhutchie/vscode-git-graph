@@ -2826,7 +2826,7 @@ class GitGraphView {
 			}
 		};
 
-		const triggerViewFileDiff = (file: GG.GitFileChange, fileElem: HTMLElement) => {
+		const triggerViewFileDiff = (file: GG.GitFileChange, fileElem: HTMLElement, externalDiffTool: boolean) => {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
@@ -2853,15 +2853,33 @@ class GitGraphView {
 			}
 
 			this.cdvUpdateFileState(file, fileElem, true, true);
-			sendMessage({
-				command: 'viewDiff',
-				repo: this.currentRepo,
-				fromHash: fromHash,
-				toHash: toHash,
-				oldFilePath: file.oldFilePath,
-				newFilePath: file.newFilePath,
-				type: fileStatus
-			});
+			if (externalDiffTool) {
+				sendMessage({
+					command: 'viewDiffInExternalDifftool',
+					repo: this.currentRepo,
+					fromHash: fromHash,
+					toHash: toHash,
+					oldFilePath: file.oldFilePath,
+					newFilePath: file.newFilePath,
+					type: fileStatus,
+					difftool: {
+						name: '',
+						path: '',
+						cmd: ''
+					},
+					isGui: true
+				});
+			} else {
+				sendMessage({
+					command: 'viewDiff',
+					repo: this.currentRepo,
+					fromHash: fromHash,
+					toHash: toHash,
+					oldFilePath: file.oldFilePath,
+					newFilePath: file.newFilePath,
+					type: fileStatus
+				});
+			}
 		};
 
 		const triggerCopyFilePath = (file: GG.GitFileChange, absolute: boolean) => {
@@ -2919,7 +2937,7 @@ class GitGraphView {
 
 			const sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile'), fileElem = getFileElemOfEventTarget(e.target);
 			if (!sourceElem.classList.contains('gitDiffPossible')) return;
-			triggerViewFileDiff(getFileOfFileElem(expandedCommit.fileChanges, fileElem), fileElem);
+			triggerViewFileDiff(getFileOfFileElem(expandedCommit.fileChanges, fileElem), fileElem, false);
 		});
 
 		addListenerToClass('copyGitFile', 'click', (e) => {
@@ -2973,7 +2991,12 @@ class GitGraphView {
 					{
 						title: 'View Diff',
 						visible: diffPossible,
-						onClick: () => triggerViewFileDiff(file, fileElem)
+						onClick: () => triggerViewFileDiff(file, fileElem, false)
+					},
+					{
+						title: 'View Diff in External Difftool',
+						visible: diffPossible,
+						onClick: () => triggerViewFileDiff(file, fileElem, true)
 					},
 					{
 						title: 'View File at this Revision',

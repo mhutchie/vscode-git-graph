@@ -2405,8 +2405,16 @@ describe('DataSource', () => {
 							remote: null
 						}
 					},
-					diffTool: 'abc',
-					guiDiffTool: 'def',
+					diffTool: {
+						name: 'abc',
+						path: null,
+						cmd: null
+					},
+					guiDiffTool: {
+						name: 'def',
+						path: null,
+						cmd: null
+					},
 					pushDefault: 'origin',
 					remotes: [
 						{
@@ -2454,8 +2462,16 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				config: {
 					branches: {},
-					diffTool: 'abc',
-					guiDiffTool: 'def',
+					diffTool: {
+						name: 'abc',
+						path: null,
+						cmd: null
+					},
+					guiDiffTool: {
+						name: 'def',
+						path: null,
+						cmd: null
+					},
 					pushDefault: null,
 					remotes: [
 						{
@@ -2501,8 +2517,16 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				config: {
 					branches: {},
-					diffTool: null,
-					guiDiffTool: null,
+					diffTool: {
+						name: null,
+						path: null,
+						cmd: null
+					},
+					guiDiffTool: {
+						name: null,
+						path: null,
+						cmd: null
+					},
 					pushDefault: null,
 					remotes: [],
 					user: {
@@ -2547,8 +2571,16 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				config: {
 					branches: {},
-					diffTool: 'abc',
-					guiDiffTool: 'def',
+					diffTool: {
+						name: 'abc',
+						path: null,
+						cmd: null
+					},
+					guiDiffTool: {
+						name: 'def',
+						path: null,
+						cmd: null
+					},
 					pushDefault: null,
 					remotes: [
 						{

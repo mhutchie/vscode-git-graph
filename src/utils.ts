@@ -4,8 +4,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
-import { DataSource, GitConfigSet, GitRepoConfigData, getConfigValue } from './dataSource';
-import { DiffDocProvider, DiffDocUriData, DiffSide, decodeDiffDocUri, encodeDiffDocUri } from './diffDocProvider';
+import { DataSource, GitRepoConfigData} from './dataSource';
+import { DiffDocProvider, DiffSide, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { ErrorInfo, GitFileStatus, GitRepoConfig, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
 
@@ -435,25 +435,18 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 		let diffTool: string | null = null;
 		let guiDiffTool: string | null = null;
 		if (config !== null) {
-			diffTool = config.diffTool;
-			guiDiffTool = config.guiDiffTool;
+			if ((config.guiDiffTool !== null) && (config.guiDiffTool !== undefined)) {
+				guiDiffTool = config.guiDiffTool.cmd;
+			}
+			if ((config.diffTool !== null) && (config.diffTool !== undefined))
+			 diffTool = config.diffTool.cmd;
 		}
 
 		if (((diffTool !== null) && (diffTool !== '')) || ((guiDiffTool !== null) && (guiDiffTool !== ''))) {
 			const fileOld = encodeDiffDocUri(repo, oldFilePath, fromHash === toHash ? fromHash + '^' : fromHash, type, DiffSide.Old);
-			const fileOldQuery = decodeDiffDocUri(fileOld);
 			const fileNew = encodeDiffDocUri(repo, newFilePath, toHash, type, DiffSide.New);
-			let fileNewData: DiffDocUriData = {
-				filePath: '',
-				commit: '',
-				repo: '',
-				exists: false
-			};
-			if (fileNew.query !== '') {
-				fileNewData = decodeDiffDocUri(fileNew);
-			}
-			const fileOldCopy = os.tmpdir() + `/${fileOldQuery.commit}.${fileOldQuery.filePath.split('/').join('-')}`;
-			const fileNewCopy = os.tmpdir() + `/${fileNewData.commit}.${fileNewData.filePath.split('/').join('-')}`;
+			const fileOldCopy = path.join(os.tmpdir(), getNonce() + '_' + oldFilePath.substring(oldFilePath.lastIndexOf('/') + 1));
+			const fileNewCopy = path.join(os.tmpdir(), getNonce() + '_' + newFilePath.substring(newFilePath.lastIndexOf('/') + 1));
 
 			const diffDocProvider: DiffDocProvider = new DiffDocProvider(dataSource);
 			let fileNewPath: string = '';
@@ -465,15 +458,14 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 				fileNewPath = fileNewCopy;
 			}
 
-			const consolidatedConfigs: GitConfigSet = (await dataSource.getConfigList(repo));
 			if ((guiDiffTool !== null) && (guiDiffTool !== '')) {
-				const cmd: string | null = getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffTool + '.cmd');
-				if (cmd !== null) {
+				const cmd = config?.guiDiffTool?.cmd;
+				if ((cmd !== null) && (cmd !== undefined)) {
 					cp.execSync(cmd.replace('$LOCAL', fileOldCopy).replace('$REMOTE', fileNewPath));
 				}
 			} else {
-				const cmd: string | null = getConfigValue(consolidatedConfigs, 'difftool.' + diffTool + '.cmd');
-				if (cmd !== null) {
+				const cmd = config?.diffTool?.cmd;
+				if ((cmd !== null) && (cmd !== undefined)) {
 					const terminal = vscode.window.createTerminal({
 						name: 'Git Graph: Diff',
 						env: { 'PATH': repo }

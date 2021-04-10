@@ -585,6 +585,12 @@ export class GitGraphView extends Disposable {
 					error: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type, this.dataSource)
 				});
 				break;
+			case 'viewDiffInExternalDifftool':
+				this.sendMessage({
+					command: 'viewDiffInExternalDifftool',
+					error: await viewDiff(msg.repo, msg.fromHash, msg.toHash, msg.oldFilePath, msg.newFilePath, msg.type, this.dataSource)
+				});
+				break;
 			case 'viewDiffWithWorkingFile':
 				this.sendMessage({
 					command: 'viewDiffWithWorkingFile',

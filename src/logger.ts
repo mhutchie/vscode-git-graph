@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { Disposable } from './utils/disposable';
 
+const DOUBLE_QUOTE_REGEXP = /"/g;
+
 /**
  * Manages the Git Graph Logger, which writes log information to the Git Graph Output Channel.
  */
@@ -32,11 +34,14 @@ export class Logger extends Disposable {
 	 * @param args The arguments passed to the command.
 	 */
 	public logCmd(cmd: string, args: string[]) {
-		this.log('> ' + cmd + ' ' + args.map((arg) => {
-			return arg.startsWith('--format=')
+		this.log('> ' + cmd + ' ' + args.map((arg) => arg === ''
+			? '""'
+			: arg.startsWith('--format=')
 				? '--format=...'
-				: arg.includes(' ') ? '"' + arg.replace(/"/g, '\\"') + '"' : arg;
-		}).join(' '));
+				: arg.includes(' ')
+					? '"' + arg.replace(DOUBLE_QUOTE_REGEXP, '\\"') + '"'
+					: arg
+		).join(' '));
 	}
 
 	/**

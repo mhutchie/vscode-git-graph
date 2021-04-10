@@ -78,7 +78,10 @@ export class CommandManager extends Disposable {
 	 */
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
 		this.registerDisposable(
-			vscode.commands.registerCommand(command, callback)
+			vscode.commands.registerCommand(command, (...args: any[]) => {
+				this.logger.log('Command Invoked: ' + command);
+				callback(...args);
+			})
 		);
 	}
 

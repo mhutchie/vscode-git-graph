@@ -208,8 +208,10 @@ export class CicdManager extends Disposable {
 		let sourceOwner = match2 !== null ? match2[2] : '';
 		let sourceRepo = match2 !== null ? match2[3] : '';
 
+		// https://docs.github.com/en/rest/reference/actions#list-workflow-runs-for-a-repository
 		let cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=${this.per_page}`;
 		if (cicdRequest.detail) {
+			// https://docs.github.com/en/rest/reference/checks#list-check-runs-for-a-git-reference
 			cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/commits/${cicdRequest.hash}/check-runs?per_page=${this.per_page}`;
 		}
 		if (cicdRequest.page > 1) {

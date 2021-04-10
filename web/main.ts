@@ -1875,6 +1875,18 @@ class GitGraphView {
 		});
 	}
 
+	public setColumnVisibility(column: number, columnWidth: number ) {
+		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
+		if (colWidths !== null) {
+			if (column < colWidths.length) {
+				colWidths[column] = columnWidth;
+				let columnWidths = [colWidths[0], COLUMN_AUTO, colWidths[1], colWidths[2], colWidths[3], colWidths[4]];
+				this.saveColumnWidths(columnWidths);
+				this.render();
+			}
+		}
+	}
+
 	public getColumnVisibility() {
 		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (colWidths !== null) {

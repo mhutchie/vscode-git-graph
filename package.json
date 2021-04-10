@@ -499,7 +499,7 @@
 						"Date": true,
 						"Author": true,
 						"Commit": true,
-						"CICD": true
+						"CICD": false
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},

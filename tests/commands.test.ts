@@ -518,16 +518,58 @@ describe('CommandManager', () => {
 	});
 
 	describe('git-graph.clearAvatarCache', () => {
-		it('Should clear the avatar cache', () => {
+		let spyOnClearCache: jest.SpyInstance;
+		beforeAll(() => {
+			spyOnClearCache = jest.spyOn(avatarManager, 'clearCache');
+		});
+
+		it('Should clear the avatar cache, and display a success message', async () => {
 			// Setup
-			const spyOnClearCache = jest.spyOn(avatarManager, 'clearCache');
+			spyOnClearCache.mockResolvedValueOnce(null);
+			vscode.window.showInformationMessage.mockResolvedValueOnce(null);
 
 			// Run
 			vscode.commands.executeCommand('git-graph.clearAvatarCache');
 
 			// Assert
-			expect(spyOnLog).toHaveBeenCalledWith('Command Invoked: git-graph.clearAvatarCache');
-			expect(spyOnClearCache).toBeCalledTimes(1);
+			await waitForExpect(() => {
+				expect(spyOnLog).toHaveBeenCalledWith('Command Invoked: git-graph.clearAvatarCache');
+				expect(spyOnClearCache).toBeCalledTimes(1);
+				expect(vscode.window.showInformationMessage).toHaveBeenCalledWith('The Avatar Cache was successfully cleared.');
+			});
+		});
+
+		it('Should display the error message returned by AvatarManager.clearCache', async () => {
+			// Setup
+			const errorMessage = 'Visual Studio Code was unable to save the Git Graph Global State Memento.';
+			spyOnClearCache.mockResolvedValueOnce(errorMessage);
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.clearAvatarCache');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnLog).toHaveBeenCalledWith('Command Invoked: git-graph.clearAvatarCache');
+				expect(spyOnClearCache).toBeCalledTimes(1);
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(errorMessage);
+			});
+		});
+
+		it('Should display an error message when AvatarManager.clearCache rejects', async () => {
+			// Setup
+			spyOnClearCache.mockRejectedValueOnce(null);
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.clearAvatarCache');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnLog).toHaveBeenCalledWith('Command Invoked: git-graph.clearAvatarCache');
+				expect(spyOnClearCache).toBeCalledTimes(1);
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('An unexpected error occurred while running the command "Clear Avatar Cache".');
+			});
 		});
 	});
 

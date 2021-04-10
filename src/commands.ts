@@ -183,7 +183,15 @@ export class CommandManager extends Disposable {
 	 * The method run when the `git-graph.clearAvatarCache` command is invoked.
 	 */
 	private clearAvatarCache() {
-		this.avatarManager.clearCache();
+		this.avatarManager.clearCache().then((errorInfo) => {
+			if (errorInfo === null) {
+				showInformationMessage('The Avatar Cache was successfully cleared.');
+			} else {
+				showErrorMessage(errorInfo);
+			}
+		}, () => {
+			showErrorMessage('An unexpected error occurred while running the command "Clear Avatar Cache".');
+		});
 	}
 
 	/**

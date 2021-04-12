@@ -680,7 +680,11 @@ class SettingsWidget {
 		if (this.currentRepo === null) return;
 		this.view.saveRepoStateValue(this.currentRepo, 'cicdConfigs', config);
 		this.render();
-		this.view.setColumnVisibility(4, 80);
+		if (config?.length !== 0) {
+			this.view.setColumnVisibility(4, 80);
+		} else {
+			this.view.setColumnVisibility(4, COLUMN_HIDDEN);
+		}
 	}
 
 	/**

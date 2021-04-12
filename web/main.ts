@@ -1879,13 +1879,8 @@ class GitGraphView {
 		let colWidths = this.gitRepos[this.currentRepo].columnWidths;
 		if (colWidths !== null) {
 			if (column < colWidths.length) {
-				colWidths[column] = columnWidth;
+				colWidths[column] = columnWidth === COLUMN_HIDDEN ? COLUMN_HIDDEN : (colWidths[0] === COLUMN_AUTO ? COLUMN_AUTO : columnWidth - COLUMN_LEFT_RIGHT_PADDING);
 				let columnWidths = [colWidths[0], COLUMN_AUTO, colWidths[1], colWidths[2], colWidths[3], colWidths[4]];
-				let col = column;
-				if (column >= 1) {
-					col = column + 1;
-				}
-				columnWidths[col] = columnWidths[0] === COLUMN_AUTO ? COLUMN_AUTO : columnWidth - COLUMN_LEFT_RIGHT_PADDING;
 				this.saveColumnWidths(columnWidths);
 				this.render();
 			}

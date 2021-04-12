@@ -9,6 +9,7 @@ import { Logger } from './logger';
 import { CICDConfig, CICDData, CICDDataSave, CICDProvider } from './types';
 import { Disposable, toDisposable } from './utils/disposable';
 import { EventEmitter } from './utils/event';
+import { RepoManager } from './repoManager';
 
 /**
  * Manages fetching and caching CICDs.
@@ -17,6 +18,7 @@ export class CicdManager extends Disposable {
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
 	private readonly cicdEventEmitter: EventEmitter<CICDEvent>;
+	private readonly repoManager: RepoManager;
 
 	private cicds: CICDCache;
 	private queue: CicdRequestQueue;
@@ -37,9 +39,10 @@ export class CicdManager extends Disposable {
 	 * @param extensionState The Git Graph ExtensionState instance.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(extensionState: ExtensionState, logger: Logger) {
+	constructor(extensionState: ExtensionState, repoManager: RepoManager, logger: Logger) {
 		super();
 		this.extensionState = extensionState;
+		this.repoManager = repoManager;
 		this.logger = logger;
 		this.cicdEventEmitter = new EventEmitter<CICDEvent>();
 		this.cicds = this.extensionState.getCICDCache();
@@ -85,7 +88,7 @@ export class CicdManager extends Disposable {
 			this.emitCICD(repo, hash, this.cicds[repo][hash]);
 		} else {
 
-			let repos = this.extensionState.getRepos();
+			let repos = this.repoManager.getRepos();
 			if (typeof repos[repo] !== 'undefined') {
 				if (repos[repo].cicdConfigs !== null) {
 					let cicdConfigs = repos[repo].cicdConfigs;
@@ -101,7 +104,8 @@ export class CicdManager extends Disposable {
 							}
 							this.requestPageTimeout = null;
 						}
-						this.cicdConfigsPrev = Object.assign({}, cicdConfigs);
+						// Deep Clone cicdConfigs
+						this.cicdConfigsPrev = JSON.parse(JSON.stringify(cicdConfigs));
 						// CICD not in the cache, request it
 						if (this.initialState) {
 							this.initialState = false;

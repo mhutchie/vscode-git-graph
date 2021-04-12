@@ -213,10 +213,10 @@ export class CicdManager extends Disposable {
 
 		let cicdConfig = cicdRequest.cicdConfig;
 
-		const match1 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
+		const match1 = cicdConfig.cicdUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
 		let hostRootUrl = match1 !== null ? 'api.' + match1[3] : '';
 
-		const match2 = cicdConfig.gitUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
+		const match2 = cicdConfig.cicdUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
 		let sourceOwner = match2 !== null ? match2[2] : '';
 		let sourceRepo = match2 !== null ? match2[3] : '';
 
@@ -234,8 +234,8 @@ export class CicdManager extends Disposable {
 			'Accept': 'application/vnd.github.v3+json',
 			'User-Agent': 'vscode-git-graph'
 		};
-		if (cicdConfig.glToken !== '') {
-			headers['Authorization'] = `token ${cicdConfig.glToken}`;
+		if (cicdConfig.cicdToken !== '') {
+			headers['Authorization'] = `token ${cicdConfig.cicdToken}`;
 		}
 
 		let triggeredOnError = false;
@@ -262,7 +262,7 @@ export class CicdManager extends Disposable {
 					// If the GitHub Api rate limit was reached, store the github timeout to prevent subsequent requests
 					this.githubTimeout = parseInt(<string>res.headers['x-ratelimit-reset']) * 1000;
 					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/' + new Date(this.githubTimeout).toString() + ')');
-					if (cicdRequest.cicdConfig.glToken === '') {
+					if (cicdRequest.cicdConfig.cicdToken === '') {
 						this.logger.log('GitHub API Rate Limit can upgrade by Access Token.');
 					}
 				}
@@ -391,7 +391,7 @@ export class CicdManager extends Disposable {
 				this.logger.log('CICD Maximum Statuses(maximumStatuses=' + cicdRequest.maximumStatuses + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
 			}
 
-			this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['x-ratelimit-limit'] || 'None') + '(1 hour)/Remaining=' + (res.headers['x-ratelimit-remaining'] || 'None') + (res.headers['x-ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() : '') + ') from GitHub');
+			this.logger.log('Added CICD for ' + cicdConfig.cicdUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['x-ratelimit-limit'] || 'None') + '(1 hour)/Remaining=' + (res.headers['x-ratelimit-remaining'] || 'None') + (res.headers['x-ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() : '') + ') from GitHub');
 			for (let i = 1; i < last; i++) {
 				this.queue.add(cicdRequest.repo, cicdRequest.cicdConfig, i + 1, true);
 			}
@@ -413,7 +413,7 @@ export class CicdManager extends Disposable {
 
 		let cicdConfig = cicdRequest.cicdConfig;
 
-		let gitUrl = cicdConfig.gitUrl.replace(/\/$/g, '');
+		let gitUrl = cicdConfig.cicdUrl.replace(/\/$/g, '');
 		gitUrl = gitUrl.replace(/.git$/g, '');
 		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
 		let hostProtocol = match1 !== null ? '' + match1[1] : '';
@@ -431,8 +431,8 @@ export class CicdManager extends Disposable {
 		let headers: any = {
 			'User-Agent': 'vscode-git-graph'
 		};
-		if (cicdConfig.glToken !== '') {
-			headers['PRIVATE-TOKEN'] = cicdConfig.glToken;
+		if (cicdConfig.cicdToken !== '') {
+			headers['PRIVATE-TOKEN'] = cicdConfig.cicdToken;
 		}
 
 		let triggeredOnError = false;
@@ -487,7 +487,7 @@ export class CicdManager extends Disposable {
 									this.logger.log('CICD Maximum Statuses(maximumStatuses=' + cicdRequest.maximumStatuses + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
 								}
 
-								this.logger.log('Added CICD for ' + cicdConfig.gitUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['ratelimit-limit'] || 'None') + '(every minute)/Remaining=' + (res.headers['ratelimit-remaining'] || 'None') + (res.headers['ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() : '') + ') from GitLab');
+								this.logger.log('Added CICD for ' + cicdConfig.cicdUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['ratelimit-limit'] || 'None') + '(every minute)/Remaining=' + (res.headers['ratelimit-remaining'] || 'None') + (res.headers['ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() : '') + ') from GitLab');
 								for (let i = 1; i < last; i++) {
 									this.queue.add(cicdRequest.repo, cicdRequest.cicdConfig, i + 1, true);
 								}
@@ -538,7 +538,7 @@ export class CicdManager extends Disposable {
 
 		let cicdConfig = cicdRequest.cicdConfig;
 
-		let gitUrl = cicdConfig.gitUrl.replace(/\/$/g, '');
+		let gitUrl = cicdConfig.cicdUrl.replace(/\/$/g, '');
 		gitUrl = gitUrl.replace(/.git$/g, '');
 		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
 		let hostProtocol = match1 !== null ? '' + match1[1] : '';
@@ -551,9 +551,9 @@ export class CicdManager extends Disposable {
 		let headers: any = {
 			'User-Agent': 'vscode-git-graph'
 		};
-		if (cicdConfig.glToken !== '') {
+		if (cicdConfig.cicdToken !== '') {
 			// headers['Authorization'] = 'Basic ' + new Buffer(username + ':' + passw).toString('base64');
-			headers['Authorization'] = 'Basic ' + new Buffer(cicdConfig.glToken).toString('base64');
+			headers['Authorization'] = 'Basic ' + new Buffer(cicdConfig.cicdToken).toString('base64');
 		}
 
 		let triggeredOnError = false;
@@ -744,7 +744,7 @@ class CicdRequestQueue {
 	 * @param hash hash for fetch detail.
 	 */
 	public add(repo: string, cicdConfig: CICDConfig, page: number, immediate: boolean, detail: boolean = false, hash: string = '') {
-		const existingRequest = this.queue.find((request) => request.cicdConfig.gitUrl === cicdConfig.gitUrl && request.page === page && request.detail === detail && request.hash === hash);
+		const existingRequest = this.queue.find((request) => request.cicdConfig.cicdUrl === cicdConfig.cicdUrl && request.page === page && request.detail === detail && request.hash === hash);
 		if (existingRequest) {
 		} else {
 			const config = getConfig();

@@ -211,8 +211,8 @@ export interface CICDDataSave {
 }
 
 export interface CICDConfigBase {
-	readonly gitUrl: string;
-	readonly glToken: string;
+	readonly cicdUrl: string;
+	readonly cicdToken: string;
 }
 
 export const enum CICDProvider {
@@ -254,6 +254,7 @@ export interface GitRepoState {
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
 	cicdConfigs: CICDConfig[] | null;
+	cicdNonce: string | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;

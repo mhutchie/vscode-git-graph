@@ -248,10 +248,10 @@ class SettingsWidget {
 						providerOptions[(GG.CICDProvider.GitHubV3).toString()] = 'GitHub';
 						providerOptions[(GG.CICDProvider.GitLabV4).toString()] = 'GitLab API v4(ver8.11-)';
 						providerOptions[(GG.CICDProvider.JenkinsV2).toString()] = 'Jenkins v2';
-						const gitUrl = escapeHtml(cicdConfig.gitUrl || 'Not Set');
+						const cicdUrl = escapeHtml(cicdConfig.cicdUrl || 'Not Set');
 						html += '<tr class="lineAbove">' +
 							'<td class="left">' + escapeHtml(providerOptions[cicdConfig.provider]) + '</td>' +
-							'<td class="leftWithEllipsis" title="URL: ' + gitUrl + '">' + gitUrl + '</td>' +
+							'<td class="leftWithEllipsis" title="URL: ' + cicdUrl + '">' + cicdUrl + '</td>' +
 							'<td class="btns cicdBtns" data-index="' + i + '"><div class="editCICD" title="Edit CI/CD' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteCICD" title="Delete CI/CD' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
 							'</tr>';
 					});
@@ -474,8 +474,8 @@ class SettingsWidget {
 				});
 				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
 					let config: GG.CICDConfig = {
-						provider: <GG.CICDProvider>parseInt(<string>values[0]), gitUrl: <string>values[1],
-						glToken: <string>values[2],
+						provider: <GG.CICDProvider>parseInt(<string>values[0]), cicdUrl: <string>values[1],
+						cicdToken: <string>values[2],
 						custom: null
 					};
 					return config;
@@ -524,14 +524,14 @@ class SettingsWidget {
 						{ name: 'GitLab API v4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() },
 						{ name: 'Jenkins v2', value: (GG.CICDProvider.JenkinsV2).toString() }
 					];
-					dialog.showForm('Edit the CI/CD <b><i>' + escapeHtml(cicdConfig.gitUrl || 'Not Set') + '</i></b>:', [
+					dialog.showForm('Edit the CI/CD <b><i>' + escapeHtml(cicdConfig.cicdUrl || 'Not Set') + '</i></b>:', [
 						{
 							type: DialogInputType.Select, name: 'Provider',
 							options: providerOptions, default: cicdConfig.provider.toString(),
 							info: 'In addition to the built-in publicly hosted CI/CD providers.'
 						},
-						{ type: DialogInputType.Text, name: 'Git/Jenkins URL', default: cicdConfig.gitUrl || '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git) / Jenkins Job URL.' },
-						{ type: DialogInputType.Password, name: 'Access Token', default: cicdConfig.glToken, info: 'The GitHub/GitLab personal or project access token / The Jenkin user_name:password or user_name:access_token' }
+						{ type: DialogInputType.Text, name: 'Git/Jenkins URL', default: cicdConfig.cicdUrl || '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git) / Jenkins Job URL.' },
+						{ type: DialogInputType.Password, name: 'Access Token', default: cicdConfig.cicdToken, info: 'The GitHub/GitLab personal or project access token / The Jenkin user_name:password or user_name:access_token' }
 					], 'Save Changes', (values) => {
 						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
 						let configs: GG.CICDConfig[] = copyConfigs();
@@ -544,7 +544,7 @@ class SettingsWidget {
 				addListenerToClass('deleteCICD', 'click', (e) => {
 					const cicdConfig = this.getCICDForBtnEvent(e);
 					if (cicdConfig === null) return;
-					dialog.showConfirmation('Are you sure you want to delete the CI/CD <b><i>' + escapeHtml(cicdConfig.gitUrl) + '</i></b>?', 'Yes, delete', () => {
+					dialog.showConfirmation('Are you sure you want to delete the CI/CD <b><i>' + escapeHtml(cicdConfig.cicdUrl) + '</i></b>?', 'Yes, delete', () => {
 						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
 						let configs: GG.CICDConfig[] = copyConfigs();
 						configs.splice(index, 1);

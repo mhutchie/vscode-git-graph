@@ -1,10 +1,11 @@
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { CICDCache } from './cicdManager';
 import { getConfig } from './config';
-import { BooleanOverride, CICDDataSave, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
-import { GitExecutable, getPathFromStr } from './utils';
+import { BooleanOverride, CICDConfig, CICDDataSave, CodeReview, ErrorInfo, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoSet, GitRepoState, RepoCommitOrdering } from './types';
+import { GitExecutable, getNonce, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -35,6 +36,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 	onRepoLoadShowSpecificBranches: null,
 	pullRequestConfig: null,
 	cicdConfigs: null,
+	cicdNonce: null,
 	showRemoteBranches: true,
 	showRemoteBranchesV2: BooleanOverride.Default,
 	showStashes: BooleanOverride.Default,
@@ -123,6 +125,31 @@ export class ExtensionState extends Disposable {
 					outputSet[repo].showRemoteBranchesV2 = repoSet[repo].showRemoteBranches ? BooleanOverride.Enabled : BooleanOverride.Disabled;
 				}
 			}
+			if (typeof repoSet[repo].cicdConfigs !== 'undefined' && repoSet[repo].cicdConfigs !== null) {
+				outputSet[repo].cicdConfigs = [];
+				if (typeof repoSet[repo].cicdNonce !== 'undefined' && repoSet[repo].cicdNonce !== null) {
+					let ENCRYPTION_KEY = repoSet[repo].cicdNonce; 		// Must be 256 bits (32 characters)
+					repoSet[repo].cicdConfigs?.forEach(element => {
+						if (typeof element.cicdUrl !== 'undefined' && typeof element.cicdToken !== 'undefined') {
+							let textParts: string[] = element.cicdToken.split(':');
+							let iv = Buffer.from(textParts[0], 'hex');
+							let encryptedText = Buffer.from(textParts[1], 'hex');
+
+							let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(<string>ENCRYPTION_KEY), iv);
+							let decrypted = decipher.update(encryptedText);
+
+							decrypted = Buffer.concat([decrypted, decipher.final()]);
+							let config: CICDConfig = {
+								provider: element.provider,
+								cicdUrl: element.cicdUrl,
+								cicdToken: decrypted.toString(),
+								custom: null
+							};
+							outputSet[repo].cicdConfigs?.push(config);
+						}
+					});
+				}
+			}
 		});
 		return outputSet;
 	}
@@ -132,7 +159,36 @@ export class ExtensionState extends Disposable {
 	 * @param gitRepoSet The set of repositories.
 	 */
 	public saveRepos(gitRepoSet: GitRepoSet) {
-		this.updateWorkspaceState(REPO_STATES, gitRepoSet);
+		// Deep Clone gitRepoSet
+		let gitRepoSetTemp = JSON.parse(JSON.stringify(gitRepoSet));
+
+		Object.keys(gitRepoSetTemp).forEach((repo) => {
+			let ENCRYPTION_KEY = getNonce(); 		// Must be 256 bits (32 characters)
+			const IV_LENGTH = 16;					// For AES, this is always 16
+			gitRepoSetTemp[repo].cicdNonce = ENCRYPTION_KEY;
+
+			// Create Encrypted cicdToken
+			let cicdConfigsEncrypto: CICDConfig[] = [];
+			gitRepoSetTemp[repo].cicdConfigs?.forEach((cicdConfig: CICDConfig) => {
+				let iv = crypto.randomBytes(IV_LENGTH);
+				let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+				let plain = Buffer.from(cicdConfig.cicdToken);
+				let encrypted = Buffer.concat([
+					cipher.update(plain),
+					cipher.final()
+				]);
+				let config: CICDConfig = {
+					provider: cicdConfig.provider,
+					cicdUrl: cicdConfig.cicdUrl,
+					cicdToken: iv.toString('hex') + ':' + encrypted.toString('hex'),
+					custom: null
+				};
+				cicdConfigsEncrypto.push(config);
+			});
+			// Replace Encrypted cicdToken
+			gitRepoSetTemp[repo].cicdConfigs = cicdConfigsEncrypto;
+		});
+		this.updateWorkspaceState(REPO_STATES, gitRepoSetTemp);
 	}
 
 	/**

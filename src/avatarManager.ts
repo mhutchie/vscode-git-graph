@@ -134,10 +134,11 @@ export class AvatarManager extends Disposable {
 
 	/**
 	 * Remove all avatars from the cache.
+	 * @returns A Thenable resolving to the ErrorInfo that resulted from executing this method.
 	 */
 	public clearCache() {
 		this.avatars = {};
-		this.extensionState.clearAvatarCache();
+		return this.extensionState.clearAvatarCache();
 	}
 
 	/**

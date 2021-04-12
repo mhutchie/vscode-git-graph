@@ -356,14 +356,19 @@ export class ExtensionState extends Disposable {
 
 	/**
 	 * Clear all avatars from the cache of avatars known to Git Graph.
+	 * @returns A Thenable resolving to the ErrorInfo that resulted from executing this method.
 	 */
 	public clearAvatarCache() {
-		this.updateGlobalState(AVATAR_CACHE, {});
-		fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {
-			if (err) return;
-			for (let i = 0; i < files.length; i++) {
-				fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => { });
+		return this.updateGlobalState(AVATAR_CACHE, {}).then((errorInfo) => {
+			if (errorInfo === null) {
+				fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {
+					if (err) return;
+					for (let i = 0; i < files.length; i++) {
+						fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => { });
+					}
+				});
 			}
+			return errorInfo;
 		});
 	}
 
@@ -529,6 +534,7 @@ export class ExtensionState extends Disposable {
 	 * Update the Git Graph Global State with a new <key, value> pair.
 	 * @param key The key.
 	 * @param value The value.
+	 * @returns A Thenable resolving to the ErrorInfo that resulted from updating the Global State.
 	 */
 	private updateGlobalState(key: string, value: any): Thenable<ErrorInfo> {
 		return this.globalState.update(key, value).then(
@@ -541,6 +547,7 @@ export class ExtensionState extends Disposable {
 	 * Update the Git Graph Workspace State with a new <key, value> pair.
 	 * @param key The key.
 	 * @param value The value.
+	 * @returns A Thenable resolving to the ErrorInfo that resulted from updating the Workspace State.
 	 */
 	private updateWorkspaceState(key: string, value: any): Thenable<ErrorInfo> {
 		return this.workspaceState.update(key, value).then(

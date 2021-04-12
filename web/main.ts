@@ -172,7 +172,7 @@ class GitGraphView {
 		this.gitRepos = repos;
 		this.saveState();
 
-		let repoPaths: ReadonlyArray<string> = Object.keys(repos), newRepo: string;
+		let newRepo: string;
 		if (loadViewTo !== null && this.currentRepo !== loadViewTo.repo && typeof repos[loadViewTo.repo] !== 'undefined') {
 			newRepo = loadViewTo.repo;
 		} else if (typeof repos[this.currentRepo] === 'undefined') {
@@ -183,7 +183,7 @@ class GitGraphView {
 			newRepo = this.currentRepo;
 		}
 
-		alterClass(this.controlsElem, 'singleRepo', repoPaths.length === 1);
+		alterClass(this.controlsElem, 'singleRepo', Object.keys(repos).length === 1);
 		this.renderRepoDropdownOptions(newRepo);
 
 		if (loadViewTo !== null) {
@@ -1010,7 +1010,7 @@ class GitGraphView {
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
 	}
 
-	public renderTagDetails(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
+	public renderTagDetails(tagName: string, commitHash: string, details: GG.GitTagDetails) {
 		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, {
 			commits: true,
 			emoji: true,
@@ -1019,13 +1019,15 @@ class GitGraphView {
 			multiline: true,
 			urls: true
 		});
-		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
-		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
-		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
-		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
-		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
-		html += textFormatter.format(message) + '</span>';
-		dialog.showMessage(html);
+		dialog.showMessage(
+			'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">' +
+			'<b>Object: </b>' + escapeHtml(details.hash) + '<br>' +
+			'<b>Commit: </b>' + escapeHtml(commitHash) + '<br>' +
+			'<b>Tagger: </b>' + escapeHtml(details.taggerName) + ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(details.taggerEmail) + '" tabindex="-1">' + escapeHtml(details.taggerEmail) + '</a>&gt;' + (details.signature !== null ? generateSignatureHtml(details.signature) : '') + '<br>' +
+			'<b>Date: </b>' + formatLongDate(details.taggerDate) + '<br><br>' +
+			textFormatter.format(details.message) +
+			'</span>'
+		);
 	}
 
 	public renderRepoDropdownOptions(repo?: string) {
@@ -1060,8 +1062,9 @@ class GitGraphView {
 					if (remotesWithBranch.length > 0) {
 						inputs.push({
 							type: DialogInputType.Checkbox,
-							name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : '') + '<span class="dialogInfo" title="This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map(remote => escapeHtml('"' + remote + '"'))) + '">' + SVG_ICONS.info + '</span>',
-							value: false
+							name: 'Delete this branch on the remote' + (this.gitRemotes.length > 1 ? 's' : ''),
+							value: false,
+							info: 'This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map((remote) => '"' + remote + '"'))
 						});
 					}
 					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Yes, delete', (values) => {
@@ -1323,8 +1326,13 @@ class GitGraphView {
 				title: 'Fetch into local branch' + ELLIPSIS,
 				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
 				onClick: () => {
-					dialog.showCheckbox('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', 'Force Fetch<span class="dialogInfo" title="Force the local branch to be reset to this remote branch.">' + SVG_ICONS.info + '</span>', this.config.dialogDefaults.fetchIntoLocalBranch.forceFetch, 'Yes, fetch', (force) => {
-						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName, force: force }, 'Fetching Branch');
+					dialog.showForm('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', [{
+						type: DialogInputType.Checkbox,
+						name: 'Force Fetch',
+						value: this.config.dialogDefaults.fetchIntoLocalBranch.forceFetch,
+						info: 'Force the local branch to be reset to this remote branch.'
+					}], 'Yes, fetch', (values) => {
+						runAction({ command: 'fetchIntoLocalBranch', repo: this.currentRepo, remote: remote, remoteBranch: branchName, localBranch: branchName, force: <boolean>values[0] }, 'Fetching Branch');
 					}, target);
 				}
 			}, {
@@ -2809,52 +2817,52 @@ class GitGraphView {
 		});
 	}
 
-	private cdvSetLastViewedFile(filePath: string, fileElem: HTMLElement) {
-		const expandedCommit = this.expandedCommit;
-		if (expandedCommit === null || expandedCommit.fileTree === null) return;
-
-		expandedCommit.lastViewedFile = filePath;
-		let lastViewedElem = document.getElementById('cdvLastFileViewed');
-		if (lastViewedElem !== null) lastViewedElem.remove();
-		lastViewedElem = document.createElement('span');
-		lastViewedElem.id = 'cdvLastFileViewed';
-		lastViewedElem.title = 'Last File Viewed';
-		lastViewedElem.innerHTML = SVG_ICONS.eyeOpen;
-		insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
-	}
-
-	private cdvChangeFileReviewedState(file: GG.GitFileChange, fileElem: HTMLElement, isReviewed: boolean, fileWasViewed: boolean) {
-		const expandedCommit = this.expandedCommit, filePath = file.newFilePath;
-		const filesElem = document.getElementById('cdvFiles');
-
-		if (expandedCommit === null || expandedCommit.fileTree === null || expandedCommit.codeReview === null || filesElem === null) {
-			return;
-		}
-
-		if (isReviewed) {
-			expandedCommit.codeReview.remainingFiles = expandedCommit.codeReview.remainingFiles.filter((path: string) => path !== filePath);
-		} else {
-			expandedCommit.codeReview.remainingFiles.push(filePath);
-		}
+	/**
+	 * Updates the state of a file in the Commit Details View.
+	 * @param file The file that was affected.
+	 * @param fileElem The HTML Element of the file.
+	 * @param isReviewed TRUE/FALSE => Set the files reviewed state accordingly, NULL => Don't update the files reviewed state.
+	 * @param fileWasViewed Was the file viewed - if so, set it to be the last viewed file.
+	 */
+	private cdvUpdateFileState(file: GG.GitFileChange, fileElem: HTMLElement, isReviewed: boolean | null, fileWasViewed: boolean) {
+		const expandedCommit = this.expandedCommit, filesElem = document.getElementById('cdvFiles'), filePath = file.newFilePath;
+		if (expandedCommit === null || expandedCommit.fileTree === null || filesElem === null) return;
 
 		if (fileWasViewed) {
-			this.cdvSetLastViewedFile(filePath, fileElem);
+			expandedCommit.lastViewedFile = filePath;
+			let lastViewedElem = document.getElementById('cdvLastFileViewed');
+			if (lastViewedElem !== null) lastViewedElem.remove();
+			lastViewedElem = document.createElement('span');
+			lastViewedElem.id = 'cdvLastFileViewed';
+			lastViewedElem.title = 'Last File Viewed';
+			lastViewedElem.innerHTML = SVG_ICONS.eyeOpen;
+			insertBeforeFirstChildWithClass(lastViewedElem, fileElem, 'fileTreeFileAction');
 		}
 
-		sendMessage({
-			command: 'updateCodeReview',
-			repo: this.currentRepo,
-			id: expandedCommit.codeReview.id,
-			remainingFiles: expandedCommit.codeReview.remainingFiles,
-			lastViewedFile: expandedCommit.lastViewedFile
-		});
+		if (expandedCommit.codeReview !== null) {
+			if (isReviewed !== null) {
+				if (isReviewed) {
+					expandedCommit.codeReview.remainingFiles = expandedCommit.codeReview.remainingFiles.filter((path: string) => path !== filePath);
+				} else {
+					expandedCommit.codeReview.remainingFiles.push(filePath);
+				}
 
-		alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, isReviewed);
-		updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
+				alterFileTreeFileReviewed(expandedCommit.fileTree, filePath, isReviewed);
+				updateFileTreeHtmlFileReviewed(filesElem, expandedCommit.fileTree, filePath);
+			}
 
-		if (expandedCommit.codeReview.remainingFiles.length === 0) {
-			expandedCommit.codeReview = null;
-			this.renderCodeReviewBtn();
+			sendMessage({
+				command: 'updateCodeReview',
+				repo: this.currentRepo,
+				id: expandedCommit.codeReview.id,
+				remainingFiles: expandedCommit.codeReview.remainingFiles,
+				lastViewedFile: expandedCommit.lastViewedFile
+			});
+
+			if (expandedCommit.codeReview.remainingFiles.length === 0) {
+				expandedCommit.codeReview = null;
+				this.renderCodeReviewBtn();
+			}
 		}
 
 		this.saveState();
@@ -2939,7 +2947,7 @@ class GitGraphView {
 				toHash = expandedCommit.commitHash;
 			}
 
-			this.cdvChangeFileReviewedState(file, fileElem, true, true);
+			this.cdvUpdateFileState(file, fileElem, true, true);
 			sendMessage({
 				command: 'viewDiff',
 				repo: this.currentRepo,
@@ -2959,7 +2967,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvChangeFileReviewedState(file, fileElem, true, true);
+			this.cdvUpdateFileState(file, fileElem, true, true);
 			sendMessage({ command: 'viewFileAtRevision', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -2967,7 +2975,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvChangeFileReviewedState(file, fileElem, false, true);
+			this.cdvUpdateFileState(file, fileElem, null, true);
 			sendMessage({ command: 'viewDiffWithWorkingFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -2975,7 +2983,7 @@ class GitGraphView {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
 
-			this.cdvChangeFileReviewedState(file, fileElem, true, true);
+			this.cdvUpdateFileState(file, fileElem, true, true);
 			sendMessage({ command: 'openFile', repo: this.currentRepo, hash: getCommitHashForFile(file, expandedCommit), filePath: file.newFilePath });
 		};
 
@@ -3082,12 +3090,12 @@ class GitGraphView {
 					{
 						title: 'Mark as Reviewed',
 						visible: codeReviewInProgressAndNotReviewed,
-						onClick: () => this.cdvChangeFileReviewedState(file, fileElem, true, false)
+						onClick: () => this.cdvUpdateFileState(file, fileElem, true, false)
 					},
 					{
 						title: 'Mark as Not Reviewed',
 						visible: expandedCommit.codeReview !== null && !codeReviewInProgressAndNotReviewed,
-						onClick: () => this.cdvChangeFileReviewedState(file, fileElem, false, false)
+						onClick: () => this.cdvUpdateFileState(file, fileElem, false, false)
 					}
 				],
 				[
@@ -3385,8 +3393,8 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'tagDetails':
-				if (msg.error === null) {
-					gitGraph.renderTagDetails(msg.tagName, msg.tagHash, msg.commitHash, msg.name, msg.email, msg.date, msg.message);
+				if (msg.details !== null) {
+					gitGraph.renderTagDetails(msg.tagName, msg.commitHash, msg.details);
 				} else {
 					dialog.showError('Unable to retrieve Tag Details', msg.error, null, null);
 				}
@@ -3856,7 +3864,6 @@ function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {
 		}
 		options.push({ name: names[i], value: repoPaths[i], hint: hint });
 	}
-
 	return options;
 }
 
@@ -3899,7 +3906,7 @@ function findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number |
 	return null;
 }
 
-function generateSignatureHtml(signature: GG.GitCommitSignature) {
+function generateSignatureHtml(signature: GG.GitSignature) {
 	return '<span class="signatureInfo ' + signature.status + '" title="' + GIT_SIGNATURE_STATUS_DESCRIPTIONS[signature.status] + ':'
 		+ ' Signed by ' + escapeHtml(signature.signer !== '' ? signature.signer : '<Unknown>')
 		+ ' (GPG Key Id: ' + escapeHtml(signature.key !== '' ? signature.key : '<Unknown>') + ')">'

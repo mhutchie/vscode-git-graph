@@ -1,5 +1,18 @@
 # Change Log
 
+## 1.30.0 - 2021-04-05
+* #395 Added a "Force Fetch" option onto the "Fetch into Local Branch" Dialog, allowing any local branch (that's not checked out) to be reset to the remote branch. This dialog is accessed via the Remote Branch Context Menu.
+* #457 New "View Diff with Working File" action on the File Context Menu in the Commit Details View.
+* #466 New "Copy Relative File Path to Clipboard" action on the File Context Menu in the Commit Details View.
+* #471 Spaces can be automatically substituted with hyphens or underscores in reference inputs on dialogs (e.g. Create Branch, Add Tag, etc.), by configuring the new extension setting `git-graph.dialog.general.referenceInputSpaceSubstitution`.
+* #476 "Open File" action is now available in the Visual Studio Code Diff View Title Menu, when the Diff View is opened from the Git Graph View. (Requires Visual Studio Code >= 1.42.0)
+* #479 New Repository Dropdown Order option "Workspace Full Path", that sorts repositories according to the Visual Studio Code Workspace Folder order, then alphabetically by the full path of the repository. This is the new default order for the `git-graph.repositoryDropdownOrder` extension setting.
+* #480 When loading the Working File for a file from a historical commit, and the file has since been renamed, Git is now used to detect renames and enable the Working File to be opened. For example: from the "Open File" & "View Diff with Working File" actions on the File Context Menu in the Commit Details View.
+* #482 New "Mark as Reviewed" & "Mark as Not Reviewed" actions on the File Context Menu in the Commit Details View, when a Code Review is in progress. Thanks [Dan Arad (@dan1994)](https://github.com/dan1994) for implementing this!
+* #486 All Git Graph View Keyboard Shortcut extension settings can now alternatively be set to "UNASSIGNED", if you don't want to have a keybinding for a specific Keyboard Shortcut.
+* #491 Standardise the cross-platform rendering of Markdown inline code blocks, to ensure they don't affect the height of each commit.
+* Various code improvements.
+
 ## 1.29.0 - 2021-02-28
 * #390 When creating a branch or adding a tag, the name is now checked against all existing branches and tags in the repository. If a branch / tag already exists with the same name, a new dialog is displayed that allows you to: replace the existing branch / tag, or to choose another name.
 * #402 New mode for the Find Widget, which will additionally open the Commit Details View as you navigate through each of the matched commits. This mode is enabled / disabled via a new button on the Find Widget.

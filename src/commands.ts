@@ -83,7 +83,10 @@ export class CommandManager extends Disposable {
 	 */
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
 		this.registerDisposable(
-			vscode.commands.registerCommand(command, callback)
+			vscode.commands.registerCommand(command, (...args: any[]) => {
+				this.logger.log('Command Invoked: ' + command);
+				callback(...args);
+			})
 		);
 	}
 
@@ -185,7 +188,15 @@ export class CommandManager extends Disposable {
 	 * The method run when the `git-graph.clearAvatarCache` command is invoked.
 	 */
 	private clearAvatarCache() {
-		this.avatarManager.clearCache();
+		this.avatarManager.clearCache().then((errorInfo) => {
+			if (errorInfo === null) {
+				showInformationMessage('The Avatar Cache was successfully cleared.');
+			} else {
+				showErrorMessage(errorInfo);
+			}
+		}, () => {
+			showErrorMessage('An unexpected error occurred while running the command "Clear Avatar Cache".');
+		});
 	}
 
 	/**
@@ -333,7 +344,7 @@ export class CommandManager extends Disposable {
 	 */
 	private openFile(arg?: vscode.Uri) {
 		const uri = arg || vscode.window.activeTextEditor?.document.uri;
-		if (typeof uri === 'object' && uri.scheme === DiffDocProvider.scheme) {
+		if (typeof uri === 'object' && uri && uri.scheme === DiffDocProvider.scheme) {
 			// A Git Graph URI has been provided
 			const request = decodeDiffDocUri(uri);
 			return openFile(request.repo, request.filePath, request.commit, this.dataSource, vscode.ViewColumn.Active).then((errorInfo) => {

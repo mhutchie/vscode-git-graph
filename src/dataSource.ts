@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignatureStatus, GitStash, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -29,6 +29,15 @@ export const GIT_CONFIG = {
 		EMAIL: 'user.email',
 		NAME: 'user.name'
 	}
+};
+
+const GPG_STATUS_CODE_PARSING_DETAILS: { [statusCode: string]: GpgStatusCodeParsingDetails } = {
+	'GOODSIG': { status: GitSignatureStatus.GoodAndValid, uid: true },
+	'BADSIG': { status: GitSignatureStatus.Bad, uid: true },
+	'ERRSIG': { status: GitSignatureStatus.CannotBeChecked, uid: false },
+	'EXPSIG': { status: GitSignatureStatus.GoodButExpired, uid: true },
+	'EXPKEYSIG': { status: GitSignatureStatus.GoodButMadeByExpiredKey, uid: true },
+	'REVKEYSIG': { status: GitSignatureStatus.GoodButMadeByRevokedKey, uid: true }
 };
 
 /**
@@ -494,21 +503,37 @@ export class DataSource extends Disposable {
 	 * @returns The tag details.
 	 */
 	public getTagDetails(repo: string, tagName: string): Promise<GitTagDetailsData> {
-		return this.spawnGit(['for-each-ref', 'refs/tags/' + tagName, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout) => {
-			let data = stdout.split(GIT_LOG_SEPARATOR);
+		if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, '1.7.8')) {
+			return Promise.resolve({ details: null, error: constructIncompatibleGitVersionMessage(this.gitExecutable, '1.7.8', 'retrieving Tag Details') });
+		}
+
+		const ref = 'refs/tags/' + tagName;
+		return this.spawnGit(['for-each-ref', ref, '--format=' + ['%(objectname)', '%(taggername)', '%(taggeremail)', '%(taggerdate:unix)', '%(contents:signature)', '%(contents)'].join(GIT_LOG_SEPARATOR)], repo, (stdout) => {
+			const data = stdout.split(GIT_LOG_SEPARATOR);
 			return {
-				tagHash: data[0],
-				name: data[1],
-				email: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
-				date: parseInt(data[3]),
-				message: removeTrailingBlankLines(data[4].split(EOL_REGEX)).join('\n'),
-				error: null
+				hash: data[0],
+				taggerName: data[1],
+				taggerEmail: data[2].substring(data[2].startsWith('<') ? 1 : 0, data[2].length - (data[2].endsWith('>') ? 1 : 0)),
+				taggerDate: parseInt(data[3]),
+				message: removeTrailingBlankLines(data.slice(5).join(GIT_LOG_SEPARATOR).replace(data[4], '').split(EOL_REGEX)).join('\n'),
+				signed: data[4] !== ''
 			};
-		}).then((data) => {
-			return data;
-		}).catch((errorMessage) => {
-			return { tagHash: '', name: '', email: '', date: 0, message: '', error: errorMessage };
-		});
+		}).then(async (tag) => ({
+			details: {
+				hash: tag.hash,
+				taggerName: tag.taggerName,
+				taggerEmail: tag.taggerEmail,
+				taggerDate: tag.taggerDate,
+				message: tag.message,
+				signature: tag.signed
+					? await this.getTagSignature(repo, ref)
+					: null
+			},
+			error: null
+		})).catch((errorMessage) => ({
+			details: null,
+			error: errorMessage
+		}));
 	}
 
 	/**
@@ -1596,6 +1621,52 @@ export class DataSource extends Disposable {
 	}
 
 	/**
+	 * Get the signature of a signed tag.
+	 * @param repo The path of the repository.
+	 * @param ref The reference identifying the tag.
+	 * @returns A Promise resolving to the signature.
+	 */
+	private getTagSignature(repo: string, ref: string): Promise<GitSignature> {
+		return this._spawnGit(['verify-tag', '--raw', ref], repo, (stdout, stderr) => stderr || stdout.toString(), true).then((output) => {
+			const records = output.split(EOL_REGEX)
+				.filter((line) => line.startsWith('[GNUPG:] '))
+				.map((line) => line.split(' '));
+
+			let signature: Writeable<GitSignature> | null = null, trustLevel: string | null = null, parsingDetails: GpgStatusCodeParsingDetails | undefined;
+			for (let i = 0; i < records.length; i++) {
+				parsingDetails = GPG_STATUS_CODE_PARSING_DETAILS[records[i][1]];
+				if (parsingDetails) {
+					if (signature !== null) {
+						throw new Error('Multiple Signatures Exist: As Git currently doesn\'t support them, nor does Git Graph (for consistency).');
+					} else {
+						signature = {
+							status: parsingDetails.status,
+							key: records[i][2],
+							signer: parsingDetails.uid ? records[i].slice(3).join(' ') : '' // When parsingDetails.uid === TRUE, the signer is the rest of the record (so join the remaining arguments)
+						};
+					}
+				} else if (records[i][1].startsWith('TRUST_')) {
+					trustLevel = records[i][1];
+				}
+			}
+
+			if (signature !== null && signature.status === GitSignatureStatus.GoodAndValid && (trustLevel === 'TRUST_UNDEFINED' || trustLevel === 'TRUST_NEVER')) {
+				signature.status = GitSignatureStatus.GoodWithUnknownValidity;
+			}
+
+			if (signature !== null) {
+				return signature;
+			} else {
+				throw new Error('No Signature could be parsed.');
+			}
+		}).catch(() => ({
+			status: GitSignatureStatus.CannotBeChecked,
+			key: '',
+			signer: ''
+		}));
+	}
+
+	/**
 	 * Get the number of uncommitted changes in a repository.
 	 * @param repo The path of the repository.
 	 * @returns The number of uncommitted changes.
@@ -1715,21 +1786,24 @@ export class DataSource extends Disposable {
 	 * Spawn Git, with the return value resolved from `stdout` as a buffer.
 	 * @param args The arguments to pass to Git.
 	 * @param repo The repository to run the command in.
-	 * @param resolveValue A callback invoked to resolve the data from `stdout`.
+	 * @param resolveValue A callback invoked to resolve the data from `stdout` and `stderr`.
+	 * @param ignoreExitCode Ignore the exit code returned by Git (default: `FALSE`).
 	 */
-	private _spawnGit<T>(args: string[], repo: string, resolveValue: { (stdout: Buffer): T }) {
+	private _spawnGit<T>(args: string[], repo: string, resolveValue: { (stdout: Buffer, stderr: string): T }, ignoreExitCode: boolean = false) {
 		return new Promise<T>((resolve, reject) => {
-			if (this.gitExecutable === null) return reject(UNABLE_TO_FIND_GIT_MSG);
+			if (this.gitExecutable === null) {
+				return reject(UNABLE_TO_FIND_GIT_MSG);
+			}
 
 			resolveSpawnOutput(cp.spawn(this.gitExecutable.path, args, {
 				cwd: repo,
 				env: Object.assign({}, process.env, this.askpassEnv)
 			})).then((values) => {
-				let status = values[0], stdout = values[1];
-				if (status.code === 0) {
-					resolve(resolveValue(stdout));
+				const status = values[0], stdout = values[1], stderr = values[2];
+				if (status.code === 0 || ignoreExitCode) {
+					resolve(resolveValue(stdout, stderr));
 				} else {
-					reject(getErrorMessage(status.error, stdout, values[2]));
+					reject(getErrorMessage(status.error, stdout, stderr));
 				}
 			});
 
@@ -1915,10 +1989,11 @@ interface GitStatusFiles {
 }
 
 interface GitTagDetailsData {
-	tagHash: string;
-	name: string;
-	email: string;
-	date: number;
-	message: string;
+	details: GitTagDetails | null;
 	error: ErrorInfo;
+}
+
+interface GpgStatusCodeParsingDetails {
+	status: GitSignatureStatus,
+	uid: boolean
 }

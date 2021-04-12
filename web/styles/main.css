@@ -39,6 +39,10 @@ body.selection-background-color-exists ::selection{
 	background-color: var(--vscode-selection-background);
 }
 
+code{
+	line-height:1;
+}
+
 
 /* Content */
 
@@ -437,6 +441,10 @@ body.selection-background-color-exists ::selection{
 	cursor:help;
 	margin-left:4px;
 	vertical-align:middle;
+	line-height:13px;
+}
+.signatureInfo svg{
+	vertical-align:0 !important;
 }
 .signatureInfo.G svg, .signatureInfo.X svg{
 	fill:#009028;

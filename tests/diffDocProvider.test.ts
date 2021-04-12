@@ -191,18 +191,7 @@ describe('encodeDiffDocUri', () => {
 });
 
 describe('decodeDiffDocUri', () => {
-	it('Should return an null if requested on an empty file URI', () => {
-		// Run
-		const value = decodeDiffDocUri(vscode.Uri.file('file').with({
-			scheme: 'git-graph',
-			query: 'bnVsbA=='
-		}));
-
-		// Assert
-		expect(value).toBe(null);
-	});
-
-	it('Should return the parse DiffDocUriData if requested on a git-graph URI', () => {
+	it('Should return the parsed DiffDocUriData from the URI', () => {
 		// Run
 		const value = decodeDiffDocUri(vscode.Uri.file('file.txt').with({
 			scheme: 'git-graph',

@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
-import { DataSource, GIT_CONFIG, GitCommitDetailsData } from './dataSource';
+import { DataSource, GitCommitDetailsData, GitConfigKey } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
@@ -325,10 +325,10 @@ export class GitGraphView extends Disposable {
 			case 'deleteUserDetails':
 				errorInfos = [];
 				if (msg.name) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserName, msg.location));
 				}
 				if (msg.email) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserEmail, msg.location));
 				}
 				this.sendMessage({
 					command: 'deleteUserDetails',
@@ -355,15 +355,15 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'editUserDetails':
 				errorInfos = [
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.name, msg.location),
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.email, msg.location)
+					await this.dataSource.setConfigValue(msg.repo, GitConfigKey.UserName, msg.name, msg.location),
+					await this.dataSource.setConfigValue(msg.repo, GitConfigKey.UserEmail, msg.email, msg.location)
 				];
 				if (errorInfos[0] === null && errorInfos[1] === null) {
 					if (msg.deleteLocalName) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserName, GitConfigLocation.Local));
 					}
 					if (msg.deleteLocalEmail) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserEmail, GitConfigLocation.Local));
 					}
 				}
 				this.sendMessage({

@@ -772,7 +772,18 @@ export async function getGitExecutableFromPaths(paths: string[]): Promise<GitExe
 }
 
 
-/* Version Handling */
+/* Version Handling / Requirements */
+
+export const enum GitVersionRequirement {
+	FetchAndPruneTags = '2.17.0',
+	GpgInfo = '2.4.0',
+	PushStash = '2.13.2',
+	TagDetails = '1.7.8'
+}
+
+export const enum VsCodeVersionRequirement {
+	Codicons = '1.42.0'
+}
 
 /**
  * Checks whether a version is at least a required version.
@@ -780,7 +791,7 @@ export async function getGitExecutableFromPaths(paths: string[]): Promise<GitExe
  * @param requiredVersion The minimum required version.
  * @returns TRUE => `version` is at least `requiredVersion`, FALSE => `version` is older than `requiredVersion`.
  */
-export function doesVersionMeetRequirement(version: string, requiredVersion: string) {
+export function doesVersionMeetRequirement(version: string, requiredVersion: GitVersionRequirement | VsCodeVersionRequirement) {
 	const v1 = parseVersion(version);
 	const v2 = parseVersion(requiredVersion);
 
@@ -824,10 +835,10 @@ function parseVersion(version: string) {
 /**
  * Construct a message that explains to the user that the Git executable is not compatible with a feature.
  * @param executable The Git executable.
- * @param version The minimum required version number.
+ * @param version The minimum required version.
  * @param feature An optional name for the feature.
  * @returns The message for the user.
  */
-export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: string, feature?: string) {
+export function constructIncompatibleGitVersionMessage(executable: GitExecutable, version: GitVersionRequirement, feature?: string) {
 	return 'A newer version of Git (>= ' + version + ') is required for ' + (feature ? feature : 'this feature') + '. Git ' + executable.version + ' is currently installed. Please install a newer version of Git to use this feature.';
 }

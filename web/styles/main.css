@@ -438,6 +438,10 @@ code{
 	cursor:help;
 	margin-left:4px;
 	vertical-align:middle;
+	line-height:13px;
+}
+.signatureInfo svg{
+	vertical-align:0 !important;
 }
 .signatureInfo.G svg, .signatureInfo.X svg{
 	fill:#009028;

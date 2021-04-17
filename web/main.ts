@@ -941,7 +941,7 @@ class GitGraphView {
 		alterClass(this.refreshBtnElem, CLASS_REFRESHING, !enabled);
 	}
 
-	public renderTagDetails(tagName: string, tagHash: string, commitHash: string, name: string, email: string, date: number, message: string) {
+	public renderTagDetails(tagName: string, commitHash: string, details: GG.GitTagDetails) {
 		const textFormatter = new TextFormatter(this.commits, this.gitRepos[this.currentRepo].issueLinkingConfig, {
 			commits: true,
 			emoji: true,
@@ -950,13 +950,15 @@ class GitGraphView {
 			multiline: true,
 			urls: true
 		});
-		let html = 'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">';
-		html += '<b>Object: </b>' + escapeHtml(tagHash) + '<br>';
-		html += '<b>Commit: </b>' + escapeHtml(commitHash) + '<br>';
-		html += '<b>Tagger: </b>' + escapeHtml(name) + ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(email) + '" tabindex="-1">' + escapeHtml(email) + '</a>&gt;<br>';
-		html += '<b>Date: </b>' + formatLongDate(date) + '<br><br>';
-		html += textFormatter.format(message) + '</span>';
-		dialog.showMessage(html);
+		dialog.showMessage(
+			'Tag <b><i>' + escapeHtml(tagName) + '</i></b><br><span class="messageContent">' +
+			'<b>Object: </b>' + escapeHtml(details.hash) + '<br>' +
+			'<b>Commit: </b>' + escapeHtml(commitHash) + '<br>' +
+			'<b>Tagger: </b>' + escapeHtml(details.taggerName) + ' &lt;<a class="' + CLASS_EXTERNAL_URL + '" href="mailto:' + escapeHtml(details.taggerEmail) + '" tabindex="-1">' + escapeHtml(details.taggerEmail) + '</a>&gt;' + (details.signature !== null ? generateSignatureHtml(details.signature) : '') + '<br>' +
+			'<b>Date: </b>' + formatLongDate(details.taggerDate) + '<br><br>' +
+			textFormatter.format(details.message) +
+			'</span>'
+		);
 	}
 
 	public renderRepoDropdownOptions(repo?: string) {
@@ -3318,8 +3320,8 @@ window.addEventListener('load', () => {
 				}
 				break;
 			case 'tagDetails':
-				if (msg.error === null) {
-					gitGraph.renderTagDetails(msg.tagName, msg.tagHash, msg.commitHash, msg.name, msg.email, msg.date, msg.message);
+				if (msg.details !== null) {
+					gitGraph.renderTagDetails(msg.tagName, msg.commitHash, msg.details);
 				} else {
 					dialog.showError('Unable to retrieve Tag Details', msg.error, null, null);
 				}
@@ -3831,7 +3833,7 @@ function findCommitElemWithId(elems: HTMLCollectionOf<HTMLElement>, id: number |
 	return null;
 }
 
-function generateSignatureHtml(signature: GG.GitCommitSignature) {
+function generateSignatureHtml(signature: GG.GitSignature) {
 	return '<span class="signatureInfo ' + signature.status + '" title="' + GIT_SIGNATURE_STATUS_DESCRIPTIONS[signature.status] + ':'
 		+ ' Signed by ' + escapeHtml(signature.signer !== '' ? signature.signer : '<Unknown>')
 		+ ' (GPG Key Id: ' + escapeHtml(signature.key !== '' ? signature.key : '<Unknown>') + ')">'

@@ -24,7 +24,7 @@ import { DataSource } from '../src/dataSource';
 import { DEFAULT_REPO_STATE, ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider, RepoDropdownOrder } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, GitVersionRequirement, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
 const extensionContext = vscode.mocks.extensionContext;
@@ -2393,7 +2393,7 @@ describe('getGitExecutableFromPaths', () => {
 describe('doesVersionMeetRequirement', () => {
 	it('Should correctly determine major newer', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6.windows.0', '1.4.6');
+		const result = doesVersionMeetRequirement('2.7.8.windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2401,7 +2401,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine major older', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6.windows.0', '3.4.6');
+		const result = doesVersionMeetRequirement('0.7.8.windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(false);
@@ -2409,7 +2409,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine minor newer', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6 (Apple Git-122.3)', '2.3.6');
+		const result = doesVersionMeetRequirement('1.8.8 (Apple Git-122.3)', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2417,7 +2417,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine minor older', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6 (Apple Git-122.3)', '2.5.6');
+		const result = doesVersionMeetRequirement('1.6.8 (Apple Git-122.3)', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(false);
@@ -2425,7 +2425,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine patch newer', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6', '2.4.5');
+		const result = doesVersionMeetRequirement('1.7.9', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2433,7 +2433,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine patch older', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6', '2.4.7');
+		const result = doesVersionMeetRequirement('1.7.7', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(false);
@@ -2441,7 +2441,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine same version', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6', '2.4.6');
+		const result = doesVersionMeetRequirement('1.7.8', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2449,7 +2449,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine major newer if missing patch version', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4', '1.4');
+		const result = doesVersionMeetRequirement('2.7', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2457,7 +2457,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine major newer if missing minor & patch versions', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2', '1');
+		const result = doesVersionMeetRequirement('2', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2465,13 +2465,13 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should only use the valid portion of the version number to compute the result', () => {
 		// Run
-		const result1 = doesVersionMeetRequirement('2.4..6-windows.0', '2.4.1');
+		const result1 = doesVersionMeetRequirement('1.7..8-windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result1).toBe(false);
 
 		// Run
-		const result2 = doesVersionMeetRequirement('2.4..6-windows.0', '2.4.0');
+		const result2 = doesVersionMeetRequirement('1.8..7-windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result2).toBe(true);
@@ -2479,15 +2479,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should return TRUE if executable version is invalid', () => {
 		// Run
-		const result = doesVersionMeetRequirement('a2.4.6', '1.4.6');
-
-		// Assert
-		expect(result).toBe(true);
-	});
-
-	it('Should return TRUE if version is invalid', () => {
-		// Run
-		const result = doesVersionMeetRequirement('2.4.6', 'a1.4.6');
+		const result = doesVersionMeetRequirement('a1.7.7', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2497,10 +2489,10 @@ describe('doesVersionMeetRequirement', () => {
 describe('constructIncompatibleGitVersionMessage', () => {
 	it('Should return the constructed message', () => {
 		// Run
-		const result = constructIncompatibleGitVersionMessage({ version: '2.4.5', path: '' }, '3.0.0');
+		const result = constructIncompatibleGitVersionMessage({ version: '1.7.7', path: '' }, GitVersionRequirement.TagDetails);
 
 		// Assert
-		expect(result).toBe('A newer version of Git (>= 3.0.0) is required for this feature. Git 2.4.5 is currently installed. Please install a newer version of Git to use this feature.');
+		expect(result).toBe('A newer version of Git (>= 1.7.8) is required for this feature. Git 1.7.7 is currently installed. Please install a newer version of Git to use this feature.');
 	});
 });
 

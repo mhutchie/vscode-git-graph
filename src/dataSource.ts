@@ -317,8 +317,8 @@ export class DataSource extends Disposable {
 					},
 					guiDiffTool: {
 						name: guiDiffToolName,
-						path: getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffToolName + 'path'),
-						cmd: getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffToolName + 'cmd')
+						path: getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffToolName + '.path'),
+						cmd: getConfigValue(consolidatedConfigs, 'difftool.' + guiDiffToolName + '.cmd')
 					},
 					pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
 					remotes: remotes.map((remote) => ({

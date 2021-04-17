@@ -461,7 +461,7 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 			if ((guiDiffTool !== null) && (guiDiffTool !== '')) {
 				const cmd = config?.guiDiffTool?.cmd;
 				if ((cmd !== null) && (cmd !== undefined)) {
-					cp.execSync(cmd.replace('$LOCAL', fileOldCopy).replace('$REMOTE', fileNewPath));
+					cp.execSync(cmd.replace('$LOCAL', fileNewPath).replace('$REMOTE', fileOldCopy));
 				}
 			} else {
 				const cmd = config?.diffTool?.cmd;
@@ -470,7 +470,7 @@ export async function viewDiff(repo: string, fromHash: string, toHash: string, o
 						name: 'Git Graph: Diff',
 						env: { 'PATH': repo }
 					});
-					terminal.sendText(cmd.replace('$LOCAL', fileOldCopy).replace('$REMOTE', fileNewPath));
+					terminal.sendText(cmd.replace('$LOCAL', fileNewPath).replace('$REMOTE', fileOldCopy));
 					terminal.show();
 				}
 			}

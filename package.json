@@ -169,6 +169,10 @@
 									"type": "boolean",
 									"title": "Push Branch..."
 								},
+								"viewIssue": {
+									"type": "boolean",
+									"title": "View Issue"
+								},
 								"createPullRequest": {
 									"type": "boolean",
 									"title": "Create Pull Request..."
@@ -262,6 +266,10 @@
 								"pull": {
 									"type": "boolean",
 									"title": "Pull into current branch..."
+								},
+								"viewIssue": {
+									"type": "boolean",
+									"title": "View Issue"
 								},
 								"createPullRequest": {
 									"type": "boolean",

@@ -1055,6 +1055,7 @@ class GitGraphView {
 				}
 			}
 		], [
+			this.getViewIssueAction(refName, visibility.viewIssue, target),
 			{
 				title: 'Create Pull Request' + ELLIPSIS,
 				visible: visibility.createPullRequest && this.gitRepos[this.currentRepo].pullRequestConfig !== null,
@@ -1283,6 +1284,7 @@ class GitGraphView {
 				}
 			}
 		], [
+			this.getViewIssueAction(refName, visibility.viewIssue, target),
 			{
 				title: 'Create Pull Request',
 				visible: visibility.createPullRequest && this.gitRepos[this.currentRepo].pullRequestConfig !== null && branchName !== 'HEAD' &&
@@ -1505,6 +1507,36 @@ class GitGraphView {
 				}
 			}
 		]];
+	}
+
+	private getViewIssueAction(refName: string, visible: boolean, target: DialogTarget & RefTarget): ContextMenuAction {
+		const issueLinks: { url: string, displayText: string }[] = [];
+
+		let issueLinking: IssueLinking | null, match: RegExpExecArray | null;
+		if (visible && (issueLinking = parseIssueLinkingConfig(this.gitRepos[this.currentRepo].issueLinkingConfig)) !== null) {
+			issueLinking.regexp.lastIndex = 0;
+			while (match = issueLinking.regexp.exec(refName)) {
+				if (match[0].length === 0) break;
+				issueLinks.push({
+					url: generateIssueLinkFromMatch(match, issueLinking),
+					displayText: match[0]
+				});
+			}
+		}
+
+		return {
+			title: 'View Issue' + (issueLinks.length > 1 ? ELLIPSIS : ''),
+			visible: issueLinks.length > 0,
+			onClick: () => {
+				if (issueLinks.length > 1) {
+					dialog.showSelect('Select which issue you want to view for this branch:', '0', issueLinks.map((issueLink, i) => ({ name: issueLink.displayText, value: i.toString() })), 'View Issue', (value) => {
+						sendMessage({ command: 'openExternalUrl', url: issueLinks[parseInt(value)].url });
+					}, target);
+				} else if (issueLinks.length === 1) {
+					sendMessage({ command: 'openExternalUrl', url: issueLinks[0].url });
+				}
+			}
+		};
 	}
 
 

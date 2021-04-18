@@ -110,10 +110,7 @@ class TextFormatter {
 		urls: boolean
 	}>;
 	private readonly commits: ReadonlyArray<GG.GitCommit>;
-	private readonly issueLinking: Readonly<{
-		regexp: RegExp,
-		url: string
-	}> | null = null;
+	private readonly issueLinking: IssueLinking | null = null;
 
 	private static readonly BACKTICK_REGEXP: RegExp = /(\\*)(`+)/gu;
 	private static readonly BACKSLASH_ESCAPE_REGEXP: RegExp = /\\[\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E]/gu;
@@ -141,15 +138,8 @@ class TextFormatter {
 			? repoIssueLinkingConfig
 			: globalState.issueLinkingConfig;
 
-		if (this.config.issueLinking && issueLinkingConfig !== null) {
-			try {
-				this.issueLinking = {
-					regexp: new RegExp(issueLinkingConfig.issue, 'gu'),
-					url: issueLinkingConfig.url
-				};
-			} catch (e) {
-				this.issueLinking = null;
-			}
+		if (this.config.issueLinking) {
+			this.issueLinking = parseIssueLinkingConfig(issueLinkingConfig);
 		}
 	}
 
@@ -266,12 +256,7 @@ class TextFormatter {
 					type: TF.NodeType.Url,
 					start: match.index,
 					end: this.issueLinking.regexp.lastIndex - 1,
-					url: match.length > 1
-						? this.issueLinking.url.replace(/\$([1-9][0-9]*)/g, (placeholder, index) => {
-							const i = parseInt(index);
-							return i < match!.length ? match![i] : placeholder;
-						})
-						: this.issueLinking.url,
+					url: generateIssueLinkFromMatch(match, this.issueLinking),
 					displayText: match[0],
 					contains: []
 				});
@@ -567,6 +552,9 @@ class TextFormatter {
 	}
 }
 
+
+/* URL Element Methods */
+
 /**
  * Is an element an external or internal URL.
  * @param elem The element to check.
@@ -592,4 +580,46 @@ function isExternalUrlElem(elem: Element) {
  */
 function isInternalUrlElem(elem: Element) {
 	return elem.classList.contains(CLASS_INTERNAL_URL);
+}
+
+
+/* Issue Linking Methods */
+
+interface IssueLinking {
+	readonly regexp: RegExp;
+	readonly url: string;
+}
+
+const ISSUE_LINKING_ARGUMENT_REGEXP = /\$([1-9][0-9]*)/g;
+
+/**
+ * Parses the Issue Linking Configuration of a repository, so it's ready to be used for detecting issues and generating links.
+ * @param issueLinkingConfig The Issue Linking Configuration.
+ * @returns The parsed Issue Linking, or `NULL` if it's not available.
+ */
+function parseIssueLinkingConfig(issueLinkingConfig: GG.IssueLinkingConfig | null): IssueLinking | null {
+	if (issueLinkingConfig !== null) {
+		try {
+			return {
+				regexp: new RegExp(issueLinkingConfig.issue, 'gu'),
+				url: issueLinkingConfig.url
+			};
+		} catch (_) { }
+	}
+	return null;
+}
+
+/**
+ * Generate the URL for an issue link, performing all variable substitutions from a match.
+ * @param match The match produced by `IssueLinking.regexp`.
+ * @param issueLinking The Issue Linking.
+ * @returns The URL for the issue link.
+ */
+function generateIssueLinkFromMatch(match: RegExpExecArray, issueLinking: IssueLinking) {
+	return match.length > 1
+		? issueLinking.url.replace(ISSUE_LINKING_ARGUMENT_REGEXP, (placeholder, index) => {
+			const i = parseInt(index);
+			return i < match.length ? match[i] : placeholder;
+		})
+		: issueLinking.url;
 }

@@ -2597,7 +2597,7 @@ class GitGraphView {
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
 			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
-			(loadedParents.length > 1 ? '<div id="cdvParentToggle" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
+			(loadedParents.length > 1 ? '<div id="cdvChooseParent" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
@@ -2669,20 +2669,34 @@ class GitGraphView {
 				this.changeFileViewType(GG.FileViewType.List);
 			});
 
-			document.getElementById('cdvParentToggle')?.addEventListener('click', () => {
+			document.getElementById('cdvChooseParent')?.addEventListener('click', (event) => {
+				// Prevent closing of context menu by the same click
+				event.stopPropagation();
+
 				const expandedCommit = this.expandedCommit!;
-				const parentIndex = expandedCommit.parentIndex;
+				const currentParentIndex = expandedCommit.parentIndex;
 				const parents = expandedCommit.commitDetails!.parents;
 
-				let nextParentIndex = parentIndex < parents.length ? parentIndex + 1 : 1;
-				while(!loadedParents.includes(parents[nextParentIndex - 1])) {
-					if(nextParentIndex === parentIndex) {
-						break;
-					}
-					nextParentIndex = nextParentIndex < parents.length ? parentIndex + 1 : 1;
-				}
+				const contextMenuItems = parents.map((parent, index) => {
+					const parentIndex = index + 1;
+					const parentCommit = this.commitLookup[parent] !== undefined ? this.commits[this.commitLookup[parent]] : undefined;
+					const subject = parentCommit?.message.split('\n')[0];
 
-				this.loadCommitDetails(expandedCommit.commitElem!, nextParentIndex);
+					return {
+						title: `[${parentIndex}] ${abbrevCommit(parent)}${subject && `: ${subject}`}`,
+						visible: parentIndex !== currentParentIndex && loadedParents.includes(parent),
+						onClick: () => {this.loadCommitDetails(expandedCommit.commitElem!, parentIndex);}
+					};
+				});
+
+				const target: ContextMenuTarget & CommitTarget = {
+					type: TargetType.CommitDetailsView,
+					hash: expandedCommit.commitHash,
+					index: this.commitLookup[expandedCommit.commitHash],
+					elem: document.getElementById('cdvChooseParent')!
+				};
+
+				contextMenu.show([contextMenuItems], false, target, event, this.isCdvDocked() ? document.body : this.viewElem);
 			});
 
 			if (codeReviewPossible) {

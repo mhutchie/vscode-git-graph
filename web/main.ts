@@ -2526,7 +2526,6 @@ class GitGraphView {
 		const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash === null ? expandedCommit.commitHash : expandedCommit.compareWithHash);
 		const codeReviewPossible = !expandedCommit.loading && commitOrder.to !== UNCOMMITTED;
 		const externalDiffPossible = !expandedCommit.loading && (expandedCommit.compareWithHash !== null || this.commits[this.commitLookup[expandedCommit.commitHash]].parents.length > 0);
-		const loadedParents = expandedCommit.commitDetails?.parents.filter(parent => this.commitLookup[parent]) || [];
 
 		if (elem === null) {
 			elem = document.createElement(isDocked ? 'div' : 'tr');
@@ -2558,15 +2557,11 @@ class GitGraphView {
 					const commitDetails = expandedCommit.commitDetails!;
 					const parents = commitDetails.parents.length > 0
 						? commitDetails.parents.map((parent, parentIndex) => {
-							const escapedParent = escapeHtml(abbrevCommit(parent));
-
-							const parentWasLoaded = loadedParents.includes(parent);
+							const escapedParent = escapeHtml(parent);
+							const escapedAbbreviatedParent = escapeHtml(abbrevCommit(parent));
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 
-							let parentHtml = escapedParent;
-							if(parentWasLoaded) {
-								parentHtml = `<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${parentHtml}</span>`;
-							}
+							let parentHtml = `<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${escapedAbbreviatedParent}</span>`;
 							if(isComparedToParent) {
 								parentHtml = `<b>${parentHtml}</b>`;
 							}
@@ -2597,7 +2592,7 @@ class GitGraphView {
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
 			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
-			(loadedParents.length > 1 ? '<div id="cdvChooseParent" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
+			(expandedCommit.commitDetails && expandedCommit.commitDetails.parents.length > 1 ? '<div id="cdvChooseParent" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';
@@ -2683,9 +2678,11 @@ class GitGraphView {
 					const subject = parentCommit?.message.split('\n')[0];
 
 					return {
-						title: `[${parentIndex}] ${abbrevCommit(parent)}${subject && `: ${subject}`}`,
-						visible: parentIndex !== currentParentIndex && loadedParents.includes(parent),
-						onClick: () => {this.loadCommitDetails(expandedCommit.commitElem!, parentIndex);}
+						title: `[${parentIndex}] ${abbrevCommit(parent)}${subject ? `: ${subject}` : ''}`,
+						visible: parentIndex !== currentParentIndex,
+						onClick: () => {
+							this.loadCommitDetails(expandedCommit.commitElem!, parentIndex);
+						}
 					};
 				});
 

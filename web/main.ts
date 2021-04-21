@@ -2558,16 +2558,14 @@ class GitGraphView {
 					const commitDetails = expandedCommit.commitDetails!;
 					const parents = commitDetails.parents.length > 0
 						? commitDetails.parents.map((parent, parentIndex) => {
-							const escapedParent = escapeHtml(parent);
+							const escapedParent = escapeHtml(abbrevCommit(parent));
 
 							const parentWasLoaded = loadedParents.includes(parent);
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 
-							let parentHtml = abbrevCommit(escapedParent);
+							let parentHtml = escapedParent;
 							if(parentWasLoaded) {
-								parentHtml = `<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">
-									${parentHtml}
-								</span>`;
+								parentHtml = `<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${parentHtml}</span>`;
 							}
 							if(isComparedToParent) {
 								parentHtml = `<b>${parentHtml}</b>`;

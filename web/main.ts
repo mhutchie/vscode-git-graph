@@ -2094,15 +2094,18 @@ class GitGraphView {
 				const value = unescapeHtml((<HTMLElement>e.target).dataset.value!);
 				switch ((<HTMLElement>e.target).dataset.type!) {
 					case 'commit':
-						if (typeof this.commitLookup[value] === 'number' && (this.expandedCommit === null || this.expandedCommit.commitHash !== value || this.expandedCommit.compareWithHash !== null)) {
-							const elem = findCommitElemWithId(getCommitElems(), this.commitLookup[value]);
-							if (elem === null) return;
-							if (e.ctrlKey || e.metaKey) {
-								if(this.expandedCommit !== null && this.expandedCommit.commitElem !== null && this.expandedCommit.commitDetails !== null) {
-									const parentIndex = this.expandedCommit.commitDetails.parents.indexOf(value) + 1;
-									this.loadCommitDetails(this.expandedCommit.commitElem, parentIndex);
+						if (e.ctrlKey || e.metaKey) {
+							if(this.expandedCommit !== null && this.expandedCommit.commitElem !== null && this.expandedCommit.commitDetails !== null) {
+								const parentIndex = this.expandedCommit.commitDetails.parents.indexOf(value) + 1;
+								this.loadCommitDetails(this.expandedCommit.commitElem, parentIndex);
+							}
+						} else {
+							if (this.expandedCommit === null || this.expandedCommit.commitHash !== value || this.expandedCommit.compareWithHash !== null) {
+								const elem = findCommitElemWithId(getCommitElems(), this.commitLookup[value] || null);
+								if (elem === null) {
+									this.showErrorOnNonLoadedCommit();
+									return;
 								}
-							} else {
 								this.loadCommitDetails(elem, DEFAULT_PARENT_INDEX);
 							}
 						}
@@ -2357,13 +2360,26 @@ class GitGraphView {
 
 	public loadCommitDetails(commitElem: HTMLElement, parentIndex: number) {
 		const commit = this.getCommitOfElem(commitElem);
-		if (commit === null) return;
+		if (commit === null) {
+			this.showErrorOnNonLoadedCommit();
+			return;
+		}
 
 		this.closeCommitDetails(false);
 		this.saveExpandedCommitLoading(parseInt(commitElem.dataset.id!), commit.hash, commitElem, null, null);
 		commitElem.classList.add(CLASS_COMMIT_DETAILS_OPEN);
 		this.renderCommitDetailsView(false);
 		this.requestCommitDetails(commit.hash, false, parentIndex);
+	}
+
+	private showErrorOnNonLoadedCommit() {
+		dialog.showError('The commit could not be found in the loaded commits.<br>' +
+			'This can happen for several reasons:' +
+			'<ol>' +
+			'<li>The commit is further down the tree and hasn\'t been loaded yet. Try loading more commits.</li>' +
+			'<li>Filtering has been applied. Try removing any filters.</li>' +
+			'<li>You are trying to see a commit present in the reflog, but not in the normal log (e.g. stash parents). Turn "Include Commits Mentioned By Reflogs" on in the extension settings.</li>' +
+			'</ol>', null, null, null);
 	}
 
 	public closeCommitDetails(saveAndRender: boolean) {

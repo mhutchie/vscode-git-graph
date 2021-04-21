@@ -38,7 +38,7 @@ export interface GitCommitDetails {
 	readonly committer: string;
 	readonly committerEmail: string;
 	readonly committerDate: number;
-	readonly signature: GitCommitSignature | null;
+	readonly signature: GitSignature | null;
 	readonly body: string;
 	readonly fileChanges: ReadonlyArray<GitFileChange>;
 }
@@ -53,7 +53,7 @@ export const enum GitSignatureStatus {
 	Bad = 'B'
 }
 
-export interface GitCommitSignature {
+export interface GitSignature {
 	readonly key: string;
 	readonly signer: string;
 	readonly status: GitSignatureStatus;
@@ -133,6 +133,15 @@ export interface GitStash {
 	readonly email: string;
 	readonly date: number;
 	readonly message: string;
+}
+
+export interface GitTagDetails {
+	readonly hash: string;
+	readonly taggerName: string;
+	readonly taggerEmail: string;
+	readonly taggerDate: number;
+	readonly message: string;
+	readonly signature: GitSignature | null;
 }
 
 
@@ -339,6 +348,7 @@ export interface ContextMenuActionsVisibility {
 		readonly merge: boolean;
 		readonly rebase: boolean;
 		readonly push: boolean;
+		readonly viewIssue: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
 		readonly selectInBranchesDropdown: boolean;
@@ -364,6 +374,7 @@ export interface ContextMenuActionsVisibility {
 		readonly fetch: boolean;
 		readonly merge: boolean;
 		readonly pull: boolean;
+		readonly viewIssue: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
 		readonly selectInBranchesDropdown: boolean;
@@ -1151,12 +1162,8 @@ export interface RequestTagDetails extends RepoRequest {
 export interface ResponseTagDetails extends ResponseWithErrorInfo {
 	readonly command: 'tagDetails';
 	readonly tagName: string;
-	readonly tagHash: string;
 	readonly commitHash: string;
-	readonly name: string;
-	readonly email: string;
-	readonly date: number;
-	readonly message: string;
+	readonly details: GitTagDetails | null;
 }
 
 export interface RequestUpdateCodeReview extends RepoRequest {

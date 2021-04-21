@@ -1627,13 +1627,36 @@ describe('AvatarManager', () => {
 	});
 
 	describe('clearCache', () => {
-		it('Should clear the cache of avatars', () => {
+		let spyOnClearAvatarCache: jest.SpyInstance;
+		beforeAll(() => {
+			spyOnClearAvatarCache = jest.spyOn(extensionState, 'clearAvatarCache');
+		});
+
+		it('Should clear the cache of avatars', async () => {
+			// Setup
+			spyOnClearAvatarCache.mockResolvedValueOnce(null);
+
 			// Run
-			avatarManager.clearCache();
+			const result = await avatarManager.clearCache();
 
 			// Assert
+			expect(result).toBeNull();
 			expect(avatarManager['avatars']).toStrictEqual({});
-			expect(extensionState.clearAvatarCache).toHaveBeenCalledTimes(1);
+			expect(spyOnClearAvatarCache).toHaveBeenCalledTimes(1);
+		});
+
+		it('Should return the error message returned by ExtensionState.clearAvatarCache', async () => {
+			// Setup
+			const errorMessage = 'Visual Studio Code was unable to save the Git Graph Global State Memento.';
+			spyOnClearAvatarCache.mockResolvedValueOnce(errorMessage);
+
+			// Run
+			const result = await avatarManager.clearCache();
+
+			// Assert
+			expect(result).toBe(errorMessage);
+			expect(avatarManager['avatars']).toStrictEqual({});
+			expect(spyOnClearAvatarCache).toHaveBeenCalledTimes(1);
 		});
 	});
 });

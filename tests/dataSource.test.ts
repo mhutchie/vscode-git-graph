@@ -12,9 +12,9 @@ import * as fs from 'fs';
 import * as iconv from 'iconv-lite';
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
-import { DataSource } from '../src/dataSource';
+import { DataSource, GitConfigKey } from '../src/dataSource';
 import { Logger } from '../src/logger';
-import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, MergeActionOn, RebaseActionOn, TagType } from '../src/types';
+import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, GitSignature, GitSignatureStatus, MergeActionOn, RebaseActionOn, TagType } from '../src/types';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -49,10 +49,15 @@ describe('DataSource', () => {
 		dataSource.dispose();
 	});
 
-	const mockGitSuccessOnce = (stdout?: string) => {
+	const mockGitSuccessOnce = (stdout?: string, stderr?: string) => {
 		mockSpyOnSpawn(spyOnSpawn, (onCallbacks, stderrOnCallbacks, stdoutOnCallbacks) => {
-			if (stdout) stdoutOnCallbacks['data'](Buffer.from(stdout));
+			if (stdout) {
+				stdoutOnCallbacks['data'](Buffer.from(stdout));
+			}
 			stdoutOnCallbacks['close']();
+			if (stderr) {
+				stderrOnCallbacks['data'](Buffer.from(stderr));
+			}
 			stderrOnCallbacks['close']();
 			onCallbacks['exit'](0);
 		});
@@ -106,6 +111,33 @@ describe('DataSource', () => {
 			// Assert
 			expect(result2).toBe(false);
 			expect(dataSource['gitExecutable']).toStrictEqual({ path: '/path/to/git', version: '2.25.0' });
+		});
+	});
+
+	describe('setGitExecutable', () => {
+		it('Should set gitExecutableSupportsGpgInfo to FALSE when there is no Git executable', () => {
+			// Run
+			dataSource.dispose();
+			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+
+			// Assert
+			expect(dataSource['gitExecutableSupportsGpgInfo']).toBe(false);
+		});
+
+		it('Should set gitExecutableSupportsGpgInfo to FALSE when the Git executable is older than 2.4.0', () => {
+			// Run
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.3.0' });
+
+			// Assert
+			expect(dataSource['gitExecutableSupportsGpgInfo']).toBe(false);
+		});
+
+		it('Should set gitExecutableSupportsGpgInfo to TRUE when the Git executable is at least 2.4.0', () => {
+			// Run
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.4.0' });
+
+			// Assert
+			expect(dataSource['gitExecutableSupportsGpgInfo']).toBe(true);
 		});
 	});
 
@@ -2737,6 +2769,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.4.0' });
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2800,6 +2833,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 			vscode.mockExtensionSettingReturnValue('showSignatureStatus', true);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.4.0' });
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2855,7 +2889,7 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^1', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should return the commit details (without signature status if not available)', async () => {
+		it('Should return the commit details (without signature status) when Git is older than 2.4.0', async () => {
 			// Setup
 			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
@@ -2863,12 +2897,9 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.3.0' });
 
 			// Run
-			onDidChangeGitExecutable.emit({
-				path: '/path/to/git',
-				version: '2.3.0'
-			});
 			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true, 1);
 
 			// Assert
@@ -3854,6 +3885,19 @@ describe('DataSource', () => {
 			});
 			expect(spyOnDecode).toBeCalledWith(expect.anything(), 'utf8');
 		});
+
+		it('Should return an error message thrown by git', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+			let errorMessage = null;
+
+			// Run
+			await dataSource.getCommitFile('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'subdirectory/file.txt').catch((error) => errorMessage = error);
+
+			// Assert
+			expect(errorMessage).toBe('error message');
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['show', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b:subdirectory/file.txt'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
 	});
 
 	describe('getCommitSubject', () => {
@@ -3945,42 +3989,105 @@ describe('DataSource', () => {
 	});
 
 	describe('getTagDetails', () => {
-		it('Should return the tags details', async () => {
+		it('Should return the tag\'s details', async () => {
 			// Setup
-			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '1.7.8' });
+			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1\nbody2\n\n');
 
 			// Run
 			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
 
 			// Assert
 			expect(result).toStrictEqual({
-				tagHash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
-				name: 'Test Tagger',
-				email: 'test@mhutchie.com',
-				date: 1587559258,
-				message: 'tag-message',
+				details: {
+					hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+					taggerName: 'Test Tagger',
+					taggerEmail: 'test@mhutchie.com',
+					taggerDate: 1587559258,
+					message: 'subject1\nsubject2\n\nbody1\nbody2',
+					signature: null
+				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toHaveBeenCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should return the tags details (when email isn\'t enclosed by <>)', async () => {
+		it('Should return the tag\'s details (when email isn\'t enclosed by <>)', async () => {
 			// Setup
-			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
+			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
 
 			// Run
 			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
 
 			// Assert
 			expect(result).toStrictEqual({
-				tagHash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
-				name: 'Test Tagger',
-				email: 'test@mhutchie.com',
-				date: 1587559258,
-				message: 'tag-message',
+				details: {
+					hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+					taggerName: 'Test Tagger',
+					taggerEmail: 'test@mhutchie.com',
+					taggerDate: 1587559258,
+					message: 'tag-message',
+					signature: null
+				},
 				error: null
 			});
-			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			expect(spyOnSpawn).toHaveBeenCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the tag\'s details (contents contains separator)', async () => {
+			// Setup
+			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1 XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%\nbody2\n\n');
+
+			// Run
+			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+			// Assert
+			expect(result).toStrictEqual({
+				details: {
+					hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+					taggerName: 'Test Tagger',
+					taggerEmail: 'test@mhutchie.com',
+					taggerDate: 1587559258,
+					message: 'subject1\nsubject2\n\nbody1 XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%\nbody2',
+					signature: null
+				},
+				error: null
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return the "Incompatible Git Version" error message when viewing tag details and Git is older than 1.7.8', async () => {
+			// Setup
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '1.7.7' });
+
+			// Run
+			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+			// Assert
+			expect(result).toStrictEqual({
+				details: null,
+				error: 'A newer version of Git (>= 1.7.8) is required for retrieving Tag Details. Git 1.7.7 is currently installed. Please install a newer version of Git to use this feature.'
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(0);
+		});
+
+		it('Should return the "Unable to Find Git" error message when no Git executable is known', async () => {
+			// Setup
+			dataSource.dispose();
+			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+
+			// Run
+			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+			// Assert
+			expect(result).toStrictEqual({
+				details: null,
+				error: 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.'
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(0);
 		});
 
 		it('Should return an error message thrown by git', async () => {
@@ -3992,12 +4099,207 @@ describe('DataSource', () => {
 
 			// Assert
 			expect(result).toStrictEqual({
-				tagHash: '',
-				name: '',
-				email: '',
-				date: 0,
-				message: '',
+				details: null,
 				error: 'error message'
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(1);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		describe('getTagSignature', () => {
+			const testParsingGpgStatus = (signatureRecord: string, trustLevel: string, expected: GitSignature) => async () => {
+				// Setup
+				mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\nXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1\nbody2\n-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\n\n');
+				mockGitSuccessOnce('', '[GNUPG:] NEWSIG\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] SIG_ID abcdefghijklmnopqrstuvwxyza 2021-04-10 1618040201\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n' + signatureRecord + '[GNUPG:] VALIDSIG ABCDEF1234567890ABCDEF1234567890ABCDEF12 2021-04-10 1618040201 0 4 0 1 8 00 ABCDEF1234567890ABCDEF1234567890ABCDEF12\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] ' + trustLevel + ' 0 pgp\r\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\r\n');
+
+				// Run
+				const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+				// Assert
+				expect(result).toStrictEqual({
+					details: {
+						hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+						taggerName: 'Test Tagger',
+						taggerEmail: 'test@mhutchie.com',
+						taggerDate: 1587559258,
+						message: 'subject1\nsubject2\n\nbody1\nbody2',
+						signature: expected
+					},
+					error: null
+				});
+				expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['verify-tag', '--raw', 'refs/tags/tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			};
+
+			it('Should parse and return a GOODSIG', testParsingGpgStatus('[GNUPG:] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_ULTIMATE', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.GoodAndValid
+			}));
+
+			it('Should parse and return a BADSIG', testParsingGpgStatus('[GNUPG:] BADSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_ULTIMATE', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.Bad
+			}));
+
+			it('Should parse and return an ERRSIG', testParsingGpgStatus('[GNUPG:] ERRSIG 1234567890ABCDEF 0 1 2 3 4\n', 'TRUST_ULTIMATE', {
+				key: '1234567890ABCDEF',
+				signer: '',
+				status: GitSignatureStatus.CannotBeChecked
+			}));
+
+			it('Should parse and return an EXPSIG', testParsingGpgStatus('[GNUPG:] EXPSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_ULTIMATE', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.GoodButExpired
+			}));
+
+			it('Should parse and return an EXPKEYSIG', testParsingGpgStatus('[GNUPG:] EXPKEYSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_ULTIMATE', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.GoodButMadeByExpiredKey
+			}));
+
+			it('Should parse and return a REVKEYSIG', testParsingGpgStatus('[GNUPG:] REVKEYSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_ULTIMATE', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.GoodButMadeByRevokedKey
+			}));
+
+			it('Should parse TRUST_UNDEFINED, and apply it to a GOODSIG', testParsingGpgStatus('[GNUPG:] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_UNDEFINED', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.GoodWithUnknownValidity
+			}));
+
+			it('Should parse TRUST_NEVER, and apply it to a GOODSIG', testParsingGpgStatus('[GNUPG:] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_NEVER', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.GoodWithUnknownValidity
+			}));
+
+			it('Should parse TRUST_UNDEFINED, and NOT apply it to a BADSIG', testParsingGpgStatus('[GNUPG:] BADSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n', 'TRUST_UNDEFINED', {
+				key: '1234567890ABCDEF',
+				signer: 'Tagger Name <tagger@mhutchie.com>',
+				status: GitSignatureStatus.Bad
+			}));
+
+			it('Should return a signature with status GitSignatureStatus.CannotBeChecked when no signature can be parsed', testParsingGpgStatus('', 'TRUST_ULTIMATE', {
+				key: '',
+				signer: '',
+				status: GitSignatureStatus.CannotBeChecked
+			}));
+
+			it('Should return a signature with status GitSignatureStatus.CannotBeChecked when multiple exclusive statuses exist', testParsingGpgStatus(
+				'[GNUPG:] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n[GNUPG:] BADSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n',
+				'TRUST_ULTIMATE',
+				{
+					key: '',
+					signer: '',
+					status: GitSignatureStatus.CannotBeChecked
+				}
+			));
+
+			it('Should ignore records that don\'t start with "[GNUPG:]"', testParsingGpgStatus(
+				'[XYZ] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n[GNUPG:] BADSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\n',
+				'TRUST_ULTIMATE',
+				{
+					key: '1234567890ABCDEF',
+					signer: 'Tagger Name <tagger@mhutchie.com>',
+					status: GitSignatureStatus.Bad
+				}
+			));
+
+			it('Should parse signatures from stdout when there is not content on stderr (for compatibility - normally output is on stderr)', async () => {
+				// Setup
+				mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\nXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1\nbody2\n-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\n\n');
+				mockGitSuccessOnce('[GNUPG:] NEWSIG\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] SIG_ID abcdefghijklmnopqrstuvwxyza 2021-04-10 1618040201\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\r\n[GNUPG:] VALIDSIG ABCDEF1234567890ABCDEF1234567890ABCDEF12 2021-04-10 1618040201 0 4 0 1 8 00 ABCDEF1234567890ABCDEF1234567890ABCDEF12\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] TRUST_ULTIMATE 0 pgp\r\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\r\n');
+
+				// Run
+				const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+				// Assert
+				expect(result).toStrictEqual({
+					details: {
+						hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+						taggerName: 'Test Tagger',
+						taggerEmail: 'test@mhutchie.com',
+						taggerDate: 1587559258,
+						message: 'subject1\nsubject2\n\nbody1\nbody2',
+						signature: {
+							key: '1234567890ABCDEF',
+							signer: 'Tagger Name <tagger@mhutchie.com>',
+							status: GitSignatureStatus.GoodAndValid
+						}
+					},
+					error: null
+				});
+				expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['verify-tag', '--raw', 'refs/tags/tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			});
+
+			it('Should parse signatures from stderr, when both stdout & stderr have content (for compatibility - normally output is on stderr)', async () => {
+				// Setup
+				mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\nXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1\nbody2\n-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\n\n');
+				mockGitSuccessOnce(
+					'[GNUPG:] NEWSIG\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] SIG_ID abcdefghijklmnopqrstuvwxyza 2021-04-10 1618040201\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] GOODSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\r\n[GNUPG:] VALIDSIG ABCDEF1234567890ABCDEF1234567890ABCDEF12 2021-04-10 1618040201 0 4 0 1 8 00 ABCDEF1234567890ABCDEF1234567890ABCDEF12\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] TRUST_ULTIMATE 0 pgp\r\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\r\n',
+					'[GNUPG:] NEWSIG\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] SIG_ID abcdefghijklmnopqrstuvwxyza 2021-04-10 1618040201\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] BADSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>\r\n[GNUPG:] VALIDSIG ABCDEF1234567890ABCDEF1234567890ABCDEF12 2021-04-10 1618040201 0 4 0 1 8 00 ABCDEF1234567890ABCDEF1234567890ABCDEF12\r\n[GNUPG:] KEY_CONSIDERED ABCDEF1234567890ABCDEF1234567890ABCDEF12 0\r\n[GNUPG:] TRUST_ULTIMATE 0 pgp\r\n[GNUPG:] VERIFICATION_COMPLIANCE_MODE 23\r\n'
+				);
+
+				// Run
+				const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+				// Assert
+				expect(result).toStrictEqual({
+					details: {
+						hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+						taggerName: 'Test Tagger',
+						taggerEmail: 'test@mhutchie.com',
+						taggerDate: 1587559258,
+						message: 'subject1\nsubject2\n\nbody1\nbody2',
+						signature: {
+							key: '1234567890ABCDEF',
+							signer: 'Tagger Name <tagger@mhutchie.com>',
+							status: GitSignatureStatus.Bad
+						}
+					},
+					error: null
+				});
+				expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['verify-tag', '--raw', 'refs/tags/tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
+			});
+
+			it('Should ignore the Git exit code when parsing signatures', async () => {
+				// Setup
+				mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\nXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1\nbody2\n-----BEGIN PGP SIGNATURE-----\n\n-----END PGP SIGNATURE-----\n\n');
+				mockGitThrowingErrorOnce('[GNUPG:] BADSIG 1234567890ABCDEF Tagger Name <tagger@mhutchie.com>');
+
+				// Run
+				const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+				// Assert
+				expect(result).toStrictEqual({
+					details: {
+						hash: '79e88e142b378f41dfd1f82d94209a7a411384ed',
+						taggerName: 'Test Tagger',
+						taggerEmail: 'test@mhutchie.com',
+						taggerDate: 1587559258,
+						message: 'subject1\nsubject2\n\nbody1\nbody2',
+						signature: {
+							key: '1234567890ABCDEF',
+							signer: 'Tagger Name <tagger@mhutchie.com>',
+							status: GitSignatureStatus.Bad
+						}
+					},
+					error: null
+				});
+				expect(spyOnSpawn).toHaveBeenCalledTimes(2);
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
+				expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['verify-tag', '--raw', 'refs/tags/tag-name'], expect.objectContaining({ cwd: '/path/to/repo' }));
 			});
 		});
 	});
@@ -4669,7 +4971,7 @@ describe('DataSource', () => {
 			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
 		});
 
-		it('Should return an error message when pruning tags with Git < 2.17.0', async () => {
+		it('Should return the "Incompatible Git Version" error message when pruning tags and Git is older than 2.17.0', async () => {
 			// Setup
 			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.16.1' });
 
@@ -5963,7 +6265,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Global);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe(null);
@@ -5975,7 +6277,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Local);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.Local);
 
 			// Assert
 			expect(result).toBe(null);
@@ -5987,7 +6289,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.System);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.System);
 
 			// Assert
 			expect(result).toBe(null);
@@ -5999,7 +6301,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Global);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -6012,7 +6314,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.Global);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6024,7 +6326,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.Local);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.Local);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6036,7 +6338,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.System);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.System);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6048,7 +6350,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.Global);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -6219,6 +6521,7 @@ describe('DataSource', () => {
 	describe('pushStash', () => {
 		it('Should push the uncommitted changes to a stash', async () => {
 			// Setup
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.13.2' });
 			mockGitSuccessOnce();
 
 			// Run
@@ -6276,10 +6579,9 @@ describe('DataSource', () => {
 			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
 		});
 
-		it('Should return the "Incompatible Git Version" error message if git is older than 2.13.2', async () => {
+		it('Should return the "Incompatible Git Version" error message when Git is older than 2.13.2', async () => {
 			// Setup
-			dataSource.dispose();
-			dataSource = new DataSource({ path: '/path/to/git', version: '2.13.1' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.13.1' });
 
 			// Run
 			const result = await dataSource.pushStash('/path/to/repo', '', false);

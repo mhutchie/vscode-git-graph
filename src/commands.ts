@@ -8,7 +8,7 @@ import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, VsCodeVersionRequirement, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -65,7 +65,7 @@ export class CommandManager extends Disposable {
 
 		// Register Extension Contexts
 		try {
-			this.registerContext('git-graph:codiconsSupported', doesVersionMeetRequirement(vscode.version, '1.42.0'));
+			this.registerContext('git-graph:codiconsSupported', doesVersionMeetRequirement(vscode.version, VsCodeVersionRequirement.Codicons));
 		} catch (_) {
 			this.logger.logError('Unable to set Visual Studio Code Context "git-graph:codiconsSupported"');
 		}
@@ -78,7 +78,10 @@ export class CommandManager extends Disposable {
 	 */
 	private registerCommand(command: string, callback: (...args: any[]) => any) {
 		this.registerDisposable(
-			vscode.commands.registerCommand(command, callback)
+			vscode.commands.registerCommand(command, (...args: any[]) => {
+				this.logger.log('Command Invoked: ' + command);
+				callback(...args);
+			})
 		);
 	}
 
@@ -180,7 +183,15 @@ export class CommandManager extends Disposable {
 	 * The method run when the `git-graph.clearAvatarCache` command is invoked.
 	 */
 	private clearAvatarCache() {
-		this.avatarManager.clearCache();
+		this.avatarManager.clearCache().then((errorInfo) => {
+			if (errorInfo === null) {
+				showInformationMessage('The Avatar Cache was successfully cleared.');
+			} else {
+				showErrorMessage(errorInfo);
+			}
+		}, () => {
+			showErrorMessage('An unexpected error occurred while running the command "Clear Avatar Cache".');
+		});
 	}
 
 	/**

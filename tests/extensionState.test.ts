@@ -863,40 +863,59 @@ describe('ExtensionState', () => {
 	});
 
 	describe('clearAvatarCache', () => {
-		it('Should clear all avatars from the cache and delete all avatars that are currently stored on the file system', () => {
-			extensionContext.globalState.update.mockResolvedValueOnce(null);
-			const spyOnReaddir = jest.spyOn(fs, 'readdir');
-			spyOnReaddir.mockImplementationOnce((_, callback) => callback(null, ['file1.jpg', 'file2.jpg']));
-			const spyOnUnlink = jest.spyOn(fs, 'unlink');
-			spyOnUnlink.mockImplementation((_, callback) => callback(null));
-
-			// Run
-			extensionState.clearAvatarCache();
-
-			// Assert
-			expect(extensionContext.globalState.update).toHaveBeenCalledWith('avatarCache', {});
-			expect(spyOnReaddir).toHaveBeenCalledTimes(1);
-			expect(spyOnReaddir.mock.calls[0][0]).toBe('/path/to/globalStorage/avatars');
-			expect(spyOnUnlink).toHaveBeenCalledTimes(2);
-			expect(spyOnUnlink.mock.calls[0][0]).toBe('/path/to/globalStorage/avatars/file1.jpg');
-			expect(spyOnUnlink.mock.calls[1][0]).toBe('/path/to/globalStorage/avatars/file2.jpg');
+		let spyOnReaddir: jest.SpyInstance, spyOnUnlink: jest.SpyInstance;
+		beforeAll(() => {
+			spyOnReaddir = jest.spyOn(fs, 'readdir');
+			spyOnUnlink = jest.spyOn(fs, 'unlink');
 		});
 
-		it('Should skip deleting avatars on the file system if they could not be listed from the file system', () => {
+		it('Should clear all avatars from the cache and delete all avatars that are currently stored on the file system', async () => {
+			// Setup
 			extensionContext.globalState.update.mockResolvedValueOnce(null);
-			const spyOnReaddir = jest.spyOn(fs, 'readdir');
-			spyOnReaddir.mockImplementationOnce((_, callback) => callback(new Error(), ['file1.jpg', 'file2.jpg']));
-			const spyOnUnlink = jest.spyOn(fs, 'unlink');
-			spyOnUnlink.mockImplementation((_, callback) => callback(null));
+			spyOnReaddir.mockImplementationOnce((_, callback) => callback(null, ['file1.jpg', 'file2.jpg']));
+			spyOnUnlink.mockImplementationOnce((_, callback) => callback(null));
+			spyOnUnlink.mockImplementationOnce((_, callback) => callback(null));
 
 			// Run
-			extensionState.clearAvatarCache();
+			const result = await extensionState.clearAvatarCache();
 
 			// Assert
+			expect(result).toBeNull();
 			expect(extensionContext.globalState.update).toHaveBeenCalledWith('avatarCache', {});
 			expect(spyOnReaddir).toHaveBeenCalledTimes(1);
-			expect(spyOnReaddir.mock.calls[0][0]).toBe('/path/to/globalStorage/avatars');
+			expect(spyOnReaddir).toHaveBeenNthCalledWith(1, '/path/to/globalStorage/avatars', expect.anything());
+			expect(spyOnUnlink).toHaveBeenCalledTimes(2);
+			expect(spyOnUnlink).toHaveBeenNthCalledWith(1, '/path/to/globalStorage/avatars/file1.jpg', expect.anything());
+			expect(spyOnUnlink).toHaveBeenNthCalledWith(2, '/path/to/globalStorage/avatars/file2.jpg', expect.anything());
+		});
+
+		it('Should skip deleting avatars on the file system if they could not be listed from the file system', async () => {
+			// Setup
+			extensionContext.globalState.update.mockResolvedValueOnce(null);
+			spyOnReaddir.mockImplementationOnce((_, callback) => callback(new Error(), ['file1.jpg', 'file2.jpg']));
+
+			// Run
+			const result = await extensionState.clearAvatarCache();
+
+			// Assert
+			expect(result).toBeNull();
+			expect(extensionContext.globalState.update).toHaveBeenCalledWith('avatarCache', {});
+			expect(spyOnReaddir).toHaveBeenCalledTimes(1);
+			expect(spyOnReaddir).toHaveBeenNthCalledWith(1, '/path/to/globalStorage/avatars', expect.anything());
 			expect(spyOnUnlink).toHaveBeenCalledTimes(0);
+		});
+
+		it('Shouldn\'t delete avatars on the file system if globalState.update rejects, and return the error message', async () => {
+			// Setup
+			extensionContext.globalState.update.mockRejectedValueOnce(null);
+
+			// Run
+			const result = await extensionState.clearAvatarCache();
+
+			// Assert
+			expect(result).toBe('Visual Studio Code was unable to save the Git Graph Global State Memento.');
+			expect(extensionContext.globalState.update).toHaveBeenCalledWith('avatarCache', {});
+			expect(spyOnReaddir).not.toHaveBeenCalled();
 		});
 	});
 

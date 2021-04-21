@@ -2696,7 +2696,7 @@ class GitGraphView {
 					const subject = parentCommit?.message.split('\n')[0];
 
 					return {
-						title: `[${parentIndex}] ${abbrevCommit(parent)}${subject ? `: ${subject}` : ''}`,
+						title: escapeHtml(`[${parentIndex}] ${abbrevCommit(parent)}${subject ? `: ${subject}` : ''}`),
 						visible: parentIndex !== currentParentIndex,
 						onClick: () => {
 							this.loadCommitDetails(expandedCommit.commitElem!, parentIndex);

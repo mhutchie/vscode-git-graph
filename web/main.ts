@@ -2373,13 +2373,15 @@ class GitGraphView {
 	}
 
 	private showErrorOnNonLoadedCommit() {
+		const actionName = this.moreCommitsAvailable ? 'Load More Commits' : null;
+
 		dialog.showError('The commit could not be found in the loaded commits.<br>' +
 			'This can happen for several reasons:' +
 			'<ol>' +
 			'<li>The commit is further down the tree and hasn\'t been loaded yet. Try loading more commits.</li>' +
 			'<li>Filtering has been applied. Try removing any filters.</li>' +
 			'<li>You are trying to see a commit present in the reflog, but not in the normal log (e.g. stash parents). Turn "Include Commits Mentioned By Reflogs" on in the extension settings.</li>' +
-			'</ol>', null, null, null);
+			'</ol>', null, actionName, () => {this.loadMoreCommits();});
 	}
 
 	public closeCommitDetails(saveAndRender: boolean) {

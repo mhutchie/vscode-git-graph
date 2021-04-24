@@ -33,6 +33,7 @@ describe('GitGraphView', () => {
 	let repoManager: RepoManager;
 
 	let spyOnLog: jest.SpyInstance;
+	let spyOnLogError: jest.SpyInstance;
 	let spyOnGetRepos: jest.SpyInstance;
 	let spyOnIsGitExecutableUnknown: jest.SpyInstance;
 
@@ -49,6 +50,7 @@ describe('GitGraphView', () => {
 		repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration.subscribe, logger);
 
 		spyOnLog = jest.spyOn(logger, 'log');
+		spyOnLogError = jest.spyOn(logger, 'logError');
 		spyOnGetRepos = jest.spyOn(repoManager, 'getRepos');
 		spyOnIsGitExecutableUnknown = jest.spyOn(dataSource, 'isGitExecutableUnknown');
 
@@ -3463,6 +3465,103 @@ describe('GitGraphView', () => {
 						}
 					]);
 				});
+			});
+		});
+	});
+
+	describe('sendMessage', () => {
+		beforeEach(() => {
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			spyOnLog.mockReset();
+			spyOnLogError.mockReset();
+		});
+
+		it('Should send a message to the Webview', async () => {
+			// Setup
+			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
+			jest.spyOn(utils, 'viewScm').mockResolvedValueOnce(null);
+			jest.spyOn(mockedWebviewPanel.panel.webview, 'postMessage').mockResolvedValueOnce(true);
+
+			// Run
+			mockedWebviewPanel.mocks.panel.webview.onDidReceiveMessage({
+				command: 'viewScm'
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(mockedWebviewPanel.panel.webview.postMessage).toHaveBeenCalledWith({
+					command: 'viewScm',
+					error: null
+				});
+				expect(spyOnLog).not.toHaveBeenCalled();
+				expect(spyOnLogError).not.toHaveBeenCalled();
+			});
+		});
+
+		it('Should log an error message when Webview.postMessage rejects, and the GitGraphView hasn\'t been disposed', async () => {
+			// Setup
+			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
+			jest.spyOn(utils, 'viewScm').mockResolvedValueOnce(null);
+			jest.spyOn(mockedWebviewPanel.panel.webview, 'postMessage').mockRejectedValueOnce(null);
+
+			// Run
+			mockedWebviewPanel.mocks.panel.webview.onDidReceiveMessage({
+				command: 'viewScm'
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(mockedWebviewPanel.panel.webview.postMessage).toHaveBeenCalledWith({
+					command: 'viewScm',
+					error: null
+				});
+				expect(spyOnLog).not.toHaveBeenCalled();
+				expect(spyOnLogError).toHaveBeenCalledWith('Unable to send "viewScm" message to the Git Graph View.');
+			});
+		});
+
+		it('Should log an information message when Webview.postMessage rejects, and the GitGraphView has been disposed', async () => {
+			// Setup
+			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
+			jest.spyOn(utils, 'viewScm').mockResolvedValueOnce(null);
+			jest.spyOn(mockedWebviewPanel.panel.webview, 'postMessage').mockImplementationOnce(() => {
+				GitGraphView.currentPanel!.dispose();
+				return Promise.reject();
+			});
+
+			// Run
+			mockedWebviewPanel.mocks.panel.webview.onDidReceiveMessage({
+				command: 'viewScm'
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(mockedWebviewPanel.panel.webview.postMessage).toHaveBeenCalledWith({
+					command: 'viewScm',
+					error: null
+				});
+				expect(spyOnLog).toHaveBeenCalledWith('The Git Graph View was disposed while sending "viewScm" message.');
+				expect(spyOnLogError).not.toHaveBeenCalled();
+			});
+		});
+
+		it('Shouldn\'t send a message to the Webview if it has been disposed', async () => {
+			// Setup
+			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
+			jest.spyOn(utils, 'viewScm').mockResolvedValueOnce(null);
+			jest.spyOn(mockedWebviewPanel.panel.webview, 'postMessage').mockResolvedValueOnce(true);
+
+			// Run
+			GitGraphView.currentPanel!.dispose();
+			mockedWebviewPanel.mocks.panel.webview.onDidReceiveMessage({
+				command: 'viewScm'
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(mockedWebviewPanel.panel.webview.postMessage).not.toHaveBeenCalled();
+				expect(spyOnLog).toHaveBeenCalledWith('The Git Graph View has already been disposed, ignored sending "viewScm" message.');
+				expect(spyOnLogError).not.toHaveBeenCalled();
 			});
 		});
 	});

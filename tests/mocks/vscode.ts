@@ -1,7 +1,25 @@
 import * as vscode from 'vscode';
+import { RequestMessage, ResponseMessage, Writeable } from '../../src/types';
+
+
+/* Mocks */
 
 const mockedExtensionSettingValues: { [section: string]: any } = {};
 const mockedCommands: { [command: string]: (...args: any[]) => any } = {};
+
+interface WebviewPanelMocks {
+	messages: ResponseMessage[],
+	panel: {
+		onDidChangeViewState: (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => any,
+		onDidDispose: (e: void) => any,
+		setVisibility: (visible: boolean) => void,
+		webview: {
+			onDidReceiveMessage: (msg: RequestMessage) => void
+		}
+	}
+}
+
+let mockedWebviews: { panel: vscode.WebviewPanel, mocks: WebviewPanelMocks }[] = [];
 
 export const mocks = {
 	extensionContext: {
@@ -48,6 +66,9 @@ export const mocks = {
 		}))
 	}
 };
+
+
+/* Visual Studio Code API Mocks */
 
 export const commands = {
 	executeCommand: jest.fn((command: string, ...rest: any[]) => mockedCommands[command](...rest)),
@@ -136,9 +157,10 @@ export enum ViewColumn {
 }
 
 export const window = {
-	activeTextEditor: { document: { uri: Uri.file('/path/to/workspace-folder/active-file.txt') } } as any,
+	activeTextEditor: undefined as any,
 	createOutputChannel: jest.fn(() => mocks.outputChannel),
 	createStatusBarItem: jest.fn(() => mocks.statusBarItem),
+	createWebviewPanel: jest.fn(createWebviewPanel),
 	createTerminal: jest.fn(() => mocks.terminal),
 	showErrorMessage: jest.fn(),
 	showInformationMessage: jest.fn(),
@@ -160,16 +182,78 @@ export const workspace = {
 	workspaceFolders: <{ uri: Uri, index: number }[] | undefined>undefined
 };
 
+function createWebviewPanel(viewType: string, title: string, _showOptions: ViewColumn | { viewColumn: ViewColumn, preserveFocus?: boolean }, _options?: vscode.WebviewPanelOptions & vscode.WebviewOptions) {
+	const mocks: WebviewPanelMocks = {
+		messages: [],
+		panel: {
+			onDidChangeViewState: () => { },
+			onDidDispose: () => { },
+			setVisibility: (visible) => {
+				webviewPanel.visible = visible;
+				mocks.panel.onDidChangeViewState({ webviewPanel: webviewPanel });
+			},
+			webview: {
+				onDidReceiveMessage: () => { }
+			}
+		}
+	};
+
+	const webviewPanel: Writeable<vscode.WebviewPanel> = {
+		active: true,
+		dispose: jest.fn(),
+		iconPath: undefined,
+		onDidChangeViewState: jest.fn((onDidChangeViewState) => {
+			mocks.panel.onDidChangeViewState = onDidChangeViewState;
+			return { dispose: jest.fn() };
+		}),
+		onDidDispose: jest.fn((onDidDispose) => {
+			mocks.panel.onDidDispose = onDidDispose;
+			return { dispose: jest.fn() };
+		}),
+		options: {},
+		reveal: jest.fn((_viewColumn?: ViewColumn, _preserveFocus?: boolean) => { }),
+		title: title,
+		visible: true,
+		viewType: viewType,
+		webview: {
+			asWebviewUri: jest.fn((uri: Uri) => uri.with({ scheme: 'vscode-webview-resource', path: 'file//' + uri.path.replace(/\\/g, '/') })),
+			cspSource: 'vscode-webview-resource:',
+			html: '',
+			onDidReceiveMessage: jest.fn((onDidReceiveMessage) => {
+				mocks.panel.webview.onDidReceiveMessage = onDidReceiveMessage;
+				return { dispose: jest.fn() };
+			}),
+			options: {},
+			postMessage: jest.fn((msg) => {
+				mocks.messages.push(msg);
+				return Promise.resolve(true);
+			})
+		}
+	};
+
+	mockedWebviews.push({ panel: webviewPanel, mocks: mocks });
+	return webviewPanel;
+}
+
 
 /* Utilities */
 
 beforeEach(() => {
 	jest.clearAllMocks();
 
+	window.activeTextEditor = {
+		document: {
+			uri: Uri.file('/path/to/workspace-folder/active-file.txt')
+		},
+		viewColumn: ViewColumn.One
+	};
+
 	// Clear any mocked extension setting values before each test
 	Object.keys(mockedExtensionSettingValues).forEach((section) => {
 		delete mockedExtensionSettingValues[section];
 	});
+
+	mockedWebviews = [];
 
 	version = '1.51.0';
 });
@@ -180,4 +264,8 @@ export function mockExtensionSettingReturnValue(section: string, value: any) {
 
 export function mockVscodeVersion(newVersion: string) {
 	version = newVersion;
+}
+
+export function getMockedWebviewPanel(i: number) {
+	return mockedWebviews[i];
 }

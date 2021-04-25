@@ -346,7 +346,7 @@ export class DataSource extends Disposable {
 	 * @returns The commit details.
 	 */
 	public getCommitDetails(repo: string, commitHash: string, hasParents: boolean, parentIndex: number): Promise<GitCommitDetailsData> {
-		const fromCommit = commitHash + (hasParents ? `^${parentIndex}` : '');
+		const fromCommit = commitHash + (hasParents ? '^' + parentIndex : '');
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
 			this.getDiffNameStatus(repo, fromCommit, commitHash),
@@ -368,7 +368,7 @@ export class DataSource extends Disposable {
 	 * @returns The stash details.
 	 */
 	public getStashDetails(repo: string, commitHash: string, stash: GitCommitStash, parentIndex: number): Promise<GitCommitDetailsData> {
-		const fromCommit = commitHash + `^${parentIndex}`;
+		const fromCommit = commitHash + '^' + parentIndex;
 		return Promise.all([
 			this.getCommitDetailsBase(repo, commitHash),
 			this.getDiffNameStatus(repo, fromCommit, commitHash),

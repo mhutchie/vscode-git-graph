@@ -959,6 +959,7 @@ describe('GitGraphView', () => {
 					repo: '/path/to/repo',
 					commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
 					hasParents: true,
+					parentIndex: 1,
 					stash: null,
 					avatarEmail: 'user@mhutchie.com',
 					refresh: false
@@ -996,6 +997,7 @@ describe('GitGraphView', () => {
 					repo: '/path/to/repo',
 					commitHash: utils.UNCOMMITTED,
 					hasParents: true,
+					parentIndex: 1,
 					stash: null,
 					avatarEmail: null,
 					refresh: false
@@ -1040,6 +1042,7 @@ describe('GitGraphView', () => {
 					repo: '/path/to/repo',
 					commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
 					hasParents: true,
+					parentIndex: 1,
 					stash: stash,
 					avatarEmail: null,
 					refresh: false

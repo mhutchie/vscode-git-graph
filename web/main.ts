@@ -2115,15 +2115,17 @@ class GitGraphView {
 		};
 
 		const getParentIndexFromClass = (element: Element) => {
+			const parentClassPreamble = CLASS_PARENT + '-';
+
 			const eventTargetClasses = element.classList.value.split(' ');
-			const parentIndexClasses = eventTargetClasses.filter(className => className.startsWith(`${CLASS_PARENT}-`));
+			const parentIndexClasses = eventTargetClasses.filter(className => className.startsWith(parentClassPreamble));
 
 			const isParentElement = parentIndexClasses.length === 1;
 			if(!isParentElement) {
 				return -1;
 			}
 
-			return parseInt(parentIndexClasses[0].substring(`${CLASS_PARENT}-`.length));
+			return parseInt(parentIndexClasses[0].substring(parentClassPreamble.length));
 		};
 
 		document.body.addEventListener('click', followInternalLink);
@@ -2579,9 +2581,9 @@ class GitGraphView {
 							const escapedAbbreviatedParent = escapeHtml(abbrevCommit(parent));
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 
-							let parentHtml = `<span class="${CLASS_INTERNAL_URL} ${CLASS_PARENT}-${parentIndex + 1}" data-type="commit" data-value="${escapedParent}" tabindex="-1">${escapedAbbreviatedParent}</span>`;
+							let parentHtml = '<span class="' + CLASS_INTERNAL_URL + ' ' + CLASS_PARENT + '-' + (parentIndex + 1) + '" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedAbbreviatedParent + '</span>';
 							if(isComparedToParent) {
-								parentHtml = `<b>${parentHtml}</b>`;
+								parentHtml = '<b>' + parentHtml + '</b>';
 							}
 
 							return parentHtml;
@@ -2696,7 +2698,7 @@ class GitGraphView {
 					const subject = parentCommit?.message.split('\n')[0];
 
 					return {
-						title: escapeHtml(`[${parentIndex}] ${abbrevCommit(parent)}${subject ? `: ${subject}` : ''}`),
+						title: escapeHtml('[' + parentIndex + '] ' + abbrevCommit(parent) + (subject ? ': ' + subject : '')),
 						visible: parentIndex !== currentParentIndex,
 						onClick: () => {
 							this.loadCommitDetails(expandedCommit.commitElem!, parentIndex);

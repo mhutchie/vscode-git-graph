@@ -2114,18 +2114,14 @@ class GitGraphView {
 			}
 		};
 
-		const getParentIndexFromClass = (element: Element) => {
-			const parentClassPreamble = CLASS_PARENT + '-';
+		const getParentIndexFromElement = (element: Element) => {
+			const parentIndexAsString = (element as HTMLElement).dataset.parent;
 
-			const eventTargetClasses = element.classList.value.split(' ');
-			const parentIndexClasses = eventTargetClasses.filter(className => className.startsWith(parentClassPreamble));
-
-			const isParentElement = parentIndexClasses.length === 1;
-			if(!isParentElement) {
+			if(parentIndexAsString === undefined) {
 				return -1;
 			}
 
-			return parseInt(parentIndexClasses[0].substring(parentClassPreamble.length));
+			return parseInt(parentIndexAsString);
 		};
 
 		document.body.addEventListener('click', followInternalLink);
@@ -2168,7 +2164,7 @@ class GitGraphView {
 					isInDialog = true;
 				}
 
-				const parentIndex = getParentIndexFromClass(eventTarget);
+				const parentIndex = getParentIndexFromElement(eventTarget);
 
 				handledEvent(e);
 				contextMenu.show([
@@ -2187,7 +2183,7 @@ class GitGraphView {
 						},
 						{
 							title: 'View Changes with this Parent',
-							visible: isInternalUrl && parentIndex !== -1,
+							visible: isInternalUrl && parentIndex !== undefined,
 							onClick: () => {
 								this.loadCommitDetails(this.expandedCommit!.commitElem!, parentIndex);
 							}
@@ -2600,7 +2596,7 @@ class GitGraphView {
 							const escapedAbbreviatedParent = escapeHtml(abbrevCommit(parent));
 							const isComparedToParent = parentIndex + 1 === expandedCommit.parentIndex;
 
-							let parentHtml = '<span class="' + CLASS_INTERNAL_URL + ' ' + CLASS_PARENT + '-' + (parentIndex + 1) + '" data-type="commit" data-value="' + escapedParent + '" tabindex="-1">' + escapedAbbreviatedParent + '</span>';
+							let parentHtml = '<span class="' + CLASS_INTERNAL_URL + '" data-type="commit" data-value="' + escapedParent + '" data-parent="' + (parentIndex + 1) + '" tabindex="-1">' + escapedAbbreviatedParent + '</span>';
 							if(isComparedToParent) {
 								parentHtml = '<b>' + parentHtml + '</b>';
 							}

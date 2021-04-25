@@ -2705,7 +2705,8 @@ class GitGraphView {
 
 					return {
 						title: escapeHtml('[' + parentIndex + '] ' + abbrevCommit(parent) + (subject ? ': ' + subject : '')),
-						visible: parentIndex !== currentParentIndex,
+						visible: true,
+						checked: parentIndex === currentParentIndex,
 						onClick: () => {
 							this.loadCommitDetails(expandedCommit.commitElem!, parentIndex);
 						}
@@ -2719,7 +2720,7 @@ class GitGraphView {
 					elem: document.getElementById('cdvChooseParent')!
 				};
 
-				contextMenu.show([contextMenuItems], false, target, event, this.isCdvDocked() ? document.body : this.viewElem);
+				contextMenu.show([contextMenuItems], true, target, event, this.isCdvDocked() ? document.body : this.viewElem);
 			});
 
 			if (codeReviewPossible) {

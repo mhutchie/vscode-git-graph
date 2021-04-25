@@ -2618,7 +2618,7 @@ class GitGraphView {
 			(codeReviewPossible ? '<div id="cdvCodeReview" class="cdvControlBtn">' + SVG_ICONS.review + '</div>' : '') +
 			(!expandedCommit.loading ? '<div id="cdvFileViewTypeTree" class="cdvControlBtn cdvFileViewTypeBtn" title="File Tree View">' + SVG_ICONS.fileTree + '</div><div id="cdvFileViewTypeList" class="cdvControlBtn cdvFileViewTypeBtn" title="File List View">' + SVG_ICONS.fileList + '</div>' : '') +
 			(externalDiffPossible ? '<div id="cdvExternalDiff" class="cdvControlBtn">' + SVG_ICONS.linkExternal + '</div>' : '') +
-			(expandedCommit.commitDetails && expandedCommit.commitDetails.parents.length > 1 ? '<div id="cdvChooseParent" class="cdvControlBtn" title="Toggle Parent">' + SVG_ICONS.merge + '</div>' : '') +
+			(expandedCommit.commitDetails && expandedCommit.commitDetails.parents.length > 1 ? '<div id="cdvChooseParent" class="cdvControlBtn" title="View Changes with an Alternate Parent...">' + SVG_ICONS.merge + '</div>' : '') +
 			'</div><div class="cdvHeightResize"></div>';
 
 		elem.innerHTML = isDocked ? html : '<td><div class="cdvHeightResize"></div></td><td colspan="' + (this.getNumColumns() - 1) + '">' + html + '</td>';

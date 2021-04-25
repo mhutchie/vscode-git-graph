@@ -2372,30 +2372,21 @@ class GitGraphView {
 
 	private showErrorOnNonLoadedCommit() {
 		const actionName = this.moreCommitsAvailable ? 'Load More Commits' : null;
-		const filteringActive = true;
 		const reflogCommitsNotShown = !getIncludeCommitsMentionedByReflogs(this.gitRepos[this.currentRepo].includeCommitsMentionedByReflogs);
 
-		let detailedMessage: string | null;
+		let detailedMessage = 'Possible causes:\n';
 
-		if(!this.moreCommitsAvailable && !filteringActive && !reflogCommitsNotShown) {
-			detailedMessage = null;
-		} else {
-			detailedMessage = 'Possible causes:\n';
+		detailedMessage += '\n• Filtering has been applied. Try removing any filters.\n';
 
-			if(this.moreCommitsAvailable) {
-				detailedMessage += '\n• The commit is further down the tree and hasn\'t been loaded yet. Try loading more commits.\n';
-			}
-
-			if(filteringActive) {
-				detailedMessage += '\n• Filtering has been applied. Try removing any filters.\n';
-			}
-
-			if(reflogCommitsNotShown) {
-				detailedMessage += '\n• You are trying to see a commit present in the reflog, but not in the normal log (e.g. stash parents). Turn "Include Commits Mentioned By Reflogs" on in the extension settings.\n';
-			}
-
-			detailedMessage += '\n';
+		if(this.moreCommitsAvailable) {
+			detailedMessage += '\n• The commit is further down the tree and hasn\'t been loaded yet. Try loading more commits.\n';
 		}
+
+		if(reflogCommitsNotShown) {
+			detailedMessage += '\n• You are trying to see a commit present in the reflog, but not in the normal log (e.g. stash parents). Turn "Include Commits Mentioned By Reflogs" on in the extension settings.\n';
+		}
+
+		detailedMessage += '\n';
 
 		dialog.showError('The commit could not be found in the loaded commits.',
 			detailedMessage, actionName, () => {this.loadMoreCommits();});

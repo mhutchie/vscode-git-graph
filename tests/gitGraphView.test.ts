@@ -1,5 +1,3 @@
-import { waitForExpect } from './helpers/expectations';
-
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 jest.mock('../src/avatarManager');
@@ -12,13 +10,16 @@ import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { AvatarEvent, AvatarManager } from '../src/avatarManager';
 import { DataSource } from '../src/dataSource';
-import { DEFAULT_REPO_STATE, ExtensionState } from '../src/extensionState';
+import { ExtensionState } from '../src/extensionState';
 import { GitGraphView, standardiseCspSource } from '../src/gitGraphView';
 import { Logger } from '../src/logger';
 import { RepoChangeEvent, RepoManager } from '../src/repoManager';
 import { CodeReview, CommitOrdering, GitCommitStash, GitConfigLocation, GitFileStatus, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitPushBranchMode, GitResetMode, MergeActionOn, PullRequestConfig, PullRequestProvider, RebaseActionOn, RequestMessage, ResponseMessage, TagType } from '../src/types';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
+
+import { waitForExpect } from './helpers/expectations';
+import { mockRepoState } from './helpers/utils';
 
 describe('GitGraphView', () => {
 	let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
@@ -54,7 +55,7 @@ describe('GitGraphView', () => {
 		spyOnGetRepos = jest.spyOn(repoManager, 'getRepos');
 		spyOnIsGitExecutableUnknown = jest.spyOn(dataSource, 'isGitExecutableUnknown');
 
-		spyOnGetRepos.mockReturnValue({ '/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE) });
+		spyOnGetRepos.mockReturnValue({ '/path/to/repo': mockRepoState() });
 		spyOnIsGitExecutableUnknown.mockReturnValue(false);
 		Object.defineProperty(repoManager, 'onDidChangeRepos', {
 			get: () => onDidChangeRepos.subscribe
@@ -150,7 +151,7 @@ describe('GitGraphView', () => {
 					lastActiveRepo: null,
 					loadViewTo: { repo: '/path/to/repo' },
 					repos: {
-						'/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE)
+						'/path/to/repo': mockRepoState()
 					}
 				}
 			]);
@@ -308,7 +309,7 @@ describe('GitGraphView', () => {
 
 				// Run
 				onDidChangeRepos.emit({
-					repos: { '/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE) },
+					repos: { '/path/to/repo': mockRepoState() },
 					numRepos: 1,
 					loadRepo: null
 				});
@@ -321,7 +322,7 @@ describe('GitGraphView', () => {
 						lastActiveRepo: null,
 						loadViewTo: null,
 						repos: {
-							'/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE)
+							'/path/to/repo': mockRepoState()
 						}
 					}
 				]);
@@ -333,7 +334,7 @@ describe('GitGraphView', () => {
 
 				// Run
 				onDidChangeRepos.emit({
-					repos: { '/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE) },
+					repos: { '/path/to/repo': mockRepoState() },
 					numRepos: 1,
 					loadRepo: '/path/to/repo'
 				});
@@ -348,7 +349,7 @@ describe('GitGraphView', () => {
 							repo: '/path/to/repo'
 						},
 						repos: {
-							'/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE)
+							'/path/to/repo': mockRepoState()
 						}
 					}
 				]);
@@ -362,7 +363,7 @@ describe('GitGraphView', () => {
 
 				// Run
 				onDidChangeRepos.emit({
-					repos: { '/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE) },
+					repos: { '/path/to/repo': mockRepoState() },
 					numRepos: 1,
 					loadRepo: null
 				});
@@ -397,7 +398,7 @@ describe('GitGraphView', () => {
 				// Run
 				onDidChangeRepos.emit({
 					repos: {
-						'/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE)
+						'/path/to/repo': mockRepoState()
 					},
 					numRepos: 1,
 					loadRepo: '/path/to/repo'
@@ -2542,7 +2543,7 @@ describe('GitGraphView', () => {
 					expect(messages).toStrictEqual([
 						{
 							command: 'loadRepos',
-							repos: { '/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE) },
+							repos: { '/path/to/repo': mockRepoState() },
 							lastActiveRepo: null,
 							loadViewTo: null
 						}
@@ -2585,7 +2586,7 @@ describe('GitGraphView', () => {
 					expect(messages).toStrictEqual([
 						{
 							command: 'loadRepos',
-							repos: { '/path/to/repo': Object.assign({}, DEFAULT_REPO_STATE) },
+							repos: { '/path/to/repo': mockRepoState() },
 							lastActiveRepo: null,
 							loadViewTo: null
 						}
@@ -3184,7 +3185,7 @@ describe('GitGraphView', () => {
 		describe('setRepoState', () => {
 			it('Should set the Repository State', async () => {
 				// Setup
-				const repoState = Object.assign({}, DEFAULT_REPO_STATE);
+				const repoState = mockRepoState();
 				const spyOnSetRepoState = jest.spyOn(repoManager, 'setRepoState');
 				spyOnSetRepoState.mockImplementationOnce(() => { });
 

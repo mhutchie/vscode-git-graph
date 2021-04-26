@@ -1,6 +1,6 @@
-import { waitForExpect } from './helpers/expectations';
-
 import { BufferedQueue } from '../src/utils/bufferedQueue';
+
+import { waitForExpect } from './helpers/expectations';
 
 describe('BufferedQueue', () => {
 	it('Should add items to the queue, and then process them once the buffer has expired', async () => {

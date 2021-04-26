@@ -19,6 +19,6 @@ export function waitForExpect(expect: () => void) {
 					reject(e);
 				}
 			}
-		}, 50);
+		}, 20);
 	});
 }

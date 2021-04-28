@@ -5812,12 +5812,21 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a branch in a terminal', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+			const resultPromise = dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -5826,12 +5835,21 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a commit in a terminal', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
+			const resultPromise = dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -5840,12 +5858,21 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a branch in a terminal (signing the new commits)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+			const resultPromise = dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6484,10 +6511,19 @@ describe('DataSource', () => {
 	describe('openExternalDirDiff', () => {
 		it('Should launch a gui directory diff (for one commit)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6498,10 +6534,19 @@ describe('DataSource', () => {
 
 		it('Should launch a gui directory diff (between two commits)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6512,10 +6557,19 @@ describe('DataSource', () => {
 
 		it('Should launch a gui directory diff (for uncommitted changes)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', utils.UNCOMMITTED, utils.UNCOMMITTED, true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', utils.UNCOMMITTED, utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6526,10 +6580,19 @@ describe('DataSource', () => {
 
 		it('Should launch a gui directory diff (between a commit and the uncommitted changes)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6540,11 +6603,20 @@ describe('DataSource', () => {
 
 		it('Should launch a directory diff in a terminal (between two commits)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', false);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', false);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6565,11 +6637,20 @@ describe('DataSource', () => {
 
 		it('Should display the error message when the diff tool doesn\'t exit successfully', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitThrowingErrorOnce('line1\nline2\nline3');
 			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);

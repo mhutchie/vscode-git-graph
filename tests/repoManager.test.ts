@@ -5,6 +5,7 @@ jest.mock('fs');
 jest.mock('../src/dataSource');
 jest.mock('../src/extensionState');
 jest.mock('../src/logger');
+jest.mock('../src/utils/bufferedQueue');
 
 import * as fs from 'fs';
 import { ConfigurationChangeEvent } from 'vscode';
@@ -13,6 +14,7 @@ import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { ExternalRepoConfig, RepoChangeEvent, RepoManager } from '../src/repoManager';
 import * as utils from '../src/utils';
+import * as bufferedQueue from '../src/utils/bufferedQueue';
 import { EventEmitter } from '../src/utils/event';
 import { BooleanOverride, FileViewType, GitRepoSet, GitRepoState, PullRequestProvider, RepoCommitOrdering } from '../src/types';
 
@@ -45,7 +47,15 @@ beforeAll(() => {
 	spyOnReadFile = jest.spyOn(fs, 'readFile');
 	spyOnStat = jest.spyOn(fs, 'stat');
 	spyOnWriteFile = jest.spyOn(fs, 'writeFile');
-	spyOnReadFile.mockImplementation((_: string, callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void) => callback(new Error(), Buffer.alloc(0)));
+
+	spyOnReadFile.mockImplementation((_: string, callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void) => {
+		callback(new Error(), Buffer.alloc(0));
+	});
+
+	jest.spyOn(bufferedQueue, 'BufferedQueue').mockImplementation(<T>(onItem: (item: T) => Promise<boolean>, onChanges: () => void) => {
+		const realBufferedQueue = jest.requireActual('../src/utils/bufferedQueue');
+		return new realBufferedQueue.BufferedQueue(onItem, onChanges, 1);
+	});
 });
 
 afterAll(() => {
@@ -1487,338 +1497,249 @@ describe('RepoManager', () => {
 	});
 
 	describe('onWatcherCreate', () => {
+		let repoManager: RepoManager;
+		let emitOnDidCreate: (e: vscode.Uri) => any;
+		let onDidChangeReposEvents: RepoChangeEvent[];
+		let spyOnEnqueue: jest.SpyInstance;
+
+		beforeEach(async () => {
+			mockDirectoryThatsNotRepository();
+			repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
+			emitOnDidCreate = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidCreate).mock.calls[0][0];
+			onDidChangeReposEvents = [];
+			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
+
+			spyOnEnqueue = jest.spyOn(repoManager['onWatcherCreateQueue'], 'enqueue');
+		});
+
+		afterEach(() => {
+			repoManager.dispose();
+		});
+
 		it('Should add a repository when a repository is added', async () => {
 			// Setup
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
-
-			const emitOnDidCreate = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidCreate).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(null, true);
 			mockRepositoryWithNoSubmodules();
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidCreate(vscode.Uri.file('/path/to/workspace-folder1/repo'));
 
 			// Assert
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('Added new repo: /path/to/workspace-folder1/repo'));
-			expect(repoManager.getRepos()).toStrictEqual({
-				'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherCreateQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(spyOnLog).toHaveBeenCalledWith('Added new repo: /path/to/workspace-folder1/repo');
+				expect(repoManager.getRepos()).toStrictEqual({
+					'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+				});
+				expect(onDidChangeReposEvents).toStrictEqual([
+					{
+						repos: {
+							'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+						},
+						numRepos: 1,
+						loadRepo: null
+					}
+				]);
 			});
-			expect(onDidChangeReposEvents).toStrictEqual([
-				{
-					repos: {
-						'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
-					},
-					numRepos: 1,
-					loadRepo: null
-				}
-			]);
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
-
-			// Teardown
-			repoManager.dispose();
 		});
 
 		it('Should add a repository when a .git directory is added', async () => {
 			// Setup
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
-
-			const emitOnDidCreate = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidCreate).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(null, true);
 			mockRepositoryWithNoSubmodules();
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidCreate(vscode.Uri.file('/path/to/workspace-folder1/repo/.git'));
 
 			// Assert
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('Added new repo: /path/to/workspace-folder1/repo'));
-			expect(repoManager.getRepos()).toStrictEqual({
-				'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherCreateQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(spyOnLog).toHaveBeenCalledWith('Added new repo: /path/to/workspace-folder1/repo');
+				expect(repoManager.getRepos()).toStrictEqual({
+					'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+				});
+				expect(onDidChangeReposEvents).toStrictEqual([
+					{
+						repos: {
+							'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+						},
+						numRepos: 1,
+						loadRepo: null
+					}
+				]);
 			});
-			expect(onDidChangeReposEvents).toStrictEqual([
-				{
-					repos: {
-						'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
-					},
-					numRepos: 1,
-					loadRepo: null
-				}
-			]);
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
-
-			// Teardown
-			repoManager.dispose();
 		});
 
-		it('Should not proceed to add repositories when the directory added is within .git', async () => {
-			// Setup
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
-			jest.useFakeTimers();
-
-			const emitOnDidCreate = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidCreate).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
-
+		it('Should not proceed to add repositories when the directory added is within .git', () => {
 			// Run
 			emitOnDidCreate(vscode.Uri.file('/path/to/workspace-folder1/repo/.git/folder'));
 
 			// Assert
-			expect(jest.getTimerCount()).toBe(0);
-
-			// Teardown
-			repoManager.dispose();
-			jest.useRealTimers();
+			expect(spyOnEnqueue).not.toHaveBeenCalled();
 		});
 
 		it('Shouldn\'t add a repository when a file is added', async () => {
 			// Setup
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
-
-			const emitOnDidCreate = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidCreate).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(null, false);
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidCreate(vscode.Uri.file('/path/to/workspace-folder1/repo'));
 
 			// Assert
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(repoManager['onWatcherCreateQueue']['processing']).toBe(false));
-			expect(repoManager.getRepos()).toStrictEqual({});
-			expect(onDidChangeReposEvents).toStrictEqual([]);
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
-
-			// Teardown
-			repoManager.dispose();
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherCreateQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(repoManager.getRepos()).toStrictEqual({});
+				expect(onDidChangeReposEvents).toStrictEqual([]);
+			});
 		});
 
 		it('Shouldn\'t add a repository when a directory is added, but it doesn\'t contain any repositories', async () => {
 			// Setup
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], []);
-
-			const emitOnDidCreate = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidCreate).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(null, true);
 			mockDirectoryThatsNotRepository();
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidCreate(vscode.Uri.file('/path/to/workspace-folder1/repo'));
 
 			// Assert
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(repoManager['onWatcherCreateQueue']['processing']).toBe(false));
-			expect(repoManager.getRepos()).toStrictEqual({});
-			expect(onDidChangeReposEvents).toStrictEqual([]);
-			expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
-
-			// Teardown
-			repoManager.dispose();
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherCreateQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherCreateQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(repoManager.getRepos()).toStrictEqual({});
+				expect(onDidChangeReposEvents).toStrictEqual([]);
+			});
 		});
 	});
 
 	describe('onWatcherChange', () => {
-		it('Should remove a repository when a repository is deleted', async () => {
-			// Setup
+		let repoManager: RepoManager;
+		let emitOnDidChange: (e: vscode.Uri) => any;
+		let onDidChangeReposEvents: RepoChangeEvent[];
+		let spyOnEnqueue: jest.SpyInstance;
+
+		beforeEach(async () => {
 			mockRepositoryWithNoSubmodules();
 			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo']);
+			repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo']);
 
-			const emitOnDidChange = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidChange).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
+			emitOnDidChange = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidChange).mock.calls[0][0];
+			onDidChangeReposEvents = [];
 			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
+
+			spyOnEnqueue = jest.spyOn(repoManager['onWatcherChangeQueue'], 'enqueue');
+		});
+
+		afterEach(() => {
+			repoManager.dispose();
+		});
+
+		it('Should remove a repository when a repository is deleted', async () => {
+			// Setup
 			mockFsStatOnce(new Error(), true);
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidChange(vscode.Uri.file('/path/to/workspace-folder1/repo'));
 
 			// Assert
-			expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('Removed repo: /path/to/workspace-folder1/repo'));
-			expect(repoManager.getRepos()).toStrictEqual({});
-			expect(onDidChangeReposEvents).toStrictEqual([
-				{
-					repos: {},
-					numRepos: 0,
-					loadRepo: null
-				}
-			]);
-
-			// Teardown
-			repoManager.dispose();
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherChangeQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(spyOnLog).toHaveBeenCalledWith('Removed repo: /path/to/workspace-folder1/repo');
+				expect(repoManager.getRepos()).toStrictEqual({});
+				expect(onDidChangeReposEvents).toStrictEqual([
+					{
+						repos: {},
+						numRepos: 0,
+						loadRepo: null
+					}
+				]);
+			});
 		});
 
 		it('Should remove a repository when a .git directory is deleted', async () => {
 			// Setup
-			mockRepositoryWithNoSubmodules();
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo']);
-
-			const emitOnDidChange = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidChange).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(new Error(), true);
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidChange(vscode.Uri.file('/path/to/workspace-folder1/repo/.git'));
 
 			// Assert
-			expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(spyOnLog).toHaveBeenCalledWith('Removed repo: /path/to/workspace-folder1/repo'));
-			expect(repoManager.getRepos()).toStrictEqual({});
-			expect(onDidChangeReposEvents).toStrictEqual([
-				{
-					repos: {},
-					numRepos: 0,
-					loadRepo: null
-				}
-			]);
-
-			// Teardown
-			repoManager.dispose();
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherChangeQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(spyOnLog).toHaveBeenCalledWith('Removed repo: /path/to/workspace-folder1/repo');
+				expect(repoManager.getRepos()).toStrictEqual({});
+				expect(onDidChangeReposEvents).toStrictEqual([
+					{
+						repos: {},
+						numRepos: 0,
+						loadRepo: null
+					}
+				]);
+			});
 		});
 
-		it('Should not proceed to remove a repository when the directory removed is within .git', async () => {
-			// Setup
-			mockRepositoryWithNoSubmodules();
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo']);
-
-			const emitOnDidChange = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidChange).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
-			jest.useFakeTimers();
-
+		it('Should not proceed to remove a repository when the directory removed is within .git', () => {
 			// Run
 			emitOnDidChange(vscode.Uri.file('/path/to/workspace-folder1/repo/.git/folder'));
 
 			// Assert
-			expect(jest.getTimerCount()).toBe(0);
-
-			// Teardown
-			repoManager.dispose();
-			jest.useRealTimers();
+			expect(spyOnEnqueue).not.toHaveBeenCalled();
 		});
 
 		it('Shouldn\'t remove a repository when a repository isn\'t deleted', async () => {
 			// Setup
-			mockRepositoryWithNoSubmodules();
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo']);
-
-			const emitOnDidChange = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidChange).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(null, true);
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidChange(vscode.Uri.file('/path/to/workspace-folder1/repo'));
 
 			// Assert
-			expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(repoManager['onWatcherChangeQueue']['processing']).toBe(false));
-			expect(repoManager.getRepos()).toStrictEqual({
-				'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherChangeQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/repo', expect.anything());
+				expect(repoManager.getRepos()).toStrictEqual({
+					'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+				});
+				expect(onDidChangeReposEvents).toStrictEqual([]);
 			});
-			expect(onDidChangeReposEvents).toStrictEqual([]);
-			expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual([]);
-
-			// Teardown
-			repoManager.dispose();
 		});
 
 		it('Shouldn\'t remove a repository when a directory is removed, but it doesn\'t contain any repositories', async () => {
 			// Setup
-			mockRepositoryWithNoSubmodules();
-			mockDirectoryThatsNotRepository();
-			const repoManager = await constructRepoManagerAndWaitUntilStarted(['/path/to/workspace-folder1'], ['/path/to/workspace-folder1/repo']);
-
-			const emitOnDidChange = (<jest.Mock<any, any>>repoManager['folderWatchers']['/path/to/workspace-folder1'].onDidChange).mock.calls[0][0];
-			const onDidChangeReposEvents: RepoChangeEvent[] = [];
-			repoManager.onDidChangeRepos((event) => onDidChangeReposEvents.push(event));
 			mockFsStatOnce(new Error(), true);
-			jest.useFakeTimers();
 
 			// Run
 			emitOnDidChange(vscode.Uri.file('/path/to/workspace-folder1/dir/repo'));
 
 			// Assert
-			expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual(['/path/to/workspace-folder1/dir/repo']);
-
-			// Run
-			jest.runOnlyPendingTimers();
-			jest.useRealTimers();
-
-			// Assert
-			await waitForExpect(() => expect(repoManager['onWatcherChangeQueue']['processing']).toBe(false));
-			expect(repoManager.getRepos()).toStrictEqual({
-				'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+			expect(spyOnEnqueue).toHaveBeenCalledWith('/path/to/workspace-folder1/dir/repo');
+			await waitForExpect(() => {
+				expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual([]);
+				expect(repoManager['onWatcherChangeQueue']['processing']).toBe(false);
+				expect(spyOnStat).toHaveBeenCalledWith('/path/to/workspace-folder1/dir/repo', expect.anything());
+				expect(repoManager.getRepos()).toStrictEqual({
+					'/path/to/workspace-folder1/repo': mockRepoState({ workspaceFolderIndex: 0 })
+				});
+				expect(onDidChangeReposEvents).toStrictEqual([]);
 			});
-			expect(onDidChangeReposEvents).toStrictEqual([]);
-			expect(repoManager['onWatcherChangeQueue']['queue']).toStrictEqual([]);
-
-			// Teardown
-			repoManager.dispose();
 		});
 	});
 

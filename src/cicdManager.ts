@@ -204,7 +204,7 @@ export class CicdManager extends Disposable {
 	 */
 	private fetchFromGitHub(cicdRequest: CICDRequestItem) {
 		let t = (new Date()).getTime();
-		if (cicdRequest.checkAfter !== 0 && t < this.githubTimeout) {
+		if (t < this.githubTimeout) {
 			// Defer request until after timeout
 			this.queue.addItem(cicdRequest, this.githubTimeout, false);
 			this.fetchCICDsInterval();
@@ -240,7 +240,7 @@ export class CicdManager extends Disposable {
 
 		let triggeredOnError = false;
 		const onError = (err: Error) => {
-			this.logger.log('GitHub API HTTPS Error - ' + err.message);
+			this.logger.log('GitHub API HTTPS Error - ' + err?.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
@@ -404,7 +404,7 @@ export class CicdManager extends Disposable {
 	 */
 	private fetchFromGitLab(cicdRequest: CICDRequestItem) {
 		let t = (new Date()).getTime();
-		if (cicdRequest.checkAfter !== 0 && t < this.gitLabTimeout) {
+		if (t < this.gitLabTimeout) {
 			// Defer request until after timeout
 			this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
 			this.fetchCICDsInterval();

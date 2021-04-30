@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { CicdManager } from './cicdManager';
 import { getConfig } from './config';
-import { DataSource, GIT_CONFIG, GitCommitDetailsData } from './dataSource';
+import { DataSource, GitCommitDetailsData, GitConfigKey } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
@@ -264,7 +264,8 @@ export class GitGraphView extends Disposable {
 			case 'compareCommits':
 				this.sendMessage({
 					command: 'compareCommits',
-					commitHash: msg.commitHash, compareWithHash: msg.compareWithHash,
+					commitHash: msg.commitHash,
+					compareWithHash: msg.compareWithHash,
 					...await this.dataSource.getCommitComparison(msg.repo, msg.fromHash, msg.toHash),
 					codeReview: msg.toHash !== UNCOMMITTED ? this.extensionState.getCodeReview(msg.repo, msg.fromHash + '-' + msg.toHash) : null,
 					refresh: msg.refresh
@@ -342,10 +343,10 @@ export class GitGraphView extends Disposable {
 			case 'deleteUserDetails':
 				errorInfos = [];
 				if (msg.name) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserName, msg.location));
 				}
 				if (msg.email) {
-					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.location));
+					errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserEmail, msg.location));
 				}
 				this.sendMessage({
 					command: 'deleteUserDetails',
@@ -372,20 +373,29 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'editUserDetails':
 				errorInfos = [
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.NAME, msg.name, msg.location),
-					await this.dataSource.setConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, msg.email, msg.location)
+					await this.dataSource.setConfigValue(msg.repo, GitConfigKey.UserName, msg.name, msg.location),
+					await this.dataSource.setConfigValue(msg.repo, GitConfigKey.UserEmail, msg.email, msg.location)
 				];
 				if (errorInfos[0] === null && errorInfos[1] === null) {
 					if (msg.deleteLocalName) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.NAME, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserName, GitConfigLocation.Local));
 					}
 					if (msg.deleteLocalEmail) {
-						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GIT_CONFIG.USER.EMAIL, GitConfigLocation.Local));
+						errorInfos.push(await this.dataSource.unsetConfigValue(msg.repo, GitConfigKey.UserEmail, GitConfigLocation.Local));
 					}
 				}
 				this.sendMessage({
 					command: 'editUserDetails',
 					errors: errorInfos
+				});
+				break;
+			case 'endCodeReview':
+				this.extensionState.endCodeReview(msg.repo, msg.id);
+				break;
+			case 'exportRepoConfig':
+				this.sendMessage({
+					command: 'exportRepoConfig',
+					error: await this.repoManager.exportRepoConfig(msg.repo)
 				});
 				break;
 			case 'fetch':
@@ -404,15 +414,6 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'fetchIntoLocalBranch',
 					error: await this.dataSource.fetchIntoLocalBranch(msg.repo, msg.remote, msg.remoteBranch, msg.localBranch, msg.force)
-				});
-				break;
-			case 'endCodeReview':
-				this.extensionState.endCodeReview(msg.repo, msg.id);
-				break;
-			case 'exportRepoConfig':
-				this.sendMessage({
-					command: 'exportRepoConfig',
-					error: await this.repoManager.exportRepoConfig(msg.repo)
 				});
 				break;
 			case 'loadCommits':
@@ -459,7 +460,8 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'merge':
 				this.sendMessage({
-					command: 'merge', actionOn: msg.actionOn,
+					command: 'merge',
+					actionOn: msg.actionOn,
 					error: await this.dataSource.merge(msg.repo, msg.obj, msg.actionOn, msg.createNewCommit, msg.squash, msg.noCommit)
 				});
 				break;
@@ -532,7 +534,9 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'rebase':
 				this.sendMessage({
-					command: 'rebase', actionOn: msg.actionOn, interactive: msg.interactive,
+					command: 'rebase',
+					actionOn: msg.actionOn,
+					interactive: msg.interactive,
 					error: await this.dataSource.rebase(msg.repo, msg.obj, msg.actionOn, msg.ignoreDate, msg.interactive)
 				});
 				break;
@@ -633,7 +637,20 @@ export class GitGraphView extends Disposable {
 	 * @param msg The message to be sent.
 	 */
 	private sendMessage(msg: ResponseMessage) {
-		this.panel.webview.postMessage(msg);
+		if (this.isDisposed()) {
+			this.logger.log('The Git Graph View has already been disposed, ignored sending "' + msg.command + '" message.');
+		} else {
+			this.panel.webview.postMessage(msg).then(
+				() => { },
+				() => {
+					if (this.isDisposed()) {
+						this.logger.log('The Git Graph View was disposed while sending "' + msg.command + '" message.');
+					} else {
+						this.logger.logError('Unable to send "' + msg.command + '" message to the Git Graph View.');
+					}
+				}
+			);
+		}
 	}
 
 	/**

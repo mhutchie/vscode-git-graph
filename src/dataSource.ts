@@ -7,7 +7,7 @@ import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
 import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
+import { GitExecutable, GitVersionRequirement, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -17,21 +17,15 @@ const INVALID_BRANCH_REGEXP = /^\(.* .*\)$/;
 const REMOTE_HEAD_BRANCH_REGEXP = /^remotes\/.*\/HEAD$/;
 const GIT_LOG_SEPARATOR = 'XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb';
 
-export const GIT_CONFIG = {
-	DIFF: {
-		GUI_TOOL: 'diff.guitool',
-		TOOL: 'diff.tool'
-	},
-	REMOTE: {
-		PUSH_DEFAULT: 'remote.pushdefault'
-	},
-	USER: {
-		EMAIL: 'user.email',
-		NAME: 'user.name'
-	}
-};
+export const enum GitConfigKey {
+	DiffGuiTool = 'diff.guitool',
+	DiffTool = 'diff.tool',
+	RemotePushDefault = 'remote.pushdefault',
+	UserEmail = 'user.email',
+	UserName = 'user.name'
+}
 
-const GPG_STATUS_CODE_PARSING_DETAILS: { [statusCode: string]: GpgStatusCodeParsingDetails } = {
+const GPG_STATUS_CODE_PARSING_DETAILS: Readonly<{ [statusCode: string]: GpgStatusCodeParsingDetails }> = {
 	'GOODSIG': { status: GitSignatureStatus.GoodAndValid, uid: true },
 	'BADSIG': { status: GitSignatureStatus.Bad, uid: true },
 	'ERRSIG': { status: GitSignatureStatus.CannotBeChecked, uid: false },
@@ -95,9 +89,9 @@ export class DataSource extends Disposable {
 	 * Set the Git executable used by the DataSource.
 	 * @param gitExecutable The Git executable.
 	 */
-	public setGitExecutable(gitExecutable: GitExecutable | null) {
+	private setGitExecutable(gitExecutable: GitExecutable | null) {
 		this.gitExecutable = gitExecutable;
-		this.gitExecutableSupportsGpgInfo = gitExecutable !== null ? doesVersionMeetRequirement(gitExecutable.version, '2.4.0') : false;
+		this.gitExecutableSupportsGpgInfo = gitExecutable !== null && doesVersionMeetRequirement(gitExecutable.version, GitVersionRequirement.GpgInfo);
 		this.generateGitCommandFormats();
 	}
 
@@ -314,9 +308,9 @@ export class DataSource extends Disposable {
 			return {
 				config: {
 					branches: branches,
-					diffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.TOOL),
-					guiDiffTool: getConfigValue(consolidatedConfigs, GIT_CONFIG.DIFF.GUI_TOOL),
-					pushDefault: getConfigValue(consolidatedConfigs, GIT_CONFIG.REMOTE.PUSH_DEFAULT),
+					diffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffTool),
+					guiDiffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffGuiTool),
+					pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
 					remotes: remotes.map((remote) => ({
 						name: remote,
 						url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
@@ -324,12 +318,12 @@ export class DataSource extends Disposable {
 					})),
 					user: {
 						name: {
-							local: getConfigValue(localConfigs, GIT_CONFIG.USER.NAME),
-							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.NAME)
+							local: getConfigValue(localConfigs, GitConfigKey.UserName),
+							global: getConfigValue(globalConfigs, GitConfigKey.UserName)
 						},
 						email: {
-							local: getConfigValue(localConfigs, GIT_CONFIG.USER.EMAIL),
-							global: getConfigValue(globalConfigs, GIT_CONFIG.USER.EMAIL)
+							local: getConfigValue(localConfigs, GitConfigKey.UserEmail),
+							global: getConfigValue(globalConfigs, GitConfigKey.UserEmail)
 						}
 					}
 				},
@@ -503,8 +497,8 @@ export class DataSource extends Disposable {
 	 * @returns The tag details.
 	 */
 	public getTagDetails(repo: string, tagName: string): Promise<GitTagDetailsData> {
-		if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, '1.7.8')) {
-			return Promise.resolve({ details: null, error: constructIncompatibleGitVersionMessage(this.gitExecutable, '1.7.8', 'retrieving Tag Details') });
+		if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, GitVersionRequirement.TagDetails)) {
+			return Promise.resolve({ details: null, error: constructIncompatibleGitVersionMessage(this.gitExecutable, GitVersionRequirement.TagDetails, 'retrieving Tag Details') });
 		}
 
 		const ref = 'refs/tags/' + tagName;
@@ -758,8 +752,8 @@ export class DataSource extends Disposable {
 		if (pruneTags) {
 			if (!prune) {
 				return Promise.resolve('In order to Prune Tags, pruning must also be enabled when fetching from ' + (remote !== null ? 'a remote' : 'remote(s)') + '.');
-			} else if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, '2.17.0')) {
-				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.17.0', 'pruning tags when fetching'));
+			} else if (this.gitExecutable !== null && !doesVersionMeetRequirement(this.gitExecutable.version, GitVersionRequirement.FetchAndPruneTags)) {
+				return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, GitVersionRequirement.FetchAndPruneTags, 'pruning tags when fetching'));
 			}
 			args.push('--prune-tags');
 		}
@@ -1139,23 +1133,23 @@ export class DataSource extends Disposable {
 	/**
 	 * Set a configuration value for a repository.
 	 * @param repo The path of the repository.
-	 * @param key The key to be set.
+	 * @param key The Git Config Key to be set.
 	 * @param value The value to be set.
 	 * @param location The location where the configuration value should be set.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public setConfigValue(repo: string, key: string, value: string, location: GitConfigLocation) {
+	public setConfigValue(repo: string, key: GitConfigKey, value: string, location: GitConfigLocation) {
 		return this.runGitCommand(['config', '--' + location, key, value], repo);
 	}
 
 	/**
 	 * Unset a configuration value for a repository.
 	 * @param repo The path of the repository.
-	 * @param key The key to be unset.
+	 * @param key The Git Config Key to be unset.
 	 * @param location The location where the configuration value should be unset.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public unsetConfigValue(repo: string, key: string, location: GitConfigLocation) {
+	public unsetConfigValue(repo: string, key: GitConfigKey, location: GitConfigLocation) {
 		return this.runGitCommand(['config', '--' + location, '--unset-all', key], repo);
 	}
 
@@ -1236,8 +1230,8 @@ export class DataSource extends Disposable {
 	public pushStash(repo: string, message: string, includeUntracked: boolean): Promise<ErrorInfo> {
 		if (this.gitExecutable === null) {
 			return Promise.resolve(UNABLE_TO_FIND_GIT_MSG);
-		} else if (!doesVersionMeetRequirement(this.gitExecutable.version, '2.13.2')) {
-			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, '2.13.2'));
+		} else if (!doesVersionMeetRequirement(this.gitExecutable.version, GitVersionRequirement.PushStash)) {
+			return Promise.resolve(constructIncompatibleGitVersionMessage(this.gitExecutable, GitVersionRequirement.PushStash));
 		}
 
 		let args = ['stash', 'push'];
@@ -1994,6 +1988,6 @@ interface GitTagDetailsData {
 }
 
 interface GpgStatusCodeParsingDetails {
-	status: GitSignatureStatus,
-	uid: boolean
+	readonly status: GitSignatureStatus,
+	readonly uid: boolean
 }

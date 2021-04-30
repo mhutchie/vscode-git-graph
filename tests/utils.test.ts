@@ -21,11 +21,13 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { DataSource } from '../src/dataSource';
-import { DEFAULT_REPO_STATE, ExtensionState } from '../src/extensionState';
+import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitFileStatus, PullRequestProvider, RepoDropdownOrder } from '../src/types';
-import { GitExecutable, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
+import { GitExecutable, GitVersionRequirement, UNCOMMITTED, abbrevCommit, abbrevText, archive, constructIncompatibleGitVersionMessage, copyFilePathToClipboard, copyToClipboard, createPullRequest, doesFileExist, doesVersionMeetRequirement, evalPromises, findGit, getExtensionVersion, getGitExecutable, getGitExecutableFromPaths, getNonce, getPathFromStr, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openExtensionSettings, openExternalUrl, openFile, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
+
+import { mockRepoState } from './helpers/utils';
 
 const extensionContext = vscode.mocks.extensionContext;
 const terminal = vscode.mocks.terminal;
@@ -577,23 +579,21 @@ describe('getRepoName', () => {
 });
 
 describe('getSortedRepositoryPaths', () => {
-	const mockRepoState = (name: string | null, workspaceFolderIndex: number | null) => Object.assign({}, DEFAULT_REPO_STATE, { name: name, workspaceFolderIndex: workspaceFolderIndex });
-
 	it('Should sort by RepoDropdownOrder.WorkspaceFullPath', () => {
 		// Run
 		const repoPaths = getSortedRepositoryPaths({
-			'/path/to/workspace-1/a': mockRepoState(null, 1),
-			'/path/to/workspace-2/c': mockRepoState(null, 0),
-			'/path/to/workspace-3/a': mockRepoState(null, null),
-			'/path/to/workspace-2/b': mockRepoState(null, 0),
-			'/path/to/workspace-1/b': mockRepoState(null, 1),
-			'/path/to/workspace-1/d': mockRepoState(null, 1),
-			'/path/to/workspace-3/b': mockRepoState(null, null),
-			'/path/to/workspace-3/d': mockRepoState(null, null),
-			'/path/to/workspace-2/a': mockRepoState(null, 0),
-			'/path/to/workspace-1/c': mockRepoState(null, 1),
-			'/path/to/workspace-3/c': mockRepoState(null, null),
-			'/path/to/workspace-2/d': mockRepoState(null, 0)
+			'/path/to/workspace-1/a': mockRepoState({ workspaceFolderIndex: 1 }),
+			'/path/to/workspace-2/c': mockRepoState({ workspaceFolderIndex: 0 }),
+			'/path/to/workspace-3/a': mockRepoState({ workspaceFolderIndex: null }),
+			'/path/to/workspace-2/b': mockRepoState({ workspaceFolderIndex: 0 }),
+			'/path/to/workspace-1/b': mockRepoState({ workspaceFolderIndex: 1 }),
+			'/path/to/workspace-1/d': mockRepoState({ workspaceFolderIndex: 1 }),
+			'/path/to/workspace-3/b': mockRepoState({ workspaceFolderIndex: null }),
+			'/path/to/workspace-3/d': mockRepoState({ workspaceFolderIndex: null }),
+			'/path/to/workspace-2/a': mockRepoState({ workspaceFolderIndex: 0 }),
+			'/path/to/workspace-1/c': mockRepoState({ workspaceFolderIndex: 1 }),
+			'/path/to/workspace-3/c': mockRepoState({ workspaceFolderIndex: null }),
+			'/path/to/workspace-2/d': mockRepoState({ workspaceFolderIndex: 0 })
 		}, RepoDropdownOrder.WorkspaceFullPath);
 
 		// Assert
@@ -603,13 +603,13 @@ describe('getSortedRepositoryPaths', () => {
 	it('Should sort by RepoDropdownOrder.FullPath', () => {
 		// Run
 		const repoPaths = getSortedRepositoryPaths({
-			'/path/to/a': mockRepoState(null, 1),
-			'/path/to/f': mockRepoState(null, 2),
-			'/path/to/D': mockRepoState(null, 3),
-			'/path/to/b': mockRepoState(null, 4),
-			'/path/to/é': mockRepoState(null, 5),
-			'/path/to/C': mockRepoState(null, 6),
-			'/path/a': mockRepoState(null, 1)
+			'/path/to/a': mockRepoState({ workspaceFolderIndex: 1 }),
+			'/path/to/f': mockRepoState({ workspaceFolderIndex: 2 }),
+			'/path/to/D': mockRepoState({ workspaceFolderIndex: 3 }),
+			'/path/to/b': mockRepoState({ workspaceFolderIndex: 4 }),
+			'/path/to/é': mockRepoState({ workspaceFolderIndex: 5 }),
+			'/path/to/C': mockRepoState({ workspaceFolderIndex: 6 }),
+			'/path/a': mockRepoState({ workspaceFolderIndex: 1 })
 		}, RepoDropdownOrder.FullPath);
 
 		// Assert
@@ -619,14 +619,14 @@ describe('getSortedRepositoryPaths', () => {
 	it('Should sort by RepoDropdownOrder.Name', () => {
 		// Run
 		const repoPaths = getSortedRepositoryPaths({
-			'/path/to/a': mockRepoState(null, 1),
-			'/path/to/x': mockRepoState('f', 2),
-			'/path/to/y': mockRepoState('D', 3),
-			'/path/to/b': mockRepoState(null, 4),
-			'/path/to/z': mockRepoState('é', 5),
-			'/path/to/C': mockRepoState(null, 6),
-			'/path/to/another/A': mockRepoState(null, 7),
-			'/path/a': mockRepoState(null, 1)
+			'/path/to/a': mockRepoState({ name: null, workspaceFolderIndex: 1 }),
+			'/path/to/x': mockRepoState({ name: 'f', workspaceFolderIndex: 2 }),
+			'/path/to/y': mockRepoState({ name: 'D', workspaceFolderIndex: 3 }),
+			'/path/to/b': mockRepoState({ name: null, workspaceFolderIndex: 4 }),
+			'/path/to/z': mockRepoState({ name: 'é', workspaceFolderIndex: 5 }),
+			'/path/to/C': mockRepoState({ name: null, workspaceFolderIndex: 6 }),
+			'/path/to/another/A': mockRepoState({ name: null, workspaceFolderIndex: 7 }),
+			'/path/a': mockRepoState({ name: null, workspaceFolderIndex: 1 })
 		}, RepoDropdownOrder.Name);
 
 		// Assert
@@ -2393,7 +2393,7 @@ describe('getGitExecutableFromPaths', () => {
 describe('doesVersionMeetRequirement', () => {
 	it('Should correctly determine major newer', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6.windows.0', '1.4.6');
+		const result = doesVersionMeetRequirement('2.7.8.windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2401,7 +2401,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine major older', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6.windows.0', '3.4.6');
+		const result = doesVersionMeetRequirement('0.7.8.windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(false);
@@ -2409,7 +2409,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine minor newer', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6 (Apple Git-122.3)', '2.3.6');
+		const result = doesVersionMeetRequirement('1.8.8 (Apple Git-122.3)', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2417,7 +2417,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine minor older', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6 (Apple Git-122.3)', '2.5.6');
+		const result = doesVersionMeetRequirement('1.6.8 (Apple Git-122.3)', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(false);
@@ -2425,7 +2425,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine patch newer', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6', '2.4.5');
+		const result = doesVersionMeetRequirement('1.7.9', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2433,7 +2433,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine patch older', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6', '2.4.7');
+		const result = doesVersionMeetRequirement('1.7.7', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(false);
@@ -2441,7 +2441,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine same version', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4.6', '2.4.6');
+		const result = doesVersionMeetRequirement('1.7.8', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2449,7 +2449,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine major newer if missing patch version', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2.4', '1.4');
+		const result = doesVersionMeetRequirement('2.7', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2457,7 +2457,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should correctly determine major newer if missing minor & patch versions', () => {
 		// Run
-		const result = doesVersionMeetRequirement('2', '1');
+		const result = doesVersionMeetRequirement('2', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2465,13 +2465,13 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should only use the valid portion of the version number to compute the result', () => {
 		// Run
-		const result1 = doesVersionMeetRequirement('2.4..6-windows.0', '2.4.1');
+		const result1 = doesVersionMeetRequirement('1.7..8-windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result1).toBe(false);
 
 		// Run
-		const result2 = doesVersionMeetRequirement('2.4..6-windows.0', '2.4.0');
+		const result2 = doesVersionMeetRequirement('1.8..7-windows.0', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result2).toBe(true);
@@ -2479,15 +2479,7 @@ describe('doesVersionMeetRequirement', () => {
 
 	it('Should return TRUE if executable version is invalid', () => {
 		// Run
-		const result = doesVersionMeetRequirement('a2.4.6', '1.4.6');
-
-		// Assert
-		expect(result).toBe(true);
-	});
-
-	it('Should return TRUE if version is invalid', () => {
-		// Run
-		const result = doesVersionMeetRequirement('2.4.6', 'a1.4.6');
+		const result = doesVersionMeetRequirement('a1.7.7', GitVersionRequirement.TagDetails);
 
 		// Assert
 		expect(result).toBe(true);
@@ -2497,10 +2489,10 @@ describe('doesVersionMeetRequirement', () => {
 describe('constructIncompatibleGitVersionMessage', () => {
 	it('Should return the constructed message', () => {
 		// Run
-		const result = constructIncompatibleGitVersionMessage({ version: '2.4.5', path: '' }, '3.0.0');
+		const result = constructIncompatibleGitVersionMessage({ version: '1.7.7', path: '' }, GitVersionRequirement.TagDetails);
 
 		// Assert
-		expect(result).toBe('A newer version of Git (>= 3.0.0) is required for this feature. Git 2.4.5 is currently installed. Please install a newer version of Git to use this feature.');
+		expect(result).toBe('A newer version of Git (>= 1.7.8) is required for this feature. Git 1.7.7 is currently installed. Please install a newer version of Git to use this feature.');
 	});
 });
 

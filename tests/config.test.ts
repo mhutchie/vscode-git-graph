@@ -1,10 +1,10 @@
-import { expectRenamedExtensionSettingToHaveBeenCalled } from './helpers/expectations';
-
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
 
 import { getConfig } from '../src/config';
 import { CommitDetailsViewLocation, CommitOrdering, DateFormatType, DateType, FileViewType, GitResetMode, GraphStyle, GraphUncommittedChangesStyle, RepoDropdownOrder, SquashMessageFormat, TabIconColourTheme, TagType } from '../src/types';
+
+import { expectRenamedExtensionSettingToHaveBeenCalled } from './helpers/expectations';
 
 const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 
@@ -270,6 +270,7 @@ describe('Config', () => {
 					merge: true,
 					rebase: true,
 					push: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -295,6 +296,7 @@ describe('Config', () => {
 					fetch: true,
 					merge: true,
 					pull: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -339,6 +341,7 @@ describe('Config', () => {
 					merge: true,
 					rebase: true,
 					push: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -364,6 +367,7 @@ describe('Config', () => {
 					fetch: true,
 					merge: true,
 					pull: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -423,6 +427,7 @@ describe('Config', () => {
 					merge: true,
 					rebase: true,
 					push: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,
@@ -448,6 +453,7 @@ describe('Config', () => {
 					fetch: false,
 					merge: true,
 					pull: true,
+					viewIssue: true,
 					createPullRequest: true,
 					createArchive: true,
 					selectInBranchesDropdown: true,

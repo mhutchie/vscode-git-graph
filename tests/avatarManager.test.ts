@@ -1,5 +1,3 @@
-import { waitForExpect } from './helpers/expectations';
-
 import * as date from './mocks/date';
 import * as vscode from './mocks/vscode';
 jest.mock('vscode', () => vscode, { virtual: true });
@@ -20,6 +18,8 @@ import { ExtensionState } from '../src/extensionState';
 import { Logger } from '../src/logger';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
+
+import { waitForExpect } from './helpers/expectations';
 
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
 let onDidChangeGitExecutable: EventEmitter<GitExecutable>;

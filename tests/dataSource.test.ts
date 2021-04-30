@@ -1,5 +1,3 @@
-import { waitForExpect } from './helpers/expectations';
-
 import * as date from './mocks/date';
 import { mockSpyOnSpawn } from './mocks/spawn';
 import * as vscode from './mocks/vscode';
@@ -12,11 +10,13 @@ import * as fs from 'fs';
 import * as iconv from 'iconv-lite';
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
-import { DataSource } from '../src/dataSource';
+import { DataSource, GitConfigKey } from '../src/dataSource';
 import { Logger } from '../src/logger';
 import { CommitOrdering, GitConfigLocation, GitPushBranchMode, GitResetMode, GitSignature, GitSignatureStatus, MergeActionOn, RebaseActionOn, TagType } from '../src/types';
 import * as utils from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
+
+import { waitForExpect } from './helpers/expectations';
 
 const workspaceConfiguration = vscode.mocks.workspaceConfiguration;
 let onDidChangeConfiguration: EventEmitter<ConfigurationChangeEvent>;
@@ -111,6 +111,33 @@ describe('DataSource', () => {
 			// Assert
 			expect(result2).toBe(false);
 			expect(dataSource['gitExecutable']).toStrictEqual({ path: '/path/to/git', version: '2.25.0' });
+		});
+	});
+
+	describe('setGitExecutable', () => {
+		it('Should set gitExecutableSupportsGpgInfo to FALSE when there is no Git executable', () => {
+			// Run
+			dataSource.dispose();
+			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+
+			// Assert
+			expect(dataSource['gitExecutableSupportsGpgInfo']).toBe(false);
+		});
+
+		it('Should set gitExecutableSupportsGpgInfo to FALSE when the Git executable is older than 2.4.0', () => {
+			// Run
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.3.0' });
+
+			// Assert
+			expect(dataSource['gitExecutableSupportsGpgInfo']).toBe(false);
+		});
+
+		it('Should set gitExecutableSupportsGpgInfo to TRUE when the Git executable is at least 2.4.0', () => {
+			// Run
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.4.0' });
+
+			// Assert
+			expect(dataSource['gitExecutableSupportsGpgInfo']).toBe(true);
 		});
 	});
 
@@ -2742,6 +2769,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.4.0' });
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2805,6 +2833,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 			vscode.mockExtensionSettingReturnValue('showSignatureStatus', true);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.4.0' });
 
 			// Run
 			onDidChangeConfiguration.emit({
@@ -2860,7 +2889,7 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['diff', '--numstat', '--find-renames', '--diff-filter=AMDR', '-z', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b^', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should return the commit details (without signature status if not available)', async () => {
+		it('Should return the commit details (without signature status) when Git is older than 2.4.0', async () => {
 			// Setup
 			mockGitSuccessOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2bXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPba1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest AuthorXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-author@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest CommitterXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest-committer@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559259XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbCommit Message.\r\nSecond Line.');
 			mockGitSuccessOnce(['D', 'dir/deleted.txt', 'M', 'dir/modified.txt', 'R100', 'dir/renamed-old.txt', 'dir/renamed-new.txt', ''].join('\0'));
@@ -2868,12 +2897,9 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('date.type', 'Author Date');
 			vscode.mockExtensionSettingReturnValue('repository.useMailmap', false);
 			vscode.mockExtensionSettingReturnValue('repository.commits.showSignatureStatus', true);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.3.0' });
 
 			// Run
-			onDidChangeGitExecutable.emit({
-				path: '/path/to/git',
-				version: '2.3.0'
-			});
 			const result = await dataSource.getCommitDetails('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
 
 			// Assert
@@ -3855,6 +3881,7 @@ describe('DataSource', () => {
 	describe('getTagDetails', () => {
 		it('Should return the tag\'s details', async () => {
 			// Setup
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '1.7.8' });
 			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb<test@mhutchie.com>XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbsubject1\r\nsubject2\n\nbody1\nbody2\n\n');
 
 			// Run
@@ -3878,7 +3905,6 @@ describe('DataSource', () => {
 
 		it('Should return the tag\'s details (when email isn\'t enclosed by <>)', async () => {
 			// Setup
-			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '1.7.8' });
 			mockGitSuccessOnce('79e88e142b378f41dfd1f82d94209a7a411384edXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbTest TaggerXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtest@mhutchie.comXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb1587559258XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbXX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPbtag-message\n');
 
 			// Run
@@ -3923,7 +3949,7 @@ describe('DataSource', () => {
 			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['for-each-ref', 'refs/tags/tag-name', '--format=%(objectname)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggername)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggeremail)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(taggerdate:unix)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents:signature)XX7Nal-YARtTpjCikii9nJxER19D6diSyk-AWkPb%(contents)'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 
-		it('Should return an error message when viewing tag details with Git < 1.7.8', async () => {
+		it('Should return the "Incompatible Git Version" error message when viewing tag details and Git is older than 1.7.8', async () => {
 			// Setup
 			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '1.7.7' });
 
@@ -3934,6 +3960,22 @@ describe('DataSource', () => {
 			expect(result).toStrictEqual({
 				details: null,
 				error: 'A newer version of Git (>= 1.7.8) is required for retrieving Tag Details. Git 1.7.7 is currently installed. Please install a newer version of Git to use this feature.'
+			});
+			expect(spyOnSpawn).toHaveBeenCalledTimes(0);
+		});
+
+		it('Should return the "Unable to Find Git" error message when no Git executable is known', async () => {
+			// Setup
+			dataSource.dispose();
+			dataSource = new DataSource(null, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+
+			// Run
+			const result = await dataSource.getTagDetails('/path/to/repo', 'tag-name');
+
+			// Assert
+			expect(result).toStrictEqual({
+				details: null,
+				error: 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.'
 			});
 			expect(spyOnSpawn).toHaveBeenCalledTimes(0);
 		});
@@ -4819,7 +4861,7 @@ describe('DataSource', () => {
 			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
 		});
 
-		it('Should return an error message when pruning tags with Git < 2.17.0', async () => {
+		it('Should return the "Incompatible Git Version" error message when pruning tags and Git is older than 2.17.0', async () => {
 			// Setup
 			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.16.1' });
 
@@ -5770,12 +5812,21 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a branch in a terminal', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+			const resultPromise = dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -5784,12 +5835,21 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a commit in a terminal', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 			vscode.mockExtensionSettingReturnValue('repository.sign.commits', false);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
+			const resultPromise = dataSource.rebase('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', RebaseActionOn.Commit, false, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -5798,12 +5858,21 @@ describe('DataSource', () => {
 
 		it('Should launch the interactive rebase of the current branch on a branch in a terminal (signing the new commits)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 			vscode.mockExtensionSettingReturnValue('repository.sign.commits', true);
 
 			// Run
-			const result = await dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+			const resultPromise = dataSource.rebase('/path/to/repo', 'develop', RebaseActionOn.Branch, false, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6113,7 +6182,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Global);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6125,7 +6194,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Local);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.Local);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6137,7 +6206,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.System);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.System);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6149,7 +6218,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.setConfigValue('/path/to/repo', 'user.name', 'Test User Name', GitConfigLocation.Global);
+			const result = await dataSource.setConfigValue('/path/to/repo', GitConfigKey.UserName, 'Test User Name', GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -6162,7 +6231,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.Global);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6174,7 +6243,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.Local);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.Local);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6186,7 +6255,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.System);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.System);
 
 			// Assert
 			expect(result).toBe(null);
@@ -6198,7 +6267,7 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.unsetConfigValue('/path/to/repo', 'user.name', GitConfigLocation.Global);
+			const result = await dataSource.unsetConfigValue('/path/to/repo', GitConfigKey.UserName, GitConfigLocation.Global);
 
 			// Assert
 			expect(result).toBe('error message');
@@ -6369,6 +6438,7 @@ describe('DataSource', () => {
 	describe('pushStash', () => {
 		it('Should push the uncommitted changes to a stash', async () => {
 			// Setup
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.13.2' });
 			mockGitSuccessOnce();
 
 			// Run
@@ -6426,10 +6496,9 @@ describe('DataSource', () => {
 			expect(result).toBe('Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.');
 		});
 
-		it('Should return the "Incompatible Git Version" error message if git is older than 2.13.2', async () => {
+		it('Should return the "Incompatible Git Version" error message when Git is older than 2.13.2', async () => {
 			// Setup
-			dataSource.dispose();
-			dataSource = new DataSource({ path: '/path/to/git', version: '2.13.1' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
+			onDidChangeGitExecutable.emit({ path: '/path/to/git', version: '2.13.1' });
 
 			// Run
 			const result = await dataSource.pushStash('/path/to/repo', '', false);
@@ -6442,10 +6511,19 @@ describe('DataSource', () => {
 	describe('openExternalDirDiff', () => {
 		it('Should launch a gui directory diff (for one commit)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6456,10 +6534,19 @@ describe('DataSource', () => {
 
 		it('Should launch a gui directory diff (between two commits)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6470,10 +6557,19 @@ describe('DataSource', () => {
 
 		it('Should launch a gui directory diff (for uncommitted changes)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', utils.UNCOMMITTED, utils.UNCOMMITTED, true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', utils.UNCOMMITTED, utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6484,10 +6580,19 @@ describe('DataSource', () => {
 
 		it('Should launch a gui directory diff (between a commit and the uncommitted changes)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitSuccessOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6498,11 +6603,20 @@ describe('DataSource', () => {
 
 		it('Should launch a directory diff in a terminal (between two commits)', async () => {
 			// Setup
+			jest.useFakeTimers();
 			const spyOnOpenGitTerminal = jest.spyOn(utils, 'openGitTerminal');
 			spyOnOpenGitTerminal.mockReturnValueOnce();
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', false);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c', false);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);
@@ -6523,11 +6637,20 @@ describe('DataSource', () => {
 
 		it('Should display the error message when the diff tool doesn\'t exit successfully', async () => {
 			// Setup
+			jest.useFakeTimers();
 			mockGitThrowingErrorOnce('line1\nline2\nline3');
 			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
 
 			// Run
-			const result = await dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+			const resultPromise = dataSource.openExternalDirDiff('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', utils.UNCOMMITTED, true);
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1500);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+			const result = await resultPromise;
 
 			// Assert
 			expect(result).toBe(null);

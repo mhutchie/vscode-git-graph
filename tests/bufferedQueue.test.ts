@@ -1,13 +1,16 @@
-import { waitForExpect } from './helpers/expectations';
-
 import { BufferedQueue } from '../src/utils/bufferedQueue';
 
+import { waitForExpect } from './helpers/expectations';
+
 describe('BufferedQueue', () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+	});
+
 	it('Should add items to the queue, and then process them once the buffer has expired', async () => {
 		// Setup
 		const onItem = jest.fn(() => Promise.resolve(true)), onChanges = jest.fn(() => { });
 		const queue = new BufferedQueue<string>(onItem, onChanges);
-		jest.useFakeTimers();
 
 		// Run
 		queue.enqueue('a');
@@ -17,6 +20,7 @@ describe('BufferedQueue', () => {
 		// Assert
 		expect(queue['queue']).toStrictEqual(['a', 'b', 'c']);
 		expect(queue['processing']).toBe(false);
+		expect(clearTimeout).toHaveBeenCalledTimes(2);
 
 		// Run
 		jest.runOnlyPendingTimers();
@@ -40,7 +44,6 @@ describe('BufferedQueue', () => {
 		// Setup
 		const onItem = jest.fn(() => Promise.resolve(true)), onChanges = jest.fn(() => { });
 		const queue = new BufferedQueue<string>(onItem, onChanges);
-		jest.useFakeTimers();
 
 		// Run
 		queue.enqueue('a');
@@ -69,7 +72,6 @@ describe('BufferedQueue', () => {
 		// Setup
 		const onItem = jest.fn(() => Promise.resolve(false)), onChanges = jest.fn(() => { });
 		const queue = new BufferedQueue<string>(onItem, onChanges);
-		jest.useFakeTimers();
 
 		// Run
 		queue.enqueue('a');
@@ -113,7 +115,6 @@ describe('BufferedQueue', () => {
 		// Setup
 		const onItem = jest.fn(() => Promise.resolve(true)), onChanges = jest.fn(() => { });
 		const queue = new BufferedQueue<string>(onItem, onChanges);
-		jest.useFakeTimers();
 
 		// Run
 		queue.enqueue('a');
@@ -131,5 +132,51 @@ describe('BufferedQueue', () => {
 		// Assert
 		expect(jest.getTimerCount()).toBe(0);
 		expect(queue['timeout']).toBe(null);
+	});
+
+	describe('bufferDuration', () => {
+		it('Should use the default buffer duration of 1000ms', async () => {
+			// Setup
+			const onItem = jest.fn(() => Promise.resolve(true)), onChanges = jest.fn(() => { });
+			const queue = new BufferedQueue<string>(onItem, onChanges);
+
+			// Run
+			queue.enqueue('a');
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 1000);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+
+			// Assert
+			await waitForExpect(() => expect(queue['processing']).toBe(false));
+			expect(onItem).toHaveBeenCalledTimes(1);
+			expect(onItem).toHaveBeenCalledWith('a');
+			expect(onChanges).toHaveBeenCalledTimes(1);
+		});
+
+		it('Should use the specified buffer duration', async () => {
+			// Setup
+			const onItem = jest.fn(() => Promise.resolve(true)), onChanges = jest.fn(() => { });
+			const queue = new BufferedQueue<string>(onItem, onChanges, 128);
+
+			// Run
+			queue.enqueue('a');
+
+			// Assert
+			expect(setTimeout).toHaveBeenCalledWith(expect.anything(), 128);
+
+			// Run
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+
+			// Assert
+			await waitForExpect(() => expect(queue['processing']).toBe(false));
+			expect(onItem).toHaveBeenCalledTimes(1);
+			expect(onItem).toHaveBeenCalledWith('a');
+			expect(onChanges).toHaveBeenCalledTimes(1);
+		});
 	});
 });

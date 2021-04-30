@@ -472,7 +472,8 @@ export class CicdManager extends Disposable {
 								ret.forEach(element => {
 									let save: CICDDataSave;
 									if (cicdRequest.detail) {
-										save = this.convComitStatuses2CICDDataSave(element, cicdRequest.detail);
+										save = this.convGitLabComitStatuses2CICDDataSave(element, cicdRequest.detail,
+											`${hostProtocol}://${hostRootUrl}${hostPort === '' ? '' : ':' + hostPort}/${hostpath.replace(/%2F/g, '/')}/-/jobs/`);
 									} else {
 										save = this.convCICDData2CICDDataSave(element);
 									}
@@ -644,7 +645,7 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
-	 * Fetch an cicd from GitHub.
+	 * Fetch an cicd from GitHub/GitLab/Jenkins.
 	 * @param cicdData The CICDData.
 	 * @returns The CICDDataSave.
 	 */
@@ -660,13 +661,13 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
-	 * Fetch an cicd from GitHub.
-	 * @param cicdData The CICDData.
+	 * Fetch an cicd from GitLab.
+	 * @param data The result of GitLab commit statuses API.
 	 * @param detail Detail fetch flag.
 	 * @returns The CICDDataSave.
 	 */
-	private convComitStatuses2CICDDataSave(data: any, detail: boolean): CICDDataSave {
-		return {
+	private convGitLabComitStatuses2CICDDataSave(data: any, detail: boolean, url: string): CICDDataSave {
+		let ret = {
 			name: data!.name,
 			ref: data!.ref,
 			status: data!.status,
@@ -674,6 +675,10 @@ export class CicdManager extends Disposable {
 			event: '',
 			detail: detail
 		};
+		if (typeof ret.web_url === 'undefined' || ret.web_url === null) {
+			ret.web_url = url + data.id;
+		}
+		return ret;
 	}
 
 	/**

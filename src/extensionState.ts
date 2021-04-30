@@ -387,6 +387,7 @@ export class ExtensionState extends Disposable {
 	 * Add a new cicd to the cache of cicds known to Git Graph.
 	 * @param repo The repository that the cicd is used in.
 	 * @param hash The hash identifying the cicd commit.
+	 * @param id The identifying that the cicd job.
 	 * @param cicdDataSave The CICDDataSave.
 	 */
 	public saveCICD(repo: string, hash: string, id: string, cicdDataSave: CICDDataSave) {

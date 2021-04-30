@@ -221,10 +221,7 @@ code{
 #commitTable tr.commit td{
 	cursor:pointer;
 }
-#commitTable tr.commit td.cicdCol{
-	cursor:pointer;
-	overflow: visible;
-}
+
 #commitTable tr.commit.current span.description .text{
 	font-weight:bold;
 }

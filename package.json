@@ -497,17 +497,12 @@
 						"Commit": {
 							"type": "boolean",
 							"title": "Visibility of the Commit column"
-						},
-						"CICD": {
-							"type": "boolean",
-							"title": "Visibility of the CI/CD Status column"
 						}
 					},
 					"default": {
 						"Date": true,
 						"Author": true,
-						"Commit": true,
-						"CICD": false
+						"Commit": true
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},

@@ -492,7 +492,6 @@ export interface DefaultColumnVisibility {
 	readonly date: boolean;
 	readonly author: boolean;
 	readonly commit: boolean;
-	readonly cicd: boolean;
 }
 
 export interface DialogDefaults {

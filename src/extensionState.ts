@@ -125,6 +125,7 @@ export class ExtensionState extends Disposable {
 					outputSet[repo].showRemoteBranchesV2 = repoSet[repo].showRemoteBranches ? BooleanOverride.Enabled : BooleanOverride.Disabled;
 				}
 			}
+			// Decrypt cicdToken
 			if (typeof repoSet[repo].cicdConfigs !== 'undefined' && repoSet[repo].cicdConfigs !== null) {
 				outputSet[repo].cicdConfigs = [];
 				if (typeof repoSet[repo].cicdNonce !== 'undefined' && repoSet[repo].cicdNonce !== null) {
@@ -161,6 +162,7 @@ export class ExtensionState extends Disposable {
 		// Deep Clone gitRepoSet
 		let gitRepoSetTemp = JSON.parse(JSON.stringify(gitRepoSet));
 
+		// Encrypt cicdToken
 		Object.keys(gitRepoSetTemp).forEach((repo) => {
 			let ENCRYPTION_KEY = getNonce(); 		// Must be 256 bits (32 characters)
 			const IV_LENGTH = 16;					// For AES, this is always 16

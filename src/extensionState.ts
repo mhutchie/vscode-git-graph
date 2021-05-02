@@ -142,8 +142,7 @@ export class ExtensionState extends Disposable {
 							let config: CICDConfig = {
 								provider: element.provider,
 								cicdUrl: element.cicdUrl,
-								cicdToken: decrypted.toString(),
-								custom: null
+								cicdToken: decrypted.toString()
 							};
 							outputSet[repo].cicdConfigs?.push(config);
 						}
@@ -180,8 +179,7 @@ export class ExtensionState extends Disposable {
 				let config: CICDConfig = {
 					provider: cicdConfig.provider,
 					cicdUrl: cicdConfig.cicdUrl,
-					cicdToken: iv.toString('hex') + ':' + encrypted.toString('hex'),
-					custom: null
+					cicdToken: iv.toString('hex') + ':' + encrypted.toString('hex')
 				};
 				cicdConfigsEncrypto.push(config);
 			});

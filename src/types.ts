@@ -234,18 +234,10 @@ export const enum CICDProvider {
 
 interface CICDConfigBuiltIn extends CICDConfigBase {
 	readonly provider: CICDProvider;
-	readonly custom: null;
 }
 
-interface CICDConfigCustom extends CICDConfigBase {
-	readonly provider: CICDProvider.Custom;
-	readonly custom: {
-		readonly name: string,
-		readonly templateUrl: string
-	};
-}
 
-export type CICDConfig = CICDConfigBuiltIn | CICDConfigCustom;
+export type CICDConfig = CICDConfigBuiltIn;
 
 export interface GitRepoState {
 	cdvDivider: number;
@@ -718,7 +710,6 @@ export interface RequestCommitDetails extends RepoRequest {
 	readonly stash: GitCommitStash | null; // null => request is for a commit, otherwise => request is for a stash
 	readonly avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	readonly refresh: boolean;
-	readonly cicdConfigs: CICDConfig[] | null;
 }
 export interface ResponseCommitDetails extends ResponseWithErrorInfo {
 	readonly command: 'commitDetails';

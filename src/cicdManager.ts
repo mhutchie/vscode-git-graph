@@ -27,10 +27,6 @@ export class CicdManager extends Disposable {
 	private githubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
 	private jenkinsTimeout: number = 0;
-	private initialState: boolean = true;
-	private requestPage: number = -1;
-	private requestPageTimeout: NodeJS.Timer | null = null;
-	private cicdConfigsPrev: CICDConfig[] = [];
 
 	private per_page: number = 100;
 
@@ -77,75 +73,23 @@ export class CicdManager extends Disposable {
 	}
 
 	/**
-	 * Fetch an cicd, either from the cache if it already exists, or queue it to be fetched.
-	 * @param repo The repository that the cicd is used in.
-	 * @param hash The hash identifying the cicd commit.
-	 * @param cicdConfigs The CICDConfigs.
-	 */
-	public fetchCICDStatus(repo: string, hash: string) {
-		if (typeof this.cicds[repo] !== 'undefined' && typeof this.cicds[repo][hash] !== 'undefined') {
-			// CICD exists in the cache
-			this.emitCICD(repo, hash, this.cicds[repo][hash]);
-		} else {
-
-			let repos = this.repoManager.getRepos();
-			if (typeof repos[repo] !== 'undefined') {
-				if (repos[repo].cicdConfigs !== null) {
-					let cicdConfigs = repos[repo].cicdConfigs;
-					if (cicdConfigs !== null) {
-						// Check update user config
-						const cicdConfigsJSON = JSON.stringify(Object.entries(cicdConfigs).sort());
-						const cicdConfigsPrevJSON = JSON.stringify(Object.entries(this.cicdConfigsPrev).sort());
-						if (cicdConfigsJSON !== cicdConfigsPrevJSON) {
-							this.initialState = true;
-							this.requestPage = -1;
-							if (this.requestPageTimeout !== null) {
-								clearTimeout(this.requestPageTimeout);
-							}
-							this.requestPageTimeout = null;
-						}
-						// Deep Clone cicdConfigs
-						this.cicdConfigsPrev = JSON.parse(JSON.stringify(cicdConfigs));
-						// CICD not in the cache, request it
-						if (this.initialState) {
-							this.initialState = false;
-							cicdConfigs.forEach(cicdConfig => {
-								this.queue.add(repo, cicdConfig, this.requestPage, true);
-							});
-							// Reset initial state for 10 seconds
-							setTimeout(() => {
-								this.logger.log('Reset initial timer of CICD');
-								this.initialState = true;
-							}, 10000);
-							// set request page to top
-							this.requestPage = 1;
-							// Reset request page to all after 10 minutes
-							if (this.requestPageTimeout === null) {
-								this.requestPageTimeout = setTimeout(() => {
-									this.logger.log('Reset request page of CICD');
-									this.requestPage = -1;
-									this.requestPageTimeout = null;
-								}, 600000);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	/**
 	 * Get the data of an cicd.
 	 * @param repo The repository that the cicd is used in.
 	 * @param hash The hash identifying the cicd commit.
 	 * @param cicdConfigs The CICDConfigs.
 	 * @returns A JSON encoded data of an cicd if the cicd exists, otherwise NULL.
 	 */
-	public getCICDDetail(repo: string, hash: string, cicdConfigs: CICDConfig[]) {
+	public getCICDDetail(repo: string, hash: string) {
 		return new Promise<string | null>((resolve) => {
-			cicdConfigs.forEach(cicdConfig => {
-				this.queue.add(repo, cicdConfig, -1, true, true, hash);
-			});
+			let repos = this.repoManager.getRepos();
+			if (typeof repos[repo] !== 'undefined') {
+				let cicdConfigs = repos[repo].cicdConfigs;
+				if (cicdConfigs !== null) {
+					cicdConfigs.forEach(cicdConfig => {
+						this.queue.add(repo, cicdConfig, -1, true, true, hash);
+					});
+				}
+			}
 			if (typeof this.cicds[repo] !== 'undefined' && typeof this.cicds[repo][hash] !== 'undefined' && this.cicds[repo][hash] !== null) {
 				resolve(JSON.stringify(this.cicds[repo][hash]));
 			} else {
@@ -261,7 +205,7 @@ export class CicdManager extends Disposable {
 				if (res.headers['x-ratelimit-remaining'] === '0') {
 					// If the GitHub Api rate limit was reached, store the github timeout to prevent subsequent requests
 					this.githubTimeout = parseInt(<string>res.headers['x-ratelimit-reset']) * 1000;
-					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/' + new Date(this.githubTimeout).toString() + ')');
+					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/' + new Date(this.githubTimeout).toString() + ')');
 					if (cicdRequest.cicdConfig.cicdToken === '') {
 						this.logger.log('GitHub API Rate Limit can upgrade by Access Token.');
 					}

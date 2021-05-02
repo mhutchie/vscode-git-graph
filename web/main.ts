@@ -714,8 +714,7 @@ class GitGraphView {
 			hasParents: commit.parents.length > 0,
 			stash: commit.stash,
 			avatarEmail: this.config.fetchAvatars && hash !== UNCOMMITTED ? commit.email : null,
-			refresh: refresh,
-			cicdConfigs: this.gitRepos[this.currentRepo].cicdConfigs
+			refresh: refresh
 		});
 	}
 

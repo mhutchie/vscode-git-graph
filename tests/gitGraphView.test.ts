@@ -49,9 +49,10 @@ describe('GitGraphView', () => {
 		logger = new Logger();
 		dataSource = new DataSource({ path: '/path/to/git', version: '2.25.0' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
 		extensionState = new ExtensionState(vscode.mocks.extensionContext, onDidChangeGitExecutable.subscribe);
+		jest.spyOn(extensionState, 'getCICDCache').mockReturnValue({});
 		avatarManager = new AvatarManager(dataSource, extensionState, logger);
-		cicdManager = new CicdManager(extensionState, repoManager, logger);
 		repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration.subscribe, logger);
+		cicdManager = new CicdManager(extensionState, repoManager, logger);
 
 		spyOnLog = jest.spyOn(logger, 'log');
 		spyOnLogError = jest.spyOn(logger, 'logError');
@@ -966,8 +967,7 @@ describe('GitGraphView', () => {
 					hasParents: true,
 					stash: null,
 					avatarEmail: 'user@mhutchie.com',
-					refresh: false,
-					cicdConfigs: null
+					refresh: false
 				});
 
 				// Assert
@@ -1005,8 +1005,7 @@ describe('GitGraphView', () => {
 					hasParents: true,
 					stash: null,
 					avatarEmail: null,
-					refresh: false,
-					cicdConfigs: null
+					refresh: false
 				});
 
 				// Assert
@@ -1051,8 +1050,7 @@ describe('GitGraphView', () => {
 					hasParents: true,
 					stash: stash,
 					avatarEmail: null,
-					refresh: false,
-					cicdConfigs: null
+					refresh: false
 				});
 
 				// Assert

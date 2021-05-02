@@ -475,8 +475,7 @@ class SettingsWidget {
 				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
 					let config: GG.CICDConfig = {
 						provider: <GG.CICDProvider>parseInt(<string>values[0]), cicdUrl: <string>values[1],
-						cicdToken: <string>values[2],
-						custom: null
+						cicdToken: <string>values[2]
 					};
 					return config;
 				};

@@ -250,7 +250,7 @@ export class GitGraphView extends Disposable {
 							? this.dataSource.getCommitDetails(msg.repo, msg.commitHash, msg.hasParents)
 							: this.dataSource.getStashDetails(msg.repo, msg.commitHash, msg.stash),
 					msg.avatarEmail !== null ? this.avatarManager.getAvatarImage(msg.avatarEmail) : Promise.resolve(null),
-					msg.cicdConfigs !== null ? this.cicdManager.getCICDDetail(msg.repo, msg.commitHash, msg.cicdConfigs) : Promise.resolve(null)
+					this.cicdManager.getCICDDetail(msg.repo, msg.commitHash)
 				]);
 				this.sendMessage({
 					command: 'commitDetails',
@@ -406,9 +406,6 @@ export class GitGraphView extends Disposable {
 				break;
 			case 'fetchAvatar':
 				this.avatarManager.fetchAvatarImage(msg.email, msg.repo, msg.remote, msg.commits);
-				break;
-			case 'fetchCICD':
-				this.cicdManager.fetchCICDStatus(msg.repo, msg.hash);
 				break;
 			case 'fetchIntoLocalBranch':
 				this.sendMessage({

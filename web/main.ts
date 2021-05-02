@@ -556,6 +556,7 @@ class GitGraphView {
 					(typeof cicdDataSave.name !== 'undefined' ? `<div class="cicdTooltipTitle">${cicdDataSave.name}</div>` : '') +
 					(typeof cicdDataSave.status !== 'undefined' ? `<div class="cicdTooltipSection">Status: ${cicdDataSave.status}</div>` : '') +
 					((typeof cicdDataSave.event !== 'undefined' && cicdDataSave.event !== '') ? `<div class="cicdTooltipSection">Event: ${cicdDataSave.event}</div>` : '') +
+					((typeof cicdDataSave.allow_failure !== 'undefined' && cicdDataSave.allow_failure) ? `<div class="cicdTooltipSection">Allow Failure: ${cicdDataSave.allow_failure}</div>` : '') +
 					'</div>' +
 					`<span class="cicdInfo ${status}">${(status === 'G' ? SVG_ICONS.passed : (status === 'B' ? SVG_ICONS.failed : (status === 'A' ? SVG_ICONS.alert : SVG_ICONS.inconclusive)))}</span>` +
 					'</a>';

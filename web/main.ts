@@ -542,7 +542,11 @@ class GitGraphView {
 			let cicdDataSave = cicdDataSaves[name];
 			let event = cicdDataSave.event || '';
 			let detailCurrent = cicdDataSave.detail || false;
-			let status = ((cicdDataSave.status === 'success' || cicdDataSave.status === 'SUCCESS') ? 'G' : ((cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure') ? 'B' : 'U'));
+			let status = ((cicdDataSave.status === 'success' || cicdDataSave.status === 'SUCCESS') ? 'G' :
+				(((typeof cicdDataSave.allow_failure === 'undefined' || !cicdDataSave.allow_failure) &&
+					(cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure')) ? 'B' :
+					((typeof cicdDataSave.allow_failure !== 'undefined' || cicdDataSave.allow_failure) &&
+						(cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure')) ? 'A' : 'U'));
 			// if (detailCurrent === detail && event === 'push' || event === 'pull_request' || event === '') {
 			if (detailCurrent === detail && event !== 'issues' && event !== 'issue_comment' && event !== 'schedule' && event !== 'workflow_run') {
 				ret +=
@@ -553,7 +557,7 @@ class GitGraphView {
 					(typeof cicdDataSave.status !== 'undefined' ? `<div class="cicdTooltipSection">Status: ${cicdDataSave.status}</div>` : '') +
 					((typeof cicdDataSave.event !== 'undefined' && cicdDataSave.event !== '') ? `<div class="cicdTooltipSection">Event: ${cicdDataSave.event}</div>` : '') +
 					'</div>' +
-					`<span class="cicdInfo ${status}">${(status === 'G' ? SVG_ICONS.passed : (status === 'B' ? SVG_ICONS.failed : SVG_ICONS.inconclusive))}</span>` +
+					`<span class="cicdInfo ${status}">${(status === 'G' ? SVG_ICONS.passed : (status === 'B' ? SVG_ICONS.failed : (status === 'A' ? SVG_ICONS.alert : SVG_ICONS.inconclusive)))}</span>` +
 					'</a>';
 			}
 		}

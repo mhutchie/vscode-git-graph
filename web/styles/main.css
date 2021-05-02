@@ -469,7 +469,7 @@ code{
 	fill:#009028;
 	opacity:0.9;
 }
-.cicdInfo.U svg{
+.cicdInfo.U svg, .cicdInfo.A svg{
 	fill:#f09000;
 	opacity:1;
 }
@@ -1082,7 +1082,7 @@ label > input[type=radio]:checked ~ .customRadio:after{
 .cicdTooltip .cicdTooltipContent.G{
 	border-color: #009028;
 }
-.cicdTooltip .cicdTooltipContent.U{
+.cicdTooltip .cicdTooltipContent.U, .cicdTooltip .cicdTooltipContent.A{
 	border-color: #f09000;
 }
 .cicdTooltip .cicdTooltipContent.B{

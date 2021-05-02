@@ -217,6 +217,7 @@ export interface CICDDataSave {
 	web_url: string;
 	event: string;
 	detail: boolean;
+	allow_failure: boolean;
 }
 
 export interface CICDConfigBase {

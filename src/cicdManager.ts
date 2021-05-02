@@ -600,7 +600,8 @@ export class CicdManager extends Disposable {
 			status: cicdData!.status,
 			web_url: cicdData!.web_url,
 			event: cicdData!.event,
-			detail: cicdData!.detail
+			detail: cicdData!.detail,
+			allow_failure: false
 		};
 	}
 
@@ -617,7 +618,8 @@ export class CicdManager extends Disposable {
 			status: data!.status,
 			web_url: data!.target_url,
 			event: '',
-			detail: detail
+			detail: detail,
+			allow_failure: data!.allow_failure
 		};
 		if (typeof ret.web_url === 'undefined' || ret.web_url === null) {
 			ret.web_url = url + data.id;

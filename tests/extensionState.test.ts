@@ -5,7 +5,9 @@ jest.mock('fs');
 
 import * as fs from 'fs';
 import { ExtensionState } from '../src/extensionState';
-import { BooleanOverride, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoState, RepoCommitOrdering } from '../src/types';
+import { BooleanOverride, CICDDataSave, CICDProvider, FileViewType, GitGraphViewGlobalState, GitGraphViewWorkspaceState, GitRepoState, RepoCommitOrdering } from '../src/types';
+import * as utils from '../src/utils';
+import * as crypto from 'crypto';
 import { GitExecutable } from '../src/utils';
 import { EventEmitter } from '../src/utils/event';
 
@@ -369,6 +371,193 @@ describe('ExtensionState', () => {
 			// Assert
 			expect(result).toStrictEqual({});
 		});
+
+		it('Should return the stored repositories with decrypt', () => {
+			// Setup
+			const cicdConfigsIn = [{
+				provider: CICDProvider.GitHubV3,
+				cicdUrl: 'https://github.com/keydepth/vscode-git-graph.git',
+				cicdToken: '31613262336334643565366631613262:aedfce60882614d275f01b86aa151bcd'
+			}];
+			const cicdConfigsOut = [{
+				provider: CICDProvider.GitHubV3,
+				cicdUrl: 'https://github.com/keydepth/vscode-git-graph.git',
+				cicdToken: 'token'
+			}];
+			const repoState: GitRepoState = {
+				cdvDivider: 0.5,
+				cdvHeight: 250,
+				columnWidths: null,
+				commitOrdering: RepoCommitOrdering.AuthorDate,
+				fileViewType: FileViewType.List,
+				hideRemotes: [],
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
+				issueLinkingConfig: null,
+				lastImportAt: 0,
+				name: 'Custom Name',
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
+				pullRequestConfig: null,
+				cicdConfigs: cicdConfigsIn,
+				cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+				showRemoteBranches: true,
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': repoState
+			});
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': Object.assign({}, repoState, {
+					cicdConfigs: cicdConfigsOut,
+					cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'
+				})
+			});
+		});
+
+		it('Should return the stored repositories with decrypt cicdNonce is null', () => {
+			// Setup
+			const cicdConfigsIn = [{
+				provider: CICDProvider.GitHubV3,
+				cicdUrl: 'https://github.com/keydepth/vscode-git-graph.git',
+				cicdToken: '31613262336334643565366631613262:aedfce60882614d275f01b86aa151bcd'
+			}];
+			const cicdConfigsOut: any = [];
+			const repoState: GitRepoState = {
+				cdvDivider: 0.5,
+				cdvHeight: 250,
+				columnWidths: null,
+				commitOrdering: RepoCommitOrdering.AuthorDate,
+				fileViewType: FileViewType.List,
+				hideRemotes: [],
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
+				issueLinkingConfig: null,
+				lastImportAt: 0,
+				name: 'Custom Name',
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
+				pullRequestConfig: null,
+				cicdConfigs: cicdConfigsIn,
+				cicdNonce: null,
+				showRemoteBranches: true,
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': repoState
+			});
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': Object.assign({}, repoState, {
+					cicdConfigs: cicdConfigsOut,
+					cicdNonce: null
+				})
+			});
+		});
+
+		it('Should return the stored repositories with decrypt cicdConfigs is null', () => {
+			// Setup
+			const cicdConfigsIn: any = null;
+			const cicdConfigsOut: any = null;
+			const repoState: GitRepoState = {
+				cdvDivider: 0.5,
+				cdvHeight: 250,
+				columnWidths: null,
+				commitOrdering: RepoCommitOrdering.AuthorDate,
+				fileViewType: FileViewType.List,
+				hideRemotes: [],
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
+				issueLinkingConfig: null,
+				lastImportAt: 0,
+				name: 'Custom Name',
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
+				pullRequestConfig: null,
+				cicdConfigs: cicdConfigsIn,
+				cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+				showRemoteBranches: true,
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': repoState
+			});
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': Object.assign({}, repoState, {
+					cicdConfigs: cicdConfigsOut,
+					cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'
+				})
+			});
+		});
+
+		it('Should return the stored repositories with decrypt cicdUrl  is undefined', () => {
+			// Setup
+			const cicdConfigsIn: any = [{
+				provider: CICDProvider.GitHubV3,
+				cicdToken: '31613262336334643565366631613262:aedfce60882614d275f01b86aa151bcd'
+			}];
+			const cicdConfigsOut: any = [];
+			const repoState: GitRepoState = {
+				cdvDivider: 0.5,
+				cdvHeight: 250,
+				columnWidths: null,
+				commitOrdering: RepoCommitOrdering.AuthorDate,
+				fileViewType: FileViewType.List,
+				hideRemotes: [],
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
+				issueLinkingConfig: null,
+				lastImportAt: 0,
+				name: 'Custom Name',
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
+				pullRequestConfig: null,
+				cicdConfigs: cicdConfigsIn,
+				cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d',
+				showRemoteBranches: true,
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce({
+				'/path/to/repo': repoState
+			});
+
+			// Run
+			const result = extensionState.getRepos();
+
+			// Assert
+			expect(result).toStrictEqual({
+				'/path/to/repo': Object.assign({}, repoState, {
+					cicdConfigs: cicdConfigsOut,
+					cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'
+				})
+			});
+		});
 	});
 
 	describe('saveRepos', () => {
@@ -382,6 +571,104 @@ describe('ExtensionState', () => {
 
 			// Assert
 			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('repoStates', repos);
+		});
+
+		it('Should store the provided repositories in the workspace state with encrypt', () => {
+			// Setup
+			const cicdConfigsIn = [{
+				provider: CICDProvider.GitHubV3,
+				cicdUrl: 'https://github.com/keydepth/vscode-git-graph.git',
+				cicdToken: 'token'
+			}];
+			const cicdConfigsOut = [{
+				provider: CICDProvider.GitHubV3,
+				cicdUrl: 'https://github.com/keydepth/vscode-git-graph.git',
+				cicdToken: '31613262336334643565366631613262:aedfce60882614d275f01b86aa151bcd'
+			}];
+			const repoState: GitRepoState = {
+				cdvDivider: 0.5,
+				cdvHeight: 250,
+				columnWidths: null,
+				commitOrdering: RepoCommitOrdering.AuthorDate,
+				fileViewType: FileViewType.List,
+				hideRemotes: [],
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
+				issueLinkingConfig: null,
+				lastImportAt: 0,
+				name: 'Custom Name',
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
+				pullRequestConfig: null,
+				cicdConfigs: cicdConfigsIn,
+				cicdNonce: null,
+				showRemoteBranches: true,
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
+			};
+			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
+			jest.spyOn(utils, 'getNonce').mockReturnValueOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d');
+			const buf16 = Buffer.from('1a2b3c4d5e6f1a2b');
+			jest.spyOn(crypto, 'randomBytes').mockImplementation(() => buf16);
+
+			// Run
+			extensionState.saveRepos({
+				'/path/to/repo': repoState
+			});
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('repoStates', {
+				'/path/to/repo': Object.assign({}, repoState, {
+					cicdConfigs: cicdConfigsOut,
+					cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'
+				})
+			});
+		});
+
+		it('Should store the provided repositories in the workspace state with encrypt cicdConfigs is null', () => {
+			// Setup
+			const repoState: GitRepoState = {
+				cdvDivider: 0.5,
+				cdvHeight: 250,
+				columnWidths: null,
+				commitOrdering: RepoCommitOrdering.AuthorDate,
+				fileViewType: FileViewType.List,
+				hideRemotes: [],
+				includeCommitsMentionedByReflogs: BooleanOverride.Enabled,
+				issueLinkingConfig: null,
+				lastImportAt: 0,
+				name: 'Custom Name',
+				onlyFollowFirstParent: BooleanOverride.Disabled,
+				onRepoLoadShowCheckedOutBranch: BooleanOverride.Enabled,
+				onRepoLoadShowSpecificBranches: ['master'],
+				pullRequestConfig: null,
+				cicdConfigs: null,
+				cicdNonce: null,
+				showRemoteBranches: true,
+				showRemoteBranchesV2: BooleanOverride.Enabled,
+				showStashes: BooleanOverride.Enabled,
+				showTags: BooleanOverride.Enabled,
+				workspaceFolderIndex: 0
+			};
+			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
+			jest.spyOn(utils, 'getNonce').mockReturnValueOnce('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d');
+			const buf16 = Buffer.from('1a2b3c4d5e6f1a2b');
+			jest.spyOn(crypto, 'randomBytes').mockImplementation(() => buf16);
+
+			// Run
+			extensionState.saveRepos({
+				'/path/to/repo': repoState
+			});
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('repoStates', {
+				'/path/to/repo': Object.assign({}, repoState, {
+					cicdConfigs: [],
+					cicdNonce: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d'
+				})
+			});
 		});
 	});
 
@@ -932,6 +1219,150 @@ describe('ExtensionState', () => {
 			expect(result).toBe('Visual Studio Code was unable to save the Git Graph Global State Memento.');
 			expect(extensionContext.globalState.update).toHaveBeenCalledWith('avatarCache', {});
 			expect(spyOnReaddir).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('getCICDCache', () => {
+		it('Should return the stored code reviews', () => {
+			// Setup
+			const cicdCache = {
+				'/path/to/repo': {
+					'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2': {
+						'id000': {
+							name: 'string',
+							status: 'string',
+							ref: 'string',
+							web_url: 'string',
+							event: 'string',
+							detail: 'boolean',
+							allow_failure: 'boolean'
+						}
+					}
+				}
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce(cicdCache);
+
+			// Run
+			const result = extensionState.getCICDCache();
+
+			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('cicdCache', {});
+			expect(result).toBe(cicdCache);
+		});
+
+		it('Should return the default value if not defined', () => {
+			// Setup
+			extensionContext.workspaceState.get.mockImplementationOnce((_, defaultValue) => defaultValue);
+
+			// Run
+			const result = extensionState.getCICDCache();
+
+			// Assert
+			expect(extensionContext.workspaceState.get).toHaveBeenCalledWith('cicdCache', {});
+			expect(result).toStrictEqual({});
+		});
+	});
+
+
+	describe('saveCICD', () => {
+		it('Should save the cicd to the cicd unknown cache', () => {
+			// Setup
+			const cicdCache = {
+				'/path/to/repo': {
+					'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2': {
+						'id000': {
+							name: 'string',
+							status: 'string',
+							ref: 'string',
+							web_url: 'string',
+							event: 'string',
+							detail: true,
+							allow_failure: true
+						}
+					}
+				}
+			};
+			const cicdDataSaveVal: CICDDataSave = {
+				name: 'string',
+				status: 'string',
+				ref: 'string',
+				web_url: 'string',
+				event: 'string',
+				detail: true,
+				allow_failure: true
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce({});
+			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
+
+			// Run
+			extensionState.saveCICD('/path/to/repo', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'id000', cicdDataSaveVal);
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('cicdCache', cicdCache);
+		});
+
+		it('Should save the cicd to the cicd known cache', () => {
+			// Setup
+			const cicdCache = {
+				'/path/to/repo': {
+					'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2': {
+						'id000': {
+							name: 'string',
+							status: 'string',
+							ref: 'string',
+							web_url: 'string',
+							event: 'string',
+							detail: true,
+							allow_failure: true
+						}
+					}
+				}
+			};
+			const cicdDataSaveVal: CICDDataSave = {
+				name: 'string1',
+				status: 'string1',
+				ref: 'string1',
+				web_url: 'string1',
+				event: 'string1',
+				detail: false,
+				allow_failure: false
+			};
+			const cicdCacheUpdated = {
+				'/path/to/repo': {
+					'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2': {
+						'id000': {
+							name: 'string1',
+							status: 'string1',
+							ref: 'string1',
+							web_url: 'string1',
+							event: 'string1',
+							detail: false,
+							allow_failure: false
+						}
+					}
+				}
+			};
+			extensionContext.workspaceState.get.mockReturnValueOnce(cicdCache);
+			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
+
+			// Run
+			extensionState.saveCICD('/path/to/repo', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', 'id000', cicdDataSaveVal);
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('cicdCache', cicdCacheUpdated);
+		});
+	});
+
+	describe('clearCICDCache', () => {
+		it('Should clear all cicd from the cache', async () => {
+			// Setup
+			extensionContext.workspaceState.update.mockResolvedValueOnce(null);
+
+			// Run
+			extensionState.clearCICDCache();
+
+			// Assert
+			expect(extensionContext.workspaceState.update).toHaveBeenCalledWith('cicdCache', {});
 		});
 	});
 

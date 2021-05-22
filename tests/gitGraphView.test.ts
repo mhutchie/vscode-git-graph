@@ -9,7 +9,7 @@ jest.mock('../src/repoManager');
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { AvatarEvent, AvatarManager } from '../src/avatarManager';
-import { CicdManager } from '../src/cicdManager';
+import { CICDEvent, CicdManager } from '../src/cicdManager';
 import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { GitGraphView, standardiseCspSource } from '../src/gitGraphView';
@@ -27,6 +27,7 @@ describe('GitGraphView', () => {
 	let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 	let onDidChangeRepos: EventEmitter<RepoChangeEvent>;
 	let onAvatar: EventEmitter<AvatarEvent>;
+	let onCICD: EventEmitter<CICDEvent>;
 
 	let logger: Logger;
 	let dataSource: DataSource;
@@ -45,6 +46,7 @@ describe('GitGraphView', () => {
 		onDidChangeGitExecutable = new EventEmitter<utils.GitExecutable>();
 		onDidChangeRepos = new EventEmitter<RepoChangeEvent>();
 		onAvatar = new EventEmitter<AvatarEvent>();
+		onCICD = new EventEmitter<CICDEvent>();
 
 		logger = new Logger();
 		dataSource = new DataSource({ path: '/path/to/git', version: '2.25.0' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
@@ -67,6 +69,9 @@ describe('GitGraphView', () => {
 		Object.defineProperty(avatarManager, 'onAvatar', {
 			get: () => onAvatar.subscribe
 		});
+		Object.defineProperty(cicdManager, 'onCICD', {
+			get: () => onCICD.subscribe
+		});
 		jest.spyOn(extensionState, 'getLastActiveRepo').mockReturnValue(null);
 	});
 
@@ -78,6 +83,7 @@ describe('GitGraphView', () => {
 		dataSource.dispose();
 		logger.dispose();
 		onAvatar.dispose();
+		onCICD.dispose();
 		onDidChangeRepos.dispose();
 		onDidChangeGitExecutable.dispose();
 		onDidChangeConfiguration.dispose();
@@ -434,6 +440,31 @@ describe('GitGraphView', () => {
 						command: 'fetchAvatar',
 						email: 'user1@mhutchie.com',
 						image: 'data:image/png;base64,YmluYXJ5LWltYWdlLWRhdGE='
+					}
+				]);
+			});
+		});
+
+		describe('CicdManager.onCICD', () => {
+			it('Should send the cicd', () => {
+				// Setup
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
+
+				// Run
+				onCICD.emit({
+					repo: 'path/to/repo',
+					hash: 'data:image/png;base64,YmluYXJ5LWltYWdlLWRhdGE=',
+					cicdDataSaves: {}
+				});
+
+				// Assert
+				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
+				expect(mockedWebviewPanel.mocks.messages).toStrictEqual([
+					{
+						command: 'fetchCICD',
+						repo: 'path/to/repo',
+						hash: 'data:image/png;base64,YmluYXJ5LWltYWdlLWRhdGE=',
+						cicdDataSaves: {}
 					}
 				]);
 			});

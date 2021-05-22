@@ -578,6 +578,26 @@ describe('CommandManager', () => {
 		});
 	});
 
+	describe('git-graph.clearCICDCache', () => {
+		let spyOnClearCache: jest.SpyInstance;
+		beforeAll(() => {
+			spyOnClearCache = jest.spyOn(cicdManager, 'clearCache');
+		});
+
+		it('Should clear the cicd cache', async () => {
+			// Setup
+			spyOnClearCache.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.clearCICDCache');
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnClearCache).toBeCalledTimes(1);
+			});
+		});
+	});
+
 	describe('git-graph.fetch', () => {
 		let spyOnGetLastActiveRepo: jest.SpyInstance;
 		beforeAll(() => {

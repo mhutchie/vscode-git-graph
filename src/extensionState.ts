@@ -126,11 +126,13 @@ export class ExtensionState extends Disposable {
 				}
 			}
 			// Decrypt cicdToken
-			if (typeof repoSet[repo].cicdConfigs !== 'undefined' && repoSet[repo].cicdConfigs !== null) {
+			const cicdConfigs = repoSet[repo].cicdConfigs;
+			if (typeof repoSet[repo].cicdConfigs !== 'undefined' && cicdConfigs !== null) {
 				outputSet[repo].cicdConfigs = [];
+				const cicdConfigsOut: CICDConfig[] = [];
 				if (typeof repoSet[repo].cicdNonce !== 'undefined' && repoSet[repo].cicdNonce !== null) {
 					let ENCRYPTION_KEY = repoSet[repo].cicdNonce; 		// Must be 256 bits (32 characters)
-					repoSet[repo].cicdConfigs?.forEach(element => {
+					cicdConfigs.forEach(element => {
 						if (typeof element.cicdUrl !== 'undefined' && typeof element.cicdToken !== 'undefined') {
 							let textParts: string[] = element.cicdToken.split(':');
 							let iv = Buffer.from(textParts[0], 'hex');
@@ -145,10 +147,11 @@ export class ExtensionState extends Disposable {
 								cicdUrl: element.cicdUrl,
 								cicdToken: decrypted.toString()
 							};
-							outputSet[repo].cicdConfigs?.push(config);
+							cicdConfigsOut.push(config);
 						}
 					});
 				}
+				outputSet[repo].cicdConfigs = cicdConfigsOut;
 			}
 		});
 		return outputSet;

@@ -24,7 +24,7 @@ export class CicdManager extends Disposable {
 	private queue: CicdRequestQueue;
 	private interval: NodeJS.Timer | null = null;
 
-	private githubTimeout: number = 0;
+	private gitHubTimeout: number = 0;
 	private gitLabTimeout: number = 0;
 	private jenkinsTimeout: number = 0;
 
@@ -134,6 +134,7 @@ export class CicdManager extends Disposable {
 					this.fetchFromJenkins(cicdRequest);
 					break;
 				default:
+					this.logger.log('Unknown provider Error');
 					break;
 			}
 		} else {
@@ -148,27 +149,28 @@ export class CicdManager extends Disposable {
 	 */
 	private fetchFromGitHub(cicdRequest: CICDRequestItem) {
 		let t = (new Date()).getTime();
-		if (t < this.githubTimeout) {
+		if (t < this.gitHubTimeout) {
 			// Defer request until after timeout
-			this.queue.addItem(cicdRequest, this.githubTimeout, false);
+			this.queue.addItem(cicdRequest, this.gitHubTimeout, false);
 			this.fetchCICDsInterval();
 			return;
 		}
 
 		let cicdConfig = cicdRequest.cicdConfig;
 
-		const match1 = cicdConfig.cicdUrl.match(/^(https?:\/\/|git@)((?=[^/]+@)[^@]+@|(?![^/]+@))([^/:]+)/);
-		let hostRootUrl = match1 !== null ? 'api.' + match1[3] : '';
-
-		const match2 = cicdConfig.cicdUrl.match(/^(https?:\/\/|git@)[^/:]+[/:]([^/]+)\/([^/]*?)(.git|)$/);
-		let sourceOwner = match2 !== null ? match2[2] : '';
-		let sourceRepo = match2 !== null ? match2[3] : '';
+		let gitUrl = cicdConfig.cicdUrl.replace(/\/$/g, '');
+		gitUrl = gitUrl.replace(/.git$/g, '');
+		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
+		let hostProtocol = (match1 !== null && typeof match1[1] !== 'undefined') ? '' + match1[1].toLowerCase() : '';
+		let hostRootUrl = (match1 !== null && typeof match1[2] !== 'undefined') ? 'api.' + match1[2] : '';
+		let hostPort = (match1 !== null && typeof match1[3] !== 'undefined') ? '' + match1[3] : '';
+		let hostPath = (match1 !== null && typeof match1[4] !== 'undefined') ? '' + match1[4].replace(/^\//, '') : '';
 
 		// https://docs.github.com/en/rest/reference/actions#list-workflow-runs-for-a-repository
-		let cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/actions/runs?per_page=${this.per_page}`;
+		let cicdRootPath = `/repos/${hostPath}/actions/runs?per_page=${this.per_page}`;
 		if (cicdRequest.detail) {
 			// https://docs.github.com/en/rest/reference/checks#list-check-runs-for-a-git-reference
-			cicdRootPath = `/repos/${sourceOwner}/${sourceRepo.replace(/\//g, '%2F')}/commits/${cicdRequest.hash}/check-runs?per_page=${this.per_page}`;
+			cicdRootPath = `/repos/${hostPath}/commits/${cicdRequest.hash}/check-runs?per_page=${this.per_page}`;
 		}
 		if (cicdRequest.page > 1) {
 			cicdRootPath = `${cicdRootPath}&page=${cicdRequest.page}`;
@@ -184,109 +186,116 @@ export class CicdManager extends Disposable {
 
 		let triggeredOnError = false;
 		const onError = (err: Error) => {
-			this.logger.log('GitHub API HTTPS Error - ' + err?.message);
+			this.logger.log('GitHub API ' + hostProtocol + ' Error - ' + err?.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
-				this.githubTimeout = t + 300000;
-				this.queue.addItem(cicdRequest, this.githubTimeout, false);
+				this.gitHubTimeout = t + 300000;
+				this.queue.addItem(cicdRequest, this.gitHubTimeout, false);
 			}
 		};
-
-		this.logger.log('Requesting CICD for https://' + hostRootUrl + cicdRootPath + ' detail=' + cicdRequest.detail + ' page=' + cicdRequest.page + ' from GitHub');
-		https.get({
-			hostname: hostRootUrl, path: cicdRootPath,
-			headers: headers,
-			agent: false, timeout: 15000
-		}, (res) => {
-			let respBody = '';
-			res.on('data', (chunk: Buffer) => { respBody += chunk; });
-			res.on('end', async () => {
-				if (res.headers['x-ratelimit-remaining'] === '0') {
-					// If the GitHub Api rate limit was reached, store the github timeout to prevent subsequent requests
-					this.githubTimeout = parseInt(<string>res.headers['x-ratelimit-reset']) * 1000;
-					this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/' + new Date(this.githubTimeout).toString() + ')');
-					if (cicdRequest.cicdConfig.cicdToken === '') {
-						this.logger.log('GitHub API Rate Limit can upgrade by Access Token.');
-					}
-				}
-
-				if (res.statusCode === 200) { // Success
-					this.logger.log('GitHub API - (' + res.statusCode + ')' + 'https://' + hostRootUrl + cicdRootPath);
-					try {
-						let respJson: any = JSON.parse(respBody);
-						if (typeof respJson['check_runs'] !== 'undefined' && respJson['check_runs'].length >= 1) { // url found
-							let ret: CICDData[] = respJson['check_runs'].map((elm: { [x: string]: any; }) => {
-								return {
-									id: elm['id'],
-									status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
-									ref: '',
-									sha: elm['head_sha'],
-									web_url: elm['html_url'],
-									created_at: elm['created_at'],
-									updated_at: elm['updated_at'],
-									name: elm['app']!['name'] + '(' + elm['name'] + ')',
-									event: '',
-									detail: cicdRequest.detail
-								};
-							});
-							ret.forEach(element => {
-								let save = this.convCICDData2CICDDataSave(element);
-								this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
-							});
-							this.reFetchPageGitHub(cicdRequest, res, cicdConfig);
-							return;
-						} else if (typeof respJson['workflow_runs'] !== 'undefined' && respJson['workflow_runs'].length >= 1) { // url found
-							let ret: CICDData[] = respJson['workflow_runs'].map((elm: { [x: string]: any; }) => {
-								return {
-									id: elm['id'],
-									status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
-									ref: elm['head_branch'],
-									sha: elm['head_sha'],
-									web_url: elm['html_url'],
-									created_at: elm['created_at'],
-									updated_at: elm['updated_at'],
-									name: elm['name'],
-									event: elm['event'],
-									detail: cicdRequest.detail
-								};
-							});
-							ret.forEach(element => {
-								let save = this.convCICDData2CICDDataSave(element);
-								this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
-							});
-							this.reFetchPageGitHub(cicdRequest, res, cicdConfig);
-							return;
+		if (!(hostProtocol === 'http' || hostProtocol === 'https') || hostRootUrl === '') {
+			this.logger.log('Requesting CICD is not match URL (' + cicdConfig.cicdUrl + ') for GitHub');
+		} else {
+			this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' detail=' + cicdRequest.detail + ' page=' + cicdRequest.page + ' from GitHub');
+			(hostProtocol === 'http' ? http : https).get({
+				hostname: hostRootUrl, path: cicdRootPath,
+				port: hostPort,
+				headers: headers,
+				agent: false, timeout: 15000
+			}, (res) => {
+				let respBody = '';
+				res.on('data', (chunk: Buffer) => { respBody += chunk; });
+				res.on('end', async () => {
+					if (res.headers['x-ratelimit-remaining'] === '0') {
+						// If the GitHub Api rate limit was reached, store the github timeout to prevent subsequent requests
+						this.gitHubTimeout = parseInt(<string>res.headers['x-ratelimit-reset']) * 1000;
+						this.logger.log('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=' + res.headers['x-ratelimit-limit'] + '(1 hour)/' + new Date(this.gitHubTimeout).toString() + ')');
+						if (cicdRequest.cicdConfig.cicdToken === '') {
+							this.logger.log('GitHub API Rate Limit can upgrade by Access Token.');
 						}
-					} catch (e) {
-						this.logger.log('GitHub API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
 					}
-					return;
-				} else if (res.statusCode === 403) {
-					// Rate limit reached, try again after timeout
-					this.queue.addItem(cicdRequest, this.githubTimeout, false);
-					return;
-				} else if (res.statusCode === 422 && cicdRequest.attempts < 4) {
-					// Commit not found on remote, try again with the next commit if less than 5 attempts have been made
-					this.queue.addItem(cicdRequest, 0, true);
-					return;
-				} else if (res.statusCode! >= 500) {
-					// If server error, try again after 10 minutes
-					this.githubTimeout = t + 600000;
-					this.queue.addItem(cicdRequest, this.githubTimeout, false);
-					return;
-				} else {
-					// API Error
-					try {
-						let respJson: any = JSON.parse(respBody);
-						this.logger.log('GitHub API Error - (' + res.statusCode + ')' + respJson.message);
-					} catch (e) {
-						this.logger.log('GitHub API Error - (' + res.statusCode + ')' + res.statusMessage);
+
+					if (res.statusCode === 200) { // Success
+						this.logger.log('GitHub API - (' + res.statusCode + ')' + hostProtocol + '://' + hostRootUrl + cicdRootPath);
+						try {
+							let respJson: any = JSON.parse(respBody);
+							if (typeof respJson['check_runs'] !== 'undefined' && respJson['check_runs'].length >= 1) { // url found
+								let ret: CICDData[] = respJson['check_runs'].map((elm: { [x: string]: any; }) => {
+									return {
+										id: elm['id'],
+										status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
+										ref: '',
+										sha: elm['head_sha'],
+										web_url: elm['html_url'],
+										created_at: elm['created_at'],
+										updated_at: elm['updated_at'],
+										name: elm['app']!['name'] + '(' + elm['name'] + ')',
+										event: '',
+										detail: cicdRequest.detail
+									};
+								});
+								ret.forEach(element => {
+									let save = this.convCICDData2CICDDataSave(element);
+									this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
+								});
+								this.reFetchPageGitHub(cicdRequest, res, cicdConfig);
+								return;
+							} else if (typeof respJson['workflow_runs'] !== 'undefined' && respJson['workflow_runs'].length >= 1) { // url found
+								let ret: CICDData[] = respJson['workflow_runs'].map((elm: { [x: string]: any; }) => {
+									return {
+										id: elm['id'],
+										status: elm['conclusion'] === null ? elm['status'] : elm['conclusion'],
+										ref: elm['head_branch'],
+										sha: elm['head_sha'],
+										web_url: elm['html_url'],
+										created_at: elm['created_at'],
+										updated_at: elm['updated_at'],
+										name: elm['name'],
+										event: elm['event'],
+										detail: cicdRequest.detail
+									};
+								});
+								ret.forEach(element => {
+									let save = this.convCICDData2CICDDataSave(element);
+									this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
+								});
+								this.reFetchPageGitHub(cicdRequest, res, cicdConfig);
+								return;
+							}
+						} catch (e) {
+							this.logger.log('GitHub API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
+						}
+						return;
+					} else if (res.statusCode === 403) {
+						// Rate limit reached, try again after timeout
+						this.queue.addItem(cicdRequest, this.gitHubTimeout, false);
+						return;
+					} else if (res.statusCode === 422 && cicdRequest.attempts < 4) {
+						// Commit not found on remote, try again with the next commit if less than 5 attempts have been made
+						this.queue.addItem(cicdRequest, 0, true);
+						return;
+					} else if (res.statusCode! >= 500) {
+						// If server error, try again after 10 minutes
+						this.gitHubTimeout = t + 600000;
+						this.queue.addItem(cicdRequest, this.gitHubTimeout, false);
+						return;
+					} else {
+						// API Error
+						try {
+							let respJson: any = JSON.parse(respBody);
+							if (typeof respJson.message === 'undefined') {
+								throw new Error('message is undefined!');
+							}
+							this.logger.log('GitHub API Error - (' + res.statusCode + ')' + respJson.message);
+						} catch (e) {
+							this.logger.log('GitHub API Error - (' + res.statusCode + ')' + res.statusMessage);
+						}
 					}
-				}
-			});
-			res.on('error', onError);
-		}).on('error', onError);
+				});
+				res.on('error', onError);
+			}).on('error', onError);
+		}
 	}
 
 	/**
@@ -337,7 +346,7 @@ export class CicdManager extends Disposable {
 
 			this.logger.log('Added CICD for ' + cicdConfig.cicdUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['x-ratelimit-limit'] || 'None') + '(1 hour)/Remaining=' + (res.headers['x-ratelimit-remaining'] || 'None') + (res.headers['x-ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['x-ratelimit-reset']) * 1000).toString() : '') + ') from GitHub');
 			for (let i = 1; i < last; i++) {
-				this.queue.add(cicdRequest.repo, cicdRequest.cicdConfig, i + 1, true);
+				this.queue.add(cicdRequest.repo, cicdRequest.cicdConfig, i + 1, true, cicdRequest.detail, cicdRequest.hash);
 			}
 		}
 	}
@@ -360,16 +369,19 @@ export class CicdManager extends Disposable {
 		let gitUrl = cicdConfig.cicdUrl.replace(/\/$/g, '');
 		gitUrl = gitUrl.replace(/.git$/g, '');
 		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
-		let hostProtocol = match1 !== null ? '' + match1[1] : '';
-		let hostRootUrl = match1 !== null ? '' + match1[2] : '';
-		let hostPort = match1 !== null ? (match1[3] || '') : '';
-		let hostpath = match1 !== null ? '' + match1[4].replace(/^\//, '').replace(/\//g, '%2F') : '';
+		let hostProtocol = (match1 !== null && typeof match1[1] !== 'undefined') ? '' + match1[1].toLowerCase() : '';
+		let hostRootUrl = (match1 !== null && typeof match1[2] !== 'undefined') ? '' + match1[2] : '';
+		let hostPort = (match1 !== null && typeof match1[3] !== 'undefined') ? '' + match1[3] : '';
+		let hostPath = (match1 !== null && typeof match1[4] !== 'undefined') ? '' + match1[4].replace(/^\//, '').replace(/\//g, '%2F') : '';
 
 		// Pipelines API https://docs.gitlab.com/ee/api/pipelines.html#list-project-pipelines
-		let cicdRootPath = `/api/v4/projects/${hostpath}/pipelines?per_page=${this.per_page}`;
+		let cicdRootPath = `/api/v4/projects/${hostPath}/pipelines?per_page=${this.per_page}`;
 		if (cicdRequest.detail) {
 			// Commits API https://docs.gitlab.com/ee/api/commits.html#list-the-statuses-of-a-commit
-			cicdRootPath = `/api/v4/projects/${hostpath}/repository/commits/${cicdRequest.hash}/statuses?per_page=${this.per_page}`;
+			cicdRootPath = `/api/v4/projects/${hostPath}/repository/commits/${cicdRequest.hash}/statuses?per_page=${this.per_page}`;
+		}
+		if (cicdRequest.page > 1) {
+			cicdRootPath = `${cicdRootPath}&page=${cicdRequest.page}`;
 		}
 
 		let headers: any = {
@@ -381,7 +393,7 @@ export class CicdManager extends Disposable {
 
 		let triggeredOnError = false;
 		const onError = (err: Error) => {
-			this.logger.log('GitLab API ' + hostProtocol + ' Error - ' + err.message);
+			this.logger.log('GitLab API ' + hostProtocol + ' Error - ' + err?.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
@@ -390,79 +402,96 @@ export class CicdManager extends Disposable {
 			}
 		};
 
-		this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' page=' + cicdRequest.page + ' from GitLab');
-		(hostProtocol === 'http' ? http : https).get({
-			hostname: hostRootUrl, path: cicdRootPath,
-			port: hostPort,
-			headers: headers,
-			agent: false, timeout: 15000
-		}, (res) => {
-			let respBody = '';
-			res.on('data', (chunk: Buffer) => { respBody += chunk; });
-			res.on('end', async () => {
-				if (res.headers['ratelimit-remaining'] === '0') {
-					// If the GitLab Api rate limit was reached, store the gitlab timeout to prevent subsequent requests
-					this.gitLabTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
-					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/' + new Date(this.gitLabTimeout).toString() + ')');
-				}
+		if (!(hostProtocol === 'http' || hostProtocol === 'https') || hostRootUrl === '') {
+			this.logger.log('Requesting CICD is not match URL (' + cicdConfig.cicdUrl + ') for GitLab');
+		} else {
+			this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' detail=' + cicdRequest.detail + ' page=' + cicdRequest.page + ' from GitLab');
+			(hostProtocol === 'http' ? http : https).get({
+				hostname: hostRootUrl, path: cicdRootPath,
+				port: hostPort,
+				headers: headers,
+				agent: false, timeout: 15000
+			}, (res) => {
+				let respBody = '';
+				res.on('data', (chunk: Buffer) => { respBody += chunk; });
+				res.on('end', async () => {
+					if (res.headers['ratelimit-remaining'] === '0') {
+						// If the GitLab Api rate limit was reached, store the gitlab timeout to prevent subsequent requests
+						this.gitLabTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
+						this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/' + new Date(this.gitLabTimeout).toString() + ')');
+					}
 
-				if (res.statusCode === 200) { // Success
-					try {
-						this.logger.log('GitLab API - (' + res.statusCode + ')' + hostProtocol + '://' + hostRootUrl + cicdRootPath);
-						if (typeof res.headers['x-page'] === 'string' && typeof res.headers['x-total-pages'] === 'string' && typeof res.headers['x-total'] === 'string') {
-							let respJson: any = JSON.parse(respBody);
-							if (parseInt(res.headers['x-total']) !== 0 && respJson.length && respJson[0].id) { // url found
-								let ret: CICDData[] = respJson;
-								ret.forEach(element => {
-									let save: CICDDataSave;
-									if (cicdRequest.detail) {
-										save = this.convGitLabComitStatuses2CICDDataSave(element, cicdRequest.detail,
-											`${hostProtocol}://${hostRootUrl}${hostPort === '' ? '' : ':' + hostPort}/${hostpath.replace(/%2F/g, '/')}/-/jobs/`);
-									} else {
-										save = this.convCICDData2CICDDataSave(element);
+					if (res.statusCode === 200) { // Success
+						try {
+							this.logger.log('GitLab API - (' + res.statusCode + ')' + hostProtocol + '://' + hostRootUrl + cicdRootPath);
+							if (typeof res.headers['x-page'] === 'string' && typeof res.headers['x-total-pages'] === 'string' && typeof res.headers['x-total'] === 'string') {
+								let respJson: any = JSON.parse(respBody);
+								if (parseInt(res.headers['x-total']) !== 0 && respJson.length && respJson[0].id) { // url found
+									let ret: CICDData[] = respJson;
+									ret.forEach(element => {
+										let save: CICDDataSave;
+										if (cicdRequest.detail) {
+											save = this.convGitLabComitStatuses2CICDDataSave(element, cicdRequest.detail,
+												`${hostProtocol}://${hostRootUrl}${hostPort === '' ? '' : ':' + hostPort}/${hostPath.replace(/%2F/g, '/')}/-/jobs/`);
+										} else {
+											save = this.convCICDData2CICDDataSave(
+												Object.assign({},
+													{
+														name: '',
+														ref: '',
+														web_url: '',
+														event: '',
+														detail: cicdRequest.detail
+													},
+													element
+												));
+										}
+										this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
+									});
+								}
+
+								if (cicdRequest.page === -1) {
+									let last = parseInt(res.headers['x-total-pages']);
+									if (last > Math.ceil(cicdRequest.maximumStatuses / this.per_page)) {
+										last = Math.ceil(cicdRequest.maximumStatuses / this.per_page);
+										this.logger.log('CICD Maximum Statuses(maximumStatuses=' + cicdRequest.maximumStatuses + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
 									}
-									this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
-								});
-							}
 
-							if (cicdRequest.page === -1) {
-								let last = parseInt(res.headers['x-total-pages']);
-								if (last > Math.ceil(cicdRequest.maximumStatuses / this.per_page)) {
-									last = Math.ceil(cicdRequest.maximumStatuses / this.per_page);
-									this.logger.log('CICD Maximum Statuses(maximumStatuses=' + cicdRequest.maximumStatuses + ') reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
+									this.logger.log('Added CICD for ' + cicdConfig.cicdUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['ratelimit-limit'] || 'None') + '(every minute)/Remaining=' + (res.headers['ratelimit-remaining'] || 'None') + (res.headers['ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() : '') + ') from GitLab');
+									for (let i = 1; i < last; i++) {
+										this.queue.add(cicdRequest.repo, cicdRequest.cicdConfig, i + 1, true, cicdRequest.detail, cicdRequest.hash);
+									}
 								}
-
-								this.logger.log('Added CICD for ' + cicdConfig.cicdUrl + ' last_page=' + last + '(RateLimit=' + (res.headers['ratelimit-limit'] || 'None') + '(every minute)/Remaining=' + (res.headers['ratelimit-remaining'] || 'None') + (res.headers['ratelimit-reset'] ? '/' + new Date(parseInt(<string>res.headers['ratelimit-reset']) * 1000).toString() : '') + ') from GitLab');
-								for (let i = 1; i < last; i++) {
-									this.queue.add(cicdRequest.repo, cicdRequest.cicdConfig, i + 1, true);
-								}
+								return;
 							}
-							return;
+						} catch (e) {
+							this.logger.log('GitLab API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
 						}
-					} catch (e) {
-						this.logger.log('GitLab API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
+					} else if (res.statusCode === 429) {
+						// Rate limit reached, try again after timeout
+						this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
+						return;
+					} else if (res.statusCode! >= 500) {
+						// If server error, try again after 10 minutes
+						this.gitLabTimeout = t + 600000;
+						this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
+						return;
+					} else {
+						// API Error
+						try {
+							let respJson: any = JSON.parse(respBody);
+							if (typeof respJson.message === 'undefined') {
+								throw new Error('message is undefined!');
+							}
+							this.logger.log('GitLab API Error - (' + res.statusCode + ')' + respJson.message);
+						} catch (e) {
+							this.logger.log('GitLab API Error - (' + res.statusCode + ')' + res.statusMessage);
+						}
 					}
-				} else if (res.statusCode === 429) {
-					// Rate limit reached, try again after timeout
-					this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
-					return;
-				} else if (res.statusCode! >= 500) {
-					// If server error, try again after 10 minutes
-					this.gitLabTimeout = t + 600000;
-					this.queue.addItem(cicdRequest, this.gitLabTimeout, false);
-					return;
-				} else {
-					// API Error
-					try {
-						let respJson: any = JSON.parse(respBody);
-						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + respJson.message);
-					} catch (e) {
-						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + res.statusMessage);
-					}
-				}
-			});
-			res.on('error', onError);
-		}).on('error', onError);
+				});
+				res.on('error', onError);
+			}).on('error', onError);
+		}
 	}
 
 	/**
@@ -470,11 +499,11 @@ export class CicdManager extends Disposable {
 	 * @param cicdRequest The cicd request to fetch.
 	 */
 	private fetchFromJenkins(cicdRequest: CICDRequestItem) {
-		if (cicdRequest.detail) {
-			return;
-		}
+		// if (cicdRequest.detail) {
+		// 	return;
+		// }
 		let t = (new Date()).getTime();
-		if (cicdRequest.checkAfter !== 0 && t < this.jenkinsTimeout) {
+		if (t < this.jenkinsTimeout) {
 			// Defer request until after timeout
 			this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
 			this.fetchCICDsInterval();
@@ -486,12 +515,13 @@ export class CicdManager extends Disposable {
 		let gitUrl = cicdConfig.cicdUrl.replace(/\/$/g, '');
 		gitUrl = gitUrl.replace(/.git$/g, '');
 		const match1 = gitUrl.match(/^(.+?):\/\/(.+?):?(\d+)?(\/.*)?$/);
-		let hostProtocol = match1 !== null ? '' + match1[1] : '';
-		let hostRootUrl = match1 !== null ? '' + match1[2] : '';
-		let hostPort = match1 !== null ? (match1[3] || '') : '';
-		let hostpath = match1 !== null ? '' + match1[4].replace(/^\//, '') : '';
+		let hostProtocol = (match1 !== null && typeof match1[1] !== 'undefined') ? '' + match1[1].toLowerCase() : '';
+		let hostRootUrl = (match1 !== null && typeof match1[2] !== 'undefined') ? '' + match1[2] : '';
+		let hostPort = (match1 !== null && typeof match1[3] !== 'undefined') ? '' + match1[3] : '';
+		let hostPath = (match1 !== null && typeof match1[4] !== 'undefined') ? '' + match1[4].replace(/^\//, '') : '';
 
-		let cicdRootPath = `/${hostpath}/api/json?tree=builds[id,timestamp,fullDisplayName,result,url,actions[lastBuiltRevision[branch[*]]]]`;
+		// https://www.jenkins.io/doc/book/using/remote-access-api/
+		let cicdRootPath = `/${hostPath}/api/json?tree=builds[id,timestamp,fullDisplayName,result,url,actions[lastBuiltRevision[branch[*]]]]`;
 
 		let headers: any = {
 			'User-Agent': 'vscode-git-graph'
@@ -503,7 +533,7 @@ export class CicdManager extends Disposable {
 
 		let triggeredOnError = false;
 		const onError = (err: Error) => {
-			this.logger.log('Jenkins API HTTPS Error - ' + err.message);
+			this.logger.log('Jenkins API ' + hostProtocol + ' Error - ' + err?.message);
 			if (!triggeredOnError) {
 				// If an error occurs, try again after 5 minutes
 				triggeredOnError = true;
@@ -511,81 +541,88 @@ export class CicdManager extends Disposable {
 				this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
 			}
 		};
+		if (!(hostProtocol === 'http' || hostProtocol === 'https') || hostRootUrl === '') {
+			this.logger.log('Requesting CICD is not match URL (' + cicdConfig.cicdUrl + ') for Jenkins');
+		} else {
+			this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' page=' + cicdRequest.page + ' from Jenkins');
+			(hostProtocol === 'http' ? http : https).get({
+				hostname: hostRootUrl, path: cicdRootPath,
+				port: hostPort,
+				headers: headers,
+				agent: false, timeout: 15000
+			}, (res) => {
+				let respBody = '';
+				res.on('data', (chunk: Buffer) => { respBody += chunk; });
+				res.on('end', async () => {
+					if (res.headers['ratelimit-remaining'] === '0') {
+						// If the Jenkins Api rate limit was reached, store the Jenkins timeout to prevent subsequent requests
+						this.jenkinsTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
+						this.logger.log('Jenkins API Rate Limit Reached - Paused fetching from Jenkins until the Rate Limit is reset (RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/' + new Date(this.jenkinsTimeout).toString() + ')');
+					}
 
-		this.logger.log('Requesting CICD for ' + hostProtocol + '://' + hostRootUrl + cicdRootPath + ' page=' + cicdRequest.page + ' from Jenkins');
-		(hostProtocol === 'http' ? http : https).get({
-			hostname: hostRootUrl, path: cicdRootPath,
-			port: hostPort,
-			headers: headers,
-			agent: false, timeout: 15000
-		}, (res) => {
-			let respBody = '';
-			res.on('data', (chunk: Buffer) => { respBody += chunk; });
-			res.on('end', async () => {
-				if (res.headers['ratelimit-remaining'] === '0') {
-					// If the GitLab Api rate limit was reached, store the gitlab timeout to prevent subsequent requests
-					this.jenkinsTimeout = parseInt(<string>res.headers['ratelimit-reset']) * 1000;
-					this.logger.log('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=' + res.headers['ratelimit-limit'] + '(every minute)/' + new Date(this.jenkinsTimeout).toString() + ')');
-				}
-
-				if (res.statusCode === 200) { // Success
-					try {
-						if (typeof res.headers['x-jenkins'] === 'string' && res.headers['x-jenkins'].startsWith('2.')) {
-							let respJson: any = JSON.parse(respBody);
-							if (respJson['builds'].length) { // url found
-								let ret: CICDData[] = [];
-								respJson['builds'].forEach((elmBuild: { [x: string]: any; }) => {
-									elmBuild['actions'].forEach((elmAction: { [x: string]: any; }) => {
-										if (typeof elmAction['lastBuiltRevision'] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'] !== 'undefined'
-											&& typeof elmAction['lastBuiltRevision']['branch'][0] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'][0].SHA1 !== 'undefined') {
-											ret.push(
-												{
-													id: elmBuild['id'],
-													status: elmBuild['result'],
-													ref: elmAction['lastBuiltRevision']!['branch']![0]!.name,
-													sha: elmAction['lastBuiltRevision']!['branch']![0]!.SHA1,
-													web_url: elmBuild['url'],
-													created_at: '',
-													updated_at: elmBuild['timestamp'],
-													name: elmBuild['fullDisplayName'],
-													event: '',
-													detail: cicdRequest.detail
-												}
-											);
-										}
+					if (res.statusCode === 200) { // Success
+						this.logger.log('Jenkins API - (' + res.statusCode + ')' + hostProtocol + '://' + hostRootUrl + cicdRootPath);
+						try {
+							if (typeof res.headers['x-jenkins'] === 'string' && res.headers['x-jenkins'].startsWith('2.')) {
+								let respJson: any = JSON.parse(respBody);
+								if (respJson['builds'].length) { // url found
+									let ret: CICDData[] = [];
+									respJson['builds'].forEach((elmBuild: { [x: string]: any; }) => {
+										elmBuild['actions'].forEach((elmAction: { [x: string]: any; }) => {
+											if (typeof elmAction['lastBuiltRevision'] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'] !== 'undefined'
+												&& typeof elmAction['lastBuiltRevision']['branch'][0] !== 'undefined' && typeof elmAction['lastBuiltRevision']['branch'][0].SHA1 !== 'undefined') {
+												ret.push(
+													{
+														id: elmBuild['id'],
+														status: elmBuild['result'],
+														ref: elmAction['lastBuiltRevision']!['branch']![0]!.name,
+														sha: elmAction['lastBuiltRevision']!['branch']![0]!.SHA1,
+														web_url: elmBuild['url'] || '',
+														created_at: '',
+														updated_at: elmBuild['timestamp'],
+														name: elmBuild['fullDisplayName'],
+														event: '',
+														detail: cicdRequest.detail
+													}
+												);
+											}
+										});
 									});
-								});
-								ret.forEach(element => {
-									let save = this.convCICDData2CICDDataSave(element);
-									this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
-								});
-								return;
+									ret.forEach(element => {
+										let save = this.convCICDData2CICDDataSave(element);
+										this.saveCICD(cicdRequest.repo, element.sha, element.id, save);
+									});
+									return;
+								}
 							}
+						} catch (e) {
+							this.logger.log('Jenkins API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
 						}
-					} catch (e) {
-						this.logger.log('Jenkins API Error - (' + res.statusCode + ')API Result error. : ' + e.message);
+					} else if (res.statusCode === 429) {
+						// Rate limit reached, try again after timeout
+						this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
+						return;
+					} else if (res.statusCode! >= 500) {
+						// If server error, try again after 10 minutes
+						this.jenkinsTimeout = t + 600000;
+						this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
+						return;
+					} else {
+						// API Error
+						try {
+							let respJson: any = JSON.parse(respBody);
+							if (typeof respJson.message === 'undefined') {
+								throw new Error('message is undefined!');
+							}
+							this.logger.log('Jenkins API Error - (' + res.statusCode + ')' + respJson.message);
+						} catch (e) {
+							this.logger.log('Jenkins API Error - (' + res.statusCode + ')' + res.statusMessage);
+						}
 					}
-				} else if (res.statusCode === 429) {
-					// Rate limit reached, try again after timeout
-					this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
-					return;
-				} else if (res.statusCode! >= 500) {
-					// If server error, try again after 10 minutes
-					this.jenkinsTimeout = t + 600000;
-					this.queue.addItem(cicdRequest, this.jenkinsTimeout, false);
-					return;
-				} else {
-					// API Error
-					try {
-						let respJson: any = JSON.parse(respBody);
-						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + respJson.message);
-					} catch (e) {
-						this.logger.log('GitLab API Error - (' + res.statusCode + ')' + res.statusMessage);
-					}
-				}
-			});
-			res.on('error', onError);
-		}).on('error', onError);
+				});
+				res.on('error', onError);
+			}).on('error', onError);
+		}
 	}
 
 	/**
@@ -694,10 +731,9 @@ class CicdRequestQueue {
 	 * @param detail Flag of fetch detail.
 	 * @param hash hash for fetch detail.
 	 */
-	public add(repo: string, cicdConfig: CICDConfig, page: number, immediate: boolean, detail: boolean = false, hash: string = '') {
+	public add(repo: string, cicdConfig: CICDConfig, page: number, immediate: boolean, detail: boolean, hash: string) {
 		const existingRequest = this.queue.find((request) => request.cicdConfig.cicdUrl === cicdConfig.cicdUrl && request.page === page && request.detail === detail && request.hash === hash);
-		if (existingRequest) {
-		} else {
+		if (!existingRequest) {
 			const config = getConfig();
 			this.insertItem({
 				repo: repo,

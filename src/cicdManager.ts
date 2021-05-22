@@ -672,18 +672,13 @@ export class CicdManager extends Disposable {
 	 * @returns A promise indicating if the event was emitted successfully.
 	 */
 	private emitCICD(repo: string, hash: string, cicdDataSaves: { [id: string]: CICDDataSave }) {
-		return new Promise<boolean>((resolve, _reject) => {
-			if (this.cicdEventEmitter.hasSubscribers()) {
-				this.cicdEventEmitter.emit({
-					repo: repo,
-					hash: hash,
-					cicdDataSaves: cicdDataSaves
-				});
-				resolve(true);
-			} else {
-				resolve(false);
-			}
-		});
+		if (this.cicdEventEmitter.hasSubscribers()) {
+			this.cicdEventEmitter.emit({
+				repo: repo,
+				hash: hash,
+				cicdDataSaves: cicdDataSaves
+			});
+		}
 	}
 
 	/**

@@ -429,7 +429,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -467,7 +467,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://github.com:80/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://github.com:80/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -530,7 +530,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for http://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)http://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for http://github.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for http://github.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -642,10 +642,10 @@ describe('CicdManager', () => {
 					});
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/actions/runs?per_page=100 detail=false page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenCalledWith('GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/actions/runs?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenCalledWith('GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/check-runs?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(6);
 				jest.useRealTimers();
 			});
@@ -763,10 +763,10 @@ describe('CicdManager', () => {
 					});
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/actions/runs?per_page=100 detail=false page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenCalledWith('GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/actions/runs?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenCalledWith('GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/check-runs?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(6);
 				jest.useRealTimers();
 			});
@@ -812,7 +812,7 @@ describe('CicdManager', () => {
 				expect(spyOnSaveCicd).toHaveBeenCalledWith(...GitHubSaveCicd);
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
-				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(3);
 			});
 
@@ -833,7 +833,7 @@ describe('CicdManager', () => {
 				expect(spyOnSaveCicd).toHaveBeenCalledWith(...GitHubSaveCicd);
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
-				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(3);
 			});
 
@@ -854,7 +854,7 @@ describe('CicdManager', () => {
 				expect(spyOnSaveCicd).toHaveBeenCalledWith(...GitHubSaveCicd);
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
-				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(3);
 			});
 
@@ -938,7 +938,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API - (200)https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitHub');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://github.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(1 hour)/Remaining=57/' + new Date(1618343683).toString() +') from GitHub');
 				expect(spyOnLog).toHaveBeenCalledTimes(22);
 			});
 
@@ -1164,7 +1164,7 @@ describe('CicdManager', () => {
 				]);
 				expect(spyOnHttpsGet).toHaveBeenCalledWith(GitHubHttpsGet, expect.anything());
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
-				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/' + new Date(1618343683).toString() +')');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'GitHub API Rate Limit can upgrade by Access Token.');
 				expect(spyOnLog).toHaveBeenCalledTimes(3);
 			});
@@ -1187,7 +1187,7 @@ describe('CicdManager', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnLog).toHaveBeenCalledWith('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+					expect(spyOnLog).toHaveBeenCalledWith('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/' + new Date(1618343683).toString() +')');
 				});
 				expect(cicdManager['queue']['queue']).toStrictEqual([
 					{
@@ -1218,7 +1218,7 @@ describe('CicdManager', () => {
 					timeout: 15000
 				}, expect.anything());
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://api.github.com/repos/keydepth/vscode-git-graph/commits/149ecc50e5c223251f80a0223cfbbd9822307224/check-runs?per_page=100 detail=true page=-1 from GitHub');
-				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/' + new Date(1618343683).toString() +')');
 				expect(spyOnLog).toHaveBeenCalledTimes(2);
 				expect(cicdManager['gitHubTimeout']).toBe((date.now + 1) * 1000);
 			});
@@ -1423,7 +1423,7 @@ describe('CicdManager', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnLog).toHaveBeenCalledWith('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+					expect(spyOnLog).toHaveBeenCalledWith('GitHub API Rate Limit Reached - Paused fetching from GitHub until the Rate Limit is reset (RateLimit=60(1 hour)/' + new Date(1618343683).toString() +')');
 				});
 
 				// Run
@@ -1517,7 +1517,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -1554,7 +1554,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com:80/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com:80/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -1616,7 +1616,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for http://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)http://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for http://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for http://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -1721,10 +1721,10 @@ describe('CicdManager', () => {
 					});
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/pipelines?per_page=100 detail=false page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenCalledWith('GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/pipelines?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenCalledWith('GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/statuses?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(6);
 				jest.useRealTimers();
 			});
@@ -1834,10 +1834,10 @@ describe('CicdManager', () => {
 					});
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/pipelines?per_page=100 detail=false page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenCalledWith('GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/pipelines?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledWith('Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenCalledWith('GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/b9112e60f5fb3d8bc2a387840577b4756a12f357/statuses?per_page=100');
-				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenCalledWith('Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=1(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(6);
 				jest.useRealTimers();
 			});
@@ -2018,7 +2018,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -2050,7 +2050,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(22);
 			});
 
@@ -2221,7 +2221,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 			});
 
@@ -2268,7 +2268,7 @@ describe('CicdManager', () => {
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
 				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API - (200)https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100');
 				expect(spyOnLog).toHaveBeenNthCalledWith(3, 'CICD Maximum Statuses(maximumStatuses=1000) reached, if you want to change Maximum page, please configure git-graph.repository.commits.fetchCICDsMaximumStatuses');
-				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00)) from GitLab');
+				expect(spyOnLog).toHaveBeenNthCalledWith(4, 'Added CICD for https://gitlab.com/keydepth/vscode-git-graph.git last_page=10(RateLimit=60(every minute)/Remaining=57/' + new Date(1618343683).toString() +') from GitLab');
 				expect(spyOnLog).toHaveBeenCalledTimes(4);
 
 			});
@@ -2291,7 +2291,7 @@ describe('CicdManager', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnLog).toHaveBeenCalledWith('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=60(every minute)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+					expect(spyOnLog).toHaveBeenCalledWith('GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=60(every minute)/' + new Date(1618343683).toString() +')');
 				});
 				expect(cicdManager['queue']['queue']).toStrictEqual([
 					{
@@ -2321,7 +2321,7 @@ describe('CicdManager', () => {
 					timeout: 15000
 				}, expect.anything());
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://gitlab.com/api/v4/projects/keydepth%2Fvscode-git-graph/repository/commits/149ecc50e5c223251f80a0223cfbbd9822307224/statuses?per_page=100 detail=true page=-1 from GitLab');
-				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=60(every minute)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'GitLab API Rate Limit Reached - Paused fetching from GitLab until the Rate Limit is reset (RateLimit=60(every minute)/' + new Date(1618343683).toString() +')');
 				expect(spyOnLog).toHaveBeenCalledTimes(2);
 				expect(cicdManager['gitLabTimeout']).toBe((date.now + 1) * 1000);
 			});
@@ -3380,7 +3380,7 @@ describe('CicdManager', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnLog).toHaveBeenCalledWith('Jenkins API Rate Limit Reached - Paused fetching from Jenkins until the Rate Limit is reset (RateLimit=undefined(every minute)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+					expect(spyOnLog).toHaveBeenCalledWith('Jenkins API Rate Limit Reached - Paused fetching from Jenkins until the Rate Limit is reset (RateLimit=undefined(every minute)/' + new Date(1618343683).toString() +')');
 				});
 				expect(cicdManager['queue']['queue']).toStrictEqual([
 					{
@@ -3410,7 +3410,7 @@ describe('CicdManager', () => {
 					timeout: 15000
 				}, expect.anything());
 				expect(spyOnLog).toHaveBeenNthCalledWith(1, 'Requesting CICD for https://jenkins.net/job/job01/job/MultiBranch/job/master/3/api/json?tree=builds[id,timestamp,fullDisplayName,result,url,actions[lastBuiltRevision[branch[*]]]] page=-1 from Jenkins');
-				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'Jenkins API Rate Limit Reached - Paused fetching from Jenkins until the Rate Limit is reset (RateLimit=undefined(every minute)/Wed Apr 22 2020 21:40:58 GMT+0900 (GMT+09:00))');
+				expect(spyOnLog).toHaveBeenNthCalledWith(2, 'Jenkins API Rate Limit Reached - Paused fetching from Jenkins until the Rate Limit is reset (RateLimit=undefined(every minute)/' + new Date(1618343683).toString() +')');
 				expect(spyOnLog).toHaveBeenCalledTimes(2);
 				expect(cicdManager['jenkinsTimeout']).toBe((date.now + 1) * 1000);
 			});

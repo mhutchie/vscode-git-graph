@@ -2927,6 +2927,20 @@ class GitGraphView {
 			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: file.newFilePath, absolute: absolute });
 		};
 
+		const triggerResetFileToRevision = (file: GG.GitFileChange, fileElem: HTMLElement) => {
+			const expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
+			const commitHash = getCommitHashForFile(file, expandedCommit);
+			dialog.showConfirmation('Are you sure you want to reset <b><i>' + escapeHtml(file.newFilePath) + '</i></b> to it\'s state at commit <b><i>' + abbrevCommit(commitHash) + '</i></b>? Any uncommitted changes made to this file will be overwritten.', 'Yes, reset file', () => {
+				runAction({ command: 'resetFileToRevision', repo: this.currentRepo, commitHash: commitHash, filePath: file.newFilePath }, 'Resetting file');
+			}, {
+				type: TargetType.CommitDetailsView,
+				hash: commitHash,
+				elem: fileElem
+			});
+		};
+
 		const triggerViewFileAtRevision = (file: GG.GitFileChange, fileElem: HTMLElement) => {
 			const expandedCommit = this.expandedCommit;
 			if (expandedCommit === null) return;
@@ -3024,7 +3038,8 @@ class GitGraphView {
 				elem: fileElem
 			};
 			const diffPossible = file.type === GG.GitFileStatus.Untracked || (file.additions !== null && file.deletions !== null);
-			const fileExistsAtThisRevisionAndDiffPossible = file.type !== GG.GitFileStatus.Deleted && diffPossible && !isUncommitted;
+			const fileExistsAtThisRevision = file.type !== GG.GitFileStatus.Deleted && !isUncommitted;
+			const fileExistsAtThisRevisionAndDiffPossible = fileExistsAtThisRevision && diffPossible;
 			const codeReviewInProgressAndNotReviewed = expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath);
 
 			contextMenu.show([
@@ -3060,6 +3075,13 @@ class GitGraphView {
 						title: 'Mark as Not Reviewed',
 						visible: expandedCommit.codeReview !== null && !codeReviewInProgressAndNotReviewed,
 						onClick: () => this.cdvUpdateFileState(file, fileElem, false, false)
+					}
+				],
+				[
+					{
+						title: 'Reset File to this Revision' + ELLIPSIS,
+						visible: fileExistsAtThisRevision && expandedCommit.compareWithHash === null,
+						onClick: () => triggerResetFileToRevision(file, fileElem)
 					}
 				],
 				[
@@ -3342,6 +3364,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'renameBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Rename Branch');
+				break;
+			case 'resetFileToRevision':
+				refreshOrDisplayError(msg.error, 'Unable to Reset File to Revision');
 				break;
 			case 'resetToCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Reset to Commit');

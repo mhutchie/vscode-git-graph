@@ -1166,6 +1166,20 @@ export class DataSource extends Disposable {
 	}
 
 
+	/* Git Action Methods - File */
+
+	/**
+	 * Reset a file to the specified revision.
+	 * @param repo The path of the repository.
+	 * @param commitHash The commit to reset the file to.
+	 * @param filePath The file to reset.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public resetFileToRevision(repo: string, commitHash: string, filePath: string) {
+		return this.runGitCommand(['checkout', commitHash, '--', filePath], repo);
+	}
+
+
 	/* Git Action Methods - Stash */
 
 	/**

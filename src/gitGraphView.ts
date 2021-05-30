@@ -542,6 +542,12 @@ export class GitGraphView extends Disposable {
 					showErrorMessage('No Git repositories were found in the current workspace.');
 				}
 				break;
+			case 'resetFileToRevision':
+				this.sendMessage({
+					command: 'resetFileToRevision',
+					error: await this.dataSource.resetFileToRevision(msg.repo, msg.commitHash, msg.filePath)
+				});
+				break;
 			case 'resetToCommit':
 				this.sendMessage({
 					command: 'resetToCommit',

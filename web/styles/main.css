@@ -566,7 +566,7 @@ code{
 .fileTreeFileAction.viewGitFileAtRevision, .fileTreeFileAction.openGitFile{
 	margin-left:6px;
 }
-.fileTreeFileRecord:hover .fileTreeFileAction, .fileTreeFileRecord.contextMenuActive .fileTreeFileAction{
+.fileTreeFileRecord:hover .fileTreeFileAction, .fileTreeFileRecord.contextMenuActive .fileTreeFileAction, .fileTreeFileRecord.dialogActive .fileTreeFileAction{
 	cursor:pointer;
 	opacity:1;
 }
@@ -583,7 +583,7 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .fileTreeFileAction svg,
 .fileTreeFileAction.viewGitFileAtRevision svg, .fileTreeFileAction.openGitFile svg{
 	top:4px;
 }
-.fileTreeFolder:hover svg.openFolderIcon, .fileTreeFolder:hover svg.closedFolderIcon, .fileTreeFileRecord:hover svg.fileIcon, .fileTreeFileRecord.contextMenuActive svg.fileIcon, .fileTreeFileRecord:hover #cdvLastFileViewed svg, .fileTreeFileRecord.contextMenuActive #cdvLastFileViewed svg, .fileTreeRepo:hover svg, .fileTreeFileAction:hover svg{
+.fileTreeFolder:hover svg.openFolderIcon, .fileTreeFolder:hover svg.closedFolderIcon, .fileTreeFileRecord:hover svg.fileIcon, .fileTreeFileRecord.contextMenuActive svg.fileIcon, .fileTreeFileRecord.dialogActive svg.fileIcon, .fileTreeFileRecord:hover #cdvLastFileViewed svg, .fileTreeFileRecord.contextMenuActive #cdvLastFileViewed svg, .fileTreeFileRecord.dialogActive #cdvLastFileViewed svg, .fileTreeRepo:hover svg, .fileTreeFileAction:hover svg{
 	fill-opacity:0.8;
 }
 svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{

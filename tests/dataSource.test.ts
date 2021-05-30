@@ -6405,6 +6405,31 @@ describe('DataSource', () => {
 		});
 	});
 
+	describe('resetFileToRevision', () => {
+		it('Should reset file to revision', async () => {
+			// Setup
+			mockGitSuccessOnce();
+
+			// Run
+			const result = await dataSource.resetFileToRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'path/to/file');
+
+			// Assert
+			expect(result).toBe(null);
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['checkout', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', '--', 'path/to/file'], expect.objectContaining({ cwd: '/path/to/repo' }));
+		});
+
+		it('Should return an error message thrown by git', async () => {
+			// Setup
+			mockGitThrowingErrorOnce();
+
+			// Run
+			const result = await dataSource.resetFileToRevision('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'path/to/file');
+
+			// Assert
+			expect(result).toBe('error message');
+		});
+	});
+
 	describe('applyStash', () => {
 		it('Should apply a stash', async () => {
 			// Setup

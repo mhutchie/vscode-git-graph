@@ -3117,6 +3117,34 @@ describe('GitGraphView', () => {
 			});
 		});
 
+		describe('resetFileToRevision', () => {
+			it('Should reset the file to a revision', async () => {
+				// Setup
+				const resetFileToRevisionResolvedValue = null;
+				const spyOnResetFileToRevision = jest.spyOn(dataSource, 'resetFileToRevision');
+				spyOnResetFileToRevision.mockResolvedValueOnce(resetFileToRevisionResolvedValue);
+
+				// Run
+				onDidReceiveMessage({
+					command: 'resetFileToRevision',
+					repo: '/path/to/repo',
+					commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					filePath: 'path/to/file'
+				});
+
+				// Assert
+				await waitForExpect(() => {
+					expect(spyOnResetFileToRevision).toHaveBeenCalledWith('/path/to/repo', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'path/to/file');
+					expect(messages).toStrictEqual([
+						{
+							command: 'resetFileToRevision',
+							error: resetFileToRevisionResolvedValue
+						}
+					]);
+				});
+			});
+		});
+
 		describe('resetToCommit', () => {
 			it('Should reset the current branch to a commit', async () => {
 				// Setup

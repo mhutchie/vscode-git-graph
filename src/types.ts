@@ -1108,6 +1108,15 @@ export interface RequestRescanForRepos extends BaseMessage {
 	readonly command: 'rescanForRepos';
 }
 
+export interface RequestResetFileToRevision extends RepoRequest {
+	readonly command: 'resetFileToRevision';
+	readonly commitHash: string;
+	readonly filePath: string;
+}
+export interface ResponseResetFileToRevision extends ResponseWithErrorInfo {
+	readonly command: 'resetFileToRevision';
+}
+
 export interface RequestResetToCommit extends RepoRequest {
 	readonly command: 'resetToCommit';
 	readonly commit: string;
@@ -1276,6 +1285,7 @@ export type RequestMessage =
 	| RequestRebase
 	| RequestRenameBranch
 	| RequestRescanForRepos
+	| RequestResetFileToRevision
 	| RequestResetToCommit
 	| RequestRevertCommit
 	| RequestSetGlobalViewState
@@ -1338,6 +1348,7 @@ export type ResponseMessage =
 	| ResponseRebase
 	| ResponseRefresh
 	| ResponseRenameBranch
+	| ResponseResetFileToRevision
 	| ResponseResetToCommit
 	| ResponseRevertCommit
 	| ResponseSetGlobalViewState

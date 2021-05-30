@@ -535,6 +535,7 @@ describe('GitGraphView', () => {
 					type: TagType.Annotated,
 					message: 'message',
 					pushToRemote: null,
+					pushSkipRemoteCheck: true,
 					force: false
 				});
 
@@ -545,6 +546,10 @@ describe('GitGraphView', () => {
 					expect(messages).toStrictEqual([
 						{
 							command: 'addTag',
+							repo: '/path/to/repo',
+							tagName: 'name',
+							pushToRemote: null,
+							commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
 							errors: [addTagResolvedValue]
 						}
 					]);
@@ -554,11 +559,11 @@ describe('GitGraphView', () => {
 			it('Should add a tag, and then push the tag to a remote', async () => {
 				// Setup
 				const addTagResolvedValue = null;
-				const pushTagResolvedValue = null;
+				const spyOnPushTagResolvedValue = [null];
 				const spyOnAddTag = jest.spyOn(dataSource, 'addTag');
 				const spyOnPushTag = jest.spyOn(dataSource, 'pushTag');
 				spyOnAddTag.mockResolvedValueOnce(addTagResolvedValue);
-				spyOnPushTag.mockResolvedValueOnce(pushTagResolvedValue);
+				spyOnPushTag.mockResolvedValueOnce(spyOnPushTagResolvedValue);
 
 				// Run
 				onDidReceiveMessage({
@@ -569,17 +574,22 @@ describe('GitGraphView', () => {
 					type: TagType.Annotated,
 					message: 'message',
 					pushToRemote: 'origin',
+					pushSkipRemoteCheck: true,
 					force: false
 				});
 
 				// Assert
 				await waitForExpect(() => {
 					expect(spyOnAddTag).toHaveBeenCalledWith('/path/to/repo', 'name', '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', TagType.Annotated, 'message', false);
-					expect(spyOnPushTag).toHaveBeenCalledWith('/path/to/repo', 'name', 'origin');
+					expect(spyOnPushTag).toHaveBeenCalledWith('/path/to/repo', 'name', ['origin'], '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
 					expect(messages).toStrictEqual([
 						{
 							command: 'addTag',
-							errors: [addTagResolvedValue, pushTagResolvedValue]
+							repo: '/path/to/repo',
+							tagName: 'name',
+							pushToRemote: 'origin',
+							commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+							errors: [addTagResolvedValue, spyOnPushTagResolvedValue[0]]
 						}
 					]);
 				});
@@ -601,6 +611,7 @@ describe('GitGraphView', () => {
 					type: TagType.Annotated,
 					message: 'message',
 					pushToRemote: 'origin',
+					pushSkipRemoteCheck: true,
 					force: false
 				});
 
@@ -611,6 +622,10 @@ describe('GitGraphView', () => {
 					expect(messages).toStrictEqual([
 						{
 							command: 'addTag',
+							repo: '/path/to/repo',
+							tagName: 'name',
+							pushToRemote: 'origin',
+							commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
 							errors: [addTagResolvedValue]
 						}
 					]);
@@ -2970,25 +2985,31 @@ describe('GitGraphView', () => {
 		describe('pushTag', () => {
 			it('Should push a tag to a remote', async () => {
 				// Setup
-				const pushTagToMultipleRemotesResolvedValue = [null];
-				const spyOnPushTagToMultipleRemotes = jest.spyOn(dataSource, 'pushTagToMultipleRemotes');
-				spyOnPushTagToMultipleRemotes.mockResolvedValueOnce(pushTagToMultipleRemotesResolvedValue);
+				const spyOnPushTagResolvedValue = [null];
+				const spyOnPushTag = jest.spyOn(dataSource, 'pushTag');
+				spyOnPushTag.mockResolvedValueOnce(spyOnPushTagResolvedValue);
 
 				// Run
 				onDidReceiveMessage({
 					command: 'pushTag',
 					repo: '/path/to/repo',
 					tagName: 'tag-name',
-					remotes: ['origin']
+					remotes: ['origin'],
+					commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					skipRemoteCheck: true
 				});
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnPushTagToMultipleRemotes).toHaveBeenCalledWith('/path/to/repo', 'tag-name', ['origin']);
+					expect(spyOnPushTag).toHaveBeenCalledWith('/path/to/repo', 'tag-name', ['origin'], '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', true);
 					expect(messages).toStrictEqual([
 						{
 							command: 'pushTag',
-							errors: pushTagToMultipleRemotesResolvedValue
+							repo: '/path/to/repo',
+							tagName: 'tag-name',
+							remotes: ['origin'],
+							commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+							errors: spyOnPushTagResolvedValue
 						}
 					]);
 				});
@@ -3157,7 +3178,8 @@ describe('GitGraphView', () => {
 				// Setup
 				const globalViewState: GitGraphViewGlobalState = {
 					alwaysAcceptCheckoutCommit: true,
-					issueLinkingConfig: null
+					issueLinkingConfig: null,
+					pushTagSkipRemoteCheck: false
 				};
 				const setGlobalViewStateResolvedValue = null;
 				const spyOnSetGlobalViewState = jest.spyOn(extensionState, 'setGlobalViewState');

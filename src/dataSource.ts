@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, ErrorInfoExtensionPrefix, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, GitVersionRequirement, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -780,17 +780,6 @@ export class DataSource extends Disposable {
 	}
 
 	/**
-	 * Push a tag to a remote.
-	 * @param repo The path of the repository.
-	 * @param tagName The name of the tag to push.
-	 * @param remote The remote to push the tag to.
-	 * @returns The ErrorInfo from the executed command.
-	 */
-	public pushTag(repo: string, tagName: string, remote: string) {
-		return this.runGitCommand(['push', remote, tagName], repo);
-	}
-
-	/**
 	 * Push a branch to multiple remotes.
 	 * @param repo The path of the repository.
 	 * @param branchName The name of the branch to push.
@@ -814,20 +803,30 @@ export class DataSource extends Disposable {
 	}
 
 	/**
-	 * Push a tag to multiple remotes.
+	 * Push a tag to remote(s).
 	 * @param repo The path of the repository.
 	 * @param tagName The name of the tag to push.
-	 * @param remote The remotes to push the tag to.
+	 * @param remotes The remote(s) to push the tag to.
+	 * @param commitHash The commit hash the tag is on.
+	 * @param skipRemoteCheck Skip checking that the tag is on each of the `remotes`.
 	 * @returns The ErrorInfo's from the executed commands.
 	 */
-	public async pushTagToMultipleRemotes(repo: string, tagName: string, remotes: string[]): Promise<ErrorInfo[]> {
+	public async pushTag(repo: string, tagName: string, remotes: string[], commitHash: string, skipRemoteCheck: boolean): Promise<ErrorInfo[]> {
 		if (remotes.length === 0) {
 			return ['No remote(s) were specified to push the tag ' + tagName + ' to.'];
 		}
 
+		if (!skipRemoteCheck) {
+			const remotesContainingCommit = await this.getRemotesContainingCommit(repo, commitHash, remotes).catch(() => remotes);
+			const remotesNotContainingCommit = remotes.filter((remote) => !remotesContainingCommit.includes(remote));
+			if (remotesNotContainingCommit.length > 0) {
+				return [ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote + JSON.stringify(remotesNotContainingCommit)];
+			}
+		}
+
 		const results: ErrorInfo[] = [];
 		for (let i = 0; i < remotes.length; i++) {
-			const result = await this.pushTag(repo, tagName, remotes[i]);
+			const result = await this.runGitCommand(['push', remotes[i], tagName], repo);
 			results.push(result);
 			if (result !== null) break;
 		}
@@ -1570,6 +1569,29 @@ export class DataSource extends Disposable {
 				}
 			}
 			return refData;
+		});
+	}
+
+	/**
+	 * Get all of the remotes that contain the specified commit hash.
+	 * @param repo The path of the repository.
+	 * @param commitHash The commit hash to test.
+	 * @param knownRemotes The list of known remotes to check for.
+	 * @returns A promise resolving to a list of remote names.
+	 */
+	private getRemotesContainingCommit(repo: string, commitHash: string, knownRemotes: string[]) {
+		return this.spawnGit(['branch', '-r', '--no-color', '--contains=' + commitHash], repo, (stdout) => {
+			// Get the names of all known remote branches that contain commitHash
+			const branchNames = stdout.split(EOL_REGEX)
+				.filter((line) => line.length > 2)
+				.map((line) => line.substring(2).split(' -> ')[0])
+				.filter((branchName) => !INVALID_BRANCH_REGEXP.test(branchName));
+
+			// Get all the remotes that are the prefix of at least one remote branch name
+			return knownRemotes.filter((knownRemote) => {
+				const knownRemotePrefix = knownRemote + '/';
+				return branchNames.some((branchName) => branchName.startsWith(knownRemotePrefix));
+			});
 		});
 	}
 

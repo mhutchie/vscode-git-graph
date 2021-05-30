@@ -265,6 +265,7 @@ export interface GitGraphViewConfig {
 export interface GitGraphViewGlobalState {
 	alwaysAcceptCheckoutCommit: boolean;
 	issueLinkingConfig: IssueLinkingConfig | null;
+	pushTagSkipRemoteCheck: boolean;
 }
 
 export interface GitGraphViewWorkspaceState {
@@ -567,6 +568,9 @@ export interface ResponseWithMultiErrorInfo extends BaseMessage {
 
 export type ErrorInfo = string | null; // null => no error, otherwise => error message
 
+export const enum ErrorInfoExtensionPrefix {
+	PushTagCommitNotOnRemote = 'VSCODE_GIT_GRAPH:PUSH_TAG:COMMIT_NOT_ON_REMOTE:'
+}
 
 /* Request / Response Messages */
 
@@ -588,10 +592,15 @@ export interface RequestAddTag extends RepoRequest {
 	readonly type: TagType;
 	readonly message: string;
 	readonly pushToRemote: string | null; // string => name of the remote to push the tag to, null => don't push to a remote
+	readonly pushSkipRemoteCheck: boolean;
 	readonly force: boolean;
 }
 export interface ResponseAddTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'addTag';
+	readonly repo: string;
+	readonly tagName: string;
+	readonly pushToRemote: string | null;
+	readonly commitHash: string;
 }
 
 export interface RequestApplyStash extends RepoRequest {
@@ -1054,9 +1063,15 @@ export interface RequestPushTag extends RepoRequest {
 	readonly command: 'pushTag';
 	readonly tagName: string;
 	readonly remotes: string[];
+	readonly commitHash: string;
+	readonly skipRemoteCheck: boolean;
 }
 export interface ResponsePushTag extends ResponseWithMultiErrorInfo {
 	readonly command: 'pushTag';
+	readonly repo: string;
+	readonly tagName: string;
+	readonly remotes: string[];
+	readonly commitHash: string;
 }
 
 export const enum RebaseActionOn {

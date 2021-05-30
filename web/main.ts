@@ -3041,58 +3041,59 @@ class GitGraphView {
 			const fileExistsAtThisRevision = file.type !== GG.GitFileStatus.Deleted && !isUncommitted;
 			const fileExistsAtThisRevisionAndDiffPossible = fileExistsAtThisRevision && diffPossible;
 			const codeReviewInProgressAndNotReviewed = expandedCommit.codeReview !== null && expandedCommit.codeReview.remainingFiles.includes(file.newFilePath);
+			const visibility = this.config.contextMenuActionsVisibility.commitDetailsViewFile;
 
 			contextMenu.show([
 				[
 					{
 						title: 'View Diff',
-						visible: diffPossible,
+						visible: visibility.viewDiff && diffPossible,
 						onClick: () => triggerViewFileDiff(file, fileElem)
 					},
 					{
 						title: 'View File at this Revision',
-						visible: fileExistsAtThisRevisionAndDiffPossible,
+						visible: visibility.viewFileAtThisRevision && fileExistsAtThisRevisionAndDiffPossible,
 						onClick: () => triggerViewFileAtRevision(file, fileElem)
 					},
 					{
 						title: 'View Diff with Working File',
-						visible: fileExistsAtThisRevisionAndDiffPossible,
+						visible: visibility.viewDiffWithWorkingFile && fileExistsAtThisRevisionAndDiffPossible,
 						onClick: () => triggerViewFileDiffWithWorkingFile(file, fileElem)
 					},
 					{
 						title: 'Open File',
-						visible: file.type !== GG.GitFileStatus.Deleted,
+						visible: visibility.openFile && file.type !== GG.GitFileStatus.Deleted,
 						onClick: () => triggerOpenFile(file, fileElem)
 					}
 				],
 				[
 					{
 						title: 'Mark as Reviewed',
-						visible: codeReviewInProgressAndNotReviewed,
+						visible: visibility.markAsReviewed && codeReviewInProgressAndNotReviewed,
 						onClick: () => this.cdvUpdateFileState(file, fileElem, true, false)
 					},
 					{
 						title: 'Mark as Not Reviewed',
-						visible: expandedCommit.codeReview !== null && !codeReviewInProgressAndNotReviewed,
+						visible: visibility.markAsNotReviewed && expandedCommit.codeReview !== null && !codeReviewInProgressAndNotReviewed,
 						onClick: () => this.cdvUpdateFileState(file, fileElem, false, false)
 					}
 				],
 				[
 					{
 						title: 'Reset File to this Revision' + ELLIPSIS,
-						visible: fileExistsAtThisRevision && expandedCommit.compareWithHash === null,
+						visible: visibility.resetFileToThisRevision && fileExistsAtThisRevision && expandedCommit.compareWithHash === null,
 						onClick: () => triggerResetFileToRevision(file, fileElem)
 					}
 				],
 				[
 					{
 						title: 'Copy Absolute File Path to Clipboard',
-						visible: true,
+						visible: visibility.copyAbsoluteFilePath,
 						onClick: () => triggerCopyFilePath(file, true)
 					},
 					{
 						title: 'Copy Relative File Path to Clipboard',
-						visible: true,
+						visible: visibility.copyRelativeFilePath,
 						onClick: () => triggerCopyFilePath(file, false)
 					}
 				]

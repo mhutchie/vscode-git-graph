@@ -369,6 +369,17 @@ export interface ContextMenuActionsVisibility {
 		readonly copyHash: boolean;
 		readonly copySubject: boolean;
 	};
+	readonly commitDetailsViewFile: {
+		readonly viewDiff: boolean;
+		readonly viewFileAtThisRevision: boolean;
+		readonly viewDiffWithWorkingFile: boolean;
+		readonly openFile: boolean;
+		readonly markAsReviewed: boolean;
+		readonly markAsNotReviewed: boolean;
+		readonly resetFileToThisRevision: boolean;
+		readonly copyAbsoluteFilePath: boolean;
+		readonly copyRelativeFilePath: boolean;
+	};
 	readonly remoteBranch: {
 		readonly checkout: boolean;
 		readonly delete: boolean;

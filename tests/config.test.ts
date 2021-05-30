@@ -290,6 +290,17 @@ describe('Config', () => {
 					copyHash: true,
 					copySubject: true
 				},
+				commitDetailsViewFile: {
+					viewDiff: true,
+					viewFileAtThisRevision: true,
+					viewDiffWithWorkingFile: true,
+					openFile: true,
+					markAsReviewed: true,
+					markAsNotReviewed: true,
+					resetFileToThisRevision: true,
+					copyAbsoluteFilePath: true,
+					copyRelativeFilePath: true
+				},
 				remoteBranch: {
 					checkout: true,
 					delete: true,
@@ -361,6 +372,17 @@ describe('Config', () => {
 					copyHash: true,
 					copySubject: true
 				},
+				commitDetailsViewFile: {
+					viewDiff: true,
+					viewFileAtThisRevision: true,
+					viewDiffWithWorkingFile: true,
+					openFile: true,
+					markAsReviewed: true,
+					markAsNotReviewed: true,
+					resetFileToThisRevision: true,
+					copyAbsoluteFilePath: true,
+					copyRelativeFilePath: true
+				},
 				remoteBranch: {
 					checkout: true,
 					delete: true,
@@ -407,6 +429,9 @@ describe('Config', () => {
 				commit: {
 					checkout: false
 				},
+				commitDetailsViewFile: {
+					resetFileToThisRevision: false
+				},
 				remoteBranch: {
 					delete: true,
 					fetch: false,
@@ -446,6 +471,17 @@ describe('Config', () => {
 					reset: true,
 					copyHash: true,
 					copySubject: true
+				},
+				commitDetailsViewFile: {
+					viewDiff: true,
+					viewFileAtThisRevision: true,
+					viewDiffWithWorkingFile: true,
+					openFile: true,
+					markAsReviewed: true,
+					markAsNotReviewed: true,
+					resetFileToThisRevision: false,
+					copyAbsoluteFilePath: true,
+					copyRelativeFilePath: true
 				},
 				remoteBranch: {
 					checkout: true,

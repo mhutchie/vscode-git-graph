@@ -542,6 +542,11 @@
 					},
 					"description": "An object specifying the default visibility of the Date, Author & Commit columns. Example: {\"Date\": true, \"Author\": true, \"Commit\": true}"
 				},
+				"git-graph.stickyHeader": {
+					"type": "boolean",
+					"default": true,
+					"description": "Keeps the header visible when the view is scrolled"
+				},
 				"git-graph.dialog.addTag.pushToRemote": {
 					"type": "boolean",
 					"default": false,

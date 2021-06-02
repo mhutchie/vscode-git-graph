@@ -260,6 +260,7 @@ export interface GitGraphViewConfig {
 	readonly showRemoteBranches: boolean;
 	readonly showStashes: boolean;
 	readonly showTags: boolean;
+	readonly stickyHeader: boolean;
 }
 
 export interface GitGraphViewGlobalState {

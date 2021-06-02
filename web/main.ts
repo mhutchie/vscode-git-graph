@@ -49,6 +49,7 @@ class GitGraphView {
 	private readonly viewElem: HTMLElement;
 	private readonly controlsElem: HTMLElement;
 	private readonly tableElem: HTMLElement;
+	private tableColHeadersElem: HTMLElement | null;
 	private readonly footerElem: HTMLElement;
 	private readonly showRemoteBranchesElem: HTMLInputElement;
 	private readonly refreshBtnElem: HTMLElement;
@@ -72,6 +73,7 @@ class GitGraphView {
 
 		this.controlsElem = document.getElementById('controls')!;
 		this.tableElem = document.getElementById('commitTable')!;
+		this.tableColHeadersElem = document.getElementById('tableColHeaders')!;
 		this.footerElem = document.getElementById('footer')!;
 		this.scrollShadowElem = <HTMLInputElement>document.getElementById('scrollShadow')!;
 
@@ -818,7 +820,8 @@ class GitGraphView {
 			markdown: this.config.markdown
 		});
 
-		let html = '<tr id="tableColHeaders"><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
+		const stickyClassAttr = this.config.stickyHeader ? ' class="sticky"' : '';
+		let html = '<tr id="tableColHeaders"' + stickyClassAttr + '><th id="tableHeaderGraphCol" class="tableColHeader" data-col="0">Graph</th><th class="tableColHeader" data-col="1">Description</th>' +
 			(colVisibility.date ? '<th class="tableColHeader dateCol" data-col="2">Date</th>' : '') +
 			(colVisibility.author ? '<th class="tableColHeader authorCol" data-col="3">Author</th>' : '') +
 			(colVisibility.commit ? '<th class="tableColHeader" data-col="4">Commit</th>' : '') +
@@ -919,6 +922,11 @@ class GitGraphView {
 					}
 				}
 			}
+		}
+
+		if (this.config.stickyHeader) {
+			this.tableColHeadersElem = document.getElementById('tableColHeaders');
+			this.alignTableHeaderToControls();
 		}
 	}
 
@@ -1938,6 +1946,22 @@ class GitGraphView {
 		this.requestLoadRepoInfoAndCommits(false, true);
 	}
 
+	private alignTableHeaderToControls() {
+		if (!this.tableColHeadersElem) {
+			return;
+		}
+
+		const controlsHeight = this.controlsElem.offsetHeight;
+		const controlsWidth = this.controlsElem.offsetWidth;
+		const tableColHeadersHeight = this.tableColHeadersElem.offsetHeight;
+		const bottomBorderWidth = 1;
+		const shadowYPos = controlsHeight + tableColHeadersHeight + bottomBorderWidth;
+
+		this.tableColHeadersElem.style.top = `${controlsHeight}px`;
+		this.scrollShadowElem.style.top = `${shadowYPos}px`;
+		this.scrollShadowElem.style.width = `${controlsWidth}px`;
+	}
+
 
 	/* Observers */
 
@@ -1949,6 +1973,10 @@ class GitGraphView {
 			} else {
 				windowWidth = window.outerWidth;
 				windowHeight = window.outerHeight;
+			}
+
+			if (this.config.stickyHeader) {
+				this.alignTableHeaderToControls();
 			}
 		});
 	}

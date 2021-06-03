@@ -358,6 +358,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.commits.fetchCICDsMaximumStatuses` Extension Setting.
+	 */
+	get fetchCICDsMaximumStatuses() {
+		return this.getRenamedExtensionSetting('repository.commits.fetchCICDsMaximumStatuses', 'fetchCICDsMaximumStatuses', 1000);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.commits.initialLoad` Extension Setting.
 	 */
 	get initialLoadCommits() {

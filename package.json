@@ -62,6 +62,11 @@
 			},
 			{
 				"category": "Git Graph",
+				"command": "git-graph.clearCICDCache",
+				"title": "Clear CI/CD Status Cache"
+			},
+			{
+				"category": "Git Graph",
 				"command": "git-graph.endAllWorkspaceCodeReviews",
 				"title": "End All Code Reviews in Workspace"
 			},
@@ -982,6 +987,11 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Fetch avatars of commit authors and committers. By enabling this setting, you consent to commit author and committer email addresses being sent GitHub, GitLab or Gravatar, depending on the repositories remote origin."
+				},
+				"git-graph.repository.commits.fetchCICDsMaximumStatuses": {
+					"type": "number",
+					"default": 1000,
+					"description": "Specifies the number of CI/CD fetch maximum statuses."
 				},
 				"git-graph.repository.commits.initialLoad": {
 					"type": "number",

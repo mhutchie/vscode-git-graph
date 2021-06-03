@@ -11,6 +11,7 @@ class GitGraphView {
 	private commitLookup: { [hash: string]: number } = {};
 	private onlyFollowFirstParent: boolean = false;
 	private avatars: AvatarImageCollection = {};
+	private cicdDatas: CICDDataCollection = {};
 	private currentBranches: string[] | null = null;
 
 	private currentRepo!: string;
@@ -124,6 +125,7 @@ class GitGraphView {
 			this.maxCommits = prevState.maxCommits;
 			this.expandedCommit = prevState.expandedCommit;
 			this.avatars = prevState.avatars;
+			this.cicdDatas = prevState.cicdDatas;
 			this.gitConfig = prevState.gitConfig;
 			this.loadRepoInfo(prevState.gitBranches, prevState.gitBranchHead, prevState.gitRemotes, prevState.gitStashes, true);
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitTags, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
@@ -517,6 +519,54 @@ class GitGraphView {
 		}
 	}
 
+	public loadCicd(repo: string, hash: string, cicdDataSaves: { [id: string]: GG.CICDDataSave }) {
+		if (typeof this.cicdDatas[repo] === 'undefined') {
+			this.cicdDatas[repo] = {};
+		}
+		this.cicdDatas[repo][hash] = cicdDataSaves;
+		this.saveState();
+		let cicdDetailElems = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('cicdDetail');
+		for (let i = 0; i < cicdDetailElems.length; i++) {
+			if (cicdDetailElems[i].dataset.hash === hash) {
+				cicdDetailElems[i].innerHTML = this.getCicdHtml(cicdDataSaves, true);
+			}
+		}
+	}
+
+	private getCicdHtml(cicdDataSaves: { [id: string]: GG.CICDDataSave }, detail: boolean = false) {
+		let ret: string = '';
+		for (let name in cicdDataSaves) {
+			// Multiplicity
+			// GitHub: Commit 1 - 0..n Workflow 0..n - 1 PullRequest  0..1 - 1..n Commit
+			// GitLab: Commit 1 - 0..n Pipeline 0..n - 1 MergeRequest 0..1 - 1..n Commit
+			let cicdDataSave = cicdDataSaves[name];
+			let event = cicdDataSave.event || '';
+			let detailCurrent = cicdDataSave.detail || false;
+			let status = ((cicdDataSave.status === 'success' || cicdDataSave.status === 'SUCCESS') ? 'G' :
+				(((typeof cicdDataSave.allow_failure === 'undefined' || !cicdDataSave.allow_failure) &&
+					(cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure')) ? 'B' :
+					((typeof cicdDataSave.allow_failure !== 'undefined' || cicdDataSave.allow_failure) &&
+						(cicdDataSave.status === 'failed' || cicdDataSave.status === 'failure')) ? 'A' : 'U'));
+			// if (detailCurrent === detail && event === 'push' || event === 'pull_request' || event === '') {
+			if (detailCurrent === detail && event !== 'issues' && event !== 'issue_comment' && event !== 'schedule' && event !== 'workflow_run') {
+				ret +=
+					'<a class="cicdAnchor cicdTooltip" href="' + cicdDataSave.web_url + '">' +
+					// '<div class="cicdTooltipContent ' + status + ' ' + (detail === true ? 'right' : 'left') + '">' +
+					`<div class="cicdTooltipContent ${status} ${(detail ? 'right' : 'left')}">` +
+					(typeof cicdDataSave.name !== 'undefined' ? `<div class="cicdTooltipTitle">${cicdDataSave.name}</div>` : '') +
+					(typeof cicdDataSave.status !== 'undefined' ? `<div class="cicdTooltipSection">Status: ${cicdDataSave.status}</div>` : '') +
+					((typeof cicdDataSave.event !== 'undefined' && cicdDataSave.event !== '') ? `<div class="cicdTooltipSection">Event: ${cicdDataSave.event}</div>` : '') +
+					((typeof cicdDataSave.allow_failure !== 'undefined' && cicdDataSave.allow_failure) ? `<div class="cicdTooltipSection">Allow Failure: ${cicdDataSave.allow_failure}</div>` : '') +
+					'</div>' +
+					`<span class="cicdInfo ${status}">${(status === 'G' ? SVG_ICONS.passed : (status === 'B' ? SVG_ICONS.failed : (status === 'A' ? SVG_ICONS.alert : SVG_ICONS.inconclusive)))}</span>` +
+					'</a>';
+			}
+		}
+		if (ret === '') {
+			ret = '-';
+		}
+		return ret;
+	}
 
 	/* Getters */
 
@@ -721,6 +771,7 @@ class GitGraphView {
 			commits: this.commits,
 			commitHead: this.commitHead,
 			avatars: this.avatars,
+			cicdDatas: this.cicdDatas,
 			currentBranches: this.currentBranches,
 			moreCommitsAvailable: this.moreCommitsAvailable,
 			maxCommits: this.maxCommits,
@@ -2214,6 +2265,8 @@ class GitGraphView {
 					contextMenu.close();
 				}
 
+			} if ((eventElem = eventTarget.closest('.cicdAnchor')) !== null) {
+				// .cicdAnchor was clicked
 			} else if ((eventElem = eventTarget.closest('.commit')) !== null) {
 				// .commit was clicked
 				if (this.expandedCommit !== null) {
@@ -2565,7 +2618,11 @@ class GitGraphView {
 						+ '<b>' + (commitDetails.authorDate !== commitDetails.committerDate ? 'Committer ' : '') + 'Date: </b>' + formatLongDate(commitDetails.committerDate)
 						+ '</span>'
 						+ (expandedCommit.avatar !== null ? '<span class="cdvSummaryAvatar"><img src="' + expandedCommit.avatar + '"></span>' : '')
-						+ '</span></span><br><br>' + textFormatter.format(commitDetails.body);
+						+ '</span></span><br>'
+						+ ('<b>CI/CD detail: </b>' + '<span class="cicdDetail" data-hash="' + escapeHtml(commitDetails.hash) + '">'
+							+ ((typeof this.cicdDatas[this.currentRepo] === 'object' && typeof this.cicdDatas[this.currentRepo][commitDetails.hash] === 'object') ? this.getCicdHtml(this.cicdDatas[this.currentRepo][commitDetails.hash], true) : '*')
+							+ '</span>')
+						+ '<br><br>' + textFormatter.format(commitDetails.body);
 				} else {
 					html += 'Displaying all uncommitted changes.';
 				}
@@ -3293,6 +3350,9 @@ window.addEventListener('load', () => {
 				imageResizer.resize(msg.image, (resizedImage) => {
 					gitGraph.loadAvatar(msg.email, resizedImage);
 				});
+				break;
+			case 'fetchCICD':
+				gitGraph.loadCicd(msg.repo, msg.hash, msg.cicdDataSaves);
 				break;
 			case 'fetchIntoLocalBranch':
 				refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');

@@ -239,6 +239,28 @@ class SettingsWidget {
 				html += '</div>';
 			}
 
+			if (this.config !== null) {
+				html += '<div class="settingsSection"><h3>CI/CD Status Configuration</h3><table><tr><th>Provider</th><th>URL</th><th>Action</th></tr>';
+				const cicdConfigs = this.repo.cicdConfigs;
+				if (cicdConfigs !== null && cicdConfigs.length !== 0) {
+					cicdConfigs.forEach((cicdConfig, i) => {
+						let providerOptions:any = {};
+						providerOptions[(GG.CICDProvider.GitHubV3).toString()] = 'GitHub';
+						providerOptions[(GG.CICDProvider.GitLabV4).toString()] = 'GitLab API v4(ver8.11-)';
+						providerOptions[(GG.CICDProvider.JenkinsV2).toString()] = 'Jenkins v2';
+						const cicdUrl = escapeHtml(cicdConfig.cicdUrl || 'Not Set');
+						html += '<tr class="lineAbove">' +
+							'<td class="left">' + escapeHtml(providerOptions[cicdConfig.provider]) + '</td>' +
+							'<td class="leftWithEllipsis" title="URL: ' + cicdUrl + '">' + cicdUrl + '</td>' +
+							'<td class="btns cicdBtns" data-index="' + i + '"><div class="editCICD" title="Edit CI/CD' + ELLIPSIS + '">' + SVG_ICONS.pencil + '</div> <div class="deleteCICD" title="Delete CI/CD' + ELLIPSIS + '">' + SVG_ICONS.close + '</div></td>' +
+							'</tr>';
+					});
+				} else {
+					html += '<tr class="lineAbove"><td colspan="4">There are no CI/CD configured for this repository.</td></tr>';
+				}
+				html += '</table><div class="settingsSectionButtons lineAbove"><div id="settingsAddCICD" class="addBtn">' + SVG_ICONS.plus + 'Add CI/CD</div></div></div>';
+			}
+
 			html += '<div class="settingsSection"><h3>Git Graph Configuration</h3><div class="settingsSectionButtons">' +
 				'<div id="openExtensionSettings">' + SVG_ICONS.gear + 'Open Git Graph Extension Settings</div><br/>' +
 				'<div id="exportRepositoryConfig">' + SVG_ICONS.package + 'Export Repository Configuration</div>' +
@@ -450,6 +472,85 @@ class SettingsWidget {
 					this.view.saveRepoStateValue(this.currentRepo, 'hideRemotes', this.repo.hideRemotes);
 					this.view.refresh(true);
 				});
+				const updateConfigWithFormValues = (values: DialogInputValue[]) => {
+					let config: GG.CICDConfig = {
+						provider: <GG.CICDProvider>parseInt(<string>values[0]), cicdUrl: <string>values[1],
+						cicdToken: <string>values[2]
+					};
+					return config;
+				};
+				const copyConfigs = () => {
+					if (this.repo === null) return [];
+					let configs: GG.CICDConfig[];
+					if (this.repo.cicdConfigs === null) {
+						configs = [];
+					} else {
+						configs = Object.assign([], this.repo.cicdConfigs);
+					}
+					return configs;
+				};
+
+				document.getElementById('settingsAddCICD')!.addEventListener('click', () => {
+					let defaultProvider = GG.CICDProvider.GitHubV3.toString();
+					let providerOptions = [
+						// { name: 'Bitbucket', value: (GG.CICDProvider.Bitbucket).toString() },
+						{ name: 'GitHub', value: (GG.CICDProvider.GitHubV3).toString() },
+						{ name: 'GitLab API v4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() },
+						{ name: 'Jenkins v2', value: (GG.CICDProvider.JenkinsV2).toString() }
+					];
+					dialog.showForm('Add a new cicd to this repository:', [
+						{
+							type: DialogInputType.Select, name: 'Provider',
+							options: providerOptions, default: defaultProvider,
+							info: 'In addition to the built-in publicly hosted CI/CD providers.'
+						},
+						{ type: DialogInputType.Text, name: 'Git/Jenkins URL', default: '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git) / Jenkins Job URL.' },
+						{ type: DialogInputType.Password, name: 'Access Token', default: '', info: 'The GitHub/GitLab personal or project access token / The Jenkin user_name:password or user_name:access_token' }
+					], 'Add CI/CD', (values) => {
+						let configs: GG.CICDConfig[] = copyConfigs();
+						let config: GG.CICDConfig = updateConfigWithFormValues(values);
+						configs.push(config);
+						this.setCICDConfig(configs);
+					}, { type: TargetType.Repo });
+				});
+
+				addListenerToClass('editCICD', 'click', (e) => {
+					const cicdConfig = this.getCICDForBtnEvent(e);
+					if (cicdConfig === null) return;
+					let providerOptions = [
+						// { name: 'Bitbucket', value: (GG.CICDProvider.Bitbucket).toString() },
+						{ name: 'GitHub', value: (GG.CICDProvider.GitHubV3).toString() },
+						{ name: 'GitLab API v4(ver8.11-)', value: (GG.CICDProvider.GitLabV4).toString() },
+						{ name: 'Jenkins v2', value: (GG.CICDProvider.JenkinsV2).toString() }
+					];
+					dialog.showForm('Edit the CI/CD <b><i>' + escapeHtml(cicdConfig.cicdUrl || 'Not Set') + '</i></b>:', [
+						{
+							type: DialogInputType.Select, name: 'Provider',
+							options: providerOptions, default: cicdConfig.provider.toString(),
+							info: 'In addition to the built-in publicly hosted CI/CD providers.'
+						},
+						{ type: DialogInputType.Text, name: 'Git/Jenkins URL', default: cicdConfig.cicdUrl || '', placeholder: null, info: 'The CI/CD provider\'s Git URL (e.g. https://gitlab.com/OWNER/REPO.git) / Jenkins Job URL.' },
+						{ type: DialogInputType.Password, name: 'Access Token', default: cicdConfig.cicdToken, info: 'The GitHub/GitLab personal or project access token / The Jenkin user_name:password or user_name:access_token' }
+					], 'Save Changes', (values) => {
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
+						let configs: GG.CICDConfig[] = copyConfigs();
+						let config: GG.CICDConfig = updateConfigWithFormValues(values);
+						configs[index] = config;
+						this.setCICDConfig(configs);
+					}, { type: TargetType.Repo });
+				});
+
+				addListenerToClass('deleteCICD', 'click', (e) => {
+					const cicdConfig = this.getCICDForBtnEvent(e);
+					if (cicdConfig === null) return;
+					dialog.showConfirmation('Are you sure you want to delete the CI/CD <b><i>' + escapeHtml(cicdConfig.cicdUrl) + '</i></b>?', 'Yes, delete', () => {
+						let index = parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!);
+						let configs: GG.CICDConfig[] = copyConfigs();
+						configs.splice(index, 1);
+						this.setCICDConfig(configs);
+					}, { type: TargetType.Repo });
+				});
+
 			}
 
 			document.getElementById('editIssueLinking')!.addEventListener('click', () => {
@@ -567,6 +668,16 @@ class SettingsWidget {
 	private setPullRequestConfig(config: GG.PullRequestConfig | null) {
 		if (this.currentRepo === null) return;
 		this.view.saveRepoStateValue(this.currentRepo, 'pullRequestConfig', config);
+		this.render();
+	}
+
+	/**
+	 * Save the pull request configuration for this repository.
+	 * @param config The pull request configuration to save.
+	 */
+	private setCICDConfig(config: GG.CICDConfig[] | null) {
+		if (this.currentRepo === null) return;
+		this.view.saveRepoStateValue(this.currentRepo, 'cicdConfigs', config);
 		this.render();
 	}
 
@@ -798,6 +909,17 @@ class SettingsWidget {
 			updateConfigWithFormValues(values);
 			this.showCreatePullRequestIntegrationDialog1(config);
 		});
+	}
+
+	/**
+	 * Get the cicd details corresponding to a mouse event.
+	 * @param e The mouse event.
+	 * @returns The details of the cicd.
+	 */
+	private getCICDForBtnEvent(e: Event) {
+		return this.repo !== null && this.repo.cicdConfigs !== null
+			? this.repo.cicdConfigs[parseInt((<HTMLElement>(<Element>e.target).closest('.cicdBtns')!).dataset.index!)]
+			: null;
 	}
 
 	/**

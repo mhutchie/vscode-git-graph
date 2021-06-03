@@ -20,6 +20,7 @@ declare global {
 	const workspaceState: GG.DeepReadonly<GG.GitGraphViewWorkspaceState>;
 
 	type AvatarImageCollection = { [email: string]: string };
+	type CICDDataCollection = { [repo: string]: { [hash: string]: { [id: string]: GG.CICDDataSave } } };
 
 	interface ExpandedCommit {
 		index: number;
@@ -57,6 +58,7 @@ declare global {
 		readonly commits: GG.GitCommit[];
 		readonly commitHead: string | null;
 		readonly avatars: AvatarImageCollection;
+		readonly cicdDatas: CICDDataCollection;
 		readonly currentBranches: string[] | null;
 		readonly moreCommitsAvailable: boolean;
 		readonly maxCommits: number;

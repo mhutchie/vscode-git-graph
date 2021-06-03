@@ -1,6 +1,7 @@
 import * as os from 'os';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
+import { CicdManager } from './cicdManager';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider, decodeDiffDocUri } from './diffDocProvider';
@@ -18,6 +19,7 @@ import { Event } from './utils/event';
 export class CommandManager extends Disposable {
 	private readonly context: vscode.ExtensionContext;
 	private readonly avatarManager: AvatarManager;
+	private readonly cicdManager: CicdManager;
 	private readonly dataSource: DataSource;
 	private readonly extensionState: ExtensionState;
 	private readonly logger: Logger;
@@ -28,6 +30,7 @@ export class CommandManager extends Disposable {
 	 * Creates the Git Graph Command Manager.
 	 * @param extensionPath The absolute file path of the directory containing the extension.
 	 * @param avatarManger The Git Graph AvatarManager instance.
+	 * @param cicdManager The Git Graph CicdManager instance.
 	 * @param dataSource The Git Graph DataSource instance.
 	 * @param extensionState The Git Graph ExtensionState instance.
 	 * @param repoManager The Git Graph RepoManager instance.
@@ -35,10 +38,11 @@ export class CommandManager extends Disposable {
 	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
 	 * @param logger The Git Graph Logger instance.
 	 */
-	constructor(context: vscode.ExtensionContext, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
+	constructor(context: vscode.ExtensionContext, avatarManger: AvatarManager, cicdManager: CicdManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: Event<GitExecutable>, logger: Logger) {
 		super();
 		this.context = context;
 		this.avatarManager = avatarManger;
+		this.cicdManager = cicdManager;
 		this.dataSource = dataSource;
 		this.extensionState = extensionState;
 		this.logger = logger;
@@ -50,6 +54,7 @@ export class CommandManager extends Disposable {
 		this.registerCommand('git-graph.addGitRepository', () => this.addGitRepository());
 		this.registerCommand('git-graph.removeGitRepository', () => this.removeGitRepository());
 		this.registerCommand('git-graph.clearAvatarCache', () => this.clearAvatarCache());
+		this.registerCommand('git-graph.clearCICDCache', () => this.clearCICDCache());
 		this.registerCommand('git-graph.fetch', () => this.fetch());
 		this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => this.endAllWorkspaceCodeReviews());
 		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
@@ -120,7 +125,7 @@ export class CommandManager extends Disposable {
 			loadRepo = this.repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
 		}
 
-		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo } : null);
+		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.cicdManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo } : null);
 	}
 
 	/**
@@ -195,6 +200,13 @@ export class CommandManager extends Disposable {
 	}
 
 	/**
+	 * The method run when the `git-graph.clearCICDCache` command is invoked.
+	 */
+	private clearCICDCache() {
+		this.cicdManager.clearCache();
+	}
+
+	/**
 	 * The method run when the `git-graph.fetch` command is invoked.
 	 */
 	private fetch() {
@@ -221,7 +233,7 @@ export class CommandManager extends Disposable {
 				canPickMany: false
 			}).then((item) => {
 				if (item && item.description) {
-					GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+					GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.cicdManager, this.repoManager, this.logger, {
 						repo: item.description,
 						runCommandOnLoad: 'fetch'
 					});
@@ -230,12 +242,12 @@ export class CommandManager extends Disposable {
 				showErrorMessage('An unexpected error occurred while running the command "Fetch from Remote(s)".');
 			});
 		} else if (repoPaths.length === 1) {
-			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.cicdManager, this.repoManager, this.logger, {
 				repo: repoPaths[0],
 				runCommandOnLoad: 'fetch'
 			});
 		} else {
-			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, null);
+			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.cicdManager, this.repoManager, this.logger, null);
 		}
 	}
 
@@ -291,7 +303,7 @@ export class CommandManager extends Disposable {
 		}).then((item) => {
 			if (item) {
 				const commitHashes = item.codeReviewId.split('-');
-				GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+				GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.cicdManager, this.repoManager, this.logger, {
 					repo: item.codeReviewRepo,
 					commitDetails: {
 						commitHash: commitHashes[commitHashes.length > 1 ? 1 : 0],

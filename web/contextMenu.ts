@@ -88,7 +88,7 @@ class ContextMenu {
 		this.elem = menu;
 		this.onClose = onClose;
 
-		addListenerToClass('contextMenuItem', 'click', (e) => {
+		addListenerToClass('contextMenuItem', 'mouseup', (e) => {
 			e.stopPropagation();
 			this.close();
 			handlers[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]();

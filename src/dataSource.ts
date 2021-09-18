@@ -883,15 +883,11 @@ export class DataSource extends Disposable {
 	 * Delete a branch in a repository.
 	 * @param repo The path of the repository.
 	 * @param branchName The name of the branch.
-	 * @param forceDelete Should the delete be forced.
+	 * @param force Should force the branch to be deleted (even if not merged).
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public deleteBranch(repo: string, branchName: string, forceDelete: boolean) {
-		let args = ['branch', '--delete'];
-		if (forceDelete) args.push('--force');
-		args.push(branchName);
-
-		return this.runGitCommand(args, repo);
+	public deleteBranch(repo: string, branchName: string, force: boolean) {
+		return this.runGitCommand(['branch', force ? '-D' : '-d', branchName], repo);
 	}
 
 	/**

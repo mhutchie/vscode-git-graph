@@ -89,9 +89,15 @@ class ContextMenu {
 		this.onClose = onClose;
 
 		addListenerToClass('contextMenuItem', 'click', (e) => {
+			// The user clicked on a context menu item => call the corresponding handler
 			e.stopPropagation();
 			this.close();
 			handlers[parseInt((<HTMLElement>(<Element>e.target).closest('.contextMenuItem')!).dataset.index!)]();
+		});
+
+		menu.addEventListener('click', (e) => {
+			// The user clicked on the context menu (but not a specific item) => keep the context menu open to allow the user to reattempt clicking on a specific item
+			e.stopPropagation();
 		});
 
 		this.target = target;

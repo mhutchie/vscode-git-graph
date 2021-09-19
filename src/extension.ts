@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
+import { CicdManager } from './cicdManager';
 import { CommandManager } from './commands';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
@@ -42,8 +43,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	const dataSource = new DataSource(gitExecutable, onDidChangeConfiguration, onDidChangeGitExecutable, logger);
 	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
 	const repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration, logger);
+	const cicdManager = new CicdManager(extensionState, repoManager, logger);
 	const statusBarItem = new StatusBarItem(repoManager.getNumRepos(), repoManager.onDidChangeRepos, onDidChangeConfiguration, logger);
-	const commandManager = new CommandManager(context, avatarManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);
+	const commandManager = new CommandManager(context, avatarManager, cicdManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);
 	const diffDocProvider = new DiffDocProvider(dataSource);
 
 	context.subscriptions.push(
@@ -73,6 +75,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		statusBarItem,
 		repoManager,
 		avatarManager,
+		cicdManager,
 		dataSource,
 		configurationEmitter,
 		extensionState,

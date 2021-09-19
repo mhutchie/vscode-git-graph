@@ -140,17 +140,17 @@
 	vertical-align:top;
 	cursor:pointer;
 }
-.settingsSection > table td.btns.remoteBtns div{
+.settingsSection > table td.btns.remoteBtns div, .settingsSection > table td.btns.cicdBtns div{
 	vertical-align:middle;
 }
-.settingsSection > table #editRepoName svg, .settingsSection > table #editInitialBranches svg, .settingsSection > table .editRemote svg{
+.settingsSection > table #editRepoName svg, .settingsSection > table #editInitialBranches svg, .settingsSection > table .editRemote svg, .settingsSection > table .editCICD svg{
 	position:absolute;
 	left:1.5px;
 	top:1.5px;
 	width:14px !important;
 	height:14px !important;
 }
-.settingsSection > table #deleteRepoName svg, .settingsSection > table #clearInitialBranches svg, .settingsSection > table .deleteRemote svg, .settingsSection > table .fetchRemote svg, .settingsSection > table .pruneRemote svg{
+.settingsSection > table #deleteRepoName svg, .settingsSection > table #clearInitialBranches svg, .settingsSection > table .deleteRemote svg, .settingsSection > table .fetchRemote svg, .settingsSection > table .pruneRemote svg, .settingsSection > table .deleteCICD svg{
 	position:absolute;
 	left:0.5px;
 	top:0.5px;

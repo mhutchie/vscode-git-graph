@@ -9,6 +9,7 @@ jest.mock('../src/repoManager');
 import * as path from 'path';
 import { ConfigurationChangeEvent } from 'vscode';
 import { AvatarEvent, AvatarManager } from '../src/avatarManager';
+import { CICDEvent, CicdManager } from '../src/cicdManager';
 import { DataSource } from '../src/dataSource';
 import { ExtensionState } from '../src/extensionState';
 import { GitGraphView, standardiseCspSource } from '../src/gitGraphView';
@@ -26,11 +27,13 @@ describe('GitGraphView', () => {
 	let onDidChangeGitExecutable: EventEmitter<utils.GitExecutable>;
 	let onDidChangeRepos: EventEmitter<RepoChangeEvent>;
 	let onAvatar: EventEmitter<AvatarEvent>;
+	let onCICD: EventEmitter<CICDEvent>;
 
 	let logger: Logger;
 	let dataSource: DataSource;
 	let extensionState: ExtensionState;
 	let avatarManager: AvatarManager;
+	let cicdManager: CicdManager;
 	let repoManager: RepoManager;
 
 	let spyOnLog: jest.SpyInstance;
@@ -43,12 +46,15 @@ describe('GitGraphView', () => {
 		onDidChangeGitExecutable = new EventEmitter<utils.GitExecutable>();
 		onDidChangeRepos = new EventEmitter<RepoChangeEvent>();
 		onAvatar = new EventEmitter<AvatarEvent>();
+		onCICD = new EventEmitter<CICDEvent>();
 
 		logger = new Logger();
 		dataSource = new DataSource({ path: '/path/to/git', version: '2.25.0' }, onDidChangeConfiguration.subscribe, onDidChangeGitExecutable.subscribe, logger);
 		extensionState = new ExtensionState(vscode.mocks.extensionContext, onDidChangeGitExecutable.subscribe);
+		jest.spyOn(extensionState, 'getCICDCache').mockReturnValue({});
 		avatarManager = new AvatarManager(dataSource, extensionState, logger);
 		repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration.subscribe, logger);
+		cicdManager = new CicdManager(extensionState, repoManager, logger);
 
 		spyOnLog = jest.spyOn(logger, 'log');
 		spyOnLogError = jest.spyOn(logger, 'logError');
@@ -63,16 +69,21 @@ describe('GitGraphView', () => {
 		Object.defineProperty(avatarManager, 'onAvatar', {
 			get: () => onAvatar.subscribe
 		});
+		Object.defineProperty(cicdManager, 'onCICD', {
+			get: () => onCICD.subscribe
+		});
 		jest.spyOn(extensionState, 'getLastActiveRepo').mockReturnValue(null);
 	});
 
 	afterAll(() => {
 		repoManager.dispose();
 		avatarManager.dispose();
+		cicdManager.dispose();
 		extensionState.dispose();
 		dataSource.dispose();
 		logger.dispose();
 		onAvatar.dispose();
+		onCICD.dispose();
 		onDidChangeRepos.dispose();
 		onDidChangeGitExecutable.dispose();
 		onDidChangeConfiguration.dispose();
@@ -95,7 +106,7 @@ describe('GitGraphView', () => {
 			};
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			expect(vscode.window.createWebviewPanel).toHaveBeenCalledWith('git-graph', 'Git Graph', vscode.ViewColumn.Two, {
@@ -108,10 +119,10 @@ describe('GitGraphView', () => {
 
 		it('Should reveal the existing WebviewPanel (when one exists)', () => {
 			// Setup
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -121,12 +132,12 @@ describe('GitGraphView', () => {
 
 		it('Should reveal the existing WebviewPanel (when one exists, but it isn\'t visible)', () => {
 			// Setup
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo' });
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, { repo: '/path/to/repo' });
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 			mockedWebviewPanel.mocks.panel.setVisibility(false);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo' });
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, { repo: '/path/to/repo' });
 
 			// Assert
 			expect(vscode.window.createWebviewPanel).toHaveBeenCalledTimes(1);
@@ -136,10 +147,10 @@ describe('GitGraphView', () => {
 
 		it('Should reveal the existing WebviewPanel (when one exists), and send loadViewTo', () => {
 			// Setup
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo' });
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, { repo: '/path/to/repo' });
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -159,7 +170,7 @@ describe('GitGraphView', () => {
 
 		it('Should construct a new WebviewPanel, providing loadViewTo', () => {
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/repo' });
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, { repo: '/path/to/repo' });
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -172,7 +183,7 @@ describe('GitGraphView', () => {
 			vscode.window.activeTextEditor = undefined;
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			expect(vscode.window.createWebviewPanel).toHaveBeenCalledWith('git-graph', 'Git Graph', vscode.ViewColumn.One, {
@@ -188,7 +199,7 @@ describe('GitGraphView', () => {
 			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', true);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			expect(vscode.window.createWebviewPanel).toHaveBeenCalledWith('git-graph', 'Git Graph', vscode.ViewColumn.One, {
@@ -204,7 +215,7 @@ describe('GitGraphView', () => {
 			vscode.mockExtensionSettingReturnValue('retainContextWhenHidden', false);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			expect(vscode.window.createWebviewPanel).toHaveBeenCalledWith('git-graph', 'Git Graph', vscode.ViewColumn.One, {
@@ -220,7 +231,7 @@ describe('GitGraphView', () => {
 			vscode.mockExtensionSettingReturnValue('tabIconColourTheme', 'colour');
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -232,7 +243,7 @@ describe('GitGraphView', () => {
 			vscode.mockExtensionSettingReturnValue('tabIconColourTheme', 'grey');
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -245,7 +256,7 @@ describe('GitGraphView', () => {
 		describe('WebviewPanel.onDidDispose', () => {
 			it('Should dispose the GitGraphView when the WebviewPanel is disposed', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 				// Run
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -259,7 +270,7 @@ describe('GitGraphView', () => {
 		describe('WebviewPanel.onDidChangeViewState', () => {
 			it('Should transition from visible to not-visible correctly', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 				const spyOnRepoFileWatcherStop = jest.spyOn(GitGraphView.currentPanel!['repoFileWatcher'], 'stop');
 
@@ -274,7 +285,7 @@ describe('GitGraphView', () => {
 
 			it('Should transition from not-visible to visible correctly', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 				mockedWebviewPanel.mocks.panel.setVisibility(false);
 				GitGraphView.currentPanel!['panel']['webview'].html = '';
@@ -289,7 +300,7 @@ describe('GitGraphView', () => {
 
 			it('Should ignore events if they have no effect', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 				GitGraphView.currentPanel!['panel']['webview'].html = '';
 
@@ -305,7 +316,7 @@ describe('GitGraphView', () => {
 		describe('RepoManager.onDidChangeRepos', () => {
 			it('Should send the updated repositories to the front-end when the view is already loaded', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 				// Run
 				onDidChangeRepos.emit({
@@ -330,7 +341,7 @@ describe('GitGraphView', () => {
 
 			it('Should send the updated repositories to the front-end when the view is already loaded (with loadViewTo)', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 				// Run
 				onDidChangeRepos.emit({
@@ -357,7 +368,7 @@ describe('GitGraphView', () => {
 
 			it('Shouldn\'t send the updated repositories to the front-end when the view is not visible', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 				mockedWebviewPanel.mocks.panel.setVisibility(false);
 
@@ -374,7 +385,7 @@ describe('GitGraphView', () => {
 
 			it('Should transition to no repositories correctly', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 				spyOnGetRepos.mockReturnValueOnce({});
 
 				// Run
@@ -393,7 +404,7 @@ describe('GitGraphView', () => {
 			it('Should transition from no repositories correctly', () => {
 				// Setup
 				spyOnGetRepos.mockReturnValueOnce({});
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 				// Run
 				onDidChangeRepos.emit({
@@ -414,7 +425,7 @@ describe('GitGraphView', () => {
 		describe('AvatarManager.onAvatar', () => {
 			it('Should send the avatar', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 				// Run
 				onAvatar.emit({
@@ -434,10 +445,35 @@ describe('GitGraphView', () => {
 			});
 		});
 
+		describe('CicdManager.onCICD', () => {
+			it('Should send the cicd', () => {
+				// Setup
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
+
+				// Run
+				onCICD.emit({
+					repo: 'path/to/repo',
+					hash: 'data:image/png;base64,YmluYXJ5LWltYWdlLWRhdGE=',
+					cicdDataSaves: {}
+				});
+
+				// Assert
+				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
+				expect(mockedWebviewPanel.mocks.messages).toStrictEqual([
+					{
+						command: 'fetchCICD',
+						repo: 'path/to/repo',
+						hash: 'data:image/png;base64,YmluYXJ5LWltYWdlLWRhdGE=',
+						cicdDataSaves: {}
+					}
+				]);
+			});
+		});
+
 		describe('RepoFileWatcher.repoChangeCallback', () => {
 			it('Should refresh the view when it\'s visible', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 				// Run
 				GitGraphView.currentPanel!['repoFileWatcher']['repoChangeCallback']();
@@ -453,7 +489,7 @@ describe('GitGraphView', () => {
 
 			it('Shouldn\'t refresh the view when it isn\'t visible', () => {
 				// Setup
-				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+				GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 				mockedWebviewPanel.mocks.panel.setVisibility(false);
 
@@ -473,7 +509,7 @@ describe('GitGraphView', () => {
 		let spyOnRepoFileWatcherMute: jest.SpyInstance;
 		let spyOnRepoFileWatcherUnmute: jest.SpyInstance;
 		beforeEach(() => {
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 
 			onDidReceiveMessage = mockedWebviewPanel.mocks.panel.webview.onDidReceiveMessage;
@@ -992,7 +1028,8 @@ describe('GitGraphView', () => {
 							avatar: getAvatarImageResolvedValue,
 							codeReview: getCodeReviewResolvedValue,
 							refresh: false,
-							error: null
+							error: null,
+							cicdDataSaves: {}
 						}
 					]);
 				});
@@ -1029,7 +1066,8 @@ describe('GitGraphView', () => {
 							avatar: null,
 							codeReview: null,
 							refresh: false,
-							error: null
+							error: null,
+							cicdDataSaves: {}
 						}
 					]);
 				});
@@ -1073,7 +1111,8 @@ describe('GitGraphView', () => {
 							avatar: null,
 							codeReview: getCodeReviewResolvedValue,
 							refresh: false,
-							error: null
+							error: null,
+							cicdDataSaves: {}
 						}
 					]);
 				});
@@ -3522,7 +3561,7 @@ describe('GitGraphView', () => {
 
 	describe('sendMessage', () => {
 		beforeEach(() => {
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 			spyOnLog.mockReset();
 			spyOnLogError.mockReset();
 		});
@@ -3635,7 +3674,7 @@ describe('GitGraphView', () => {
 			spyOnIsGitExecutableUnknown.mockReturnValueOnce(true);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -3648,7 +3687,7 @@ describe('GitGraphView', () => {
 			spyOnGetRepos.mockResolvedValueOnce({});
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -3663,7 +3702,7 @@ describe('GitGraphView', () => {
 			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', false);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
@@ -3679,7 +3718,7 @@ describe('GitGraphView', () => {
 			vscode.mockExtensionSettingReturnValue('repository.commits.fetchAvatars', true);
 
 			// Run
-			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, cicdManager, repoManager, logger, null);
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);

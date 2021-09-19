@@ -456,6 +456,28 @@ code{
 	opacity:0.8;
 }
 
+.cicdInfo{
+	vertical-align:top;
+	display:inline-block;
+	width:13px;
+	height:13px;
+	vertical-align:top;
+	margin-top:3px;
+	margin-right:4px;
+}
+.cicdInfo.G svg{
+	fill:#009028;
+	opacity:0.9;
+}
+.cicdInfo.U svg, .cicdInfo.A svg{
+	fill:#f09000;
+	opacity:1;
+}
+.cicdInfo.B svg{
+	fill:#e00000;
+	opacity:0.8;
+}
+
 #cdvFiles{
 	left:50%;
 	right:0;
@@ -1020,4 +1042,78 @@ label > input[type=radio]:checked ~ .customRadio:after{
 #commitGraph, #commitTable th, #commitTable td, .gitRef, #loadingHeader, .unselectable, .roundedBtn, #controls label{
 	-webkit-user-select:none;
 	user-select:none;
+}
+
+/* cicdTooltip */
+
+.cicdTooltip{
+	display: inline-block;
+	position: relative;
+	cursor: pointer;
+}
+.cicdTooltip .cicdTooltipContent{
+	position: absolute;
+	border-style: solid;
+	/* transform: translateY(-50%); */
+	visibility: hidden;
+	z-index: 1;
+}
+/* .cicdTooltip .cicdTooltipContent::before{
+	position: absolute;
+	border-style: solid;
+	transform: translateY(-50%);
+	content: "";
+	height: 0;
+	width: 0;
+	top: 50%;
+} */
+.cicdTooltip .cicdTooltipContent{
+	background-color:var(--vscode-menu-background);
+	border-radius: 5px;
+	border-width: 2px;
+	color:var(--vscode-menu-foreground);
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	/* top: 50%; */
+	top: calc(100%);
+	white-space: nowrap;
+}
+.cicdTooltip .cicdTooltipContent.G{
+	border-color: #009028;
+}
+.cicdTooltip .cicdTooltipContent.U, .cicdTooltip .cicdTooltipContent.A{
+	border-color: #f09000;
+}
+.cicdTooltip .cicdTooltipContent.B{
+	border-color: #e00000;
+}
+/* .cicdTooltip .cicdTooltipContent.right::before{
+	border-color: transparent rgba(128,128,128,1.0) transparent transparent;
+	border-width: 5px 9px 5px 0;
+	right: 100%;
+} */
+.cicdTooltip .cicdTooltipContent.right{
+	left: calc(100% + 13px);
+}
+/* .cicdTooltip .cicdTooltipContent.left::before{
+	border-color: transparent transparent transparent rgba(128,128,128,1.0);
+	border-width: 5px 0 5px 9px;
+	left: 100%;
+} */
+.cicdTooltip .cicdTooltipContent.left{
+	right: calc(100% + 13px);
+}
+.cicdTooltip:hover .cicdTooltipContent{
+	visibility: visible;
+}
+.cicdTooltipTitle, .cicdTooltipSection{
+	padding:3px 10px;
+}
+.cicdTooltipTitle{
+	text-align:center;
+	font-weight:700;
+}
+.cicdTooltipSection{
+	border-top:1px solid rgba(128,128,128,0.5);
 }

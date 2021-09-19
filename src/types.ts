@@ -197,6 +197,49 @@ interface PullRequestConfigCustom extends PullRequestConfigBase {
 
 export type PullRequestConfig = PullRequestConfigBuiltIn | PullRequestConfigCustom;
 
+export interface CICDData {
+	id: string;
+	status: string;
+	ref: string;
+	sha: string;
+	web_url: string;
+	created_at: string;
+	updated_at: string;
+	name: string;
+	event: string;
+	detail: boolean;
+}
+
+export interface CICDDataSave {
+	name: string;
+	status: string;
+	ref: string;
+	web_url: string;
+	event: string;
+	detail: boolean;
+	allow_failure: boolean;
+}
+
+export interface CICDConfigBase {
+	readonly cicdUrl: string;
+	readonly cicdToken: string;
+}
+
+export const enum CICDProvider {
+	Bitbucket,
+	Custom,
+	GitHubV3,
+	GitLabV4,
+	JenkinsV2
+}
+
+interface CICDConfigBuiltIn extends CICDConfigBase {
+	readonly provider: CICDProvider;
+}
+
+
+export type CICDConfig = CICDConfigBuiltIn;
+
 export interface GitRepoState {
 	cdvDivider: number;
 	cdvHeight: number;
@@ -212,6 +255,8 @@ export interface GitRepoState {
 	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
+	cicdConfigs: CICDConfig[] | null;
+	cicdNonce: string | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
@@ -245,6 +290,7 @@ export interface GitGraphViewConfig {
 	readonly fetchAndPrune: boolean;
 	readonly fetchAndPruneTags: boolean;
 	readonly fetchAvatars: boolean;
+	readonly fetchCICDsMaximumStatuses: number;
 	readonly graph: GraphConfig;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly initialLoadCommits: number;
@@ -692,6 +738,7 @@ export interface ResponseCommitDetails extends ResponseWithErrorInfo {
 	readonly avatar: string | null;
 	readonly codeReview: CodeReview | null;
 	readonly refresh: boolean;
+	readonly cicdDataSaves: { [id: string]: CICDDataSave };
 }
 
 export interface RequestCompareCommits extends RepoRequest {
@@ -885,6 +932,17 @@ export interface ResponseFetchAvatar extends BaseMessage {
 	readonly command: 'fetchAvatar';
 	readonly email: string;
 	readonly image: string;
+}
+export interface RequestFetchCICD extends RepoRequest {
+	readonly command: 'fetchCICD';
+	readonly repo: string;
+	readonly hash: string;
+}
+export interface ResponseFetchCICD extends BaseMessage {
+	readonly command: 'fetchCICD';
+	readonly repo: string;
+	readonly hash: string;
+	readonly cicdDataSaves: { [id: string]: CICDDataSave };
 }
 
 export interface RequestFetchIntoLocalBranch extends RepoRequest {
@@ -1276,6 +1334,7 @@ export type RequestMessage =
 	| RequestExportRepoConfig
 	| RequestFetch
 	| RequestFetchAvatar
+	| RequestFetchCICD
 	| RequestFetchIntoLocalBranch
 	| RequestLoadCommits
 	| RequestLoadConfig
@@ -1339,6 +1398,7 @@ export type ResponseMessage =
 	| ResponseExportRepoConfig
 	| ResponseFetch
 	| ResponseFetchAvatar
+	| ResponseFetchCICD
 	| ResponseFetchIntoLocalBranch
 	| ResponseLoadCommits
 	| ResponseLoadConfig

@@ -83,7 +83,7 @@ body.vscode-high-contrast .dialog{
 	background-color:var(--vscode-menu-foreground);
 }
 
-.dialogContent > table.dialogForm input[type=text]{
+.dialogContent > table.dialogForm input[type=text], .dialogContent > table.dialogForm input[type=password]{
 	width:100%;
 	padding:4px 6px;
 	box-sizing:border-box;
@@ -96,10 +96,10 @@ body.vscode-high-contrast .dialog{
 	font-size:13px;
 	line-height:17px;
 }
-.dialogContent > table.dialogForm input[type=text]:focus, .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:focus ~ .customCheckbox, .dialogContent .dialogFormRadio > label > input[type=radio]:focus ~ .customRadio{
+.dialogContent > table.dialogForm input[type=text]:focus, .dialogContent > table.dialogForm input[type=password]:focus, .dialogContent .dialogFormCheckbox > label > input[type=checkbox]:focus ~ .customCheckbox, .dialogContent .dialogFormRadio > label > input[type=radio]:focus ~ .customRadio{
 	border-color:var(--vscode-focusBorder);
 }
-.dialogContent > table.dialogForm input[type=text]::placeholder{
+.dialogContent > table.dialogForm input[type=text]::placeholder, .dialogContent > table.dialogForm input[type=password]::placeholder{
 	color:var(--vscode-menu-foreground);
 	opacity:0.4;
 }

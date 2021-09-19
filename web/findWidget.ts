@@ -397,7 +397,7 @@ class FindWidget {
 			if (commitHash !== null && !this.view.isCdvOpen(commitHash, null)) {
 				const commitElem = findCommitElemWithId(getCommitElems(), this.view.getCommitId(commitHash));
 				if (commitElem !== null) {
-					this.view.loadCommitDetails(commitElem);
+					this.view.loadCommitDetails(commitElem, DEFAULT_PARENT_INDEX);
 				}
 			}
 		}

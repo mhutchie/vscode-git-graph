@@ -2887,6 +2887,8 @@ describe('Config', () => {
 
 	describe('showStatusBarItem', testBooleanExtensionSetting('showStatusBarItem', 'showStatusBarItem', true));
 
+	describe('stickyHeader', testBooleanExtensionSetting('stickyHeader', 'stickyHeader', true));
+
 	describe('tabIconColourTheme', () => {
 		it('Should return TabIconColourTheme.Colour when the configuration value is "colour"', () => {
 			// Setup

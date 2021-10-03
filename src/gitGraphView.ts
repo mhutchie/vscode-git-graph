@@ -251,6 +251,13 @@ export class GitGraphView extends Disposable {
 					refresh: msg.refresh
 				});
 				break;
+			case 'commitFixup':
+				this.sendMessage({
+					command: 'commitFixup',
+					commitHash: msg.commitHash,
+					error: await this.dataSource.commitFixup(msg.repo, msg.commitHash)
+				});
+				break;
 			case 'compareCommits':
 				this.sendMessage({
 					command: 'compareCommits',
@@ -528,7 +535,7 @@ export class GitGraphView extends Disposable {
 					command: 'rebase',
 					actionOn: msg.actionOn,
 					interactive: msg.interactive,
-					error: await this.dataSource.rebase(msg.repo, msg.obj, msg.actionOn, msg.ignoreDate, msg.interactive)
+					error: await this.dataSource.rebase(msg.repo, msg.obj, msg.actionOn, msg.ignoreDate, msg.interactive, msg.autosquash)
 				});
 				break;
 			case 'renameBranch':

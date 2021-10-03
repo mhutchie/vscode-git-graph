@@ -1001,13 +1001,17 @@ export class DataSource extends Disposable {
 	 * @param actionOn Is the rebase on a branch or commit.
 	 * @param ignoreDate Is `--ignore-date` enabled.
 	 * @param interactive Should the rebase be performed interactively.
+	 * @param autosquash Is `--autosquash` enabled.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public rebase(repo: string, obj: string, actionOn: RebaseActionOn, ignoreDate: boolean, interactive: boolean) {
+	public rebase(repo: string, obj: string, actionOn: RebaseActionOn, ignoreDate: boolean, interactive: boolean, autosquash: boolean) {
 		if (interactive) {
 			return this.openGitTerminal(
 				repo,
-				'rebase --interactive ' + (getConfig().signCommits ? '-S ' : '') + (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
+				'rebase --interactive ' +
+					(autosquash ? '--autosquash ' : '') +
+					(getConfig().signCommits ? '-S ' : '') +
+					(actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
 				'Rebase on "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"'
 			);
 		} else {
@@ -1089,6 +1093,17 @@ export class DataSource extends Disposable {
 			args.push('-S');
 		}
 		args.push('--onto', commitHash + '^', commitHash);
+		return this.runGitCommand(args, repo);
+	}
+
+	/**
+	 * Commit the stashed files to fixup a commit.
+	 * @param repo The path of the repository.
+	 * @param commitHash The hash of the commit to drop.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public commitFixup(repo: string, commitHash: string) {
+		const args = ['commit', '--fixup=' + commitHash];
 		return this.runGitCommand(args, repo);
 	}
 

@@ -361,6 +361,7 @@ export interface ContextMenuActionsVisibility {
 		readonly createBranch: boolean;
 		readonly checkout: boolean;
 		readonly cherrypick: boolean;
+		readonly commitFixup: boolean;
 		readonly revert: boolean;
 		readonly drop: boolean;
 		readonly merge: boolean;
@@ -496,6 +497,7 @@ export interface DialogDefaults {
 	readonly rebase: {
 		readonly ignoreDate: boolean,
 		readonly interactive: boolean
+		readonly autosquash: boolean
 	};
 	readonly resetCommit: {
 		readonly mode: GitResetMode
@@ -686,6 +688,17 @@ export interface RequestCommitDetails extends RepoRequest {
 	readonly avatarEmail: string | null; // string => fetch avatar with the given email, null => don't fetch avatar
 	readonly refresh: boolean;
 }
+
+export interface ResponseCommitFixup extends ResponseWithErrorInfo {
+	readonly command: 'commitFixup';
+	readonly commitHash: string;
+}
+
+export interface RequestCommitFixup extends RepoRequest {
+	readonly command: 'commitFixup';
+	readonly commitHash: string;
+}
+
 export interface ResponseCommitDetails extends ResponseWithErrorInfo {
 	readonly command: 'commitDetails';
 	readonly commitDetails: GitCommitDetails | null;
@@ -1095,6 +1108,7 @@ export interface RequestRebase extends RepoRequest {
 	readonly actionOn: RebaseActionOn;
 	readonly ignoreDate: boolean;
 	readonly interactive: boolean;
+	readonly autosquash: boolean;
 }
 export interface ResponseRebase extends ResponseWithErrorInfo {
 	readonly command: 'rebase';
@@ -1257,6 +1271,7 @@ export type RequestMessage =
 	| RequestCherrypickCommit
 	| RequestCleanUntrackedFiles
 	| RequestCommitDetails
+	| RequestCommitFixup
 	| RequestCompareCommits
 	| RequestCopyFilePath
 	| RequestCopyToClipboard
@@ -1322,6 +1337,7 @@ export type ResponseMessage =
 	| ResponseCleanUntrackedFiles
 	| ResponseCompareCommits
 	| ResponseCommitDetails
+	| ResponseCommitFixup
 	| ResponseCopyFilePath
 	| ResponseCopyToClipboard
 	| ResponseCreateArchive

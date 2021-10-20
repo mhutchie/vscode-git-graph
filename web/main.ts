@@ -971,23 +971,23 @@ class GitGraphView {
 		const isSelectedInBranchesDropdown = this.branchDropdown.isSelected(refName);
 		return [[
 			{
-				title: 'Checkout Branch',
+				title: localize('Checkout Branch'),
 				visible: visibility.checkout && this.gitBranchHead !== refName,
 				onClick: () => this.checkoutBranchAction(refName, null, null, target)
 			}, {
-				title: 'Rename Branch' + ELLIPSIS,
+				title: localize('Rename Branch') + ELLIPSIS,
 				visible: visibility.rename,
 				onClick: () => {
-					dialog.showRefInput('Enter the new name for branch <b><i>' + escapeHtml(refName) + '</i></b>:', refName, 'Rename Branch', (newName) => {
+					dialog.showRefInput(localize('Enter the new name for branch') + ' <b><i>' + escapeHtml(refName) + '</i></b>:', refName, localize('Rename Branch'), (newName) => {
 						runAction({ command: 'renameBranch', repo: this.currentRepo, oldName: refName, newName: newName }, 'Renaming Branch');
 					}, target);
 				}
 			}, {
-				title: 'Delete Branch' + ELLIPSIS,
+				title: localize('Delete Branch') + ELLIPSIS,
 				visible: visibility.delete && this.gitBranchHead !== refName,
 				onClick: () => {
 					let remotesWithBranch = this.gitRemotes.filter(remote => this.gitBranches.includes('remotes/' + remote + '/' + refName));
-					let inputs: DialogInput[] = [{ type: DialogInputType.Checkbox, name: 'Force Delete', value: this.config.dialogDefaults.deleteBranch.forceDelete }];
+					let inputs: DialogInput[] = [{ type: DialogInputType.Checkbox, name: localize('Force Delete'), value: this.config.dialogDefaults.deleteBranch.forceDelete }];
 					if (remotesWithBranch.length > 0) {
 						inputs.push({
 							type: DialogInputType.Checkbox,
@@ -996,20 +996,20 @@ class GitGraphView {
 							info: 'This branch is on the remote' + (remotesWithBranch.length > 1 ? 's: ' : ' ') + formatCommaSeparatedList(remotesWithBranch.map((remote) => '"' + remote + '"'))
 						});
 					}
-					dialog.showForm('Are you sure you want to delete the branch <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, 'Yes, delete', (values) => {
+					dialog.showForm(localize('Are you sure you want to delete the branch') + ' <b><i>' + escapeHtml(refName) + '</i></b>?', inputs, localize('yes, delete'), (values) => {
 						runAction({ command: 'deleteBranch', repo: this.currentRepo, branchName: refName, forceDelete: <boolean>values[0], deleteOnRemotes: remotesWithBranch.length > 0 && <boolean>values[1] ? remotesWithBranch : [] }, 'Deleting Branch');
 					}, target);
 				}
 			}, {
-				title: 'Merge into current branch' + ELLIPSIS,
+				title: localize('Merge into current branch') + ELLIPSIS,
 				visible: visibility.merge && this.gitBranchHead !== refName,
 				onClick: () => this.mergeAction(refName, refName, GG.MergeActionOn.Branch, target)
 			}, {
-				title: 'Rebase current branch on Branch' + ELLIPSIS,
+				title: localize('Rebase current branch on Branch') + ELLIPSIS,
 				visible: visibility.rebase && this.gitBranchHead !== refName,
 				onClick: () => this.rebaseAction(refName, refName, GG.RebaseActionOn.Branch, target)
 			}, {
-				title: 'Push Branch' + ELLIPSIS,
+				title: localize('Push Branch') + ELLIPSIS,
 				visible: visibility.push && this.gitRemotes.length > 0,
 				onClick: () => {
 					const multipleRemotes = this.gitRemotes.length > 1;
@@ -1054,7 +1054,7 @@ class GitGraphView {
 			}
 		], [
 			{
-				title: 'Create Pull Request' + ELLIPSIS,
+				title: localize('Create Pull Request') + ELLIPSIS,
 				visible: visibility.createPullRequest && this.gitRepos[this.currentRepo].pullRequestConfig !== null,
 				onClick: () => {
 					const config = this.gitRepos[this.currentRepo].pullRequestConfig;
@@ -1098,11 +1098,11 @@ class GitGraphView {
 		const commit = this.commits[this.commitLookup[hash]];
 		return [[
 			{
-				title: 'Add Tag' + ELLIPSIS,
+				title: localize('Add Tag') + ELLIPSIS,
 				visible: visibility.addTag,
 				onClick: () => this.addTagAction(hash, '', this.config.dialogDefaults.addTag.type, '', null, target)
 			}, {
-				title: 'Create Branch' + ELLIPSIS,
+				title: localize('Create Branch') + ELLIPSIS,
 				visible: visibility.createBranch,
 				onClick: () => this.createBranchAction(hash, '', this.config.dialogDefaults.createBranch.checkout, target)
 			}
@@ -1185,7 +1185,7 @@ class GitGraphView {
 					}
 				}
 			}, {
-				title: 'Drop' + ELLIPSIS,
+				title: localize('Drop') + ELLIPSIS,
 				visible: visibility.drop && this.graph.dropCommitPossible(this.commitLookup[hash]),
 				onClick: () => {
 					dialog.showConfirmation('Are you sure you want to permanently drop commit <b><i>' + abbrevCommit(hash) + '</i></b>?' + (this.onlyFollowFirstParent ? '<br/><i>Note: By enabling "Only follow the first parent of commits", some commits may have been hidden from the Git Graph View that could affect the outcome of performing this action.</i>' : ''), 'Yes, drop', () => {
@@ -1195,11 +1195,11 @@ class GitGraphView {
 			}
 		], [
 			{
-				title: 'Merge into current branch' + ELLIPSIS,
+				title: localize('Merge into current branch') + ELLIPSIS,
 				visible: visibility.merge,
 				onClick: () => this.mergeAction(hash, abbrevCommit(hash), GG.MergeActionOn.Commit, target)
 			}, {
-				title: 'Rebase current branch on this Commit' + ELLIPSIS,
+				title: localize('Rebase current branch on this Commit') + ELLIPSIS,
 				visible: visibility.rebase,
 				onClick: () => this.rebaseAction(hash, abbrevCommit(hash), GG.RebaseActionOn.Commit, target)
 			}, {
@@ -1217,14 +1217,14 @@ class GitGraphView {
 			}
 		], [
 			{
-				title: 'Copy Commit Hash to Clipboard',
+				title: localize('Copy Commit Hash to Clipboard'),
 				visible: visibility.copyHash,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: hash });
 				}
 			},
 			{
-				title: 'Copy Commit Subject to Clipboard',
+				title: localize('Copy Commit Subject to Clipboard'),
 				visible: visibility.copySubject,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Commit Subject', data: commit.message });
@@ -1240,19 +1240,19 @@ class GitGraphView {
 		const isSelectedInBranchesDropdown = this.branchDropdown.isSelected(prefixedRefName);
 		return [[
 			{
-				title: 'Checkout Branch' + ELLIPSIS,
+				title: localize('Checkout Branch') + ELLIPSIS,
 				visible: visibility.checkout,
 				onClick: () => this.checkoutBranchAction(refName, remote, null, target)
 			}, {
-				title: 'Delete Remote Branch' + ELLIPSIS,
+				title: localize('Delete Remote Branch') + ELLIPSIS,
 				visible: visibility.delete && remote !== '',
 				onClick: () => {
-					dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', 'Yes, delete', () => {
+					dialog.showConfirmation('Are you sure you want to delete the remote branch <b><i>' + escapeHtml(refName) + '</i></b>?', localize('yes, delete'), () => {
 						runAction({ command: 'deleteRemoteBranch', repo: this.currentRepo, branchName: branchName, remote: remote }, 'Deleting Remote Branch');
 					}, target);
 				}
 			}, {
-				title: 'Fetch into local branch' + ELLIPSIS,
+				title: localize('Fetch into local branch') + ELLIPSIS,
 				visible: visibility.fetch && remote !== '' && this.gitBranches.includes(branchName) && this.gitBranchHead !== branchName,
 				onClick: () => {
 					dialog.showForm('Are you sure you want to fetch the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into the local branch <b><i>' + escapeHtml(branchName) + '</i></b>?', [{
@@ -1265,11 +1265,11 @@ class GitGraphView {
 					}, target);
 				}
 			}, {
-				title: 'Merge into current branch' + ELLIPSIS,
+				title: localize('Merge into current branch') + ELLIPSIS,
 				visible: visibility.merge,
 				onClick: () => this.mergeAction(refName, refName, GG.MergeActionOn.RemoteTrackingBranch, target)
 			}, {
-				title: 'Pull into current branch' + ELLIPSIS,
+				title: localize('Pull into current branch') + ELLIPSIS,
 				visible: visibility.pull && remote !== '',
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into ' + (this.gitBranchHead !== null ? '<b><i>' + escapeHtml(this.gitBranchHead) + '</i></b> (the current branch)' : 'the current branch') + '? If a merge is required:', [
@@ -1282,7 +1282,7 @@ class GitGraphView {
 			}
 		], [
 			{
-				title: 'Create Pull Request',
+				title: localize('Create Pull Request'),
 				visible: visibility.createPullRequest && this.gitRepos[this.currentRepo].pullRequestConfig !== null && branchName !== 'HEAD' &&
 					(this.gitRepos[this.currentRepo].pullRequestConfig!.sourceRemote === remote || this.gitRepos[this.currentRepo].pullRequestConfig!.destRemote === remote),
 				onClick: () => {
@@ -1334,7 +1334,7 @@ class GitGraphView {
 		const hash = target.hash, selector = target.ref, visibility = this.config.contextMenuActionsVisibility.stash;
 		return [[
 			{
-				title: 'Apply Stash' + ELLIPSIS,
+				title: localize('Apply Stash') + ELLIPSIS,
 				visible: visibility.apply,
 				onClick: () => {
 					dialog.showForm('Are you sure you want to apply the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', [{
@@ -1347,15 +1347,15 @@ class GitGraphView {
 					}, target);
 				}
 			}, {
-				title: 'Create Branch from Stash' + ELLIPSIS,
+				title: localize('Create Branch from Stash') + ELLIPSIS,
 				visible: visibility.createBranch,
 				onClick: () => {
-					dialog.showRefInput('Create a branch from stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b> with the name:', '', 'Create Branch', (branchName) => {
+					dialog.showRefInput('Create a branch from stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b> with the name:', '', localize('Create Branch'), (branchName) => {
 						runAction({ command: 'branchFromStash', repo: this.currentRepo, selector: selector, branchName: branchName }, 'Creating Branch');
 					}, target);
 				}
 			}, {
-				title: 'Pop Stash' + ELLIPSIS,
+				title: localize('Pop Stash') + ELLIPSIS,
 				visible: visibility.pop,
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', [{
@@ -1368,7 +1368,7 @@ class GitGraphView {
 					}, target);
 				}
 			}, {
-				title: 'Drop Stash' + ELLIPSIS,
+				title: localize('Drop Stash') + ELLIPSIS,
 				visible: visibility.drop,
 				onClick: () => {
 					dialog.showConfirmation('Are you sure you want to drop the stash <b><i>' + escapeHtml(selector.substring(5)) + '</i></b>?', 'Yes, drop', () => {
@@ -1378,13 +1378,13 @@ class GitGraphView {
 			}
 		], [
 			{
-				title: 'Copy Stash Name to Clipboard',
+				title: localize('Copy Stash Name to Clipboard'),
 				visible: visibility.copyName,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Stash Name', data: selector });
 				}
 			}, {
-				title: 'Copy Stash Hash to Clipboard',
+				title: localize('Copy Stash Hash to Clipboard'),
 				visible: visibility.copyHash,
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Stash Hash', data: hash });
@@ -1410,15 +1410,15 @@ class GitGraphView {
 					if (this.gitRemotes.length > 1) {
 						let options = [{ name: 'Don\'t delete on any remote', value: '-1' }];
 						this.gitRemotes.forEach((remote, i) => options.push({ name: remote, value: i.toString() }));
-						dialog.showSelect(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, 'Yes, delete', remoteIndex => {
+						dialog.showSelect(message + '<br>Do you also want to delete the tag on a remote:', '-1', options, localize('yes, delete'), remoteIndex => {
 							this.deleteTagAction(tagName, remoteIndex !== '-1' ? this.gitRemotes[parseInt(remoteIndex)] : null);
 						}, target);
 					} else if (this.gitRemotes.length === 1) {
-						dialog.showCheckbox(message, 'Also delete on remote', false, 'Yes, delete', deleteOnRemote => {
+						dialog.showCheckbox(message, 'Also delete on remote', false, localize('yes, delete'), deleteOnRemote => {
 							this.deleteTagAction(tagName, deleteOnRemote ? this.gitRemotes[0] : null);
 						}, target);
 					} else {
-						dialog.showConfirmation(message, 'Yes, delete', () => {
+						dialog.showConfirmation(message, localize('yes, delete'), () => {
 							this.deleteTagAction(tagName, null);
 						}, target);
 					}
@@ -1536,7 +1536,7 @@ class GitGraphView {
 			inputs.push({ type: DialogInputType.Checkbox, name: 'Push to remote', value: defaultValue, info: 'Once this tag has been added, push it to the repositories remote.' });
 		}
 
-		dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, 'Add Tag', (values) => {
+		dialog.showForm('Add tag to commit <b><i>' + abbrevCommit(hash) + '</i></b>:', inputs, localize('Add Tag'), (values) => {
 			const tagName = <string>values[0];
 			const type = <string>values[1] === 'annotated' ? GG.TagType.Annotated : GG.TagType.Lightweight;
 			const message = <string>values[2];
@@ -1560,7 +1560,7 @@ class GitGraphView {
 
 	private checkoutBranchAction(refName: string, remote: string | null, prefillName: string | null, target: DialogTarget & (CommitTarget | RefTarget)) {
 		if (remote !== null) {
-			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substring(remote.length + 1) : refName)), 'Checkout Branch', newBranch => {
+			dialog.showRefInput('Enter the name of the new branch you would like to create when checking out <b><i>' + escapeHtml(refName) + '</i></b>:', (prefillName !== null ? prefillName : (remote !== '' ? refName.substring(remote.length + 1) : refName)), localize('Checkout Branch'), newBranch => {
 				if (this.gitBranches.includes(newBranch)) {
 					const canPullFromRemote = remote !== '';
 					dialog.showTwoButtons('The name <b><i>' + escapeHtml(newBranch) + '</i></b> is already used by another branch:', 'Choose another branch name', () => {
@@ -1591,10 +1591,10 @@ class GitGraphView {
 	}
 
 	private createBranchAction(hash: string, initialName: string, initialCheckOut: boolean, target: DialogTarget & CommitTarget) {
-		dialog.showForm('Create branch at commit <b><i>' + abbrevCommit(hash) + '</i></b>:', [
+		dialog.showForm(localize('Create branch at commit') + ' <b><i>' + abbrevCommit(hash) + '</i></b>:', [
 			{ type: DialogInputType.TextRef, name: 'Name', default: initialName },
 			{ type: DialogInputType.Checkbox, name: 'Check out', value: initialCheckOut }
-		], 'Create Branch', (values) => {
+		], localize('Create Branch'), (values) => {
 			const branchName = <string>values[0], checkOut = <boolean>values[1];
 			if (this.gitBranches.includes(branchName)) {
 				dialog.showTwoButtons('A branch named <b><i>' + escapeHtml(branchName) + '</i></b> already exists, do you want to replace it with this new branch?', 'Yes, replace the existing branch', () => {

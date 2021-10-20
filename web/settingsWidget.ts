@@ -261,7 +261,7 @@ class SettingsWidget {
 			if (this.repo.name !== null) {
 				document.getElementById('deleteRepoName')!.addEventListener('click', () => {
 					if (this.currentRepo === null || this.repo === null || this.repo.name === null) return;
-					dialog.showConfirmation('Are you sure you want to delete the manually configured name <b><i>' + escapeHtml(this.repo.name) + '</i></b> for this repository, and use the default name from the File System <b><i>' + escapeHtml(getRepoName(this.currentRepo)) + '</i></b>?', 'Yes, delete', () => {
+					dialog.showConfirmation('Are you sure you want to delete the manually configured name <b><i>' + escapeHtml(this.repo.name) + '</i></b> for this repository, and use the default name from the File System <b><i>' + escapeHtml(getRepoName(this.currentRepo)) + '</i></b>?', localize('yes, delete'), () => {
 						if (this.currentRepo === null) return;
 						this.view.saveRepoStateValue(this.currentRepo, 'name', null);
 						this.view.renderRepoDropdownOptions();
@@ -408,7 +408,7 @@ class SettingsWidget {
 				addListenerToClass('deleteRemote', 'click', (e) => {
 					const remote = this.getRemoteForBtnEvent(e);
 					if (remote === null) return;
-					dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', 'Yes, delete', () => {
+					dialog.showConfirmation('Are you sure you want to delete the remote <b><i>' + escapeHtml(remote.name) + '</i></b>?', localize('yes, delete'), () => {
 						if (this.currentRepo === null) return;
 						runAction({ command: 'deleteRemote', repo: this.currentRepo, name: remote.name }, 'Deleting Remote');
 					}, { type: TargetType.Repo });

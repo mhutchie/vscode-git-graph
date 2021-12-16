@@ -120,12 +120,12 @@ export function doesFileExist(path: string) {
 /* General Methods */
 
 /**
- * Abbreviate a commit hash to the first eight characters.
+ * Abbreviate a commit hash to the first seven characters.
  * @param commitHash The full commit hash.
  * @returns The abbreviated commit hash.
  */
 export function abbrevCommit(commitHash: string) {
-	return commitHash.substring(0, 8);
+	return commitHash.substring(0, 7);
 }
 
 /**

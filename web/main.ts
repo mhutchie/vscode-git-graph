@@ -3814,7 +3814,7 @@ function haveFilesChanged(oldFiles: ReadonlyArray<GG.GitFileChange> | null, newF
 }
 
 function abbrevCommit(commitHash: string) {
-	return commitHash.substring(0, 8);
+	return commitHash.substring(0, 7);
 }
 
 function getRepoDropdownOptions(repos: Readonly<GG.GitRepoSet>) {

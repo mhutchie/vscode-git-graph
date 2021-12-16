@@ -1227,6 +1227,13 @@ class GitGraphView {
 				}
 			},
 			{
+				title: 'Copy short Commit Hash to Clipboard',
+				visible: visibility.copySubject,
+				onClick: () => {
+					sendMessage({ command: 'copyToClipboard', type: 'Commit Hash', data: abbrevCommit(hash) });
+				}
+			},
+			{
 				title: 'Copy Commit Subject to Clipboard',
 				visible: visibility.copySubject,
 				onClick: () => {

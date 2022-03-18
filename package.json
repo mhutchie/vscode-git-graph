@@ -958,6 +958,14 @@
 					"default": false,
 					"description": "Open the Git Graph View to the repository containing the active Text Editor document."
 				},
+				"git-graph.priorityBranches": {
+					"type": "array",
+					"default": [
+						"main",
+						"origin/main"
+					],
+					"description": "Specifies the branches that should be prioritized when displaying the Git Graph View. The branches are displayed in the order specified in this setting."
+				},
 				"git-graph.referenceLabels.alignment": {
 					"type": "string",
 					"enum": [

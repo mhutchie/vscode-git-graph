@@ -571,6 +571,10 @@ class Config {
 		}
 	}
 
+	get priorityBranches() {
+		return this.config.get("priorityBranches", ["main", "origin/main", "master", "origin/master"]);
+	}
+
 	/**
 	 * Get the normalised keybinding located by the provided section.
 	 * @param section The section locating the keybinding setting.

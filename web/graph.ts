@@ -159,6 +159,32 @@ class Branch {
 	}
 }
 
+// The Branch2 class represents a particular "channel" in the graph, which is denoted by the 'x' variable.
+// This way, we can modify the priority of this "channel".
+// The original Branch class doesn't do this, and instead, holds the rendering
+// information of where and how to draw lines. This meant my initial attempts
+// of prioritising "branches" failed, because I would always get weird connections...
+// This way, we can prioritise which channel each commit goes into, and then only
+// the commit is responsible for drawing dots and lines
+class Branch2 {
+	public readonly name: string;
+
+	public x: number;
+
+	constructor(x: number, name: string) {
+		this.x = x;
+		this.name = name;
+	}
+
+	setPriority(priorities: string[]) {
+		this.x = priorities.indexOf(this.name);
+	}
+
+	// TODO: Maybe a force priority?
+	// But then I've never understood private vars with getters and setters
+	// that do nothing except get and set (only assign) the variable...
+}
+
 
 /* Vertex Class */
 
@@ -307,6 +333,7 @@ class Vertex {
 		circle.setAttribute('cx', cx);
 		circle.setAttribute('cy', cy);
 		circle.setAttribute('r', '4');
+		circle.dataset.coord = `(${this.x}, ${this.id})`;
 		if (this.isCurrent) {
 			circle.setAttribute('class', 'current');
 			circle.setAttribute('stroke', colour);
@@ -328,6 +355,86 @@ class Vertex {
 
 		circle.addEventListener('mouseover', overListener);
 		circle.addEventListener('mouseout', outListener);
+	}
+}
+
+
+/* Commit Class */
+// This class could be merged with the GitCommit class, but maybe it shouldn't be?
+// GitCommit does a particular funciton within the code
+// The only reason merging is suggested is to keep the code footprint small,
+// and to recreate consistency within the code.
+// Maybe the two classes can hold references to eachother?
+class Commit2 {
+	public readonly y: number;
+	public readonly hash: string;
+	public readonly heads: Set<Branch2>;
+	public readonly inferredHeads: Set<Branch2> = new Set<Branch2>([]);
+
+	public branch: Branch2 | null;
+	public parents: Commit2[] = [];
+
+	private _allHeads: Set<Branch2> | null = null;
+
+	constructor(y: number, hash: string, heads: Set<Branch2> = new Set<Branch2>([])) {
+		this.y = y;
+		this.hash = hash;
+		this.heads = heads;
+		this.branch = null;
+	}
+
+	get shortHash() {
+		// TODO: This could be generated elsewhere?
+		// TODO: Or maybe this will use the config?
+		return this.hash.substring(0, 8);
+	}
+
+	get allHeads(): Set<Branch2> {
+		if (!this._allHeads) this._allHeads = new Set([...Array.from(this.heads), ...Array.from(this.inferredHeads)]);
+		return this._allHeads;
+	}
+
+	get x() {
+		return this.branch?.x ?? -1;
+	}
+
+	addParent(parent: Commit2) {
+		this.parents.push(parent);
+	}
+
+	hasHeads() {
+		return this.heads.size > 0;
+	}
+	hasInferredHeads() {
+		return this.inferredHeads.size > 0;
+	}
+
+	addHeads(heads: Set<Branch2>) {
+		if (heads.size > 0) {
+			heads.forEach(head => this.inferredHeads.add(head));
+			this._allHeads = null;
+		}
+	}
+
+	setBranchAccordingToPriority(priorities: readonly string[]) {
+		// Set this.branch to it's head/inferred according to the following algorithm:
+		// 1. If the commit has heads:
+		//    1. If there is only one head, set it as the branch.
+		//    2. If there are multiple heads, set the branch to the one with the best priority.
+		// 2. Otherwise, if the commit has inferred heads (all commits will have one or the other):
+		//    1. If the inferred heads contain priority heads, set the branch to the first priority head
+		//    2. Otherwise, set the branch to the first inferred head
+		let priorityHeads: Branch2[] = [];
+		let headsToUse: Branch2[];
+
+		if (this.hasHeads()) headsToUse = Array.from(this.heads);
+		else headsToUse = Array.from(this.inferredHeads);
+
+		priorityHeads = headsToUse.filter(head => priorities.includes(head.name));
+		if (priorityHeads.length > 0) this.branch = priorityHeads[0];
+		else this.branch = headsToUse[0];
+
+		return this.branch;
 	}
 }
 
@@ -389,8 +496,7 @@ class Graph {
 
 
 	/* Graph Operations */
-
-	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean) {
+	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean, priorityBranches: ReadonlyArray<string>) {
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.commitLookup = commitLookup;
@@ -400,43 +506,62 @@ class Graph {
 		this.availableColours = [];
 		if (commits.length === 0) return;
 
-		const nullVertex = new Vertex(NULL_VERTEX_ID, false);
-		let i: number, j: number;
-		for (i = 0; i < commits.length; i++) {
-			this.vertices.push(new Vertex(i, commits[i].stash !== null));
-		}
-		for (i = 0; i < commits.length; i++) {
-			for (j = 0; j < commits[i].parents.length; j++) {
-				let parentHash = commits[i].parents[j];
-				if (typeof commitLookup[parentHash] === 'number') {
-					// Parent is the <commitLookup[parentHash]>th vertex
-					this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
-					this.vertices[commitLookup[parentHash]].addChild(this.vertices[i]);
-				} else if (!this.onlyFollowFirstParent || j === 0) {
-					// Parent is not one of the vertices of the graph, and the parent isn't being hidden by the onlyFollowFirstParent condition.
-					this.vertices[i].addParent(nullVertex);
+		// Everything above is to hush the TS compiler
+		// It actually doesn't give anything valuable to the below code, except for the commits array.
+
+		// The first passthrough is to create the Commit2 lookup
+		// This should be made redundant by enhancing the GitCommit Interface to a Class
+		const commitObjs: { [hash: string]: Commit2 } = {};
+		commits.forEach((commit, index) => {
+			commitObjs[commit.hash] = new Commit2(index, commit.hash, new Set<Branch2>(commit.heads.map(head => new Branch2(-1, head))));
+		});
+
+		// The second passthrough is to link parents, and share heads (aka Branch2) to ancestors
+		// This should be done with remotes as well, in this passthrough
+		commits.forEach((commit) => {
+			commit.parents.forEach((parent) => {
+				let commitObj = commitObjs[commit.hash];
+				let parentObj = commitObjs[parent];
+
+				commitObj.addParent(parentObj);
+
+				// heads are sets, so if we happen to add two "main"s, we don't get dupes
+				if(!parentObj.hasHeads()) {
+					parentObj.addHeads(commitObj.heads);
+					parentObj.addHeads(commitObj.inferredHeads);
 				}
+			})
+		});
+
+		// Changing priorities allows us to assign "channels" to non-prioritised branches
+		// Because the passed commits are sorted by date, we will always have the latest
+		// non-priority commit as high as possible. Ie, if we're working on a feature, and 
+		// "main" is prioritised, "channel 0" will be main and "channel 1" will be the feature.
+		let changingPriorities = priorityBranches.slice();
+		for(let c = 0; c < commits.length; c++) {
+			let commitObj = commitObjs[commits[c].hash];
+			
+			// If we have our own head (not an ancesstor head)
+			if(commitObj.hasHeads()) {
+				commitObj.heads.forEach((head) => {
+					head.setPriority(changingPriorities);
+					if(head.x === -1) {
+						head.x = changingPriorities.length;
+						changingPriorities.push(head.name);
+					}
+				})
 			}
+
+			// This will set the commit's branch to the highest priority
+			// If it doesn't have a priority branch, then the next "best" branch is used
+			// ("best" bc lack of a better word...)
+			commitObj.setBranchAccordingToPriority(priorityBranches);
 		}
 
-		if (commits[0].hash === UNCOMMITTED) {
-			this.vertices[0].setNotCommitted();
-		}
-
-		if (commits[0].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
-			this.vertices[0].setCurrent();
-		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
-			this.vertices[commitLookup[commitHead]].setCurrent();
-		}
-
-		i = 0;
-		while (i < this.vertices.length) {
-			if (this.vertices[i].getNextParent() !== null || this.vertices[i].isNotOnBranch()) {
-				this.determinePath(i);
-			} else {
-				i++;
-			}
-		}
+		// From here, we can use a commit and it's (x,y) coordinate, and access
+		// to its parents to draw the dots and lines.
+		// Obviously there's still a long way to go, in terms of implementing
+		// the other features of GitGraph, but imo this is a good starting point.
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
@@ -701,66 +826,86 @@ class Graph {
 
 
 	/* Graph Layout Methods */
+	private determinePath(startAt: number, sortedVertices: Vertex[]) {
 
-	private determinePath(startAt: number) {
-		let i = startAt;
-		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent(), curVertex;
-		let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint(), curPoint;
-
-		if (parentVertex !== null && parentVertex.id !== NULL_VERTEX_ID && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
-			// Branch is a merge between two vertices already on branches
-			let foundPointToParent = false, parentBranch = parentVertex.getBranch()!;
-			for (i = startAt + 1; i < this.vertices.length; i++) {
-				curVertex = this.vertices[i];
-				curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
-				if (curPoint !== null) {
-					foundPointToParent = true; // Parent was found
-				} else {
-					curPoint = curVertex.getNextPoint(); // Parent couldn't be found, choose the next available point for the vertex
-				}
-				parentBranch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true);
-				curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch);
-				lastPoint = curPoint;
-
-				if (foundPointToParent) {
-					vertex.registerParentProcessed();
-					break;
-				}
-			}
-		} else {
-			// Branch is normal
-			let branch = new Branch(this.getAvailableColour(startAt));
-			vertex.addToBranch(branch, lastPoint.x);
-			vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
-			for (i = startAt + 1; i < this.vertices.length; i++) {
-				curVertex = this.vertices[i];
-				curPoint = parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint();
-				branch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), lastPoint.x < curPoint.x);
-				curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch);
-				lastPoint = curPoint;
-
-				if (parentVertex === curVertex) {
-					// The parent of <vertex> has been reached, progress <vertex> and <parentVertex> to continue building the branch
-					vertex.registerParentProcessed();
-					let parentVertexOnBranch = !parentVertex.isNotOnBranch();
-					parentVertex.addToBranch(branch, curPoint.x);
-					vertex = parentVertex;
-					parentVertex = vertex.getNextParent();
-					if (parentVertex === null || parentVertexOnBranch) {
-						// There are no more parent vertices, or the parent was already on a branch
-						break;
-					}
-				}
-			}
-			if (i === this.vertices.length && parentVertex !== null && parentVertex.id === NULL_VERTEX_ID) {
-				// Vertex is the last in the graph, so no more branch can be formed to the parent
-				vertex.registerParentProcessed();
-			}
-			branch.setEnd(i);
-			this.branches.push(branch);
-			this.availableColours[branch.getColour()] = i;
-		}
 	}
+	// private determinePath(startAt: number, sortedVerticies: Vertex[]) {
+	// 	// Set an 'index' variable
+	// 	let i = startAt;
+	// 	// Get the current vertex
+	// 	let vertex = sortedVerticies[startAt];
+	// 	// Get the current vertex's next **unprocessed** parent
+	// 	let parentVertex = sortedVerticies[startAt].getNextParent();
+	// 	// Create a curVertex tmp variable
+	// 	let curVertex;
+	// 	// lastPoint = {0,   i} if the vertex is NOT on a branch
+	// 	// 			 = {v.x, i} if the vertex IS on a branch
+	// 	let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint();
+	// 	// Create a curPoint tmp variable
+	// 	let curPoint;
+
+	// 	// If the current processing parent isn't null,
+	// 	// AND the current vertex is a merge,
+	// 	// AND the current vertex is on a branch
+	// 	// AND the current processed vertex is on a branch
+	// 	if (parentVertex !== null && parentVertex.id !== NULL_VERTEX_ID && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
+	// 		// Therefore: we are processing a convergence of two or more parent commits/paths into one point
+
+	// 		// Holds if we've found a pathway to the parent?
+	// 		let foundPointToParent = false;
+	// 		// Get the Branch that the parent is on
+	// 		let parentBranch = parentVertex.getBranch()!;
+	// 		for (i = startAt + 1; i < sortedVerticies.length; i++) {
+	// 			curVertex = sortedVerticies[i];
+	// 			curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
+	// 			if (curPoint !== null) {
+	// 				foundPointToParent = true; // Parent was found
+	// 			} else {
+	// 				curPoint = curVertex.getNextPoint(); // Parent couldn't be found, choose the next available point for the vertex
+	// 			}
+	// 			parentBranch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true);
+	// 			curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch);
+	// 			lastPoint = curPoint;
+
+	// 			if (foundPointToParent) {
+	// 				vertex.registerParentProcessed();
+	// 				break;
+	// 			}
+	// 		}
+	// 	} else {
+	// 		// Branch is normal
+	// 		let branch = new Branch(this.getAvailableColour(startAt));
+	// 		vertex.addToBranch(branch, lastPoint.x);
+	// 		vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
+	// 		for (i = startAt + 1; i < sortedVerticies.length; i++) {
+	// 			curVertex = sortedVerticies[i];
+	// 			curPoint = parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint();
+	// 			branch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), lastPoint.x < curPoint.x);
+	// 			curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch);
+	// 			lastPoint = curPoint;
+
+	// 			if (parentVertex === curVertex) {
+	// 				// The parent of <vertex> has been reached, progress <vertex> and <parentVertex> to continue building the branch
+	// 				vertex.registerParentProcessed();
+	// 				let parentVertexOnBranch = !parentVertex.isNotOnBranch();
+	// 				parentVertex.addToBranch(branch, curPoint.x);
+	// 				vertex = parentVertex;
+	// 				parentVertex = vertex.getNextParent();
+	// 				if (parentVertex === null || parentVertexOnBranch) {
+	// 					// There are no more parent vertices, or the parent was already on a branch
+	// 					break;
+	// 				}
+	// 			}
+	// 		}
+	// 		if (i === sortedVerticies.length && parentVertex !== null && parentVertex.id === NULL_VERTEX_ID) {
+	// 			// Vertex is the last in the graph, so no more branch can be formed to the parent
+	// 			vertex.registerParentProcessed();
+	// 		}
+	// 		branch.setEnd(i);
+	// 		this.branches.push(branch);
+	// 		this.availableColours[branch.getColour()] = i;
+	// 	}
+	// }
 
 	private getAvailableColour(startAt: number) {
 		for (let i = 0; i < this.availableColours.length; i++) {

@@ -2423,20 +2423,21 @@ class GitGraphView {
 			path = gitFiles[i].newFilePath.split('/');
 			absPath = this.currentRepo;
 			for (j = 0; j < path.length; j++) {
+				let contentName = 'graph-' + path[j];
 				absPath += '/' + path[j];
 				if (typeof this.gitRepos[absPath] !== 'undefined') {
-					if (typeof cur.contents[path[j]] === 'undefined') {
-						cur.contents[path[j]] = { type: 'repo', name: path[j], path: absPath };
+					if (typeof cur.contents[contentName] === 'undefined') {
+						cur.contents[contentName] = { type: 'repo', name: path[j], path: absPath };
 					}
 					break;
 				} else if (j < path.length - 1) {
-					if (typeof cur.contents[path[j]] === 'undefined') {
+					if (typeof cur.contents[contentName] === 'undefined') {
 						contents = {};
-						cur.contents[path[j]] = { type: 'folder', name: path[j], folderPath: absPath.substring(this.currentRepo.length + 1), contents: contents, open: true, reviewed: true };
+						cur.contents[contentName] = { type: 'folder', name: path[j], folderPath: absPath.substring(this.currentRepo.length + 1), contents: contents, open: true, reviewed: true };
 					}
-					cur = <FileTreeFolder>cur.contents[path[j]];
+					cur = <FileTreeFolder>cur.contents[contentName];
 				} else if (path[j] !== '') {
-					cur.contents[path[j]] = { type: 'file', name: path[j], index: i, reviewed: codeReview === null || !codeReview.remainingFiles.includes(gitFiles[i].newFilePath) };
+					cur.contents[contentName] = { type: 'file', name: path[j], index: i, reviewed: codeReview === null || !codeReview.remainingFiles.includes(gitFiles[i].newFilePath) };
 				}
 			}
 		}

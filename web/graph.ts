@@ -462,7 +462,7 @@ class Graph {
 				commitObj.addParent(parentObj);
 
 				// heads are sets, so if we happen to add two "main"s, we don't get dupes
-				if (!parentObj.hasHeads()) {
+				if (!parentObj.hasHeads() && i === 0) {
 					parentObj.addHeads(commitObj.definedHeads);
 					parentObj.addHeads(commitObj.inferredHeads);
 				}
@@ -498,6 +498,7 @@ class Graph {
 		// non-priority commit as high as possible. Ie, if we're working on a feature, and
 		// "main" is prioritised, "channel 0" will be main and "channel 1" will be the feature.
 		let changingPriorities = priorityBranches.slice();
+		let untrackedHeads: Branch2[] = [];
 		for (let c = 0; c < this.commits.length; c++) {
 			// We loop through commits to do this, because we need to loop through commits anyway
 			let commitObj = this.commits[c];
@@ -511,6 +512,17 @@ class Graph {
 						changingPriorities.push(head.name);
 					}
 				});
+			} else if (!commitObj.hasInferredHeads()) { // no defined heads and no inferred heads
+				let untrackedBranch = new Branch2(untrackedHeads.length, '', commitObj);
+				let untrackedBranchAsSet = new Set<Branch2>([untrackedBranch]);
+				commitObj.addHeads(untrackedBranchAsSet);
+				const recurse = (parent: Commit2) => {
+					if (parent.hasHeads() || parent.hasInferredHeads()) return;
+					parent.addHeads(untrackedBranchAsSet);
+					parent.getParents().forEach(recurse);
+				};
+				untrackedHeads.push(untrackedBranch);
+				this.branches.push(untrackedBranch);
 			}
 
 			// This will set the commit's branch to the highest priority
@@ -518,6 +530,7 @@ class Graph {
 			// ("best" bc lack of a better word...)
 			commitObj.setBranchAccordingToPriority(priorityBranches);
 		}
+		untrackedHeads.forEach((h) => h.x += changingPriorities.length);
 
 		// This last passthrough ensures that there are no gaps between branches (no empty channels)
 		let sortedBranches = this.branches.sort((a, b) => a.x - b.x);

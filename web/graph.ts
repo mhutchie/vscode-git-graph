@@ -41,14 +41,59 @@ class Branch2 {
 	public readonly name: string;
 	public tip: Commit2;
 
-	public x: number;
+	private _x: number;
+	private branchToFollow: Branch2 | null = null;
 
 	private lines: Line[] = [];
 
 	constructor(x: number, name: string, tip: Commit2) {
-		this.x = x;
+		this._x = x;
 		this.name = name;
 		this.tip = tip;
+	}
+
+	get x(): number {
+		if (this.branchToFollow !== null && this.branchToFollow !== this) return this.branchToFollow.x;
+		return this._x;
+	}
+	set x(x) {
+		this._x = x;
+	}
+
+	get isRemote() {
+		return this.name.includes('/');
+	}
+	get branchName() {
+		let parts = this.name.split('/');
+		return parts[parts.length - 1];
+	}
+	get remoteName(): string | null {
+		let parts = this.name.split('/');
+		if (parts.length === 1) return null;
+		return parts[0];
+	}
+
+	/**
+	 * Uses the Breadth-First Search algorithm to find if the passed branch is a direct ancestor
+	 * of this branch (ie, the two branches DON'T diverge from a common ancestor).
+	 *
+	 * @param branch The branch to look for
+	 * @returns True if the passed branch is a direct ancestor of this branch
+	 */
+	public isDirectAncestor(branch: Branch2): boolean {
+		let queue = [this.tip];
+		let commit;
+		while (queue.length > 0) {
+			commit = queue.shift()!;
+			if (commit.definedHeads.has(branch)) return true; // If defined has it, then we're an ancestor
+			if (commit.inferredHeads.has(branch)) return false; // If inferred has it, we likely came from a merge
+			queue.push(...commit.getParents());
+		}
+		return false;
+	}
+
+	public followBranch(branch: Branch2): void {
+		this.branchToFollow = branch;
 	}
 
 	public setPriority(priorities: string[]) {
@@ -184,10 +229,10 @@ class Commit2 {
 	private _allHeads: Set<Branch2> | null = null;
 	public isCurrent: boolean = false;
 
-	constructor(y: number, commit: GG.GitCommit, heads: Set<Branch2> = new Set<Branch2>([])) {
+	constructor(y: number, commit: GG.GitCommit) {
 		this.y = y;
 		this.commit = commit;
-		this.definedHeads = heads;
+		this.definedHeads = new Set<Branch2>([]);
 		this._branch = null;
 
 		if (commit.heads.length > 0) this.definedHeads.add(new Branch2(-1, commit.heads[0], this));
@@ -454,7 +499,11 @@ class Graph {
 		let headProcessed = false;
 		commits.forEach((commitObj) => {
 			commitObj.definedHeads.forEach((b) => {
-				if (!this.branches.includes(b)) this.branches.push(b);
+				if (!this.branches.includes(b)) {
+					let bb = this.branches.findIndex(bb => bb.branchName === b.branchName);
+					if (bb !== -1 && this.branches[bb].isDirectAncestor(b)) b.followBranch(this.branches[bb]);
+					this.branches.push(b);
+				}
 			});
 
 			commitObj.parents.forEach((parent, i) => {
@@ -507,7 +556,7 @@ class Graph {
 			// We loop through commits to do this, because we need to loop through commits anyway
 			let commitObj = this.commits[c];
 
-			// If we have our own head (not an ancesstor head)
+			// If we have our own head
 			if (commitObj.hasHeads()) {
 				commitObj.definedHeads.forEach((head) => {
 					head.setPriority(changingPriorities);

@@ -48,7 +48,6 @@ class Branch2 {
 	public setPriority(priorities: string[]) {
 		this.x = priorities.indexOf(this.name);
 	}
-	// MAYBE: Maybe a force priority? I don't know if it's needed tho...
 
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
 		this.buildLines();
@@ -137,7 +136,6 @@ class Branch2 {
 		this.lines = [];
 	}
 
-	// MAYBE: this could be static
 	public buildLines(commit: Commit2 = this.tip): void {
 		if (!commit.isCommitted()) this.numUncommittedFoundWhileBuilding++;
 

@@ -572,7 +572,7 @@ class Config {
 	}
 
 	get priorityBranches() {
-		return this.config.get("priorityBranches", ["main", "origin/main", "master", "origin/master"]);
+		return this.config.get('priorityBranches', ['main', 'origin/main', 'master', 'origin/master']);
 	}
 
 	/**

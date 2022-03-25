@@ -441,7 +441,7 @@ class Graph {
 		if (this.commits[0].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
 			this.commits[0].isCurrent = true;
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
-			this.getCommitFromHash(commitHead).isCurrent = true;
+			this.getCommitFromHash(commitHead)!.isCurrent = true;
 		}
 
 		// The second passthrough is to link parents, and share heads (aka Branch2) to ancestors
@@ -458,6 +458,8 @@ class Graph {
 				if (this.onlyFollowFirstParent && i !== 0) return;
 
 				let parentObj = this.getCommitFromHash(parent);
+				if(parentObj === undefined) return;
+
 				commitObj.addParent(parentObj);
 
 				// heads are sets, so if we happen to add two "main"s, we don't get dupes
@@ -494,7 +496,7 @@ class Graph {
 		let changingPriorities = priorityBranches.slice();
 		for (let c = 0; c < this.commits.length; c++) {
 			// We loop through commits to do this, because we need to loop through commits anyway
-			let commitObj = this.getCommitFromHash(this.commits[c].hash);
+			let commitObj = this.commits[c];
 
 			// If we have our own head (not an ancesstor head)
 			if (commitObj.hasHeads()) {
@@ -546,7 +548,7 @@ class Graph {
 
 	/* Get */
 
-	public getCommitFromHash(hash: string): Commit2 {
+	public getCommitFromHash(hash: string): Commit2 | undefined {
 		return this.commits[this.commitLookup[hash]];
 	}
 
@@ -585,7 +587,7 @@ class Graph {
 		if (typeof i === 'number') {
 			return this.commits[i].isDroppable;
 		} else if (typeof i === 'string') {
-			return this.getCommitFromHash(i).isDroppable;
+			return this.getCommitFromHash(i)?.isDroppable ?? false;
 		}
 
 		return false;

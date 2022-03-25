@@ -1100,7 +1100,9 @@ class GitGraphView {
 	private getCommitContextMenuActions(target: DialogTarget & CommitTarget): ContextMenuActions {
 		const hash = target.hash;
 		const visibility = this.config.contextMenuActionsVisibility.commit;
-		const commit = this.graph.getCommitFromHash(hash); // this.commits[this.commitLookup[hash]];
+		const commit = this.graph.getCommitFromHash(hash);
+		if(commit === undefined) return [];
+
 		return [[
 			{
 				title: 'Add Tag' + ELLIPSIS,

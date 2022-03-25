@@ -11,14 +11,15 @@ interface Point {
 interface Line {
 	p1: Point;
 	p2: Point;
-	collisionType: LineCollisionType;
+	curveTiming: CurveTiming;
 	isCommitted: boolean;
+	colour: string;
 	// readonly lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
 }
-enum LineCollisionType {
-	NoIssue = 0,
-	NoCollision = 1,
-	Collision = 2
+enum CurveTiming {
+	NoCurve = 0,
+	CurveLast = 1,
+	CurveFirst = 2
 }
 
 /* Branch Class */
@@ -50,7 +51,7 @@ class Branch2 {
 	}
 
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
-		this.buildLines();
+		this.buildLines(config);
 
 		let p1: Point; // Source
 		let p2: Point; // Dest
@@ -76,10 +77,9 @@ class Branch2 {
 				// I wasn't sure how "locking" fit into the mix...
 			}
 
-			screenLines.push({ p1, p2, collisionType: curLine.collisionType, isCommitted: curLine.isCommitted });
+			screenLines.push({ p1, p2, curveTiming: curLine.curveTiming, isCommitted: curLine.isCommitted, colour: curLine.colour });
 		}
 
-		const colour = this.getColour(config);
 		const isAngular = config.style === GG.GraphStyle.Angular;
 		let svgPath: string = '';
 		let rowHeightOffset: number = config.grid.y * (isAngular ? 0.38 : 0.8);
@@ -94,11 +94,11 @@ class Branch2 {
 
 			// Set SVG Path
 			svgPath += `M${p1.x.toFixed(0)},${p1.y.toFixed(1)} `; // Move to P1
-			if (curLine.collisionType === LineCollisionType.NoIssue) {
+			if (curLine.curveTiming === CurveTiming.NoCurve) {
 				// No issue means no channel change, so draw a line straight down
 				svgPath += `L${p2.x.toFixed(0)},${p2.y.toFixed(1)} `;
-			} else if (curLine.collisionType === LineCollisionType.Collision) {
-				// Collision means draw a curve now
+			} else if (curLine.curveTiming === CurveTiming.CurveFirst) {
+				// CurveFirst means draw a curve now
 				if (isAngular) svgPath += `L${p2.x.toFixed(0)},${(p1.y + rowHeightOffset).toFixed(1)} `;
 				else {
 					p3 = { x: p2.x, y: p1.y + config.grid.y };
@@ -106,10 +106,9 @@ class Branch2 {
 				}
 
 				svgPath += `L${p2.x.toFixed(0)},${p2.y.toFixed(1)} `;
-			} else if (curLine.collisionType === LineCollisionType.NoCollision) {
-				// NoCollision means draw a curve later
+			} else if (curLine.curveTiming === CurveTiming.CurveLast) {
+				// CurveLast means draw a curve later
 
-				// Draw line
 				p3 = { x: p1.x, y: p2.y - config.grid.y };
 				svgPath += `L${p3.x.toFixed(0)},${p3.y.toFixed(1)} `;
 
@@ -125,7 +124,7 @@ class Branch2 {
 			line.setAttribute('class', 'line');
 			// line.setAttribute('fill', 'transparent');
 			line.setAttribute('d', svgPath);
-			line.setAttribute('stroke', curLine.isCommitted ? colour : DEFAULT_COLOUR);
+			line.setAttribute('stroke', curLine.isCommitted ? curLine.colour : DEFAULT_COLOUR);
 			if (!curLine.isCommitted && config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit) {
 				line.setAttribute('stroke-dasharray', '2px');
 			}
@@ -136,25 +135,22 @@ class Branch2 {
 		this.lines = [];
 	}
 
-	public buildLines(commit: Commit2 = this.tip): void {
+	public buildLines(config: GG.GraphConfig, commit: Commit2 = this.tip): void {
 		let parents = commit.getParents();
-		let otherParent: Commit2 | undefined;
+		// let otherParent: Commit2 | undefined;
 		for (let parent of parents) {
-			otherParent = parents.find(p => p !== parent);
+			// otherParent = parents.find(p => p !== parent);
 			// Duck-typing lets us cheat and this works
 			// TODO: Another option is to let branches have maximum time in
 			// the right most channel, but I don't know the algorithm for that...
 			this.lines.push({
 				p1: commit,
 				p2: parent,
-				collisionType: commit.x === parent.x ?
-					LineCollisionType.NoIssue :
-					otherParent !== undefined && commit.x === otherParent.x && otherParent.y < parent.y ?
-						LineCollisionType.Collision :
-						LineCollisionType.NoCollision,
-				isCommitted: commit.isCommitted()
+				curveTiming: commit.x === parent.x ? CurveTiming.NoCurve : commit.x < parent.x ? CurveTiming.CurveFirst : CurveTiming.CurveLast,
+				isCommitted: commit.isCommitted(),
+				colour: parent.x > commit.x ? parent.getColour(config) : commit.getColour(config)
 			});
-			if (parent.branch === this) this.buildLines(parent);
+			if (parent.branch === this) this.buildLines(config, parent);
 		}
 	}
 

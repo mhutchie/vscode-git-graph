@@ -12,6 +12,7 @@ interface Line {
 	p1: Point;
 	p2: Point;
 	collisionType: LineCollisionType;
+	isCommitted: boolean;
 	// readonly lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
 }
 enum LineCollisionType {
@@ -32,12 +33,11 @@ enum LineCollisionType {
 // the commit is responsible for drawing dots and lines
 class Branch2 {
 	public readonly name: string;
-	public readonly tip: Commit2;
+	public tip: Commit2;
 
 	public x: number;
 
 	private lines: Line[] = [];
-	private numUncommittedFoundWhileBuilding: number = 0;
 
 	constructor(x: number, name: string, tip: Commit2) {
 		this.x = x;
@@ -76,7 +76,7 @@ class Branch2 {
 				// I wasn't sure how "locking" fit into the mix...
 			}
 
-			screenLines.push({ p1, p2, collisionType: curLine.collisionType });
+			screenLines.push({ p1, p2, collisionType: curLine.collisionType, isCommitted: curLine.isCommitted });
 		}
 
 		const colour = this.getColour(config);
@@ -125,8 +125,8 @@ class Branch2 {
 			line.setAttribute('class', 'line');
 			// line.setAttribute('fill', 'transparent');
 			line.setAttribute('d', svgPath);
-			line.setAttribute('stroke', this.numUncommittedFoundWhileBuilding === 0 ? colour : DEFAULT_COLOUR);
-			if (this.numUncommittedFoundWhileBuilding === 0 && config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit) {
+			line.setAttribute('stroke', curLine.isCommitted ? colour : DEFAULT_COLOUR);
+			if (!curLine.isCommitted && config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit) {
 				line.setAttribute('stroke-dasharray', '2px');
 			}
 		}
@@ -137,8 +137,6 @@ class Branch2 {
 	}
 
 	public buildLines(commit: Commit2 = this.tip): void {
-		if (!commit.isCommitted()) this.numUncommittedFoundWhileBuilding++;
-
 		let parents = commit.getParents();
 		let otherParent: Commit2 | undefined;
 		for (let parent of parents) {
@@ -153,7 +151,8 @@ class Branch2 {
 					LineCollisionType.NoIssue :
 					otherParent !== undefined && commit.x === otherParent.x && otherParent.y < parent.y ?
 						LineCollisionType.Collision :
-						LineCollisionType.NoCollision
+						LineCollisionType.NoCollision,
+				isCommitted: commit.isCommitted()
 			});
 			if (parent.branch === this) this.buildLines(parent);
 		}
@@ -438,7 +437,7 @@ class Graph {
 
 		// The first passthrough is to create the Commit2 lookup
 		// This should be made redundant by enhancing the GitCommit Interface to a Class
-		if (this.commits[0].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
+		if (!this.commits[0].isCommitted() && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
 			this.commits[0].isCurrent = true;
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
 			this.getCommitFromHash(commitHead)!.isCurrent = true;
@@ -458,7 +457,7 @@ class Graph {
 				if (this.onlyFollowFirstParent && i !== 0) return;
 
 				let parentObj = this.getCommitFromHash(parent);
-				if(parentObj === undefined) return;
+				if (parentObj === undefined) return;
 
 				commitObj.addParent(parentObj);
 
@@ -486,6 +485,11 @@ class Graph {
 				} // are there any other conditions making commits droppable/not?
 			}
 		});
+		if (!this.commits[0].isCommitted()) {
+			this.commits[0].addHeads(this.commits[0].getParents()[0].definedHeads);
+			this.commits[0].addHeads(this.commits[0].getParents()[0].inferredHeads);
+			Array.from(this.commits[0].getParents()[0].definedHeads)[0].tip = this.commits[0];
+		}
 
 		// The third passthrough is what actually creates the priorities for the branches
 		// This could be condensed into the second passthrough, but let's see if this works first..

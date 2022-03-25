@@ -40,9 +40,9 @@ enum CurveTiming {
 class Branch2 {
 	public readonly name: string;
 	public tip: Commit2;
+	public branchToFollow: Branch2 | null = null;
 
 	private _x: number;
-	private branchToFollow: Branch2 | null = null;
 
 	private lines: Line[] = [];
 
@@ -90,10 +90,6 @@ class Branch2 {
 			queue.push(...commit.getParents());
 		}
 		return false;
-	}
-
-	public followBranch(branch: Branch2): void {
-		this.branchToFollow = branch;
 	}
 
 	public setPriority(priorities: string[]) {
@@ -501,7 +497,7 @@ class Graph {
 			commitObj.definedHeads.forEach((b) => {
 				if (!this.branches.includes(b)) {
 					let bb = this.branches.findIndex(bb => bb.branchName === b.branchName);
-					if (bb !== -1 && this.branches[bb].isDirectAncestor(b)) b.followBranch(this.branches[bb]);
+					if (bb !== -1 && this.branches[bb].isDirectAncestor(b)) b.branchToFollow = this.branches[bb];
 					this.branches.push(b);
 				}
 			});
@@ -587,7 +583,11 @@ class Graph {
 
 		// This last passthrough ensures that there are no gaps between branches (no empty channels)
 		let sortedBranches = this.branches.sort((a, b) => a.x - b.x);
-		for (let x = 0; x < sortedBranches.length; x++) sortedBranches[x].x = x;
+		let offset = 0;
+		for (let x = 0; x < sortedBranches.length; x++) {
+			if(sortedBranches[x].branchToFollow !== null) offset++;
+			sortedBranches[x].x = x - offset;
+		}
 		console.timeEnd(LOAD_COMMITS);
 	}
 

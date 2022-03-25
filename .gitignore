@@ -3,3 +3,4 @@ media
 node_modules
 out
 *.vsix
+.vscode-profile

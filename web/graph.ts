@@ -1,3 +1,8 @@
+// FIXME: Delete the console timers before merging!
+/* eslint-disable no-console */
+const WHOLE_THING = 'loadCommits to render';
+const LOAD_COMMITS = 'Graph.loadCommits';
+
 const CLASS_GRAPH_VERTEX_ACTIVE = 'graphVertexActive';
 const NULL_VERTEX_ID = -1;
 const DEFAULT_COLOUR = '#808080';
@@ -185,7 +190,10 @@ class Commit2 {
 		this.definedHeads = heads;
 		this._branch = null;
 
-		commit.heads.map(h => new Branch2(-1, h, this)).forEach(b => this.definedHeads.add(b));
+		if (commit.heads.length > 0) this.definedHeads.add(new Branch2(-1, commit.heads[0], this));
+		else if (commit.remotes.length > 0) this.definedHeads.add(new Branch2(-1, commit.remotes[0].name, this));
+		// commit.heads.map(h => new Branch2(-1, h, this)).forEach(b => this.definedHeads.add(b));
+		// commit.remotes.filter(r => !commit.heads.includes(r.name.substring((r.remote?.length ?? 0) + 1))).map(r => new Branch2(-1, r.name, this)).forEach(b => this.definedHeads.add(b));
 	}
 
 	get id() {
@@ -427,9 +435,9 @@ class Graph {
 		this.onlyFollowFirstParent = onlyFollowFirstParent;
 		this.branches = [];
 		if (commits.length === 0) return;
-
-		// Everything above is to hush the TS compiler
-		// It actually doesn't give anything valuable to the below code, except for the commits array.
+		console.log(commits.length);
+		console.time(LOAD_COMMITS);
+		console.time(WHOLE_THING);
 
 		// The first passthrough is to create the Commit2 lookup
 		// This should be made redundant by enhancing the GitCommit Interface to a Class
@@ -531,6 +539,7 @@ class Graph {
 		// This last passthrough ensures that there are no gaps between branches (no empty channels)
 		let sortedBranches = this.branches.sort((a, b) => a.x - b.x);
 		for (let x = 0; x < sortedBranches.length; x++) sortedBranches[x].x = x;
+		console.timeEnd(LOAD_COMMITS);
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
@@ -556,6 +565,7 @@ class Graph {
 		this.setDimensions(contentWidth, this.getHeight(expandedCommit));
 		this.applyMaxWidth(contentWidth);
 		this.closeTooltip();
+		console.timeEnd(WHOLE_THING);
 	}
 
 

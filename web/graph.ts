@@ -41,6 +41,7 @@ class Branch2 {
 	public readonly name: string;
 	public tip: Commit2;
 	public branchToFollow: Branch2 | null = null;
+	public isPriority: boolean = false;
 
 	private _x: number;
 
@@ -94,6 +95,8 @@ class Branch2 {
 
 	public setPriority(priorities: string[]) {
 		this.x = priorities.indexOf(this.name);
+		if (this.x !== -1) this.isPriority = true;
+		else this.isPriority = false;
 	}
 
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
@@ -202,6 +205,54 @@ class Branch2 {
 
 	public getColour(config: GG.GraphConfig) {
 		return Branch2.getBranchColor(this, config);
+	}
+
+	public collapseLeft(graph: Graph) {
+		const getYoungestChild = (commit: Commit2) => {
+			if (commit.getChildren().length === 0) return null;
+			return commit.getChildren().reduce((found, current) => ((found?.y ?? Infinity) > current.y ? current : found));
+		};
+		const priorities = graph.getPriorityChannels();
+
+		let availableChannels: Array<number[]> = [];
+
+		let commit: Commit2;
+		let commitQueue: Commit2[] = [this.tip];
+		let youngest: Commit2 | null;
+		let commitsBetween: ReadonlyArray<Commit2>;
+
+		let channelTemplate = [...Array(graph.getBranchCount()).keys()].filter((v) => !priorities.includes(v));
+		let channels = [];
+		let keepRunning = true; // we want to run up to one commit past this branch, so we'll keep track of when to stop
+		while (commitQueue.length > 0) {
+			commit = commitQueue.shift()!;
+			if (commit.branch !== this) keepRunning = false;
+
+			youngest = getYoungestChild(commit);
+			commitsBetween = graph.getCommitsBetween(youngest, commit);
+			channels = channelTemplate.slice();
+			for (let cb of commitsBetween) {
+				if (cb.branch === this) continue; // skip commits on this branch, but this shouldn't be a thing anyway...
+
+				let cbi = channels.indexOf(cb.x);
+				if (cbi !== -1) channels.splice(cbi, 1);
+			}
+			availableChannels.push(channels);
+
+			if (keepRunning) commitQueue.push(...commit.getParents());
+		}
+
+		let trueChannels = new Set<number>();
+		for (let bracket of availableChannels) {
+			for (let channel of bracket) {
+				if (availableChannels.every(b => b.includes(channel))) trueChannels.add(channel);
+			}
+		}
+
+		if (trueChannels.size > 0) {
+			// We have an x we can use, so update!
+			this.x = Math.min(this.x, ...trueChannels.values());
+		}
 	}
 
 	public static getBranchColor(branch: Branch2, config: GG.GraphConfig) {
@@ -585,7 +636,7 @@ class Graph {
 		let sortedBranches = this.branches.sort((a, b) => a.x - b.x);
 		let offset = 0;
 		for (let x = 0; x < sortedBranches.length; x++) {
-			if(sortedBranches[x].branchToFollow !== null) offset++;
+			if (sortedBranches[x].branchToFollow !== null) offset++;
 			sortedBranches[x].x = x - offset;
 		}
 		console.timeEnd(LOAD_COMMITS);
@@ -598,15 +649,13 @@ class Graph {
 		let contentWidth = this.getContentWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
-		for (i = 0; i < this.branches.length; i++) {
-			this.branches[i].draw(group, this.config, this.expandedCommitIndex);
-		}
+		// We need to collapse everything left before we can render everything!
+		this.branches.forEach(b => b.collapseLeft(this));
+		this.branches.forEach(b => b.draw(group, this.config, this.expandedCommitIndex));
 
 		const overListener = (e: MouseEvent) => this.commitPointHoverStart(e);
 		const outListener = (e: MouseEvent) => this.commitPointHoverEnd(e);
-		for (i = 0; i < this.commits.length; i++) {
-			this.commits[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.index, overListener, outListener);
-		}
+		this.commits.forEach(c => c.draw(group, this.config, expandedCommit !== null && i > expandedCommit.index, overListener, outListener));
 
 		if (this.group !== null) this.svg.removeChild(this.group);
 		this.svg.appendChild(group);
@@ -713,6 +762,33 @@ class Graph {
 		}
 
 		return muted;
+	}
+
+	public getCommitsBetween(start: Commit2 | null | number = 0, end: Commit2 | null | number = -1): ReadonlyArray<Commit2> {
+		if (start === null) start = 0;
+		if (start instanceof Commit2) start = start.y;
+		if (end === null) end = 0;
+		if (end instanceof Commit2) end = end.y;
+
+		start = Math.max(start, 0);
+		if (end === -1) end = this.commits.length;
+		end = Math.min(this.commits.length, end);
+		if (start >= end) return [];
+
+		return this.commits.slice(start, end);
+	}
+
+	public getPriorityChannels(): number[] {
+		const channels = [];
+		for (let b of this.branches) {
+			if (b.isPriority) channels.push(b.x);
+			else break; // we've passed all priorities
+		}
+		return channels;
+	}
+
+	public getBranchCount(): number {
+		return this.branches.length;
 	}
 
 

@@ -208,6 +208,7 @@ class Branch2 {
 	}
 
 	public collapseLeft(graph: Graph) {
+		console.time(`collapse from hash ${this.tip.hash}`);
 		const getYoungestChild = (commit: Commit2) => {
 			if (commit.getChildren().length === 0) return null;
 			return commit.getChildren().reduce((found, current) => ((found?.y ?? Infinity) > current.y ? current : found));
@@ -253,6 +254,7 @@ class Branch2 {
 			// We have an x we can use, so update!
 			this.x = Math.min(this.x, ...trueChannels.values());
 		}
+		console.timeEnd(`collapse from hash ${this.tip.hash}`);
 	}
 
 	public static getBranchColor(branch: Branch2, config: GG.GraphConfig) {
@@ -643,6 +645,8 @@ class Graph {
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
+		console.time('graph render');
+
 		this.expandedCommitIndex = expandedCommit !== null ? expandedCommit.index : -1;
 		let group = document.createElementNS(SVG_NAMESPACE, 'g');
 		let i: number;
@@ -650,8 +654,12 @@ class Graph {
 		group.setAttribute('mask', 'url(#GraphMask)');
 
 		// We need to collapse everything left before we can render everything!
+		console.time('branch collapsing');
 		this.branches.forEach(b => b.collapseLeft(this));
+		console.timeEnd('branch collapsing');
+		console.time('branch drawing');
 		this.branches.forEach(b => b.draw(group, this.config, this.expandedCommitIndex));
+		console.timeEnd('branch drawing');
 
 		const overListener = (e: MouseEvent) => this.commitPointHoverStart(e);
 		const outListener = (e: MouseEvent) => this.commitPointHoverEnd(e);
@@ -663,6 +671,8 @@ class Graph {
 		this.setDimensions(contentWidth, this.getHeight(expandedCommit));
 		this.applyMaxWidth(contentWidth);
 		this.closeTooltip();
+
+		console.time('graph render');
 		console.timeEnd(WHOLE_THING);
 	}
 

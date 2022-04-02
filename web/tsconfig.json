@@ -4,6 +4,7 @@
 			"es6",
 			"dom"
 		],
+		"downlevelIteration": true,
 		"module": "none",
 		"moduleResolution": "node",
 		"noFallthroughCasesInSwitch": true,

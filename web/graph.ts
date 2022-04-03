@@ -208,53 +208,47 @@ class Branch2 {
 	}
 
 	public collapseLeft(graph: Graph) {
-		console.time(`collapse from hash ${this.tip.hash}`);
+		if (this.isPriority) return;
+
+		// console.time(`collapse ${this.name}`);
+
 		const getYoungestChild = (commit: Commit2) => {
 			if (commit.getChildren().length === 0) return null;
 			return commit.getChildren().reduce((found, current) => ((found?.y ?? Infinity) > current.y ? current : found));
 		};
-		const priorities = graph.getPriorityChannels();
-
-		let availableChannels: Array<number[]> = [];
 
 		let commit: Commit2;
 		let commitQueue: Commit2[] = [this.tip];
 		let youngest: Commit2 | null;
 		let commitsBetween: ReadonlyArray<Commit2>;
 
-		let channelTemplate = [...Array(graph.getBranchCount()).keys()].filter((v) => !priorities.includes(v));
-		let channels = [];
+		// console.time('  available channels');
+		let avilableChannels: number[] = graph.getAvailableChannels().slice();
+		// console.timeEnd('  available channels');
 		let keepRunning = true; // we want to run up to one commit past this branch, so we'll keep track of when to stop
+
 		while (commitQueue.length > 0) {
 			commit = commitQueue.shift()!;
 			if (commit.branch !== this) keepRunning = false;
 
 			youngest = getYoungestChild(commit);
 			commitsBetween = graph.getCommitsBetween(youngest, commit);
-			channels = channelTemplate.slice();
 			for (let cb of commitsBetween) {
 				if (cb.branch === this) continue; // skip commits on this branch, but this shouldn't be a thing anyway...
 
-				let cbi = channels.indexOf(cb.x);
-				if (cbi !== -1) channels.splice(cbi, 1);
+				let cbi = avilableChannels.indexOf(cb.x);
+				if (cbi !== -1) avilableChannels.splice(cbi, 1);
 			}
-			availableChannels.push(channels);
 
 			if (keepRunning) commitQueue.push(...commit.getParents());
 		}
 
-		let trueChannels = new Set<number>();
-		for (let bracket of availableChannels) {
-			for (let channel of bracket) {
-				if (availableChannels.every(b => b.includes(channel))) trueChannels.add(channel);
-			}
+		if (avilableChannels.length > 0) {
+			// We have an x we can use, so update!
+			this.x = Math.min(this.x, ...avilableChannels);
 		}
 
-		if (trueChannels.size > 0) {
-			// We have an x we can use, so update!
-			this.x = Math.min(this.x, ...trueChannels.values());
-		}
-		console.timeEnd(`collapse from hash ${this.tip.hash}`);
+		// console.timeEnd(`collapse ${this.name}`);
 	}
 
 	public static getBranchColor(branch: Branch2, config: GG.GraphConfig) {
@@ -474,6 +468,7 @@ class Graph {
 	private readonly muteConfig: GG.MuteCommitsConfig;
 	private branches: Branch2[] = [];
 	private maxWidth: number = -1;
+	private availableChannelsCache: ReadonlyArray<number> | null = null;
 
 	private commits: ReadonlyArray<Commit2> = [];
 	private commitHead: string | null = null;
@@ -528,6 +523,7 @@ class Graph {
 		this.commitLookup = commitLookup;
 		this.onlyFollowFirstParent = onlyFollowFirstParent;
 		this.branches = [];
+		this.availableChannelsCache = null;
 		if (commits.length === 0) return;
 		console.log(commits.length);
 		console.time(LOAD_COMMITS);
@@ -654,12 +650,12 @@ class Graph {
 		group.setAttribute('mask', 'url(#GraphMask)');
 
 		// We need to collapse everything left before we can render everything!
-		console.time('branch collapsing');
+		// console.time('branch collapsing');
 		this.branches.forEach(b => b.collapseLeft(this));
-		console.timeEnd('branch collapsing');
-		console.time('branch drawing');
+		// console.timeEnd('branch collapsing');
+		// console.time('branch drawing');
 		this.branches.forEach(b => b.draw(group, this.config, this.expandedCommitIndex));
-		console.timeEnd('branch drawing');
+		// console.timeEnd('branch drawing');
 
 		const overListener = (e: MouseEvent) => this.commitPointHoverStart(e);
 		const outListener = (e: MouseEvent) => this.commitPointHoverEnd(e);
@@ -672,7 +668,7 @@ class Graph {
 		this.applyMaxWidth(contentWidth);
 		this.closeTooltip();
 
-		console.time('graph render');
+		console.timeEnd('graph render');
 		console.timeEnd(WHOLE_THING);
 	}
 
@@ -795,6 +791,15 @@ class Graph {
 			else break; // we've passed all priorities
 		}
 		return channels;
+	}
+	public getAvailableChannels(useCache: boolean = true): ReadonlyArray<number> {
+		if (useCache && this.availableChannelsCache !== null) return this.availableChannelsCache;
+		const channels = [];
+		for (let b of this.branches) {
+			if (!b.isPriority) channels.push(b.x);
+		}
+		this.availableChannelsCache = channels.slice();
+		return this.availableChannelsCache;
 	}
 
 	public getBranchCount(): number {

@@ -608,7 +608,6 @@ class Graph {
 	public render(expandedCommit: ExpandedCommit | null) {
 		this.expandedCommitIndex = expandedCommit !== null ? expandedCommit.index : -1;
 		let group = document.createElementNS(SVG_NAMESPACE, 'g');
-		let i: number;
 		let contentWidth = this.getContentWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
@@ -618,7 +617,7 @@ class Graph {
 
 		const overListener = (e: MouseEvent) => this.commitPointHoverStart(e);
 		const outListener = (e: MouseEvent) => this.commitPointHoverEnd(e);
-		this.commits.forEach(c => c.draw(group, this.config, expandedCommit !== null && i > expandedCommit.index, overListener, outListener));
+		this.commits.forEach((c, i) => c.draw(group, this.config, expandedCommit !== null && i > expandedCommit.index, overListener, outListener));
 
 		if (this.group !== null) this.svg.removeChild(this.group);
 		this.svg.appendChild(group);

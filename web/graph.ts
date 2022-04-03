@@ -579,12 +579,12 @@ class Graph {
 			} else if (!commitObj.hasInferredHeads()) { // no defined heads and no inferred heads
 				let untrackedBranch = new Branch2(untrackedHeads.length, '', commitObj);
 				let untrackedBranchAsSet = new Set<Branch2>([untrackedBranch]);
-				commitObj.addHeads(untrackedBranchAsSet);
-				const recurse = (parent: Commit2) => {
-					if (parent.hasHeads() || parent.hasInferredHeads()) return;
-					parent.addHeads(untrackedBranchAsSet);
-					parent.getParents().forEach(recurse);
+				const recurse = (commit: Commit2) => {
+					if (commit.hasHeads() || commit.hasInferredHeads()) return;
+					commit.addHeads(untrackedBranchAsSet);
+					commit.getParents().forEach(recurse);
 				};
+				recurse(commitObj);
 				untrackedHeads.push(untrackedBranch);
 				this.branches.push(untrackedBranch);
 			}

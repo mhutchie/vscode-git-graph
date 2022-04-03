@@ -1,8 +1,3 @@
-// FIXME: Delete the console timers before merging!
-/* eslint-disable no-console */
-const WHOLE_THING = 'loadCommits to render';
-const LOAD_COMMITS = 'Graph.loadCommits';
-
 const CLASS_GRAPH_VERTEX_ACTIVE = 'graphVertexActive';
 const NULL_VERTEX_ID = -1;
 const DEFAULT_COLOUR = '#808080';
@@ -19,7 +14,6 @@ interface Line {
 	curveTiming: CurveTiming;
 	isCommitted: boolean;
 	colour: string;
-	// readonly lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
 }
 enum CurveTiming {
 	NoCurve = 0,
@@ -171,7 +165,6 @@ class Branch2 {
 			shadow.setAttribute('fill', 'transparent');
 			shadow.setAttribute('d', svgPath);
 			line.setAttribute('class', 'line');
-			// line.setAttribute('fill', 'transparent');
 			line.setAttribute('d', svgPath);
 			line.setAttribute('stroke', curLine.isCommitted ? curLine.colour : DEFAULT_COLOUR);
 			if (!curLine.isCommitted && config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit) {
@@ -186,12 +179,7 @@ class Branch2 {
 
 	public buildLines(config: GG.GraphConfig, commit: Commit2 = this.tip): void {
 		let parents = commit.getParents();
-		// let otherParent: Commit2 | undefined;
 		for (let parent of parents) {
-			// otherParent = parents.find(p => p !== parent);
-			// Duck-typing lets us cheat and this works
-			// TODO: Another option is to let branches have maximum time in
-			// the right most channel, but I don't know the algorithm for that...
 			this.lines.push({
 				p1: commit,
 				p2: parent,
@@ -210,8 +198,6 @@ class Branch2 {
 	public collapseLeft(graph: Graph) {
 		if (this.isPriority) return;
 
-		// console.time(`collapse ${this.name}`);
-
 		const getYoungestChild = (commit: Commit2) => {
 			if (commit.getChildren().length === 0) return null;
 			return commit.getChildren().reduce((found, current) => ((found?.y ?? Infinity) > current.y ? current : found));
@@ -222,9 +208,7 @@ class Branch2 {
 		let youngest: Commit2 | null;
 		let commitsBetween: ReadonlyArray<Commit2>;
 
-		// console.time('  available channels');
 		let avilableChannels: number[] = graph.getAvailableChannels().slice();
-		// console.timeEnd('  available channels');
 		let keepRunning = true; // we want to run up to one commit past this branch, so we'll keep track of when to stop
 
 		while (commitQueue.length > 0) {
@@ -234,7 +218,7 @@ class Branch2 {
 			youngest = getYoungestChild(commit);
 			commitsBetween = graph.getCommitsBetween(youngest, commit);
 			for (let cb of commitsBetween) {
-				if (cb.branch === this) continue; // skip commits on this branch, but this shouldn't be a thing anyway...
+				if (cb.branch === this) continue; // skip commits on this branch
 
 				let cbi = avilableChannels.indexOf(cb.x);
 				if (cbi !== -1) avilableChannels.splice(cbi, 1);
@@ -247,8 +231,6 @@ class Branch2 {
 			// We have an x we can use, so update!
 			this.x = Math.min(this.x, ...avilableChannels);
 		}
-
-		// console.timeEnd(`collapse ${this.name}`);
 	}
 
 	public static getBranchColor(branch: Branch2, config: GG.GraphConfig) {
@@ -280,8 +262,6 @@ class Commit2 {
 
 		if (commit.heads.length > 0) this.definedHeads.add(new Branch2(-1, commit.heads[0], this));
 		else if (commit.remotes.length > 0) this.definedHeads.add(new Branch2(-1, commit.remotes[0].name, this));
-		// commit.heads.map(h => new Branch2(-1, h, this)).forEach(b => this.definedHeads.add(b));
-		// commit.remotes.filter(r => !commit.heads.includes(r.name.substring((r.remote?.length ?? 0) + 1))).map(r => new Branch2(-1, r.name, this)).forEach(b => this.definedHeads.add(b));
 	}
 
 	get id() {
@@ -414,8 +394,6 @@ class Commit2 {
 		priorityHeads = headsToUse.filter(head => priorities.includes(head.name));
 		if (priorityHeads.length > 0) this._branch = priorityHeads[0];
 		else this._branch = headsToUse[0];
-
-		return this._branch;
 	}
 
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandOffsetNeeded: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
@@ -525,22 +503,16 @@ class Graph {
 		this.branches = [];
 		this.availableChannelsCache = null;
 		if (commits.length === 0) return;
-		console.log(commits.length);
-		console.time(LOAD_COMMITS);
-		console.time(WHOLE_THING);
 
-		// The first passthrough is to create the Commit2 lookup
-		// This should be made redundant by enhancing the GitCommit Interface to a Class
 		if (!this.commits[0].isCommitted() && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
 			this.commits[0].isCurrent = true;
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
 			this.getCommitFromHash(commitHead)!.isCurrent = true;
 		}
 
-		// The second passthrough is to link parents, and share heads (aka Branch2) to ancestors
-		// This should be done with remotes as well, but let's see if this works first.
+		// The first passthrough is to link parents and children, and share heads (aka Branch2) to ancestors.
 		// We also set droppable branches here.
-		let droppable = true;
+		let dropping = true;
 		let headProcessed = false;
 		commits.forEach((commitObj) => {
 			commitObj.definedHeads.forEach((b) => {
@@ -566,40 +538,34 @@ class Graph {
 				}
 			});
 
-			// FIXME: Somepone please review if this works legally.
-			// I understood the onld code as if any commit us undroppable, all its parents become undroppable.
-			// This means we can "early exit" (using the droppable bool) to say when to stop checking if commits are droppable
-			// I could be wrong, but that's what I understood. Please correct me? 🙏
 			// By default, all commits are non-droppable, and must satisfy a condition to become droppable
-			if (droppable) {
-				if (commitObj.isMerge()) {
-					droppable = false;
-				} else if (commitObj.hash === this.commitHead || headProcessed) {
+			if (dropping) {
+				if (commitObj.isMerge()) dropping = false;
+				else if (commitObj.hash === this.commitHead || headProcessed) {
 					commitObj.setDroppable();
 					headProcessed = true;
-					// This bottom bit, idk...
-					// } else {
-					// 	droppable = false;
-				} // are there any other conditions making commits droppable/not?
+				} // TODO: are there any other conditions making commits droppable/not?
 			}
 		});
+
+		// If we have an uncommitted, then share its heads from its parent, and reset the tip
 		if (!this.commits[0].isCommitted()) {
 			this.commits[0].addHeads(this.commits[0].getParents()[0].definedHeads);
 			this.commits[0].addHeads(this.commits[0].getParents()[0].inferredHeads);
 			Array.from(this.commits[0].getParents()[0].definedHeads)[0].tip = this.commits[0];
 		}
 
-		// The third passthrough is what actually creates the priorities for the branches
-		// This could be condensed into the second passthrough, but let's see if this works first..
+		// The second passthrough is what actually creates the priorities for the branches
+		// This might be able to be condensed into the first passthrough!
 		// Changing priorities allows us to assign "channels" to non-prioritised branches
-		// Because the passed commits are sorted by date, we will always have the latest
-		// non-priority commit as high as possible. Ie, if we're working on a feature, and
-		// "main" is prioritised, "channel 0" will be main and "channel 1" will be the feature.
+		// We also identify any deleted branches through the "untrackedHeads" variable.
 		let changingPriorities = priorityBranches.slice();
 		let untrackedHeads: Branch2[] = [];
-		for (let c = 0; c < this.commits.length; c++) {
+		let priorityBranchObjects: Branch2[] = [];
+		// for (let c = 0; c < this.commits.length; c++) {
+		for (let commitObj of this.commits) {
 			// We loop through commits to do this, because we need to loop through commits anyway
-			let commitObj = this.commits[c];
+			// let commitObj = this.commits[c];
 
 			// If we have our own head
 			if (commitObj.hasHeads()) {
@@ -608,7 +574,7 @@ class Graph {
 					if (head.x === -1) {
 						head.x = changingPriorities.length;
 						changingPriorities.push(head.name);
-					}
+					} else priorityBranchObjects.push(head);
 				});
 			} else if (!commitObj.hasInferredHeads()) { // no defined heads and no inferred heads
 				let untrackedBranch = new Branch2(untrackedHeads.length, '', commitObj);
@@ -630,19 +596,16 @@ class Graph {
 		}
 		untrackedHeads.forEach((h) => h.x += changingPriorities.length);
 
-		// This last passthrough ensures that there are no gaps between branches (no empty channels)
+		// This last passthrough ensures that there are no gaps between the branches (all channels used)
 		let sortedBranches = this.branches.sort((a, b) => a.x - b.x);
 		let offset = 0;
 		for (let x = 0; x < sortedBranches.length; x++) {
 			if (sortedBranches[x].branchToFollow !== null) offset++;
 			sortedBranches[x].x = x - offset;
 		}
-		console.timeEnd(LOAD_COMMITS);
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
-		console.time('graph render');
-
 		this.expandedCommitIndex = expandedCommit !== null ? expandedCommit.index : -1;
 		let group = document.createElementNS(SVG_NAMESPACE, 'g');
 		let i: number;
@@ -650,12 +613,8 @@ class Graph {
 		group.setAttribute('mask', 'url(#GraphMask)');
 
 		// We need to collapse everything left before we can render everything!
-		// console.time('branch collapsing');
 		this.branches.forEach(b => b.collapseLeft(this));
-		// console.timeEnd('branch collapsing');
-		// console.time('branch drawing');
 		this.branches.forEach(b => b.draw(group, this.config, this.expandedCommitIndex));
-		// console.timeEnd('branch drawing');
 
 		const overListener = (e: MouseEvent) => this.commitPointHoverStart(e);
 		const outListener = (e: MouseEvent) => this.commitPointHoverEnd(e);
@@ -667,9 +626,6 @@ class Graph {
 		this.setDimensions(contentWidth, this.getHeight(expandedCommit));
 		this.applyMaxWidth(contentWidth);
 		this.closeTooltip();
-
-		console.timeEnd('graph render');
-		console.timeEnd(WHOLE_THING);
 	}
 
 
@@ -696,7 +652,7 @@ class Graph {
 	public getWidthsAtVertices() {
 		let widths = [];
 		for (let i = 0; i < this.commits.length; i++) {
-			// Plus 1 because otherwise the first column has no width
+			// 										Plus 1 because otherwise the first column has no width
 			widths[i] = this.config.grid.offsetX + (this.commits[i].x + 1) * this.config.grid.x - 2;
 		}
 		return widths;
@@ -748,7 +704,6 @@ class Graph {
 				if (commit.isMerge() && !commit.isStashed) muted[i] = true;
 			}
 
-
 			// Mute commits that are not ancestors of the commit head if the Extension Setting is enabled, and the head commit is in the graph
 			// If Non-Ancestors should be muted && we have a shownAncestors array (we have a current hash AND it's in the graph)
 			if (this.muteConfig.commitsNotAncestorsOfHead && shownAncestors !== null) {
@@ -795,8 +750,8 @@ class Graph {
 	public getAvailableChannels(useCache: boolean = true): ReadonlyArray<number> {
 		if (useCache && this.availableChannelsCache !== null) return this.availableChannelsCache;
 		const channels = [];
-		for (let b of this.branches) {
-			if (!b.isPriority) channels.push(b.x);
+		for (let b = 0; b < this.branches.length; b++) {
+			if (!this.branches[b].isPriority) channels.push(b);
 		}
 		this.availableChannelsCache = channels.slice();
 		return this.availableChannelsCache;

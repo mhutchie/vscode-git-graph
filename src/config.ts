@@ -458,6 +458,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.showReverseCommits` Extension Setting.
+	 */
+	 get showReverseCommits() {
+		return !!this.config.get('repository.showReverseCommits', false);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.showRemoteBranches` Extension Setting.
 	 */
 	get showRemoteBranches() {

@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.30.0",
+	"version": "1.30.1",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -1072,6 +1072,11 @@
 					"default": true,
 					"description": "Show Commits that are only referenced by tags in Git Graph."
 				},
+				"git-graph.repository.showReverseCommits": {
+					"type": "boolean",
+					"default": false,
+					"description": "Show Commits in reverse order by default. This can be overridden per repository from the Git Graph View's Control Bar."
+				},
 				"git-graph.repository.showRemoteBranches": {
 					"type": "boolean",
 					"default": true,
@@ -1515,7 +1520,7 @@
 		"vscode:prepublish": "npm run compile",
 		"vscode:uninstall": "node ./out/life-cycle/uninstall.js",
 		"clean": "node ./.vscode/clean.js",
-		"compile": "npm run lint && npm run clean && npm run compile-src && npm run compile-web",
+		"compile": "npm run lint && npm run clean && npm run compile-src && npm run compile-web-debug",
 		"compile-src": "tsc -p ./src && node ./.vscode/package-src.js",
 		"compile-web": "tsc -p ./web && node ./.vscode/package-web.js",
 		"compile-web-debug": "tsc -p ./web && node ./.vscode/package-web.js debug",

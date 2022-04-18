@@ -72,11 +72,15 @@ class Branch {
 
 	/* Rendering */
 
-	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
-		let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
+	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number, showReverseCommits: boolean) {
+		let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', line, nextLine;
+		let di = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8);
+		let d = showReverseCommits ? -di : di;
 
 		// Convert branch lines into pixel coordinates, respecting expanded commit extensions
-		for (i = 0; i < this.lines.length; i++) {
+		for (showReverseCommits ? i = this.lines.length - 1 : i = 0;
+			 showReverseCommits ? i >= 0 : i < this.lines.length;
+			 showReverseCommits ? i-- : i++) {
 			line = this.lines[i];
 			x1 = line.p1.x * config.grid.x + config.grid.offsetX; y1 = line.p1.y * config.grid.y + config.grid.offsetY;
 			x2 = line.p2.x * config.grid.x + config.grid.offsetX; y2 = line.p2.y * config.grid.y + config.grid.offsetY;
@@ -191,7 +195,6 @@ class Vertex {
 	public getChildren(): ReadonlyArray<Vertex> {
 		return this.children;
 	}
-
 
 	/* Parents */
 
@@ -347,6 +350,7 @@ class Graph {
 	private commitLookup: { [hash: string]: number } = {};
 	private onlyFollowFirstParent: boolean = false;
 	private expandedCommitIndex: number = -1;
+	private showReverseCommits: boolean;
 
 	private readonly viewElem: HTMLElement;
 	private readonly contentElem: HTMLElement;
@@ -361,10 +365,11 @@ class Graph {
 	private tooltipTimeout: NodeJS.Timer | null = null;
 	private tooltipVertex: HTMLElement | null = null;
 
-	constructor(id: string, viewElem: HTMLElement, config: GG.GraphConfig, muteConfig: GG.MuteCommitsConfig) {
+	constructor(id: string, viewElem: HTMLElement, config: GG.GraphConfig, muteConfig: GG.MuteCommitsConfig, showReverseCommits: boolean) {
 		this.viewElem = viewElem;
 		this.config = config;
 		this.muteConfig = muteConfig;
+		this.showReverseCommits = showReverseCommits;
 
 		const elem = document.getElementById(id)!;
 		this.contentElem = elem.parentElement!;
@@ -387,10 +392,13 @@ class Graph {
 		elem.appendChild(this.svg);
 	}
 
+	public setShowReverseCommits(flag: boolean) {
+		this.showReverseCommits = flag;
+	}
 
 	/* Graph Operations */
 
-	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean) {
+	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean, showReverseCommits: boolean) {
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.commitLookup = commitLookup;
@@ -419,22 +427,28 @@ class Graph {
 			}
 		}
 
-		if (commits[0].hash === UNCOMMITTED) {
-			this.vertices[0].setNotCommitted();
+		let top = showReverseCommits ? commits.length - 1 : 0;
+		if (commits[top].hash === UNCOMMITTED) {
+			this.vertices[top].setNotCommitted();
 		}
 
-		if (commits[0].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
-			this.vertices[0].setCurrent();
+		if (commits[top].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
+			this.vertices[top].setCurrent();
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
 			this.vertices[commitLookup[commitHead]].setCurrent();
 		}
 
-		i = 0;
-		while (i < this.vertices.length) {
-			if (this.vertices[i].getNextParent() !== null || this.vertices[i].isNotOnBranch()) {
-				this.determinePath(i);
+		i = showReverseCommits ? this.vertices.length - 1 : 0;
+		while (showReverseCommits ? i >= 0 : i < this.vertices.length) {
+			const nv = this.vertices[i].getNextParent();
+			if (nv !== null || this.vertices[i].isNotOnBranch()) {
+				this.determinePath(i, showReverseCommits);
 			} else {
-				i++;
+				if (showReverseCommits) {
+					i--;
+				} else {
+					i++;
+				}
 			}
 		}
 	}
@@ -444,8 +458,10 @@ class Graph {
 		let group = document.createElementNS(SVG_NAMESPACE, 'g'), i, contentWidth = this.getContentWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
-		for (i = 0; i < this.branches.length; i++) {
-			this.branches[i].draw(group, this.config, this.expandedCommitIndex);
+		for (this.showReverseCommits ? i = this.branches.length - 1 : i = 0;
+			 this.showReverseCommits ? i >= 0 : i < this.branches.length;
+			 this.showReverseCommits ? i-- : i++) {
+			this.branches[i].draw(group, this.config, this.expandedCommitIndex, this.showReverseCommits);
 		}
 
 		const overListener = (e: MouseEvent) => this.vertexOver(e), outListener = (e: MouseEvent) => this.vertexOut(e);
@@ -702,7 +718,7 @@ class Graph {
 
 	/* Graph Layout Methods */
 
-	private determinePath(startAt: number) {
+	private determinePath(startAt: number, showReverseCommits: boolean) {
 		let i = startAt;
 		let vertex = this.vertices[i], parentVertex = this.vertices[i].getNextParent(), curVertex;
 		let lastPoint = vertex.isNotOnBranch() ? vertex.getNextPoint() : vertex.getPoint(), curPoint;
@@ -710,7 +726,9 @@ class Graph {
 		if (parentVertex !== null && parentVertex.id !== NULL_VERTEX_ID && vertex.isMerge() && !vertex.isNotOnBranch() && !parentVertex.isNotOnBranch()) {
 			// Branch is a merge between two vertices already on branches
 			let foundPointToParent = false, parentBranch = parentVertex.getBranch()!;
-			for (i = startAt + 1; i < this.vertices.length; i++) {
+			for (showReverseCommits ? i = startAt - 1 : i = startAt + 1;
+				 showReverseCommits ? i >= 0 : i < this.vertices.length;
+				 showReverseCommits ? i-- : i++) {
 				curVertex = this.vertices[i];
 				curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
 				if (curPoint !== null) {
@@ -732,7 +750,9 @@ class Graph {
 			let branch = new Branch(this.getAvailableColour(startAt));
 			vertex.addToBranch(branch, lastPoint.x);
 			vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
-			for (i = startAt + 1; i < this.vertices.length; i++) {
+			for (showReverseCommits ? i = startAt - 1 : i = startAt + 1;
+				 showReverseCommits ? i >= 0 : i < this.vertices.length;
+				 showReverseCommits ? i-- : i++) {
 				curVertex = this.vertices[i];
 				curPoint = parentVertex === curVertex && !parentVertex.isNotOnBranch() ? curVertex.getPoint() : curVertex.getNextPoint();
 				branch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), lastPoint.x < curPoint.x);
@@ -752,7 +772,9 @@ class Graph {
 					}
 				}
 			}
-			if (i === this.vertices.length && parentVertex !== null && parentVertex.id === NULL_VERTEX_ID) {
+			if ((showReverseCommits ? i === -1 : i === this.vertices.length)
+				 && parentVertex !== null
+				 && parentVertex.id === NULL_VERTEX_ID) {
 				// Vertex is the last in the graph, so no more branch can be formed to the parent
 				vertex.registerParentProcessed();
 			}

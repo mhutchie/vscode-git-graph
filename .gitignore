@@ -3,3 +3,5 @@ media
 node_modules
 out
 *.vsix
+yarn.lock
+package-lock.json

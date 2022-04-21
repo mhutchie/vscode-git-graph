@@ -1,5 +1,6 @@
 /* Git Interfaces / Types */
 
+
 export interface GitCommit {
 	readonly hash: string;
 	readonly parents: ReadonlyArray<string>;
@@ -212,6 +213,7 @@ export interface GitRepoState {
 	onRepoLoadShowCheckedOutBranch: BooleanOverride;
 	onRepoLoadShowSpecificBranches: string[] | null;
 	pullRequestConfig: PullRequestConfig | null;
+	showReverseCommits: boolean;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
 	showStashes: BooleanOverride;
@@ -257,6 +259,7 @@ export interface GitGraphViewConfig {
 	readonly onRepoLoad: OnRepoLoadConfig;
 	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
+	readonly showReverseCommits: boolean;
 	readonly showRemoteBranches: boolean;
 	readonly showStashes: boolean;
 	readonly showTags: boolean;
@@ -904,6 +907,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly branches: ReadonlyArray<string> | null; // null => Show All
 	readonly maxCommits: number;
 	readonly showTags: boolean;
+	readonly showReverseCommits: boolean;
 	readonly showRemoteBranches: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly onlyFollowFirstParent: boolean;
@@ -920,6 +924,7 @@ export interface ResponseLoadCommits extends ResponseWithErrorInfo {
 	readonly tags: string[];
 	readonly moreCommitsAvailable: boolean;
 	readonly onlyFollowFirstParent: boolean;
+	readonly showReverseCommits: boolean;
 }
 
 export interface RequestLoadConfig extends RepoRequest {

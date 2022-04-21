@@ -163,118 +163,121 @@ export class DataSource extends Disposable {
 	 */
 	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showReverseCommits: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
 		const config = getConfig();
-		return Promise.all([
-			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showReverseCommits, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
-			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
-		]).then(async (results) => {
-			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
-			let moreCommitsAvailable = commits.length === maxCommits + 1;
-			if (moreCommitsAvailable) commits.pop();
 
-			// It doesn't matter if getRefs() was rejected if no commits exist
-			if (typeof refData === 'string') {
-				// getRefs() returned an error message (string)
-				if (commits.length > 0) {
-					// Commits exist, throw the error
-					throw refData;
-				} else {
-					// No commits exist, so getRefs() will always return an error. Set refData to the default value
-					refData = { head: null, heads: [], tags: [], remotes: [] };
+		return this.getCommitsCount(repo).then((count) => {
+			return Promise.all([
+				this.getLog(repo, branches, maxCommits + 1, count, showTags && config.showCommitsOnlyReferencedByTags, showReverseCommits, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
+				this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
+			]).then(async (results) => {
+				let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
+				let moreCommitsAvailable = commits.length === maxCommits + 1;
+				if (moreCommitsAvailable) commits.pop();
+
+				// It doesn't matter if getRefs() was rejected if no commits exist
+				if (typeof refData === 'string') {
+					// getRefs() returned an error message (string)
+					if (commits.length > 0) {
+						// Commits exist, throw the error
+						throw refData;
+					} else {
+						// No commits exist, so getRefs() will always return an error. Set refData to the default value
+						refData = { head: null, heads: [], tags: [], remotes: [] };
+					}
 				}
-			}
 
-			if (refData.head !== null && config.showUncommittedChanges) {
-				for (i = 0; i < commits.length; i++) {
-					if (refData.head === commits[i].hash) {
-						const numUncommittedChanges = await this.getUncommittedChanges(repo);
-						if (numUncommittedChanges > 0) {
-							const cn = { hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + numUncommittedChanges + ')' };
-							if (showReverseCommits) {
-								commits.push(cn);
-							} else {
-								commits.unshift(cn);
+				if (refData.head !== null && config.showUncommittedChanges) {
+					for (i = 0; i < commits.length; i++) {
+						if (refData.head === commits[i].hash) {
+							const numUncommittedChanges = await this.getUncommittedChanges(repo);
+							if (numUncommittedChanges > 0) {
+								const cn = { hash: UNCOMMITTED, parents: [refData.head], author: '*', email: '', date: Math.round((new Date()).getTime() / 1000), message: 'Uncommitted Changes (' + numUncommittedChanges + ')' };
+								if (showReverseCommits) {
+									commits.push(cn);
+								} else {
+									commits.unshift(cn);
+								}
 							}
+							break;
 						}
-						break;
 					}
 				}
-			}
 
-			let commitNodes: DeepWriteable<GitCommit>[] = [];
-			let commitLookup: { [hash: string]: number } = {};
+				let commitNodes: DeepWriteable<GitCommit>[] = [];
+				let commitLookup: { [hash: string]: number } = {};
 
-			for (i = 0; i < commits.length; i++) {
-				commitLookup[commits[i].hash] = i;
-				commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null });
-			}
-
-			/* Insert Stashes */
-			// OK for reverse order?
-			let toAdd: { index: number, data: GitStash }[] = [];
-			for (i = 0; i < stashes.length; i++) {
-				if (typeof commitLookup[stashes[i].hash] === 'number') {
-					commitNodes[commitLookup[stashes[i].hash]].stash = {
-						selector: stashes[i].selector,
-						baseHash: stashes[i].baseHash,
-						untrackedFilesHash: stashes[i].untrackedFilesHash
-					};
-				} else if (typeof commitLookup[stashes[i].baseHash] === 'number') {
-					toAdd.push({ index: commitLookup[stashes[i].baseHash], data: stashes[i] });
+				for (i = 0; i < commits.length; i++) {
+					commitLookup[commits[i].hash] = i;
+					commitNodes.push({ ...commits[i], heads: [], tags: [], remotes: [], stash: null });
 				}
-			}
-			toAdd.sort((a, b) => a.index !== b.index ? a.index - b.index : b.data.date - a.data.date);
-			for (i = toAdd.length - 1; i >= 0; i--) {
-				let stash = toAdd[i].data;
-				commitNodes.splice(toAdd[i].index, 0, {
-					hash: stash.hash,
-					parents: [stash.baseHash],
-					author: stash.author,
-					email: stash.email,
-					date: stash.date,
-					message: stash.message,
-					heads: [], tags: [], remotes: [],
-					stash: {
-						selector: stash.selector,
-						baseHash: stash.baseHash,
-						untrackedFilesHash: stash.untrackedFilesHash
+
+				/* Insert Stashes */
+				// OK for reverse order?
+				let toAdd: { index: number, data: GitStash }[] = [];
+				for (i = 0; i < stashes.length; i++) {
+					if (typeof commitLookup[stashes[i].hash] === 'number') {
+						commitNodes[commitLookup[stashes[i].hash]].stash = {
+							selector: stashes[i].selector,
+							baseHash: stashes[i].baseHash,
+							untrackedFilesHash: stashes[i].untrackedFilesHash
+						};
+					} else if (typeof commitLookup[stashes[i].baseHash] === 'number') {
+						toAdd.push({ index: commitLookup[stashes[i].baseHash], data: stashes[i] });
 					}
-				});
-			}
-			for (i = 0; i < commitNodes.length; i++) {
-				// Correct commit lookup after stashes have been spliced in
-				commitLookup[commitNodes[i].hash] = i;
-			}
-
-			/* Annotate Heads */
-			for (i = 0; i < refData.heads.length; i++) {
-				if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
-			}
-
-			/* Annotate Tags */
-			if (showTags) {
-				for (i = 0; i < refData.tags.length; i++) {
-					if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
 				}
-			}
-
-			/* Annotate Remotes */
-			for (i = 0; i < refData.remotes.length; i++) {
-				if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
-					let name = refData.remotes[i].name;
-					let remote = remotes.find(remote => name.startsWith(remote + '/'));
-					commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
+				toAdd.sort((a, b) => a.index !== b.index ? a.index - b.index : b.data.date - a.data.date);
+				for (i = toAdd.length - 1; i >= 0; i--) {
+					let stash = toAdd[i].data;
+					commitNodes.splice(toAdd[i].index, 0, {
+						hash: stash.hash,
+						parents: [stash.baseHash],
+						author: stash.author,
+						email: stash.email,
+						date: stash.date,
+						message: stash.message,
+						heads: [], tags: [], remotes: [],
+						stash: {
+							selector: stash.selector,
+							baseHash: stash.baseHash,
+							untrackedFilesHash: stash.untrackedFilesHash
+						}
+					});
 				}
-			}
+				for (i = 0; i < commitNodes.length; i++) {
+					// Correct commit lookup after stashes have been spliced in
+					commitLookup[commitNodes[i].hash] = i;
+				}
 
-			return {
-				commits: commitNodes,
-				head: refData.head,
-				tags: unique(refData.tags.map((tag) => tag.name)),
-				moreCommitsAvailable: showReverseCommits ? false : moreCommitsAvailable,
-				error: null
-			};
-		}).catch((errorMessage) => {
-			return { commits: [], head: null, tags: [], moreCommitsAvailable: false, error: errorMessage };
+				/* Annotate Heads */
+				for (i = 0; i < refData.heads.length; i++) {
+					if (typeof commitLookup[refData.heads[i].hash] === 'number') commitNodes[commitLookup[refData.heads[i].hash]].heads.push(refData.heads[i].name);
+				}
+
+				/* Annotate Tags */
+				if (showTags) {
+					for (i = 0; i < refData.tags.length; i++) {
+						if (typeof commitLookup[refData.tags[i].hash] === 'number') commitNodes[commitLookup[refData.tags[i].hash]].tags.push({ name: refData.tags[i].name, annotated: refData.tags[i].annotated });
+					}
+				}
+
+				/* Annotate Remotes */
+				for (i = 0; i < refData.remotes.length; i++) {
+					if (typeof commitLookup[refData.remotes[i].hash] === 'number') {
+						let name = refData.remotes[i].name;
+						let remote = remotes.find(remote => name.startsWith(remote + '/'));
+						commitNodes[commitLookup[refData.remotes[i].hash]].remotes.push({ name: name, remote: remote ? remote : null });
+					}
+				}
+
+				return {
+					commits: commitNodes,
+					head: refData.head,
+					tags: unique(refData.tags.map((tag) => tag.name)),
+					moreCommitsAvailable: moreCommitsAvailable,
+					error: null
+				};
+			}).catch((errorMessage) => {
+				return { commits: [], head: null, tags: [], moreCommitsAvailable: false, error: errorMessage };
+			});
 		});
 	}
 
@@ -458,6 +461,11 @@ export class DataSource extends Disposable {
 
 	/* Get Data Methods - General */
 
+	public getCommitsCount(repo: string): Promise<number> {
+		return this.spawnGit(['rev-list', '--all', '--count'], repo, (stdout) => {
+			return Number.parseInt(stdout);
+		}).then((count) => count, () => 0);
+	}
 	/**
 	 * Get the subject of a commit.
 	 * @param repo The path of the repository.
@@ -1502,10 +1510,12 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns An array of commits.
 	 */
-	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, includeTags: boolean, showReverseCommits: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
+	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, allcount: number, includeTags: boolean, showReverseCommits: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
 		let args = [];
 		if (showReverseCommits) {
-			args = ['-c', 'log.showSignature=false', 'log', '--format=' + this.gitFormatLog, '--date-order', '--reverse'];
+			let skipnum = allcount - num;
+			if (skipnum <= 0) skipnum = 0;
+			args = ['-c', 'log.showSignature=false', 'log', '--skip=' + skipnum, '--format=' + this.gitFormatLog, '--date-order', '--reverse'];
 		} else {
 			args = ['-c', 'log.showSignature=false', 'log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		}

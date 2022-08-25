@@ -1057,7 +1057,7 @@
 					"type": "array",
 					"items": {
 						"type": "string",
-						"description": "A local branch name (e.g. \"master\"), a remote-tracking branch name prefixed with \"remotes/\" (e.g. \"remotes/origin/master\"), or a glob pattern defined in git-graph.customBranchGlobPatterns prefixed with \"--glob=\" (e.g. \"--glob=heads/feature/*\")."
+						"description": "A local branch name (e.g. \"master\"), a remote-tracking branch name prefixed with \"remotes/\" (e.g. \"remotes/origin/master\"), or a glob pattern defined in git-graph.customBranchGlobPatterns prefixed with \"--glob=\" (e.g. \"--glob=heads/feature/*\"). The pattern must already exist in git-graph.customBranchGlobPatterns."
 					},
 					"default": [],
 					"markdownDescription": "Show specific branches when a repository is loaded in the Git Graph View. Branches can be specified as follows: A local branch name (e.g. `master`), a remote-tracking branch name prefixed with \"remotes/\" (e.g. `remotes/origin/master`), or a glob pattern defined in `git-graph.customBranchGlobPatterns` prefixed with \"--glob=\" (e.g. `--glob=heads/feature/*`). This setting can be used in conjunction with \"Repository > On Load: Show Checked Out Branch\". Default: [] (show all branches)"

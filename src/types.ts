@@ -264,6 +264,7 @@ export interface GitGraphViewConfig {
 
 export interface GitGraphViewGlobalState {
 	alwaysAcceptCheckoutCommit: boolean;
+	alwaysAcceptRestoreCommit: boolean;
 	issueLinkingConfig: IssueLinkingConfig | null;
 	pushTagSkipRemoteCheck: boolean;
 }
@@ -359,6 +360,7 @@ export interface ContextMenuActionsVisibility {
 	readonly commit: {
 		readonly addTag: boolean;
 		readonly createBranch: boolean;
+		readonly restore: boolean;
 		readonly checkout: boolean;
 		readonly cherrypick: boolean;
 		readonly revert: boolean;
@@ -1137,6 +1139,14 @@ export interface ResponseResetToCommit extends ResponseWithErrorInfo {
 	readonly command: 'resetToCommit';
 }
 
+export interface RequestRestoreCommit extends RepoRequest {
+	readonly command: 'restoreCommit';
+	readonly commitHash: string;
+}
+export interface ResponseRestoreCommit extends ResponseWithErrorInfo {
+	readonly command: 'restoreCommit';
+}
+
 export interface RequestRevertCommit extends RepoRequest {
 	readonly command: 'revertCommit';
 	readonly commitHash: string;
@@ -1298,6 +1308,7 @@ export type RequestMessage =
 	| RequestRescanForRepos
 	| RequestResetFileToRevision
 	| RequestResetToCommit
+	| RequestRestoreCommit
 	| RequestRevertCommit
 	| RequestSetGlobalViewState
 	| RequestSetRepoState
@@ -1362,6 +1373,7 @@ export type ResponseMessage =
 	| ResponseResetFileToRevision
 	| ResponseResetToCommit
 	| ResponseRevertCommit
+	| ResponseRestoreCommit
 	| ResponseSetGlobalViewState
 	| ResponseSetWorkspaceViewState
 	| ResponseStartCodeReview

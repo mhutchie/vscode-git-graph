@@ -41,6 +41,7 @@ export const DEFAULT_REPO_STATE: GitRepoState = {
 
 const DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE: GitGraphViewGlobalState = {
 	alwaysAcceptCheckoutCommit: false,
+	alwaysAcceptRestoreCommit: false,
 	issueLinkingConfig: null,
 	pushTagSkipRemoteCheck: false
 };

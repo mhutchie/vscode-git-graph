@@ -215,6 +215,12 @@ export class GitGraphView extends Disposable {
 					errors: errorInfos
 				});
 				break;
+			case 'restoreCommit':
+				this.sendMessage({
+					command: 'restoreCommit',
+					error: await this.dataSource.restoreCommit(msg.repo, msg.commitHash)
+				});
+				break;
 			case 'checkoutCommit':
 				this.sendMessage({
 					command: 'checkoutCommit',

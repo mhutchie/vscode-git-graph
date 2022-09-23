@@ -1111,6 +1111,22 @@ class GitGraphView {
 			}
 		], [
 			{
+				title: 'Restore' + (globalState.alwaysAcceptRestoreCommit ? '' : ELLIPSIS),
+				visible: visibility.restore,
+				onClick: () => {
+					const restoreCommit = () => runAction({ command: 'restoreCommit', repo: this.currentRepo, commitHash: hash }, 'Restore Commit');
+					if (globalState.alwaysAcceptRestoreCommit) {
+						restoreCommit();
+					} else {
+						dialog.showCheckbox('Are you sure you want to restore commit <b><i>' + abbrevCommit(hash) + '</i></b>?', 'Always Accept', false, 'Yes, restore', (alwaysAccept) => {
+							if (alwaysAccept) {
+								updateGlobalViewState('alwaysAcceptRestoreCommit', true);
+							}
+							restoreCommit();
+						}, target);
+					}
+				}
+			}, {
 				title: 'Checkout' + (globalState.alwaysAcceptCheckoutCommit ? '' : ELLIPSIS),
 				visible: visibility.checkout,
 				onClick: () => {
@@ -3371,6 +3387,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'resetToCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Reset to Commit');
+				break;
+			case 'restoreCommit':
+				refreshOrDisplayError(msg.error, 'Unable to Restore Commit');
 				break;
 			case 'revertCommit':
 				refreshOrDisplayError(msg.error, 'Unable to Revert Commit');

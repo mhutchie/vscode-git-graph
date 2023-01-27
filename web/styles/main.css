@@ -229,6 +229,9 @@ code{
 #commitTable tr.commit span.description{
 	display:flex;
 }
+#commitTable tr.commitDetailsOpen span.description{
+	display:grid;
+}
 #commitTable tr.commit span.description .commitHeadDot, #commitTable tr.commit td span.description .gitRef{
 	flex-shrink:0;
 }

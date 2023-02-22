@@ -292,6 +292,7 @@ describe('Config', () => {
 				},
 				commitDetailsViewFile: {
 					viewDiff: true,
+					viewDiffInFIle: true,
 					viewFileAtThisRevision: true,
 					viewDiffWithWorkingFile: true,
 					openFile: true,
@@ -374,6 +375,7 @@ describe('Config', () => {
 				},
 				commitDetailsViewFile: {
 					viewDiff: true,
+					viewDiffInFIle: true,
 					viewFileAtThisRevision: true,
 					viewDiffWithWorkingFile: true,
 					openFile: true,
@@ -474,6 +476,7 @@ describe('Config', () => {
 				},
 				commitDetailsViewFile: {
 					viewDiff: true,
+					viewDiffInFIle: true,
 					viewFileAtThisRevision: true,
 					viewDiffWithWorkingFile: true,
 					openFile: true,

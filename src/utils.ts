@@ -7,6 +7,7 @@ import { DataSource } from './dataSource';
 import { DiffSide, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { ErrorInfo, GitFileStatus, GitRepoSet, PullRequestConfig, PullRequestProvider, RepoDropdownOrder } from './types';
+import { GitDiffView } from './gitDiffView';
 
 export const UNCOMMITTED = '*';
 export const UNABLE_TO_FIND_GIT_MSG = 'Unable to find a Git executable. Either: Set the Visual Studio Code Setting "git.path" to the path and filename of an existing Git executable, or install Git and restart Visual Studio Code.';
@@ -436,6 +437,58 @@ export function viewDiff(repo: string, fromHash: string, toHash: string, oldFile
 	} else {
 		return openFile(repo, newFilePath);
 	}
+}
+
+/**
+ * Open diff in .diff file
+ * @param repo The repository the file is contained in.
+ * @param fromHash The revision of the left-side of the Diff View.
+ * @param toHash The revision of the right-side of the Diff View.
+ * @param oldFilePath The relative path of the left-side file within the repository.
+ * @param newFilePath The relative path of the right-side file within the repository.
+ * @param type The Git file status of the change.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
+ */
+export function viewDiffInFile(extensionPath: string, repo: string, fromHash: string, toHash: string, oldFilePath: string, newFilePath: string, type: GitFileStatus) {
+	if (type !== GitFileStatus.Untracked) {
+		if (fromHash === UNCOMMITTED) fromHash = 'HEAD';
+
+		fromHash = fromHash === toHash ? fromHash + '^' : fromHash;
+
+		if (toHash === '*') {
+			toHash = '';
+		}
+
+		const cmd = `cd '${repo}';git diff ${fromHash} ${toHash} -- '${oldFilePath}'`;
+		GitDiffView.createOrShow(extensionPath, cmd, newFilePath);
+		return null;
+	} else {
+		return openFile(repo, newFilePath);
+	}
+}
+
+export function viewGitDiffByPath(extensionPath: string, repo: string, filePath: string) {
+	const cmd = `cd '${repo}';git diff -- '${filePath}'`;
+	GitDiffView.createOrShow(extensionPath, cmd, filePath);
+	return null;
+}
+
+export function viewGitDiffForRepo(extensionPath: string, repo: string) {
+	const filePath = '.';
+	const cmd = `cd '${repo}'; git add -N --no-all ${filePath}; git diff ${filePath}`;
+	GitDiffView.createOrShow(extensionPath, cmd, filePath);
+	return null;
+}
+
+export function execShell(cmd: string) {
+	return new Promise<string>((resolve, reject) => {
+		cp.exec(cmd, (err, out) => {
+			if (err) {
+				return reject(err);
+			}
+			return resolve(out);
+		});
+	});
 }
 
 /**

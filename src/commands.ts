@@ -8,7 +8,7 @@ import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, VsCodeVersionRequirement, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, VsCodeVersionRequirement, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage, viewGitDiffByPath, viewGitDiffForRepo} from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
 
@@ -56,6 +56,8 @@ export class CommandManager extends Disposable {
 		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
 		this.registerCommand('git-graph.version', () => this.version());
 		this.registerCommand('git-graph.openFile', (arg) => this.openFile(arg));
+		this.registerCommand('git-graph.viewGitDiff', () => this.viewGitDiff());
+		this.registerCommand('git-graph.viewGitDiffForRepo', () => this.viewGitDiffForRepo());
 
 		this.registerDisposable(
 			onDidChangeGitExecutable((gitExecutable) => {
@@ -345,6 +347,23 @@ export class CommandManager extends Disposable {
 		}
 	}
 
+
+	private viewGitDiff() {
+		const uriPath = vscode.window.activeTextEditor?.document.uri.path;
+		if (uriPath && vscode.workspace.workspaceFolders) {
+			const repo = vscode.workspace.workspaceFolders[0].uri.path;
+			const extensionPath = this.context.extensionPath;
+			viewGitDiffByPath(extensionPath, repo, uriPath);
+		}
+	}
+
+	private viewGitDiffForRepo() {
+		if ( vscode.workspace.workspaceFolders) {
+			const repo = vscode.workspace.workspaceFolders[0].uri.path;
+			const extensionPath = this.context.extensionPath;
+			viewGitDiffForRepo(extensionPath, repo);
+		}
+	}
 
 	/* Helper Methods */
 

@@ -1,0 +1,30 @@
+#diff-2-html{
+  box-sizing: border-box;
+  font-size: 13px;
+}
+
+#diff-2-html *,
+#diff-2-html *:before,
+#diff-2-html *:after {
+  box-sizing: inherit;
+}
+
+#diff-2-html body,
+#diff-2-html h1,
+#diff-2-html h2,
+#diff-2-html h3,
+#diff-2-html h4,
+#diff-2-html h5,
+#diff-2-html h6,
+#diff-2-html p,
+#diff-2-html ol,
+#diff-2-html ul {
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+#diff-2-html td,
+#diff-2-html th {
+  padding: 0;
+}

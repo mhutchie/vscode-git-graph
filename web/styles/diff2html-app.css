@@ -1,0 +1,19 @@
+#diff-2-html,
+#diff-2-html body {
+  height: 100%;
+  background-color: white !important;
+  color: black !important;
+  padding: 1px;
+}
+#diff-2-html del,
+#diff-2-html ins {
+  vertical-align: baseline !important;
+}
+
+#diff-2-html .d2h-code-line-ctn {
+  vertical-align: baseline !important;
+}
+
+#diff-2-html .d2h-code-line-prefix {
+  vertical-align: top;
+}

@@ -145,7 +145,21 @@ class GitGraphView {
 			this.requestLoadRepoInfoAndCommits(false, false);
 		}
 
-		const fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
+		const headBtn = document.getElementById('headBtn')!;
+		const fetchBtn = document.getElementById('fetchBtn')!;
+		const findBtn = document.getElementById('findBtn')!;
+		const settingsBtn = document.getElementById('settingsBtn')!;
+		const terminalBtn = document.getElementById('terminalBtn')!;
+
+		headBtn.innerHTML = SVG_ICONS.eyeOpen;
+		headBtn.addEventListener('click', () => {
+			const headDots = document.getElementsByClassName('commitHeadDot');
+			if (headDots.length === 1) {
+				// Scroll its parent (the commit row) into view. If you just
+				// scroll the dot into view it chops off part of the row.
+				headDots[0].parentElement?.scrollIntoView();
+			}
+		});
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => this.fetchFromRemotesAction());

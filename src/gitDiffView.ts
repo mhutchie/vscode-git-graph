@@ -198,6 +198,7 @@ export class GitDiffView extends Disposable {
 	private getHtmlForWebview(diffContent: string): string {
 		const nonce = getNonce();
 		this.logger.appendLine(`handle ${this.escapedStr} automatically`);
+		const encodedDiffContent = encodeURIComponent(diffContent);
 		return /* html */ `
 		<!DOCTYPE html>
 		<html lang="en" id="diff-2-html">
@@ -226,7 +227,7 @@ export class GitDiffView extends Disposable {
 					jQuery('#git-diff-body').on('click','.custom-git-btn',function(evt){
 						_vscodeApi.postMessage(jQuery(this).data());
 					});
-					const diffContent = \`${this.getEscapedDiffContent(diffContent)}\`;
+					const diffContent = decodeURIComponent("${encodedDiffContent}");
 					const configuration = {
 						drawFileList: true,
 						fileListToggle: true,
@@ -276,11 +277,11 @@ export class GitDiffView extends Disposable {
 		</html>`;
 	}
 
-	private getEscapedDiffContent(diff:string):string {
-		diff = diff.replace(/[\\`\$]/g, '\\$&');
-		diff = diff.replace(/</g, '${escapedStr}');
-		return diff;
-	}
+	// private getEscapedDiffContent(diff:string):string {
+	// 	diff = diff.replace(/[\\`\$]/g, '\\$&');
+	// 	diff = diff.replace(/</g, '${escapedStr}');
+	// 	return diff;
+	// }
 	/* URI Manipulation Methods */
 	private getMediaUri(file: string) {
 		return this.panel.webview.asWebviewUri(this.getUri('media', file));

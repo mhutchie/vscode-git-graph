@@ -2923,6 +2923,44 @@ class GitGraphView {
 			});
 		};
 
+		const triggerViewFileDiffInFile = (file: GG.GitFileChange, fileElem: HTMLElement) => {
+			const expandedCommit = this.expandedCommit;
+			if (expandedCommit === null) return;
+
+			let commit = this.commits[this.commitLookup[expandedCommit.commitHash]], fromHash: string, toHash: string, fileStatus = file.type;
+			if (expandedCommit.compareWithHash !== null) {
+				// Commit Comparison
+				const commitOrder = this.getCommitOrder(expandedCommit.commitHash, expandedCommit.compareWithHash);
+				fromHash = commitOrder.from;
+				toHash = commitOrder.to;
+			} else if (commit.stash !== null) {
+				// Stash Commit
+				if (fileStatus === GG.GitFileStatus.Untracked) {
+					fromHash = commit.stash.untrackedFilesHash!;
+					toHash = commit.stash.untrackedFilesHash!;
+					fileStatus = GG.GitFileStatus.Added;
+				} else {
+					fromHash = commit.stash.baseHash;
+					toHash = expandedCommit.commitHash;
+				}
+			} else {
+				// Single Commit
+				fromHash = expandedCommit.commitHash;
+				toHash = expandedCommit.commitHash;
+			}
+
+			this.cdvUpdateFileState(file, fileElem, true, true);
+			sendMessage({
+				command: 'viewDiffInFile',
+				repo: this.currentRepo,
+				fromHash: fromHash,
+				toHash: toHash,
+				oldFilePath: file.oldFilePath,
+				newFilePath: file.newFilePath,
+				type: fileStatus
+			});
+		};
+
 		const triggerCopyFilePath = (file: GG.GitFileChange, absolute: boolean) => {
 			sendMessage({ command: 'copyFilePath', repo: this.currentRepo, filePath: file.newFilePath, absolute: absolute });
 		};
@@ -2992,7 +3030,7 @@ class GitGraphView {
 
 			const sourceElem = <HTMLElement>(<Element>e.target).closest('.fileTreeFile'), fileElem = getFileElemOfEventTarget(e.target);
 			if (!sourceElem.classList.contains('gitDiffPossible')) return;
-			triggerViewFileDiff(getFileOfFileElem(expandedCommit.fileChanges, fileElem), fileElem);
+			triggerViewFileDiffInFile(getFileOfFileElem(expandedCommit.fileChanges, fileElem), fileElem);
 		});
 
 		addListenerToClass('copyGitFile', 'click', (e) => {
@@ -3049,6 +3087,11 @@ class GitGraphView {
 						title: 'View Diff',
 						visible: visibility.viewDiff && diffPossible,
 						onClick: () => triggerViewFileDiff(file, fileElem)
+					},
+					{
+						title: 'View Diff In File',
+						visible: visibility.viewDiff && diffPossible,
+						onClick: () => triggerViewFileDiffInFile(file, fileElem)
 					},
 					{
 						title: 'View File at this Revision',

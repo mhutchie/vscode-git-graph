@@ -1,7 +1,7 @@
 {
 	"name": "git-graph",
 	"displayName": "Git Graph",
-	"version": "1.30.0",
+	"version": "1.30.1",
 	"publisher": "mhutchie",
 	"author": {
 		"name": "Michael Hutchison",
@@ -96,6 +96,16 @@
 				"title": "Open File",
 				"icon": "$(go-to-file)",
 				"enablement": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.viewGitDiff",
+				"title": "View Git Diff"
+			},
+			{
+				"category": "Git Graph",
+				"command": "git-graph.viewGitDiffForRepo",
+				"title": "View Git Diff For Repository"
 			}
 		],
 		"configuration": {
@@ -250,6 +260,10 @@
 								"viewDiff": {
 									"type": "boolean",
 									"title": "View Diff"
+								},
+								"viewDiffInFile": {
+									"type": "boolean",
+									"title": "View Diff in file"
 								},
 								"viewFileAtThisRevision": {
 									"type": "boolean",
@@ -1526,9 +1540,12 @@
 		"test-and-report-coverage": "jest --verbose --coverage"
 	},
 	"dependencies": {
+		"diff2html": "^3.4.16",
+		"hogan.js": "^3.0.2",
 		"iconv-lite": "0.5.0"
 	},
 	"devDependencies": {
+		"@types/hogan.js": "^3.0.1",
 		"@types/jest": "26.0.19",
 		"@types/node": "8.10.62",
 		"@types/vscode": "1.38.0",
